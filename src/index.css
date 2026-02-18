@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .homad-card {
+    @apply bg-white rounded-3xl overflow-hidden cursor-pointer transition-all duration-300 hover:translate-y-[-4px];
+  }
+
+  .homad-card-premium {
+    @apply bg-white border border-gray-100 rounded-[2.5rem] p-10 shadow-2xl shadow-gray-200/50;
+  }
+
+  .homad-btn-primary {
+    @apply bg-black text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-gray-800 transition-all active:scale-[0.98] flex items-center justify-center gap-2;
+  }
+
+  .homad-btn-secondary {
+    @apply border border-gray-100 px-6 py-3 rounded-xl text-sm font-bold hover:bg-gray-50 transition-all active:scale-[0.98] flex items-center justify-center gap-2;
+  }
+
+  .homad-btn-outline {
+    @apply border border-gray-900 px-6 py-3 rounded-xl text-sm font-bold hover:bg-gray-900 hover:text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2;
+  }
+
+  .homad-badge {
+    @apply text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider w-fit;
+  }
+
+  .homad-badge-black {
+    @apply homad-badge bg-black text-white;
+  }
+
+  .homad-badge-green {
+    @apply homad-badge bg-[#22C55E] text-white;
+  }
+
+  .homad-input-group {
+    @apply flex flex-col gap-1;
+  }
+
+  .homad-input-label {
+    @apply text-[10px] text-gray-400 font-black uppercase tracking-widest pl-1 mb-1;
+  }
+
+  .homad-input {
+    @apply w-full px-6 py-4 bg-gray-50 rounded-2xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-gray-100 transition-all;
+  }
+
+  .homad-input-with-icon {
+    @apply homad-input pl-11;
+  }
+
+  .homad-h1 {
+    @apply text-5xl md:text-7xl font-black text-gray-900 tracking-tighter leading-[1.1];
+  }
+
+  .homad-h2 {
+    @apply text-4xl font-black text-gray-900 tracking-tight;
+  }
+
+  .homad-p-muted {
+    @apply text-gray-400 text-sm leading-relaxed;
+  }
+
+  .homad-icon-bg {
+    @apply p-3 bg-gray-50 rounded-2xl shadow-sm text-gray-400;
+  }
+}
+
+:root {
+  --brand-dark: #000000;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  @apply antialiased text-gray-900;
+}
