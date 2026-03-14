@@ -1,66 +1,86 @@
 import { Facebook, Instagram, Twitter, Linkedin, MapPin, Phone, Mail } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
     return (
-        <footer className="bg-white pt-10 pb-8 px-6 border-t border-gray-50">
+        <footer id="contacto" className="bg-minimal-header text-black pt-20 pb-12 px-6">
             <div className="max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-16 gap-y-10 mb-10">
-                    <div className="space-y-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12 mb-16 px-4 md:px-0">
+                    <div className="col-span-2 lg:col-span-1 flex flex-col items-start text-left space-y-6">
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-black rounded flex items-center justify-center text-white font-bold">H</div>
-                            <span className="text-black font-bold text-xl tracking-tighter">Homad</span>
+                            <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center text-white font-bold text-lg">H</div>
+                            <span className="text-black font-black text-2xl tracking-tighter">Homad</span>
                         </div>
-                        <p className="homad-p-muted max-w-[280px]">
+                        <p className="text-black/50 text-sm leading-relaxed max-w-[280px]">
                             Tu plataforma de confianza para encontrar apartamentos y habitaciones amobladas con servicios premium.
                         </p>
-                        <div className="flex gap-4">
+                        <div className="flex gap-3">
                             {[Facebook, Instagram, Twitter, Linkedin].map((Icon, idx) => (
-                                <div key={idx} className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center text-gray-400 hover:bg-black hover:text-white transition-all cursor-pointer">
-                                    <Icon size={16} />
+                                <div key={idx} className="w-10 h-10 bg-white border border-black/5 rounded-xl flex items-center justify-center text-gray-400 hover:bg-black hover:text-white hover:scale-110 active:scale-90 transition-all cursor-pointer shadow-sm">
+                                    <Icon size={18} />
                                 </div>
                             ))}
                         </div>
                     </div>
-                    <div>
-                        <h4 className="font-bold text-gray-900 mb-4">Enlaces Rápidos</h4>
-                        <ul className="space-y-2">
-                            {["Buscar apartamentos", "Buscar habitaciones", "Servicios adicionales", "Cómo funciona", "Preguntas frecuentes"].map(item => (
-                                <li key={item} className="homad-p-muted hover:text-black cursor-pointer transition-colors w-fit">{item}</li>
+
+                    <div className="flex flex-col items-start text-left">
+                        <h4 className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-8">Enlaces Rápidos</h4>
+                        <ul className="space-y-4">
+                            {[
+                                { label: "Buscar apartamentos", path: "/#apartamentos" },
+                                { label: "Buscar habitaciones", path: "/#apartamentos" },
+                                { label: "Servicios adicionales", path: "/#servicios" },
+                                { label: "Preguntas frecuentes", path: "/faq" }
+                            ].map(item => (
+                                <li key={item.label} className="text-black/50 hover:text-black active:scale-95 transition-all w-fit cursor-pointer text-sm font-bold">
+                                    {item.path.startsWith('/#') ? (
+                                        <a href={item.path}>{item.label}</a>
+                                    ) : (
+                                        <Link to={item.path}>{item.label}</Link>
+                                    )}
+                                </li>
                             ))}
                         </ul>
                     </div>
-                    <div>
-                        <h4 className="font-bold text-gray-900 mb-4">Empresa</h4>
-                        <ul className="space-y-2">
-                            {["Sobre nosotros", "Blog", "Carreras", "Términos y condiciones", "Política de privacidad"].map(item => (
-                                <li key={item} className="homad-p-muted hover:text-black cursor-pointer transition-colors w-fit">{item}</li>
+
+                    <div className="flex flex-col items-start text-left">
+                        <h4 className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-8">Empresa</h4>
+                        <ul className="space-y-4">
+                            {[
+                                { label: "Sobre nosotros", path: "/about" }
+                            ].map(item => (
+                                <li key={item.label} className="text-black/50 hover:text-black cursor-pointer transition-colors w-fit text-sm font-bold">
+                                    <Link to={item.path}>{item.label}</Link>
+                                </li>
                             ))}
                         </ul>
                     </div>
-                    <div>
-                        <h4 className="font-bold text-gray-900 mb-4">Contacto</h4>
-                        <ul className="space-y-3">
-                            <li className="flex items-start gap-3 homad-p-muted">
-                                <MapPin size={16} className="mt-0.5 shrink-0" />
-                                <span>Av. Principal 123, Ciudad Principal</span>
+
+                    <div className="flex flex-col items-start text-left">
+                        <h4 className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-8">Contacto</h4>
+                        <ul className="space-y-5">
+                            <li className="flex items-start gap-3 text-black/50 text-sm font-bold">
+                                <MapPin size={18} className="shrink-0 text-black" />
+                                <span>Av. Principal 123, Lima</span>
                             </li>
-                            <li className="flex items-center gap-3 homad-p-muted">
-                                <Phone size={16} className="shrink-0" />
-                                <span>+1 (234) 567-890</span>
+                            <li className="flex items-center gap-3 text-black/50 text-sm font-bold">
+                                <Phone size={18} className="shrink-0 text-black" />
+                                <span>+51 987 654 321</span>
                             </li>
-                            <li className="flex items-center gap-3 homad-p-muted">
-                                <Mail size={16} className="shrink-0" />
-                                <span>info@homad.com</span>
+                            <li className="flex items-center gap-3 text-black/50 text-sm font-bold">
+                                <Mail size={18} className="shrink-0 text-black" />
+                                <span>hola@homad.com</span>
                             </li>
                         </ul>
                     </div>
                 </div>
-                <div className="pt-6 border-t border-gray-50 flex flex-col md:flex-row justify-between items-center gap-6">
-                    <p className="homad-p-muted">© 2026 Homad. Todos los derechos reservados.</p>
+
+                <div className="pt-8 border-t border-black/5 flex flex-col md:flex-row justify-between items-center gap-8">
+                    <p className="text-black/40 text-[13px] font-bold italic">© 2026 Homad. Todos los derechos reservados.</p>
                     <div className="flex gap-8">
-                        {["Términos", "Privacidad", "Cookies"].map(item => (
-                            <span key={item} className="homad-p-muted hover:text-black cursor-pointer transition-colors">{item}</span>
-                        ))}
+                        <Link to="/terms" className="text-black/40 text-[13px] font-bold hover:text-black cursor-pointer transition-colors">Términos</Link>
+                        <Link to="/privacy" className="text-black/40 text-[13px] font-bold hover:text-black cursor-pointer transition-colors">Privacidad</Link>
+                        <span className="text-black/40 text-[13px] font-bold hover:text-black cursor-pointer transition-colors">Cookies</span>
                     </div>
                 </div>
             </div>
