@@ -1,21 +1,23 @@
 import { useEffect, useState } from 'react';
 import { propertyService, Property } from '../../services/crudService';
-import { Plus, Edit, Trash2, MapPin, Loader2, X } from 'lucide-react';
+import { Plus, Edit, Trash2, MapPin, Loader2, X, ChevronDown, Image as ImageIcon, Upload } from 'lucide-react';
 
 const PropertyManager = () => {
     const [properties, setProperties] = useState<Property[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [preview, setPreview] = useState<string | null>(null);
     const [formData, setFormData] = useState<Property>({
         title: '',
-        type: 'Departamento',
+        type: '',
         location: '',
         price: 0,
         beds: 1,
         baths: 1,
         area: '',
-        status: 'Disponible',
+        status: '',
         img: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2070&auto=format&fit=crop',
     });
 
@@ -53,13 +55,13 @@ const PropertyManager = () => {
             setEditingProperty(null);
             setFormData({
                 title: '',
-                type: 'Departamento',
+                type: '',
                 location: '',
                 price: 0,
                 beds: 1,
                 baths: 1,
                 area: '',
-                status: 'Disponible',
+                status: '',
                 img: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2070&auto=format&fit=crop',
             });
         }
@@ -69,6 +71,20 @@ const PropertyManager = () => {
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setEditingProperty(null);
+        setSelectedFile(null);
+        setPreview(null);
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setSelectedFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -79,10 +95,24 @@ const PropertyManager = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const data = new FormData();
+            Object.entries(formData).forEach(([key, value]) => {
+                if (key !== 'img' && value !== null && value !== undefined) {
+                    data.append(key, value.toString());
+                }
+            });
+
+            if (selectedFile) {
+                data.append('img', selectedFile);
+            } else if (!editingProperty) {
+                alert("Por favor selecciona una imagen");
+                return;
+            }
+
             if (editingProperty && editingProperty.id) {
-                await propertyService.update(editingProperty.id, formData);
+                await propertyService.update(editingProperty.id, data);
             } else {
-                await propertyService.create(formData);
+                await propertyService.create(data);
             }
             handleCloseModal();
             loadProperties();
@@ -208,10 +238,20 @@ const PropertyManager = () => {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tipo</label>
-                                    <select name="type" value={formData.type} onChange={handleInputChange} className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold appearance-none">
-                                        <option value="Habitaciones">Habitaciones</option>
-                                        <option value="Departamento">Departamentos</option>
-                                    </select>
+                                    <div className="relative">
+                                        <select 
+                                            name="type" 
+                                            value={formData.type} 
+                                            onChange={handleInputChange} 
+                                            required
+                                            className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold appearance-none cursor-pointer"
+                                        >
+                                            <option value="" disabled>Elegir</option>
+                                            <option value="Habitaciones">Habitaciones</option>
+                                            <option value="Departamento">Departamentos</option>
+                                        </select>
+                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                    </div>
                                 </div>
                                 <div className="space-y-2 md:col-span-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Ubicación</label>
@@ -235,15 +275,51 @@ const PropertyManager = () => {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Estado</label>
-                                    <select name="status" value={formData.status} onChange={handleInputChange} className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold appearance-none">
-                                        <option value="Disponible">Disponible</option>
-                                        <option value="Ocupado">Ocupado</option>
-                                        <option value="Mantenimiento">Mantenimiento</option>
-                                    </select>
+                                    <div className="relative">
+                                        <select 
+                                            name="status" 
+                                            value={formData.status} 
+                                            onChange={handleInputChange} 
+                                            required
+                                            className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold appearance-none cursor-pointer"
+                                        >
+                                            <option value="" disabled>Elegir</option>
+                                            <option value="Disponible">Disponible</option>
+                                            <option value="Ocupado">Ocupado</option>
+                                            <option value="Mantenimiento">Mantenimiento</option>
+                                        </select>
+                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                    </div>
                                 </div>
                                 <div className="space-y-2 md:col-span-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">URL de Imagen</label>
-                                    <input type="url" name="img" value={formData.img} onChange={handleInputChange} className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold" />
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Imagen de la Propiedad</label>
+                                    <div className="flex flex-col gap-4">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-24 h-24 rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden group relative">
+                                                {preview || (editingProperty?.img) ? (
+                                                    <img src={preview || formData.img} alt="Preview" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <ImageIcon className="text-gray-300" size={32} />
+                                                )}
+                                                <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                                                    <Upload className="text-white" size={20} />
+                                                    <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
+                                                </label>
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-xs font-bold text-black mb-1">
+                                                    {selectedFile ? selectedFile.name : 'Sube una imagen representativa'}
+                                                </p>
+                                                <p className="text-[10px] text-gray-400 font-medium leading-relaxed">
+                                                    Recomendamos imágenes de alta calidad (JPG, PNG) con un tamaño mínimo de 800x600px.
+                                                </p>
+                                                <label className="mt-3 inline-block px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-pointer transition-colors text-gray-600">
+                                                    Seleccionar Archivo
+                                                    <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div className="pt-6 flex justify-end gap-3 border-t border-gray-100">

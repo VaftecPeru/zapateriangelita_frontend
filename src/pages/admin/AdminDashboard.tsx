@@ -12,6 +12,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useState, useEffect } from 'react';
 import PropertyManager from './PropertyManager';
 import ServiceManager from './ServiceManager';
+import { statsService, DashboardStats } from '../../services/crudService';
 
 
 
@@ -58,12 +59,12 @@ const Counter = ({ value, duration = 2000, prefix = "", suffix = "", decimals = 
     );
 };
 
-const ConcentricChart = () => {
+const ConcentricChart = ({ stats }: { stats: DashboardStats | null }) => {
     const layers = [
-        { label: '$ 29k', size: 'w-48 h-48 md:w-56 md:h-56', color: 'bg-red-500/10' },
-        { label: '$ 21k', size: 'w-40 h-40 md:w-48 md:h-48', color: 'bg-red-500/20' },
-        { label: '$ 17k', size: 'w-32 h-32 md:w-36 md:h-36', color: 'bg-red-500/30' },
-        { label: '$ 14k', size: 'w-24 h-24 md:w-28 md:h-28', color: 'bg-red-500' },
+        { label: `$ ${stats?.revenue.total ? Math.round(stats.revenue.total / 1000) : 29}k`, size: 'w-48 h-48 md:w-56 md:h-56', color: 'bg-minimal-olive/10' },
+        { label: `$ ${stats?.revenue.expenses ? Math.round(stats.revenue.expenses / 1000) : 21}k`, size: 'w-40 h-40 md:w-48 md:h-48', color: 'bg-minimal-olive/20' },
+        { label: `$ ${stats?.charts.benefitsDistribution.taxes ? Math.round(stats.charts.benefitsDistribution.taxes / 1000) : 17}k`, size: 'w-32 h-32 md:w-36 md:h-36', color: 'bg-minimal-olive/30' },
+        { label: `$ ${stats?.charts.benefitsDistribution.costs ? Math.round(stats.charts.benefitsDistribution.costs / 1000) : 14}k`, size: 'w-24 h-24 md:w-28 md:h-28', color: 'bg-minimal-olive' },
     ];
 
     return (
@@ -86,8 +87,10 @@ const ConcentricChart = () => {
     );
 };
 
-const SimpleBarChart = () => {
-    const bars = [40, 60, 45, 80, 50, 90, 70];
+const SimpleBarChart = ({ stats }: { stats: DashboardStats | null }) => {
+    const bars = stats?.charts.monthlyRevenue || [40, 60, 45, 80, 50, 90, 70];
+    const maxVal = Math.max(...bars);
+    
     return (
         <div className="bg-white rounded-3xl p-6 border border-gray-50 shadow-sm space-y-4">
             <div className="flex justify-between items-center mb-2">
@@ -96,16 +99,16 @@ const SimpleBarChart = () => {
             </div>
             <div className="space-y-1">
                 <p className="text-xl font-black text-black tracking-tight">
-                    <Counter value={2100.99} prefix="$ " suffix="" />
+                    <Counter value={stats?.revenue.total || 0} prefix="$ " suffix="" />
                 </p>
                 <p className="text-[10px] font-bold text-gray-300 uppercase letter tracking-widest">USD</p>
             </div>
             <div className="flex items-end justify-between h-24 gap-1.5 px-1">
-                {bars.map((h, i) => (
+                {bars.map((val, i) => (
                     <div
                         key={i}
-                        className={`w-full rounded-full transition-all duration-1000 ${i % 2 === 0 ? 'bg-red-500' : 'bg-gray-100'}`}
-                        style={{ height: `${h}%` }}
+                        className={`w-full rounded-full transition-all duration-1000 ${i === bars.length - 1 ? 'bg-minimal-olive' : 'bg-gray-100'}`}
+                        style={{ height: `${(val / maxVal) * 100}%` }}
                     />
                 ))}
             </div>
@@ -116,10 +119,36 @@ const SimpleBarChart = () => {
 const AdminDashboard = () => {
     const { user, logout } = useAuth();
     const [activeTab, setActiveTab] = useState<'stats' | 'properties' | 'services'>('stats');
+    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const stats = [
-        { label: 'Ingresos por Rentas', value: 620991.10, change: '+12%', icon: <ArrowUpRight className="text-green-500" /> },
-        { label: 'Gastos Operativos', value: 310211.10, change: '-5%', icon: <ArrowDownRight className="text-red-500" /> },
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const response = await statsService.getStats();
+                setStats(response.data);
+            } catch (err) {
+                console.error("Error fetching stats:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
+    }, []);
+
+    const statCards = [
+        { 
+            label: 'Ingresos por Rentas', 
+            value: stats?.revenue.total || 0, 
+            change: stats?.revenue.change || '+0%', 
+            icon: <ArrowUpRight className="text-green-500" /> 
+        },
+        { 
+            label: 'Gastos Operativos', 
+            value: stats?.revenue.expenses || 0, 
+            change: stats?.revenue.expensesChange || '-0%', 
+            icon: <ArrowDownRight className="text-minimal-olive" /> 
+        },
     ];
 
     return (
@@ -202,20 +231,20 @@ const AdminDashboard = () => {
                                             </div>
                                         </div>
                                         <div>
-                                            <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">Balance Disponible</p>
+                                            <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">Recaudación Mensual</p>
                                             <p className="text-3xl font-black tracking-tighter">
-                                                <Counter value={120400} prefix="$ " />
+                                                <Counter value={12450.00} prefix="$ " />
                                             </p>
                                         </div>
                                         <div className="flex justify-between items-end pt-4 border-t border-white/10">
-                                            <div className="text-[10px] font-black tracking-widest uppercase text-white/40">CUENTA INMOBILIARIA</div>
-                                            <button className="px-4 py-2 bg-white text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-minimal-olive hover:text-white transition-all">Retirar</button>
+                                            <div className="text-[10px] font-black tracking-widest uppercase text-white/40">ADMINISTRACIÓN UMBRAL</div>
+                                            <button className="px-4 py-2 bg-white text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-minimal-olive hover:text-white transition-all">Reporte</button>
                                         </div>
                                     </div>
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-minimal-olive/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-minimal-olive/40 transition-colors" />
                                 </div>
 
-                                {stats.map((stat, i) => (
+                                {statCards.map((stat, i) => (
                                     <div key={i} className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 group">
                                         <div className="flex justify-between items-start mb-4 md:mb-6">
                                             <p className="text-gray-400 text-xs font-black uppercase tracking-widest">{stat.label}</p>
@@ -224,12 +253,12 @@ const AdminDashboard = () => {
                                             </div>
                                         </div>
                                         <p className="text-2xl font-black text-black tracking-tighter mb-4">
-                                            <Counter value={typeof stat.value === 'number' ? stat.value : 0} prefix="$ " />
+                                            <Counter value={stat.value} prefix="$ " />
                                         </p>
                                         <div className="flex items-center gap-2">
                                             <div className="flex items-center gap-1 text-xs font-bold">
                                                 {stat.icon}
-                                                <span className={stat.change.startsWith('+') ? 'text-green-500' : 'text-red-500'}>{stat.change}</span>
+                                                <span className={stat.change.startsWith('+') ? 'text-green-500' : 'text-minimal-olive'}>{stat.change}</span>
                                             </div>
                                             <span className="text-[10px] text-gray-300 font-bold uppercase">vs últ. semana</span>
                                         </div>
@@ -251,7 +280,7 @@ const AdminDashboard = () => {
                                             <div className="absolute inset-0 rounded-full border-[16px] border-minimal-olive border-t-transparent border-l-transparent rotate-45" />
                                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                                 <span className="text-3xl font-black text-black">
-                                                    <Counter value={14} prefix="$ " suffix="k" decimals={0} />
+                                                    <Counter value={stats?.charts.benefitsDistribution.total || 0} prefix="$ " suffix="" decimals={0} />
                                                 </span>
                                                 <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Utilidad</span>
                                             </div>
@@ -259,13 +288,13 @@ const AdminDashboard = () => {
                                     </div>
                                     <div className="grid grid-cols-3 gap-4 pt-10 border-t border-gray-50">
                                         {[
-                                            { val: 29, label: 'Total' },
-                                            { val: 12, label: 'Costos' },
-                                            { val: 17, label: 'Impuestos' }
+                                            { val: stats?.charts.benefitsDistribution.total || 0, label: 'Total' },
+                                            { val: stats?.charts.benefitsDistribution.costs || 0, label: 'Costos' },
+                                            { val: stats?.charts.benefitsDistribution.taxes || 0, label: 'Impuestos' }
                                         ].map((item, i) => (
                                             <div key={i} className="text-center">
                                                 <p className="text-sm font-black text-black">
-                                                    <Counter value={item.val} prefix="$ " suffix="k" decimals={0} />
+                                                    <Counter value={item.val} prefix="$ " suffix="" decimals={0} />
                                                 </p>
                                                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{item.label}</p>
                                             </div>
@@ -275,14 +304,14 @@ const AdminDashboard = () => {
 
                                 <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border border-gray-100 shadow-sm flex flex-col">
                                     <div className="flex justify-between items-center mb-6 md:mb-10">
-                                        <h3 className="font-black text-black">Plan de Negocios</h3>
+                                        <h3 className="font-black text-black">Gestión Operativa</h3>
                                         <Search size={16} className="text-gray-400" />
                                     </div>
                                     <div className="space-y-6 flex-1">
                                         {[
-                                            { label: 'Préstamos Hipotecarios', status: 'Activo', color: 'bg-minimal-olive' },
-                                            { label: 'Contabilidad Mensual', status: 'Pendiente', color: 'bg-yellow-400' },
-                                            { label: 'Comisiones de Plataforma', status: 'Pagado', color: 'bg-minimal-olive' }
+                                            { label: 'Limpieza de Unidades', status: 'Activo', color: 'bg-minimal-olive' },
+                                            { label: 'Mantenimiento Preventivo', status: 'Pendiente', color: 'bg-yellow-400' },
+                                            { label: 'Gestión de Reservas', status: 'Pagado', color: 'bg-minimal-olive' }
                                         ].map((plan, i) => (
                                             <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all cursor-pointer group">
                                                 <div className="flex items-center gap-4">
@@ -294,7 +323,7 @@ const AdminDashboard = () => {
                                         ))}
                                     </div>
                                     <button className="w-full mt-6 py-4 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-minimal-olive transition-all">
-                                        Ver plan completo
+                                        Ver todas las tareas
                                     </button>
                                 </div>
                             </div>
@@ -304,9 +333,9 @@ const AdminDashboard = () => {
                         <div className="lg:col-span-4 space-y-6 md:space-y-8">
                             <div className="space-y-6">
                                 <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border border-gray-100 shadow-sm relative h-[300px] flex items-center justify-center overflow-hidden">
-                                    <ConcentricChart />
+                                    <ConcentricChart stats={stats} />
                                 </div>
-                                <SimpleBarChart />
+                                <SimpleBarChart stats={stats} />
                             </div>
 
                             <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border border-gray-100 shadow-sm">
@@ -315,11 +344,12 @@ const AdminDashboard = () => {
                                     <span className="text-[10px] font-black text-minimal-olive uppercase tracking-widest bg-minimal-olive/10 px-3 py-1 rounded-lg">Hoy</span>
                                 </div>
                                 <div className="space-y-6">
-                                    {[
-                                        { text: "Propiedad 'Villa Sol' vendida", time: "10:24 AM" },
-                                        { text: "Nueva solicitud de visita", time: "09:12 AM" },
-                                        { text: "Contrato firmado por Carlos R.", time: "Ayer" }
-                                    ].map((item, i) => (
+                                    {(stats?.recentActivity || [
+                                        { text: "Reserva confirmada: Habitación Premium", time: "10:24 AM" },
+                                        { text: "Check-in completado: Suite Familiar", time: "09:12 AM" },
+                                        { text: "Servicio de limpieza solicitado", time: "08:45 AM" },
+                                        { text: "Nueva consulta vía WhatsApp", time: "Ayer" }
+                                    ]).map((item, i) => (
                                         <div key={i} className="flex gap-4 group cursor-pointer">
                                             <div className="w-1.5 h-1.5 rounded-full bg-minimal-olive mt-2 group-hover:scale-150 transition-all" />
                                             <div className="space-y-1">

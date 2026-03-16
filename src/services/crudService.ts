@@ -18,8 +18,8 @@ export interface Property {
 export const propertyService = {
     getAll: () => apiClient.get<Property[]>('/properties'),
     getById: (id: number) => apiClient.get<Property>(`/properties/${id}`),
-    create: (data: Property) => apiClient.post<Property>('/properties', data),
-    update: (id: number, data: Partial<Property>) => apiClient.put<Property>(`/properties/${id}`, data),
+    create: (data: Property | FormData) => apiClient.post<Property>('/properties', data),
+    update: (id: number, data: Partial<Property> | FormData) => apiClient.post<Property>(`/properties/${id}?_method=PUT`, data),
     delete: (id: number) => apiClient.delete(`/properties/${id}`),
 };
 
@@ -54,4 +54,34 @@ export const additionalServiceService = {
     create: (data: AdditionalService) => apiClient.post<AdditionalService>('/services', data),
     update: (id: number, data: Partial<AdditionalService>) => apiClient.put<AdditionalService>(`/services/${id}`, data),
     delete: (id: number) => apiClient.delete(`/services/${id}`),
+};
+
+export interface DashboardStats {
+    revenue: {
+        total: number;
+        change: string;
+        expenses: number;
+        expensesChange: string;
+    };
+    inventory: {
+        properties: number;
+        rooms: number;
+        services: number;
+    };
+    charts: {
+        monthlyRevenue: number[];
+        benefitsDistribution: {
+            total: number;
+            costs: number;
+            taxes: number;
+        };
+    };
+    recentActivity: {
+        text: string;
+        time: string;
+    }[];
+}
+
+export const statsService = {
+    getStats: () => apiClient.get<DashboardStats>('/stats'),
 };

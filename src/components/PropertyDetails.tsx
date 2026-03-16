@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { X, Bed, Bath, Square, MapPin, Star, CheckCircle2, Calendar, Users } from 'lucide-react';
 
 interface PropertyDetailsProps {
@@ -6,6 +7,27 @@ interface PropertyDetailsProps {
 }
 
 const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, onClose }) => {
+    const [checkIn, setCheckIn] = useState('');
+    const [checkOut, setCheckOut] = useState('');
+    const [guests, setGuests] = useState(1);
+
+    const handleReserve = () => {
+        const phoneNumber = "+51952822712";
+        const message = `Hola, buen día. Deseo realizar una reserva en Umbral Suite.
+
+Tipo de habitación: ${property.title}.
+
+Fecha de ingreso (Check-in): ${checkIn || '[Insertar Fecha]'}
+
+Fecha de salida (Check-out): ${checkOut || '[Insertar Fecha]'}
+
+Cantidad de personas: ${guests}
+
+Quedo atento a su confirmación de disponibilidad y a los pasos para garantizar la reserva. ¡Muchas gracias!`;
+        const whatsappUrl = `https://wa.me/${phoneNumber.replace('+', '')}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+    };
+
     return (
         <div className="fixed inset-0 z-[2000] bg-minimal-beige overflow-y-auto font-inter">
 
@@ -125,17 +147,27 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, onClose }) 
                             <form className="space-y-6">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="flex flex-col gap-2">
-                                        <label className="text-[11px] text-gray-400 font-black uppercase tracking-widest pl-1">Check-in</label>
+                                        <label className="text-[11px] text-gray-400 font-black uppercase tracking-widest pl-1">Fecha de ingreso</label>
                                         <div className="relative group">
-                                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={18} />
-                                            <input type="date" className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all cursor-pointer" />
+                                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={16} />
+                                            <input 
+                                                type="date" 
+                                                value={checkIn}
+                                                onChange={(e) => setCheckIn(e.target.value)}
+                                                className="w-full pl-10 pr-2 py-4 bg-gray-50/50 border border-gray-100 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all cursor-pointer" 
+                                            />
                                         </div>
                                     </div>
                                     <div className="flex flex-col gap-2">
-                                        <label className="text-[11px] text-gray-400 font-black uppercase tracking-widest pl-1">Check-out</label>
+                                        <label className="text-[11px] text-gray-400 font-black uppercase tracking-widest pl-1">Fecha de salida</label>
                                         <div className="relative group">
-                                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={18} />
-                                            <input type="date" className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all cursor-pointer" />
+                                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={16} />
+                                            <input 
+                                                type="date" 
+                                                value={checkOut}
+                                                onChange={(e) => setCheckOut(e.target.value)}
+                                                className="w-full pl-10 pr-2 py-4 bg-gray-50/50 border border-gray-100 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all cursor-pointer" 
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -144,11 +176,21 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, onClose }) 
                                     <label className="text-[11px] text-gray-400 font-black uppercase tracking-widest pl-1">Huéspedes</label>
                                     <div className="relative group">
                                         <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={20} />
-                                        <input type="number" defaultValue={1} className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all" />
+                                        <input 
+                                            type="number" 
+                                            min={1}
+                                            value={guests}
+                                            onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
+                                            className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all" 
+                                        />
                                     </div>
                                 </div>
 
-                                <button type="button" className="bg-orie-yellow text-black w-full py-5 text-base font-bold rounded-xl hover:bg-orie-yellow/80 transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-2">
+                                <button
+                                    type="button"
+                                    onClick={handleReserve}
+                                    className="bg-orie-yellow text-black w-full py-5 text-base font-bold rounded-xl hover:bg-orie-yellow/80 transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-2"
+                                >
                                     Reservar ahora
                                 </button>
 
