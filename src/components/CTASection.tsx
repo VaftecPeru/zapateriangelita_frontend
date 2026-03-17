@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
 
 const AnimatedCounter: React.FC<{ end: number, duration?: number, suffix?: string }> = ({ end, duration = 1500, suffix = "" }) => {
@@ -51,36 +52,37 @@ const AnimatedCounter: React.FC<{ end: number, duration?: number, suffix?: strin
 
 const CTASection = () => (
     <section className="bg-white">
-        <div className="py-12 text-center border-t border-gray-100">
-            <p className="homad-p-muted font-medium mb-6">¿Necesitas un servicio personalizado?</p>
-            <button className="homad-btn-outline px-10 border-gray-900 mx-auto">
-                Contáctanos
-            </button>
-        </div>
-        <div className="bg-black text-white py-24 px-6 relative overflow-hidden">
+
+        <div id="contacto" className="bg-minimal-header text-black py-24 px-6 relative overflow-hidden border-y border-black">
             <div className="max-w-7xl mx-auto relative z-10">
                 <div className="text-center max-w-4xl mx-auto mb-24">
                     <h2 className="text-4xl md:text-6xl font-extrabold mb-8 tracking-tighter">¿Listo para encontrar tu nuevo hogar?</h2>
-                    <p className="text-gray-400 text-lg mb-12 max-w-2xl mx-auto leading-relaxed">
+                    <p className="text-black/60 text-lg mb-12 max-w-2xl mx-auto leading-relaxed">
                         Miles de personas ya confían en Homad para encontrar el espacio perfecto.
                         Únete a nuestra comunidad hoy mismo.
                     </p>
                     <div className="flex flex-col sm:flex-row justify-center gap-4">
-                        <button className="homad-btn-primary bg-white text-black px-10 py-5 text-base hover:bg-gray-100 transition-colors">
+                        <Link
+                            to="/properties"
+                            className="bg-black text-white px-10 py-5 text-base rounded-xl font-bold border border-black hover:bg-minimal-olive hover:text-white transition-all active:scale-95 flex items-center justify-center gap-2"
+                        >
                             Explorar propiedades <ArrowRight size={20} />
-                        </button>
-                        <button className="homad-btn-secondary bg-transparent border-white/20 text-white px-10 py-5 text-base hover:bg-white/10 transition-colors">
+                        </Link>
+                        <Link
+                            to="/contact-advisor"
+                            className="bg-white text-black border border-black px-10 py-5 text-base rounded-xl font-bold hover:bg-black hover:text-white transition-all active:scale-95 flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1"
+                        >
                             Contactar asesor
-                        </button>
+                        </Link>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 pt-20 border-t border-white/10">
                     <div className="text-center">
-                        <p className="text-5xl font-black mb-3 tracking-tighter">
+                        <p className="text-5xl font-black mb-3 tracking-tighter text-minimal-serene">
                             <AnimatedCounter end={2500} suffix="+" />
                         </p>
-                        <p className="text-gray-500 text-[11px] uppercase tracking-[0.3em] font-extrabold">Propiedades disponibles</p>
+                        <p className="text-black/40 text-[11px] uppercase tracking-[0.3em] font-extrabold">Propiedades disponibles</p>
                     </div>
                     <div className="text-center">
                         <p className="text-5xl font-black mb-3 tracking-tighter">
