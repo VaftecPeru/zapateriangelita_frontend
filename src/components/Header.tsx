@@ -34,8 +34,7 @@ const Header = () => {
 
           <nav className="hidden md:flex items-center gap-10">
             {[
-              { label: "Apartamentos", href: "/properties" },
-              { label: "Habitaciones", href: "/properties" },
+              { label: "Propiedades", href: "/properties" },
               { label: "Servicios", id: "servicios" },
               { label: "Sobre nosotros", href: "/about" },
               { label: "Contacto", id: "contacto" }
@@ -177,8 +176,7 @@ const Header = () => {
           </div>
           <nav className="flex flex-col gap-2">
             {[
-              { label: "Apartamentos", icon: <Square size={22} />, id: "apartamentos" },
-              { label: "Habitaciones", icon: <Bed size={22} />, id: "apartamentos" },
+              { label: "Propiedades", icon: <Square size={22} />, id: "apartamentos" },
               { label: "Servicios", icon: <Bell size={22} />, id: "servicios" },
               { label: "Sobre nosotros", icon: <Info size={22} />, href: "/about" },
               { label: "Contacto", icon: <Mail size={22} />, id: "contacto" }

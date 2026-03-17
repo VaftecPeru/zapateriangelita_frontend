@@ -1,5 +1,6 @@
-import { useRef } from 'react';
-import { Wifi, Sparkles, Car, Utensils, Dumbbell, Box, ChevronLeft, ChevronRight, Search, Home, Smartphone } from 'lucide-react';
+import { useRef, useEffect, useState } from 'react';
+import { Wifi, Sparkles, Car, Utensils, Dumbbell, Box, ChevronLeft, ChevronRight, Search, Home, Smartphone, Star } from 'lucide-react';
+import { additionalServiceService, AdditionalService } from '../services/crudService';
 
 const ziroomServices = [
     {
@@ -80,6 +81,34 @@ const additionalServices = [
 const ServicesSection = () => {
     const ziroomScrollRef = useRef<HTMLDivElement>(null);
     const additionalScrollRef = useRef<HTMLDivElement>(null);
+    const [dynamicServices, setDynamicServices] = useState<AdditionalService[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchServices = async () => {
+            try {
+                const response = await additionalServiceService.getAll();
+                setDynamicServices(response.data);
+            } catch (err) {
+                console.error("Error fetching services:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchServices();
+    }, []);
+
+    // Helper to get an icon based on name or index
+    const getServiceIcon = (name: string, index: number) => {
+        const lowercaseName = name.toLowerCase();
+        if (lowercaseName.includes('wifi') || lowercaseName.includes('internet')) return <Wifi size={24} />;
+        if (lowercaseName.includes('limpieza')) return <Sparkles size={24} />;
+        if (lowercaseName.includes('parking') || lowercaseName.includes('estacionamiento')) return <Car size={24} />;
+        if (lowercaseName.includes('comida') || lowercaseName.includes('chef')) return <Utensils size={24} />;
+        if (lowercaseName.includes('gym') || lowercaseName.includes('gimnasio')) return <Dumbbell size={24} />;
+        if (lowercaseName.includes('paquete') || lowercaseName.includes('recepción')) return <Box size={24} />;
+        return <Star size={24} />;
+    };
 
     const scroll = (direction: 'left' | 'right', ref: React.RefObject<HTMLDivElement>) => {
         if (ref.current) {
@@ -196,35 +225,45 @@ const ServicesSection = () => {
                         ref={additionalScrollRef}
                         className="flex overflow-x-auto gap-6 no-scrollbar snap-x snap-mandatory pb-4"
                     >
-                        {additionalServices.map((s, idx) => (
-                            <div
-                                key={idx}
-                                className="min-w-[85vw] md:min-w-[calc(33.333%-16px)] bg-minimal-olive/[0.15] rounded-2xl p-8 flex flex-col h-full border border-black hover:bg-minimal-olive/[0.2] transition-all snap-center"
-                            >
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className="mb-6 text-minimal-olive bg-minimal-olive/10 p-3 rounded-xl border border-minimal-olive/20">
-                                        {s.icon}
-                                    </div>
-                                    {s.popular && (
-                                        <span className="homad-badge bg-orie-red text-white py-1.5 rounded-lg tracking-widest text-center">
-                                            Popular
-                                        </span>
-                                    )}
-                                </div>
-
-                                <h3 className="text-lg font-bold text-gray-900 mb-2">{s.title}</h3>
-                                <p className="homad-p-muted mb-6 flex-grow text-sm">
-                                    {s.desc}
-                                </p>
-
-                                <div className="flex justify-between items-center pt-6 border-t border-gray-100">
-                                    <span className="text-sm font-bold text-gray-900">{s.price}</span>
-                                    <button className="text-sm font-black text-gray-900 hover:tracking-wider transition-all uppercase tracking-widest">
-                                        Agregar
-                                    </button>
-                                </div>
+                        {loading ? (
+                            <div className="w-full py-20 text-center">
+                                <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Cargando servicios adicionales...</p>
                             </div>
-                        ))}
+                        ) : dynamicServices.length > 0 ? (
+                            dynamicServices.map((s, idx) => (
+                                <div
+                                    key={s.id || idx}
+                                    className="min-w-[85vw] md:min-w-[calc(33.333%-16px)] bg-minimal-olive/[0.15] rounded-2xl p-8 flex flex-col h-full border border-black hover:bg-minimal-olive/[0.2] transition-all snap-center"
+                                >
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className="mb-6 text-minimal-olive bg-minimal-olive/10 p-3 rounded-xl border border-minimal-olive/20">
+                                            {getServiceIcon(s.name, idx)}
+                                        </div>
+                                        {idx < 2 && (
+                                            <span className="homad-badge bg-orie-red text-white py-1.5 rounded-lg tracking-widest text-center">
+                                                Popular
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2">{s.name}</h3>
+                                    <p className="homad-p-muted mb-6 flex-grow text-sm">
+                                        {s.description || "Mejora tu estancia con este servicio exclusivo diseñado para tu confort."}
+                                    </p>
+
+                                    <div className="flex justify-between items-center pt-6 border-t border-gray-100">
+                                        <span className="text-sm font-bold text-gray-900">${s.price}</span>
+                                        <button className="text-sm font-black text-gray-900 hover:tracking-wider transition-all uppercase tracking-widest">
+                                            Detalles
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="w-full py-20 text-center">
+                                <p className="text-gray-400 font-bold">No hay servicios adicionales disponibles en este momento.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
