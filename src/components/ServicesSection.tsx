@@ -5,78 +5,47 @@ import { additionalServiceService, AdditionalService } from '../services/crudSer
 const ziroomServices = [
     {
         title: "Limpieza",
-        description: "Abraza la frescura y regresa a la libertad.",
+        shortDesc: "Disfruta de frescura y regresa a la libertad.",
+        description: "Disfruta de frescura y regresa a la libertad.",
         image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=800",
-        bg: "bg-yellow-50",
-        accent: "text-yellow-600"
+        bg: "bg-[#FFF9E6]",
+        accent: "text-[#F4B400]",
+        iconBg: "bg-[#F4B400]",
+        icon: <Sparkles className="w-6 h-6 text-white" />
     },
     {
         title: "Mover lugar",
-        description: "Empaquetar y transportar recuerdos es ideal.",
-        image: "https://images.unsplash.com/photo-1600585152220-90363fe7e115?auto=format&fit=crop&q=80&w=800",
-        bg: "bg-blue-50",
-        accent: "text-blue-600"
+        shortDesc: "Empaquetamos y transportamos tus recursos.",
+        description: "Empaquetamos y transportamos tus recursos.",
+        image: "https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?auto=format&fit=crop&q=80&w=800",
+        bg: "bg-[#EBF3FF]",
+        accent: "text-[#4285F4]",
+        iconBg: "bg-[#4285F4]",
+        icon: <Car className="w-6 h-6 text-white" />
     },
     {
         title: "Reparación de viviendas",
-        description: "Protección de seguridad oportuna y profesional.",
+        shortDesc: "Solución profesional a daños y averías.",
+        description: "Solución profesional a daños y averías.",
         image: "https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&q=80&w=800",
-        bg: "bg-indigo-50",
-        accent: "text-indigo-600"
+        bg: "bg-[#F3E8FF]",
+        accent: "text-[#7B1FA2]",
+        iconBg: "bg-[#7B1FA2]",
+        icon: <Box className="w-6 h-6 text-white" />
     },
     {
         title: "Proyectos de renta",
+        shortDesc: "Optimiza tu espacio para el mejor rendimiento.",
         description: "Optimiza tu espacio para el mejor rendimiento.",
         image: "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80&w=800",
-        bg: "bg-emerald-50",
-        accent: "text-emerald-600"
+        bg: "bg-[#E6FFFA]",
+        accent: "text-[#00897B]",
+        iconBg: "bg-[#00897B]",
+        icon: <Home className="w-6 h-6 text-white" />
     }
 ];
 
-const additionalServices = [
-    {
-        title: "Internet de Alta Velocidad",
-        desc: "Conexión fibra óptica hasta 500 Mbps incluida en todas las propiedades",
-        price: "Incluido",
-        icon: <Wifi size={24} />,
-        popular: true
-    },
-    {
-        title: "Servicio de Limpieza",
-        desc: "Limpieza profesional semanal o quincenal de tu espacio",
-        price: "Desde $50/mes",
-        icon: <Sparkles size={24} />,
-        popular: true
-    },
-    {
-        title: "Estacionamiento Privado",
-        desc: "Espacio de parking cubierto y seguro para tu vehículo",
-        price: "$80/mes",
-        icon: <Car size={24} />,
-        popular: false
-    },
-    {
-        title: "Servicio de Comidas",
-        desc: "Desayuno, almuerzo o cena preparados por chef profesional",
-        price: "Desde $200/mes",
-        icon: <Utensils size={24} />,
-        popular: false
-    },
-    {
-        title: "Gimnasio y Spa",
-        desc: "Acceso completo a gimnasio equipado y área de wellness",
-        price: "$45/mes",
-        icon: <Dumbbell size={24} />,
-        popular: true
-    },
-    {
-        title: "Recepción de Paquetes",
-        desc: "Servicio de conserjería para recibir y guardar tus entregas",
-        price: "Incluido",
-        icon: <Box size={24} />,
-        popular: false
-    }
-];
+
 
 const ServicesSection = () => {
     const ziroomScrollRef = useRef<HTMLDivElement>(null);
@@ -98,8 +67,8 @@ const ServicesSection = () => {
         fetchServices();
     }, []);
 
-    // Helper to get an icon based on name or index
-    const getServiceIcon = (name: string, index: number) => {
+
+    const getServiceIcon = (name: string, _index: number) => {
         const lowercaseName = name.toLowerCase();
         if (lowercaseName.includes('wifi') || lowercaseName.includes('internet')) return <Wifi size={24} />;
         if (lowercaseName.includes('limpieza')) return <Sparkles size={24} />;
@@ -119,83 +88,97 @@ const ServicesSection = () => {
     };
 
     return (
-        <section id="servicios" className="py-24 px-6 bg-white selection:bg-black selection:text-white relative overflow-hidden">
+        <section id="servicios" className="py-24 px-6 bg-minimal-beige selection:bg-black selection:text-white relative overflow-hidden">
             <div className="max-w-7xl mx-auto">
-                {/* Ziroom Services Grid - FIRST */}
-                <div className="mb-24 relative">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
-                        <div className="max-w-2xl">
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-minimal-olive/10 text-minimal-olive rounded-full text-[10px] font-black uppercase tracking-[0.3em] mb-6">
-                                Servicio Ziroom
-                            </div>
-                            <h2 className="text-4xl md:text-5xl font-black text-black tracking-tighter leading-tight mb-4">
-                                Servicios Ziroom
-                            </h2>
-                            <p className="text-lg text-gray-400 font-medium italic">
-                                Para vivir una buena vida no es necesario mover un dedo.
-                            </p>
-                        </div>
-
-                        {/* Navigation Arrows for Ziroom */}
-                        <div className="flex gap-2 mb-2 md:mb-0">
-                            <button
-                                onClick={() => scroll('left', ziroomScrollRef)}
-                                className="p-3 bg-white border border-black rounded-xl hover:bg-gray-50 transition-colors shadow-sm"
-                            >
-                                <ChevronLeft size={20} />
-                            </button>
-                            <button
-                                onClick={() => scroll('right', ziroomScrollRef)}
-                                className="p-3 bg-white border border-black rounded-xl hover:bg-gray-50 transition-colors shadow-sm"
-                            >
-                                <ChevronRight size={20} />
+          
+                <div className="mb-6 relative">
+                    <div className="text-center mb-8 px-4">
+                        <h2 className="homad-h2 text-5xl md:text-6xl mb-4">
+                            Servicios Ziroom
+                        </h2>
+                        <p className="text-xl text-gray-800 font-medium mb-8 max-w-3xl mx-auto">
+                            Contrata limpieza, mudanza y mantenimiento en minutos
+                        </p>
+                        <div className="flex justify-center">
+                            <button className="bg-[#6b8552] text-white px-10 py-4 rounded-xl text-2xl font-bold shadow-lg hover:bg-minimal-olive transition-all">
+                                Solicitar servicio
                             </button>
                         </div>
                     </div>
 
+                    <div className="flex justify-end gap-3 mb-6 px-4">
+                        <button
+                            onClick={() => scroll('left', ziroomScrollRef)}
+                            className="p-3 bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors shadow-sm text-gray-400"
+                        >
+                            <ChevronLeft size={24} />
+                        </button>
+                        <button
+                            onClick={() => scroll('right', ziroomScrollRef)}
+                            className="p-3 bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors shadow-sm text-gray-400"
+                        >
+                            <ChevronRight size={24} />
+                        </button>
+                    </div>
+
                     <div
                         ref={ziroomScrollRef}
-                        className="flex overflow-x-auto gap-6 xl:gap-8 no-scrollbar snap-x snap-mandatory pb-4"
+                        className="flex overflow-x-auto gap-6 xl:gap-8 no-scrollbar snap-x snap-mandatory pb-4 px-4"
                     >
                         {ziroomServices.map((service, idx) => (
-                            <div key={idx} className={`min-w-[85vw] sm:min-w-[calc(50%-12px)] lg:min-w-[calc(25%-18px)] ${service.bg} rounded-[2rem] overflow-hidden border border-black/5 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group flex flex-col snap-center select-none`}>
-                                <div className="p-8 pb-6 flex-grow">
-                                    <h3 className={`text-2xl font-black mb-3 ${service.accent}`}>{service.title}</h3>
-                                    <p className="text-sm text-gray-500 font-medium leading-relaxed">{service.description}</p>
+                            <div key={idx} className="min-w-[85vw] sm:min-w-[calc(50%-12px)] lg:min-w-[calc(25%-18px)] bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 group flex flex-col snap-center select-none">
+                                <div className={`px-8 py-6 ${service.bg}`}>
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-12 h-12 rounded-full ${service.iconBg} flex items-center justify-center shadow-lg border border-white/20`}>
+                                            {service.icon}
+                                        </div>
+                                        <h3 className={`text-xl font-black ${service.accent} leading-tight max-w-[150px]`}>{service.title}</h3>
+                                    </div>
                                 </div>
-                                <div className="h-48 sm:h-56 relative overflow-hidden mt-auto">
+                                
+                                <div className="h-48 sm:h-52 relative overflow-hidden">
                                     <img
                                         src={service.image}
                                         alt={service.title}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                                </div>
+
+                                <div className="px-8 py-7 bg-white flex-grow">
+                                    <p className="text-sm text-gray-500 font-medium leading-relaxed">
+                                        {service.description}
+                                    </p>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Growth Stats Mini */}
-                <div className="mb-32 grid grid-cols-2 lg:grid-cols-4 gap-8 py-12 border-y border-gray-100">
-                    {[
-                        { label: "Personal", val: "9000+", icon: <Sparkles size={16} className="text-yellow-500" /> },
-                        { label: "Afiliados", val: "1.5M+", icon: <Smartphone size={16} className="text-blue-500" /> },
-                        { label: "Pedidos", val: "10M+", icon: <Search size={16} className="text-orange-500" /> },
-                        { label: "Ciudades", val: "10+", icon: <Home size={16} className="text-indigo-500" /> }
-                    ].map((s, i) => (
-                        <div key={i} className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center">{s.icon}</div>
-                            <div>
-                                <p className="text-lg font-black text-black leading-none">{s.val}</p>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{s.label}</p>
+              
+                <div className="mb-12 bg-white rounded-3xl shadow-[0_10px_50px_rgba(0,0,0,0.04)] border border-gray-100 py-6 px-8">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                        {[
+                            { label: "Profesionales activos", val: "9,000+", accent: "bg-yellow-50 text-yellow-500", icon: <Sparkles size={20} /> },
+                            { label: "Aplicaciones descargadas", val: "1.5M+", accent: "bg-blue-50 text-blue-500", icon: <Smartphone size={20} /> },
+                            { label: "Servicios completados", val: "10M+", accent: "bg-orange-50 text-orange-500", icon: <Search size={20} /> },
+                            { label: "Ciudades cubiertas", val: "10+", accent: "bg-emerald-50 text-emerald-500", icon: <Home size={20} /> }
+                        ].map((s, i) => (
+                            <div key={i} className="flex items-center gap-6 group">
+                                <div className={`w-14 h-14 ${s.accent} rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110`}>
+                                    {s.icon}
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-black text-gray-900 leading-none mb-2">{s.val}</p>
+                                    <p className="text-sm font-medium text-gray-400 capitalize">{s.label}</p>
+                                </div>
+                                {i < 3 && <div className="hidden lg:block w-px h-12 bg-gray-100 ml-auto mr-0"></div>}
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
 
-                {/* Additional Services Carousel - RESTORED STYLE */}
-                <div className="relative">
+           
+                <div className="relative mt-24 pt-20 border-t border-black/5">
                     <div className="flex justify-between items-end mb-12">
                         <div className="max-w-2xl">
                             <h2 className="homad-h2 mb-4">Servicios Adicionales</h2>
@@ -204,7 +187,7 @@ const ServicesSection = () => {
                             </p>
                         </div>
 
-                        {/* Navigation Arrows */}
+                        
                         <div className="flex gap-2 mb-2">
                             <button
                                 onClick={() => scroll('left', additionalScrollRef)}

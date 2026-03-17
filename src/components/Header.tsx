@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Heart, Bell, User, LogOut, Menu, X, Square, Bed, Mail, Info, BarChart3 } from 'lucide-react';
+import { Heart, Bell, User, LogOut, Menu, X, Square, Mail, Info, BarChart3 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Link, useLocation } from 'react-router-dom';
 

@@ -12,7 +12,7 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, onClose }) 
     const [guests, setGuests] = useState(1);
 
     const handleReserve = () => {
-        const phoneNumber = "+51952822712";
+        const phoneNumber = "+51968231620";
         const message = `Hola, buen día. Deseo realizar una reserva en Umbral Suite.
 
 Tipo de habitación: ${property.title}.
@@ -150,11 +150,11 @@ Quedo atento a su confirmación de disponibilidad y a los pasos para garantizar 
                                         <label className="text-[11px] text-gray-400 font-black uppercase tracking-widest pl-1">Fecha de ingreso</label>
                                         <div className="relative group">
                                             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={16} />
-                                            <input 
-                                                type="date" 
+                                            <input
+                                                type="date"
                                                 value={checkIn}
                                                 onChange={(e) => setCheckIn(e.target.value)}
-                                                className="w-full pl-10 pr-2 py-4 bg-gray-50/50 border border-gray-100 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all cursor-pointer" 
+                                                className="w-full pl-10 pr-2 py-4 bg-gray-50/50 border border-gray-100 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all cursor-pointer"
                                             />
                                         </div>
                                     </div>
@@ -162,11 +162,11 @@ Quedo atento a su confirmación de disponibilidad y a los pasos para garantizar 
                                         <label className="text-[11px] text-gray-400 font-black uppercase tracking-widest pl-1">Fecha de salida</label>
                                         <div className="relative group">
                                             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={16} />
-                                            <input 
-                                                type="date" 
+                                            <input
+                                                type="date"
                                                 value={checkOut}
                                                 onChange={(e) => setCheckOut(e.target.value)}
-                                                className="w-full pl-10 pr-2 py-4 bg-gray-50/50 border border-gray-100 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all cursor-pointer" 
+                                                className="w-full pl-10 pr-2 py-4 bg-gray-50/50 border border-gray-100 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all cursor-pointer"
                                             />
                                         </div>
                                     </div>
@@ -176,12 +176,12 @@ Quedo atento a su confirmación de disponibilidad y a los pasos para garantizar 
                                     <label className="text-[11px] text-gray-400 font-black uppercase tracking-widest pl-1">Huéspedes</label>
                                     <div className="relative group">
                                         <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={20} />
-                                        <input 
-                                            type="number" 
+                                        <input
+                                            type="number"
                                             min={1}
                                             value={guests}
                                             onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
-                                            className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all" 
+                                            className="w-full pl-12 pr-6 py-4 bg-gray-50/50 border border-gray-100 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all"
                                         />
                                     </div>
                                 </div>

@@ -19,7 +19,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
         );
     }
 
-    // Role check (the database query showed user 4 has role: 'admin')
+    
     if (!isAuthenticated || (user as any)?.role !== 'admin') {
         return <Navigate to="/" replace />;
     }

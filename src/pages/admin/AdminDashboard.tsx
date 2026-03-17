@@ -120,7 +120,7 @@ const AdminDashboard = () => {
     const { user, logout } = useAuth();
     const [activeTab, setActiveTab] = useState<'stats' | 'properties' | 'services'>('stats');
     const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchStats = async () => {
