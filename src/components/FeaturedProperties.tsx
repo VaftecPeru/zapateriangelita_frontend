@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Star, MapPin, Bed, Bath, Square, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import apiClient from '../services/apiClient';
+import { Link } from 'react-router-dom';
 
 const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
   const [properties, setProperties] = useState<any[]>([]);
@@ -174,13 +175,17 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
         </div>
 
         <div className="mt-20 flex justify-center">
-          <button 
-            onClick={() => window.location.href = '/properties'}
-            className="flex items-center gap-3 px-10 py-5 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-minimal-olive hover:scale-105 active:scale-95 transition-all shadow-2xl hover:shadow-minimal-olive/20 group"
+          <Link
+            to="/properties"
           >
-            Explorar propiedades
-            <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-          </button>
+            <button 
+              // onClick={() => window.location.href = '/properties'}
+              className="flex items-center gap-3 px-10 py-5 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-minimal-olive hover:scale-105 active:scale-95 transition-all shadow-2xl hover:shadow-minimal-olive/20 group"
+            >
+              Explorar propiedades
+              <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+          </Link>
         </div>
       </div>
     </section>
