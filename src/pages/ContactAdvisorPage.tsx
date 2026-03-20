@@ -12,8 +12,21 @@ import {
     ArrowRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useSettings } from '../hooks/useSettings';
 
 const ContactAdvisorPage = () => {
+    const { settings } = useSettings();
+
+    const handleWhatsAppContact = (topic: string) => {
+        const phoneNumber = settings.whatsapp_number;
+        if (!phoneNumber) {
+            alert("El número de contacto no está configurado.");
+            return;
+        }
+        const message = encodeURIComponent(`Hola, me gustaría recibir asesoría sobre: ${topic}`);
+        window.open(`https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}?text=${message}`, '_blank');
+    };
+
     return (
         <div className="min-h-screen bg-white">
             {/* Hero Section */}
@@ -22,7 +35,7 @@ const ContactAdvisorPage = () => {
                     <div className="flex-1 space-y-8 animate-in fade-in slide-in-from-left-8 duration-700">
                         <div className="inline-flex items-center gap-2 px-4 py-2 bg-minimal-olive/10 rounded-full border border-minimal-olive/20">
                             <span className="w-2 h-2 bg-minimal-olive rounded-full animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-minimal-olive">Rentas by Homad</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-minimal-olive">Rentas by Umbral Suites</span>
                         </div>
                         <h1 className="text-5xl lg:text-7xl font-black text-black tracking-tighter leading-[0.9]">
                             Corretaje y <span className="text-minimal-olive italic">administración</span> de tu depa
@@ -31,7 +44,9 @@ const ContactAdvisorPage = () => {
                             Nos encargamos de todo para que no te preocupes por nada. Te conseguimos el inquilino ideal y administramos tu propiedad de principio a fin.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4">
-                            <button className="bg-black text-white px-10 py-5 rounded-2xl font-black text-lg hover:bg-minimal-olive transition-all shadow-[8px_8px_0px_0px_rgba(107,114,84,0.3)] active:shadow-none active:translate-x-1 active:translate-y-1">
+                            <button 
+                                onClick={() => handleWhatsAppContact('Corretaje y administración')}
+                                className="bg-black text-white px-10 py-5 rounded-2xl font-black text-lg hover:bg-minimal-olive transition-all shadow-[8px_8px_0px_0px_rgba(107,114,84,0.3)] active:shadow-none active:translate-x-1 active:translate-y-1">
                                 CONTÁCTANOS AHORA
                             </button>
                             <Link to="/about" className="flex items-center justify-center gap-2 px-10 py-5 rounded-2xl font-black text-lg text-black hover:bg-gray-100 transition-all">
@@ -120,7 +135,7 @@ const ContactAdvisorPage = () => {
                             "¡Ayer me entregaron mi primer depa 100% para inversión!"
                         </h2>
                         <p className="text-lg font-medium text-gray-500">
-                            Diego Poblete, inversionista feliz recibiendo su propiedad y confiando en Homad Rentas para la administración integral.
+                            Diego Poblete, inversionista feliz recibiendo su propiedad y confiando en Umbral Suites Rentas para la administración integral.
                         </p>
                         <button className="flex items-center gap-2 font-black text-minimal-olive hover:underline underline-offset-8">
                             Ver más historias <ChevronRight size={18} />
@@ -153,7 +168,9 @@ const ContactAdvisorPage = () => {
                                     </li>
                                 ))}
                             </ul>
-                            <button className="px-10 py-5 bg-minimal-olive text-white rounded-2xl font-black shadow-xl shadow-minimal-olive/20 hover:scale-105 transition-all">
+                            <button 
+                                onClick={() => handleWhatsAppContact('Plataforma tecnológica')}
+                                className="px-10 py-5 bg-minimal-olive text-white rounded-2xl font-black shadow-xl shadow-minimal-olive/20 hover:scale-105 transition-all">
                                 SOLICITAR PLATAFORMA
                             </button>
                         </div>
@@ -205,8 +222,8 @@ const ContactAdvisorPage = () => {
             <section className="py-32 px-6 bg-black text-white">
                 <div className="max-w-7xl mx-auto space-y-16">
                     <div className="text-center space-y-4">
-                        <h2 className="text-4xl md:text-6xl font-black tracking-tighter">¡En Homad nos hacemos <br /><span className="text-minimal-olive">cargo de todo!</span></h2>
-                        <p className="text-gray-400 font-medium max-w-2xl mx-auto">Compara la tranquilidad de administrar con Homad Rentas frente a hacerlo por tu cuenta.</p>
+                        <h2 className="text-4xl md:text-6xl font-black tracking-tighter">¡En Umbral Suites nos hacemos <br /><span className="text-minimal-olive">cargo de todo!</span></h2>
+                        <p className="text-gray-400 font-medium max-w-2xl mx-auto">Compara la tranquilidad de administrar con Umbral Suites Rentas frente a hacerlo por tu cuenta.</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -215,7 +232,7 @@ const ContactAdvisorPage = () => {
                                 <div className="w-12 h-12 bg-red-500/20 rounded-2xl flex items-center justify-center text-red-500">
                                     <XCircle size={28} />
                                 </div>
-                                Sin Homad
+                                Sin Umbral Suites
                             </h3>
                             <ul className="space-y-6">
                                 {["Tú alquilas", "Tú cobras", "Tú administras", "Tú lidias con reparaciones", "Incertidumbre en pagos"].map((x, i) => (
@@ -233,7 +250,7 @@ const ContactAdvisorPage = () => {
                                 <div className="w-12 h-12 bg-minimal-olive/20 rounded-2xl flex items-center justify-center text-minimal-olive">
                                     <CheckCircle2 size={28} />
                                 </div>
-                                Con Homad
+                                Con Umbral Suites
                             </h3>
                             <ul className="space-y-6">
                                 {["Nosotros alquilamos", "Nosotros cobramos", "Tú recibes tu renta", "Nosotros gestionamos ruidos/fallas", "Pagos garantizados"].map((x, i) => (
@@ -246,7 +263,9 @@ const ContactAdvisorPage = () => {
                     </div>
 
                     <div className="text-center pt-10">
-                        <button className="px-12 py-6 bg-white text-black rounded-2xl font-black text-xl hover:bg-minimal-olive hover:text-white transition-all">
+                        <button 
+                            onClick={() => handleWhatsAppContact('Inversión mejorada')}
+                            className="px-12 py-6 bg-white text-black rounded-2xl font-black text-xl hover:bg-minimal-olive hover:text-white transition-all">
                             EMPIEZA A INVERTIR MEJOR
                         </button>
                     </div>
@@ -262,7 +281,9 @@ const ContactAdvisorPage = () => {
                     <p className="text-xl text-gray-400 font-medium leading-relaxed">
                         Únete a cientos de inversionistas que ya disfrutan de su renta mensual sin dolores de cabeza.
                     </p>
-                    <button className="homad-btn-secondary px-12 py-6 rounded-2xl text-xl font-black">
+                    <button 
+                        onClick={() => handleWhatsAppContact('Asesoría gratuita')}
+                        className="umbralsuites-btn-secondary px-12 py-6 rounded-2xl text-xl font-black">
                         SOLICITAR ASESORÍA GRATUITA
                     </button>
                 </div>

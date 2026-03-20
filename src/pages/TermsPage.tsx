@@ -35,7 +35,7 @@ const TermsPage = () => {
                                 Aceptación de los Términos
                             </h2>
                             <p className="text-black/60 leading-relaxed font-medium">
-                                Al acceder y utilizar la plataforma Homad, usted acepta cumplir y estar sujeto a los siguientes términos y condiciones de uso. Estos términos rigen su relación con Homad en relación con este sitio web.
+                                Al acceder y utilizar la plataforma Umbral Suites, usted acepta cumplir y estar sujeto a los siguientes términos y condiciones de uso. Estos términos rigen su relación con Umbral Suites en relación con este sitio web.
                             </p>
                         </section>
 
@@ -45,7 +45,7 @@ const TermsPage = () => {
                                 Uso del Servicio
                             </h2>
                             <p className="text-black/60 leading-relaxed font-medium">
-                                Nuestra plataforma facilita la conexión entre propietarios y huéspedes para el alquiler de apartamentos y habitaciones amobladas. Homad no es propietario ni gestiona directamente todas las propiedades listadas.
+                                Nuestra plataforma facilita la conexión entre propietarios y huéspedes para el alquiler de apartamentos y habitaciones amobladas. Umbral Suites no es propietario ni gestiona directamente todas las propiedades listadas.
                             </p>
                             <ul className="mt-4 space-y-2 text-black/60 font-medium list-disc pl-10">
                                 <li>El usuario debe ser mayor de edad para realizar una reserva.</li>

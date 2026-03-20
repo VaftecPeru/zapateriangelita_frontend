@@ -1,24 +1,37 @@
 import { Facebook, Instagram, Twitter, Linkedin, MapPin, Phone, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useSettings } from '../hooks/useSettings';
 
 const Footer = () => {
+    const { settings } = useSettings();
     return (
         <footer id="contacto" className="bg-minimal-header text-black pt-20 pb-12 px-6">
             <div className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12 mb-16 px-4 md:px-0">
                     <div className="col-span-2 lg:col-span-1 flex flex-col items-start text-left space-y-6">
                         <div className="flex items-center gap-2">
-                            <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center text-white font-bold text-lg">H</div>
-                            <span className="text-black font-black text-2xl tracking-tighter">Homad</span>
+                            <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center text-white font-bold text-lg">U</div>
+                            <span className="text-black font-black text-2xl tracking-tighter">Umbral Suites</span>
                         </div>
                         <p className="text-black/50 text-sm leading-relaxed max-w-[280px]">
                             Tu plataforma de confianza para encontrar apartamentos y habitaciones amobladas con servicios premium.
                         </p>
                         <div className="flex gap-3">
-                            {[Facebook, Instagram, Twitter, Linkedin].map((Icon, idx) => (
-                                <div key={idx} className="w-10 h-10 bg-white border border-black/5 rounded-xl flex items-center justify-center text-gray-400 hover:bg-black hover:text-white hover:scale-110 active:scale-90 transition-all cursor-pointer shadow-sm">
-                                    <Icon size={18} />
-                                </div>
+                            {[
+                                { Icon: Facebook, href: 'https://facebook.com/umbralsuites' },
+                                { Icon: Instagram, href: 'https://instagram.com/umbralsuites' },
+                                { Icon: Twitter, href: 'https://twitter.com/umbralsuites' },
+                                { Icon: Linkedin, href: 'https://linkedin.com/company/umbralsuites' }
+                            ].map((social, idx) => (
+                                <a 
+                                    key={idx} 
+                                    href={social.href} 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="w-10 h-10 bg-white border border-black/5 rounded-xl flex items-center justify-center text-gray-400 hover:bg-black hover:text-white hover:scale-110 active:scale-90 transition-all cursor-pointer shadow-sm"
+                                >
+                                    <social.Icon size={18} />
+                                </a>
                             ))}
                         </div>
                     </div>
@@ -65,18 +78,18 @@ const Footer = () => {
                             </li>
                             <li className="flex items-center gap-3 text-black/50 text-sm font-bold">
                                 <Phone size={18} className="shrink-0 text-black" />
-                                <span>+51 987 654 321</span>
+                                <span>{settings.whatsapp_number ? `+${settings.whatsapp_number}` : 'No configurado'}</span>
                             </li>
                             <li className="flex items-center gap-3 text-black/50 text-sm font-bold">
                                 <Mail size={18} className="shrink-0 text-black" />
-                                <span>hola@homad.com</span>
+                                <span>hola@umbralsuites.com</span>
                             </li>
                         </ul>
                     </div>
                 </div>
 
                 <div className="pt-8 border-t border-black/5 flex flex-col md:flex-row justify-between items-center gap-8">
-                    <p className="text-black/40 text-[13px] font-bold italic">© 2026 Homad. Todos los derechos reservados.</p>
+                    <p className="text-black/40 text-[13px] font-bold italic">© 2026 Umbral Suites. Todos los derechos reservados.</p>
                     <div className="flex gap-8">
                         <Link to="/terms" className="text-black/40 text-[13px] font-bold hover:text-black cursor-pointer transition-colors">Términos</Link>
                         <Link to="/privacy" className="text-black/40 text-[13px] font-bold hover:text-black cursor-pointer transition-colors">Privacidad</Link>

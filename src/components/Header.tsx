@@ -27,8 +27,8 @@ const Header = () => {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
 
           <Link to="/" className="flex items-center gap-2 cursor-pointer relative z-50">
-            <div className="w-8 h-8 bg-black rounded flex items-center justify-center text-white font-bold">H</div>
-            <span className="text-black font-bold text-xl tracking-tighter">Homad</span>
+            <div className="w-8 h-8 bg-black rounded flex items-center justify-center text-white font-bold">U</div>
+            <span className="text-black font-bold text-xl tracking-tighter">Umbral Suites</span>
           </Link>
 
 
@@ -77,7 +77,7 @@ const Header = () => {
                 <>
                   <Link
                     to="/login"
-                    className="homad-btn-secondary px-5 py-2.5 flex items-center gap-2 hover:bg-black hover:text-white hover:scale-105 active:scale-95 border-black transition-all duration-300"
+                    className="umbralsuites-btn-secondary px-5 py-2.5 flex items-center gap-2 hover:bg-black hover:text-white hover:scale-105 active:scale-95 border-black transition-all duration-300"
                   >
                     <User size={18} /> Iniciar sesión
                   </Link>
@@ -171,8 +171,8 @@ const Header = () => {
             </button>
           </div>
           <div className="absolute top-8 left-8 flex items-center gap-2">
-            <div className="w-8 h-8 bg-black rounded flex items-center justify-center text-white font-bold">H</div>
-            <span className="text-black font-bold text-xl tracking-tighter">Homad</span>
+            <div className="w-8 h-8 bg-black rounded flex items-center justify-center text-white font-bold">U</div>
+            <span className="text-black font-bold text-xl tracking-tighter">Umbral Suites</span>
           </div>
           <nav className="flex flex-col gap-2">
             {[

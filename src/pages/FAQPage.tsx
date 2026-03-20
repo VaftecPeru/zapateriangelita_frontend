@@ -6,7 +6,7 @@ const FAQPage = () => {
 
     const faqs = [
         {
-            question: "¿Cómo puedo reservar una propiedad en Homad?",
+            question: "¿Cómo puedo reservar una propiedad en Umbral Suites?",
             answer: "Para reservar, primero debe crear una cuenta formal en nuestra plataforma. Una vez iniciada la sesión, podrá seleccionar la propiedad de su interés y seguir el proceso de solicitud, el cual será revisado por nuestro equipo de asesores premium."
         },
         {
@@ -15,7 +15,7 @@ const FAQPage = () => {
         },
         {
             question: "¿El procesos de pago es seguro?",
-            answer: "Absolutamente. Homad utiliza pasarelas de pago integradas con los más altos estándares de seguridad bancaria. Todas las transacciones son formales, transparentes y generan un comprobante oficial de pago."
+            answer: "Absolutamente. Umbral Suites utiliza pasarelas de pago integradas con los más altos estándares de seguridad bancaria. Todas las transacciones son formales, transparentes y generan un comprobante oficial de pago."
         },
         {
             question: "¿Puedo visitar la propiedad antes de alquilar?",
@@ -23,10 +23,10 @@ const FAQPage = () => {
         },
         {
             question: "¿Qué sucede si tengo un problema durante mi estancia?",
-            answer: "Homad ofrece un canal de soporte premium 24/7 para incidencias críticas. Contamos con una red de servicios de mantenimiento verificados para asegurar que su experiencia de vida sea impecable."
+            answer: "Umbral Suites ofrece un canal de soporte premium 24/7 para incidencias críticas. Contamos con una red de servicios de mantenimiento verificados para asegurar que su experiencia de vida sea impecable."
         },
         {
-            question: "¿Cómo puedo publicar mi propiedad en Homad?",
+            question: "¿Cómo puedo publicar mi propiedad en Umbral Suites?",
             answer: "Estamos siempre en búsqueda de nuevos espacios premium. Puede iniciar el proceso en la sección 'Registrar propiedad', donde nuestro equipo evaluará si el inmueble cumple con nuestros estándares de calidad y formalidad."
         }
     ];

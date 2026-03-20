@@ -58,7 +58,7 @@ const CTASection = () => (
                 <div className="text-center max-w-4xl mx-auto mb-24">
                     <h2 className="text-4xl md:text-6xl font-extrabold mb-8 tracking-tighter">¿Listo para encontrar tu nuevo hogar?</h2>
                     <p className="text-black/60 text-lg mb-12 max-w-2xl mx-auto leading-relaxed">
-                        Miles de personas ya confían en Homad para encontrar el espacio perfecto.
+                        Miles de personas ya confían en Umbral Suites para encontrar el espacio perfecto.
                         Únete a nuestra comunidad hoy mismo.
                     </p>
                     <div className="flex flex-col sm:flex-row justify-center gap-4">

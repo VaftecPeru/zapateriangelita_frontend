@@ -83,7 +83,7 @@ const RegisterPage = () => {
         setLoading(true);
 
         try {
-            const response = await fetch(`${API_URL}/api/register`, {
+            const response = await fetch(`${API_URL}/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -123,8 +123,8 @@ const RegisterPage = () => {
                 </Link>
 
                 <div className="text-center mb-12">
-                    <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white font-bold text-xl mx-auto mb-6">H</div>
-                    <h1 className="text-4xl font-black text-black tracking-tighter">Únete a Homad</h1>
+                    <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white font-bold text-xl mx-auto mb-6">U</div>
+                    <h1 className="text-4xl font-black text-black tracking-tighter">Únete a Umbral Suites</h1>
                     <p className="text-gray-400 font-medium mt-2 text-lg">Crea tu cuenta premium en pocos pasos</p>
                 </div>
 
@@ -163,7 +163,7 @@ const RegisterPage = () => {
                             <div className="space-y-2">
                                 <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest pl-1">Género</label>
                                 <select name="gender" required value={formData.gender} onChange={handleChange}
-                                    className="homad-select w-full bg-gray-50 border-transparent rounded-2xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all font-bold text-sm">
+                                    className="umbralsuites-select w-full bg-gray-50 border-transparent rounded-2xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all font-bold text-sm">
                                     <option value="" disabled hidden>Género</option>
                                     <option value="Masculino">Masculino</option>
                                     <option value="Femenino">Femenino</option>
@@ -201,7 +201,7 @@ const RegisterPage = () => {
                                 <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest pl-1">Departamento</label>
                                 <select name="department" required value={formData.department} disabled={ubigeoLoading}
                                     onChange={(e) => setFormData({ ...formData, department: e.target.value, province: '', district: '' })}
-                                    className="homad-select w-full bg-gray-50 border-transparent rounded-2xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all font-bold text-sm disabled:opacity-50">
+                                    className="umbralsuites-select w-full bg-gray-50 border-transparent rounded-2xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all font-bold text-sm disabled:opacity-50">
                                     <option value="" disabled hidden>{ubigeoLoading ? 'Cargando...' : 'Seleccionar'}</option>
                                     {departments.map(dept => <option key={dept} value={dept}>{dept}</option>)}
                                 </select>
@@ -211,7 +211,7 @@ const RegisterPage = () => {
                                 <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest pl-1">Provincia</label>
                                 <select name="province" required value={formData.province} disabled={!formData.department || ubigeoLoading}
                                     onChange={(e) => setFormData({ ...formData, province: e.target.value, district: '' })}
-                                    className="homad-select w-full bg-gray-50 border-transparent rounded-2xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all font-bold text-sm disabled:opacity-50">
+                                    className="umbralsuites-select w-full bg-gray-50 border-transparent rounded-2xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all font-bold text-sm disabled:opacity-50">
                                     <option value="" disabled hidden>Seleccionar</option>
                                     {provinces.map(prov => <option key={prov} value={prov}>{prov}</option>)}
                                 </select>
@@ -221,7 +221,7 @@ const RegisterPage = () => {
                                 <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest pl-1">Distrito</label>
                                 <select name="district" required value={formData.district} disabled={!formData.province || ubigeoLoading}
                                     onChange={handleChange}
-                                    className="homad-select w-full bg-gray-50 border-transparent rounded-2xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all font-bold text-sm disabled:opacity-50">
+                                    className="umbralsuites-select w-full bg-gray-50 border-transparent rounded-2xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all font-bold text-sm disabled:opacity-50">
                                     <option value="" disabled hidden>Seleccionar</option>
                                     {districts.map(dist => <option key={dist} value={dist}>{dist}</option>)}
                                 </select>

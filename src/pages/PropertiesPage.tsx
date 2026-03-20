@@ -45,15 +45,26 @@ const PropertiesPage = () => {
     };
 
     const filteredProperties = properties.filter(p => {
-        const matchesSearch = p.title.toLowerCase().includes(filters.search.toLowerCase()) || 
-                             p.location.toLowerCase().includes(filters.search.toLowerCase());
+        const title = (p.title || '').toLowerCase();
+        const location = (p.location || '').toLowerCase();
+        const search = (filters.search || '').toLowerCase();
+
+        const matchesSearch = title.includes(search) || location.includes(search);
+        
         const matchesType = filters.type === 'Todos' || p.type === (filters.type === 'Habitaciones' ? 'Habitación' : 'Apartamento');
         
-        // Extract number from price string (e.g., "$1,200/mo")
-        const priceValue = parseInt(p.price.replace(/[^0-9]/g, ''));
+        // Safety check for price: could be number or string
+        let priceValue = 0;
+        if (typeof p.price === 'number') {
+            priceValue = p.price;
+        } else if (typeof p.price === 'string') {
+            priceValue = parseInt(p.price.replace(/[^0-9]/g, '')) || 0;
+        }
+        
         const matchesPrice = priceValue >= filters.minPrice && priceValue <= filters.maxPrice;
         
-        const matchesBeds = filters.beds === 'Cualquiera' || p.beds >= parseInt(filters.beds);
+        const bedsLimit = filters.beds === 'Cualquiera' ? 0 : parseInt(filters.beds);
+        const matchesBeds = filters.beds === 'Cualquiera' || (p.beds && p.beds >= bedsLimit);
 
         return matchesSearch && matchesType && matchesPrice && matchesBeds;
     });
@@ -145,7 +156,7 @@ const PropertiesPage = () => {
                                     />
                                     <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-black/5">
                                         <span className="text-[10px] font-black text-gray-400 uppercase">Hasta</span>
-                                        <span className="text-sm font-black text-black">${filters.maxPrice.toLocaleString()}</span>
+                                        <span className="text-sm font-black text-black">S/{filters.maxPrice.toLocaleString()}</span>
                                     </div>
                                 </div>
                             </div>
@@ -195,9 +206,12 @@ const PropertiesPage = () => {
                                     >
                                         <div className="relative aspect-[16/10] overflow-hidden rounded-[1rem] md:rounded-[1.2rem] shrink-0">
                                             <img
-                                                src={p.img}
+                                                src={p.img || 'https://images.unsplash.com/photo-1560448204-603b3fc33ddc?q=80&w=800'}
                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                                                 alt={p.title}
+                                                onError={(e: any) => {
+                                                    e.target.src = 'https://images.unsplash.com/photo-1560448204-603b3fc33ddc?q=80&w=800';
+                                                }}
                                             />
 
                                             <div className="absolute top-5 left-5">

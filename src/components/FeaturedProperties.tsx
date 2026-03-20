@@ -41,7 +41,9 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
 
   const filteredProperties = properties.filter(p => {
     if (!searchCriteria) return true;
-    const matchesLocation = !searchCriteria.location || p.location.toLowerCase().includes(searchCriteria.location.toLowerCase());
+    const location = (p.location || '').toLowerCase();
+    const searchLocation = (searchCriteria.location || '').toLowerCase();
+    const matchesLocation = !searchLocation || location.includes(searchLocation);
     const matchesType = !searchCriteria.propertyType || p.type === searchCriteria.propertyType;
     return matchesLocation && matchesType;
   });
@@ -51,7 +53,7 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
       <section className="py-24 px-6 bg-white text-center">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-100 rounded-full w-48 mx-auto" />
-          <p className="homad-p-muted">Cargando propiedades...</p>
+          <p className="umbralsuites-p-muted">Cargando propiedades...</p>
         </div>
       </section>
     );
@@ -100,9 +102,12 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
             >
               <div className="relative aspect-[16/10] overflow-hidden rounded-[1rem] md:rounded-[1.2rem] shrink-0">
                 <img
-                  src={p.img}
+                  src={p.img || 'https://images.unsplash.com/photo-1560448204-603b3fc33ddc?q=80&w=800'}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                   alt={p.title}
+                  onError={(e: any) => {
+                    e.target.src = 'https://images.unsplash.com/photo-1560448204-603b3fc33ddc?q=80&w=800';
+                  }}
                 />
 
                 <div className="absolute top-5 left-5">
@@ -163,7 +168,7 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
                 <div className="flex justify-between items-center bg-black pl-4 pr-1.5 py-2.5 md:pl-5 md:pr-2 md:py-3 rounded-xl border border-black/5 group-hover:bg-[#FF914D] active:scale-[0.97] transition-all duration-300">
                   <div className="text-left">
                     <p className="text-[8px] md:text-[9px] text-white/40 font-black uppercase tracking-widest leading-none mb-0.5">Precio Total</p>
-                    <p className="text-lg md:text-xl font-black text-white tracking-tighter leading-none">{p.price}</p>
+                    <p className="text-lg md:text-xl font-black text-white tracking-tighter leading-none">S/{p.price}</p>
                   </div>
                   <div className="w-7 h-7 md:w-8 md:h-8 bg-white rounded-lg flex items-center justify-center text-black">
                     <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />

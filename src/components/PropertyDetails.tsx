@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Bed, Bath, Square, MapPin, Star, CheckCircle2, Calendar, Users } from 'lucide-react';
+import { useSettings } from '../hooks/useSettings';
+import { propertyService, leadService } from '../services/crudService';
 
 interface PropertyDetailsProps {
     property: any;
@@ -10,9 +12,25 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, onClose }) 
     const [checkIn, setCheckIn] = useState('');
     const [checkOut, setCheckOut] = useState('');
     const [guests, setGuests] = useState(1);
+    const { settings } = useSettings();
+
+    // Track Property View when component mounts
+    useEffect(() => {
+        if (property?.id) {
+            propertyService.trackView(property.id).catch(console.error);
+        }
+    }, [property?.id]);
 
     const handleReserve = () => {
-        const phoneNumber = "+51968231620";
+        // Track Lead
+        if (property?.id) {
+            leadService.trackLead('property', property.id).catch(console.error);
+        }
+        const phoneNumber = settings.whatsapp_number;
+        if (!phoneNumber) {
+            alert("El número de contacto no está configurado. Por favor, intenta de nuevo más tarde.");
+            return;
+        }
         const message = `Hola, buen día. Deseo realizar una reserva en Umbral Suite.
 
 Tipo de habitación: ${property.title}.
@@ -24,7 +42,7 @@ Fecha de salida (Check-out): ${checkOut || '[Insertar Fecha]'}
 Cantidad de personas: ${guests}
 
 Quedo atento a su confirmación de disponibilidad y a los pasos para garantizar la reserva. ¡Muchas gracias!`;
-        const whatsappUrl = `https://wa.me/${phoneNumber.replace('+', '')}?text=${encodeURIComponent(message)}`;
+        const whatsappUrl = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
     };
 
@@ -34,7 +52,7 @@ Quedo atento a su confirmación de disponibilidad y a los pasos para garantizar 
             <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-md flex justify-between items-center px-8 md:px-12 py-6 border-b border-black">
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-black rounded flex items-center justify-center text-white font-bold">H</div>
-                    <span className="text-black font-bold text-xl tracking-tighter">Homad</span>
+                    <span className="text-black font-bold text-xl tracking-tighter">Umbral Suites</span>
                 </div>
                 <button
                     onClick={onClose}
@@ -61,7 +79,7 @@ Quedo atento a su confirmación de disponibilidad y a los pasos para garantizar 
                             <h2 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tighter">
                                 {property.title}
                             </h2>
-                            <span className="homad-badge-black px-5 py-2 rounded-lg text-xs w-fit">
+                            <span className="umbralsuites-badge-black px-5 py-2 rounded-lg text-xs w-fit">
                                 {property.type}
                             </span>
                         </div>
@@ -76,14 +94,14 @@ Quedo atento a su confirmación de disponibilidad y a los pasos para garantizar 
                                 <span className="font-bold text-gray-900 text-sm">{property.rating}</span>
                                 <span className="text-gray-400 text-sm">({property.reviews} reseñas)</span>
                             </div>
-                            <span className="homad-badge bg-orie-green text-white px-4 py-1.5 rounded-lg text-[11px] font-bold">
+                            <span className="umbralsuites-badge bg-orie-green text-white px-4 py-1.5 rounded-lg text-[11px] font-bold">
                                 {property.status}
                             </span>
                         </div>
 
                         <div className="grid grid-cols-3 gap-4 mb-12 pt-8 border-t border-gray-100">
                             <div className="flex items-center gap-4">
-                                <div className="homad-icon-bg p-3 bg-gray-50 rounded-xl">
+                                <div className="umbralsuites-icon-bg p-3 bg-gray-50 rounded-xl">
                                     <Bed size={22} className="text-gray-700" />
                                 </div>
                                 <div>
@@ -92,7 +110,7 @@ Quedo atento a su confirmación de disponibilidad y a los pasos para garantizar 
                                 </div>
                             </div>
                             <div className="flex items-center gap-4 border-l border-gray-100 pl-4">
-                                <div className="homad-icon-bg p-3 bg-gray-50 rounded-xl">
+                                <div className="umbralsuites-icon-bg p-3 bg-gray-50 rounded-xl">
                                     <Bath size={22} className="text-gray-700" />
                                 </div>
                                 <div>
@@ -101,7 +119,7 @@ Quedo atento a su confirmación de disponibilidad y a los pasos para garantizar 
                                 </div>
                             </div>
                             <div className="flex items-center gap-4 border-l border-gray-100 pl-4">
-                                <div className="homad-icon-bg p-3 bg-gray-50 rounded-xl">
+                                <div className="umbralsuites-icon-bg p-3 bg-gray-50 rounded-xl">
                                     <Square size={22} className="text-gray-700" />
                                 </div>
                                 <div>
@@ -114,7 +132,7 @@ Quedo atento a su confirmación de disponibilidad y a los pasos para garantizar 
 
                         <div className="mb-12">
                             <h3 className="text-2xl font-bold text-gray-900 mb-6">Descripción</h3>
-                            <p className="homad-p-muted text-lg leading-relaxed">
+                            <p className="umbralsuites-p-muted text-lg leading-relaxed">
                                 Estudio moderno con vistas espectaculares al mar. Edificio con amenidades de lujo,
                                 ubicado en una de las zonas más exclusivas y tranquilas. Ideal para ejecutivos o
                                 parejas que buscan comodidad y diseño vanguardista.
@@ -138,7 +156,7 @@ Quedo atento a su confirmación de disponibilidad y a los pasos para garantizar 
                     <div className="lg:sticky lg:top-32 h-fit">
                         <div className="bg-white border border-black rounded-2xl p-8">
                             <div className="flex flex-col gap-1 mb-6">
-                                <span className="text-4xl font-black text-gray-900">{property.price}</span>
+                                <span className="text-4xl font-black text-gray-900">S/{property.price}</span>
                                 <span className="text-gray-400 font-bold text-sm">por mes</span>
                             </div>
 

@@ -50,8 +50,8 @@ const WhyChooseUs = () => {
             <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-end mb-12">
                     <div className="max-w-2xl">
-                        <h2 className="homad-h2 mb-4">¿Por qué elegir Homad?</h2>
-                        <p className="homad-p-muted text-base">
+                        <h2 className="umbralsuites-h2 mb-4">¿Por qué elegir Umbral Suites?</h2>
+                        <p className="umbralsuites-p-muted text-base">
                             Ofrecemos la mejor experiencia en búsqueda y reserva de apartamentos y habitaciones amobladas
                         </p>
                     </div>

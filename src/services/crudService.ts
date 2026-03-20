@@ -21,24 +21,7 @@ export const propertyService = {
     create: (data: Property | FormData) => apiClient.post<Property>('/properties', data),
     update: (id: number, data: Partial<Property> | FormData) => apiClient.post<Property>(`/properties/${id}?_method=PUT`, data),
     delete: (id: number) => apiClient.delete(`/properties/${id}`),
-};
-
-export interface Room {
-    id?: number;
-    property_id: number;
-    room_number: string;
-    type: string;
-    price: number;
-    status: string;
-    description?: string;
-}
-
-export const roomService = {
-    getAll: () => apiClient.get<Room[]>('/rooms'),
-    getById: (id: number) => apiClient.get<Room>(`/rooms/${id}`),
-    create: (data: Room) => apiClient.post<Room>('/rooms', data),
-    update: (id: number, data: Partial<Room>) => apiClient.put<Room>(`/rooms/${id}`, data),
-    delete: (id: number) => apiClient.delete(`/rooms/${id}`),
+    trackView: (id: number) => apiClient.post(`/properties/${id}/view`),
 };
 
 export interface AdditionalService {
@@ -85,3 +68,13 @@ export interface DashboardStats {
 export const statsService = {
     getStats: () => apiClient.get<DashboardStats>('/stats'),
 };
+
+export const settingsService = {
+    getAll: () => apiClient.get<{ success: boolean; data: { [key: string]: string } }>('/settings'),
+    update: (key: string, value: string) => apiClient.post(`/settings/${key}?_method=PUT`, { value }),
+};
+
+export const leadService = {
+    trackLead: (type: 'property' | 'service', itemId: number) => apiClient.post('/leads', { type, item_id: itemId }),
+};
+

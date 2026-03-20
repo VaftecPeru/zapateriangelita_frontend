@@ -26,7 +26,7 @@ const FloatingHowItWorks = () => {
                 shadow-2xl transition-all duration-500 transform
                 ${isExpanded ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}
             `}>
-                ¿Tienes dudas? Mira cómo funciona Homad
+                ¿Tienes dudas? Mira cómo funciona Umbral Suites
             </div>
 
             <div className="flex items-center gap-2 pointer-events-auto group">

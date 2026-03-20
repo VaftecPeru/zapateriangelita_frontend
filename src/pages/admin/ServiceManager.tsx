@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { additionalServiceService, AdditionalService } from '../../services/crudService';
-import { Plus, Edit, Trash2, Loader2, Sparkles, DollarSign, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2, Sparkles, X } from 'lucide-react';
 
 const ServiceManager = () => {
     const [services, setServices] = useState<AdditionalService[]>([]);
@@ -133,8 +133,7 @@ const ServiceManager = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-1 text-sm font-black text-black">
-                                                <DollarSign size={14} className="text-minimal-olive" />
-                                                {s.price}
+                                                S/{s.price}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">

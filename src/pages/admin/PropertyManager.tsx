@@ -193,7 +193,7 @@ const PropertyManager = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-sm font-black text-black">
-                                            ${p.price}
+                                            S/{p.price}
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">

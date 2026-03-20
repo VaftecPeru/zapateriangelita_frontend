@@ -35,7 +35,7 @@ const PrivacyPage = () => {
                                 Recopilación de Datos
                             </h2>
                             <p className="text-black/60 leading-relaxed font-medium">
-                                En Homad, nos tomamos muy en serio su privacidad. Recopilamos información personal necesaria para procesar sus reservas y mejorar su experiencia, como nombre, correo electrónico, número de teléfono y detalles de pago.
+                                En Umbral Suites, nos tomamos muy en serio su privacidad. Recopilamos información personal necesaria para procesar sus reservas y mejorar su experiencia, como nombre, correo electrónico, número de teléfono y detalles de pago.
                             </p>
                         </section>
 
@@ -71,7 +71,7 @@ const PrivacyPage = () => {
                                 Sus Derechos
                             </h2>
                             <p className="text-black/60 leading-relaxed font-medium">
-                                Usted tiene derecho a acceder, rectificar o eliminar sus datos personales en cualquier momento. Puede contactarnos para ejercer estos derechos a través de info@homad.com.
+                                Usted tiene derecho a acceder, rectificar o eliminar sus datos personales en cualquier momento. Puede contactarnos para ejercer estos derechos a través de info@umbralsuites.com.
                             </p>
                         </section>
 

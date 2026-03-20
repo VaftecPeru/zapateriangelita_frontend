@@ -51,9 +51,9 @@ const HowItWorksPage = () => {
         },
         {
             number: "03",
-            title: "Bienvenida Homad",
+            title: "Bienvenida Umbral Suites",
             subtitle: "EXPERIENCIA POST-RESERVA",
-            description: "No eres un número, eres parte de Homad. Te acompañamos en el check-in y durante toda tu estancia para lo que necesites.",
+            description: "No eres un número, eres parte de Umbral Suites. Te acompañamos en el check-in y durante toda tu estancia para lo que necesites.",
             features: [
                 { label: "Soporte VIP", desc: "Atención prioritaria 24/7." },
                 { label: "Garantía de Mudanza", desc: "Si no es lo prometido, te reubicamos." }
@@ -70,7 +70,7 @@ const HowItWorksPage = () => {
             <section className="py-12 md:py-20 px-6 relative">
                 <div className="max-w-7xl mx-auto flex flex-col items-center">
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-black text-white rounded-full text-[10px] font-black uppercase tracking-[0.3em] mb-8 animate-fade-in shadow-xl">
-                        ¿Cómo funciona Homad?
+                        ¿Cómo funciona Umbral Suites?
                     </div>
 
                     <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-black text-center leading-[0.9] mb-12 animate-slide-up">
@@ -216,7 +216,7 @@ const HowItWorksPage = () => {
                     EMPIEZA <span className="text-minimal-olive italic underline-offset-8">AQUÍ.</span>
                 </h2>
                 <div className="flex flex-col md:flex-row items-center justify-center gap-6">
-                    <Link to="/register" className="homad-btn-primary px-10 py-5 rounded-2xl text-base group shadow-2xl shadow-black/20">
+                    <Link to="/register" className="umbralsuites-btn-primary px-10 py-5 rounded-2xl text-base group shadow-2xl shadow-black/20">
                         Crear Cuenta Gratuita <Sparkles size={16} className="group-hover:rotate-12 transition-transform" />
                     </Link>
                     <Link to="/" className="text-[11px] font-black uppercase tracking-widest border-b border-black pb-0.5 hover:text-minimal-olive hover:border-minimal-olive transition-colors">

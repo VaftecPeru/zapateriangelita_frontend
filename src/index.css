@@ -5,79 +5,79 @@
 @tailwind utilities;
 
 @layer components {
-  .homad-card {
+  .umbralsuites-card {
     @apply bg-white rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 border border-black hover:translate-y-[-2px];
   }
 
-  .homad-card-premium {
+  .umbralsuites-card-premium {
     @apply bg-white border border-black rounded-3xl p-10;
   }
 
-  .homad-btn-primary {
+  .umbralsuites-btn-primary {
     @apply bg-black text-white px-6 py-3 rounded-xl text-sm font-bold border border-black hover:bg-white hover:text-black transition-all active:scale-[0.98] flex items-center justify-center gap-2;
   }
 
-  .homad-btn-secondary {
+  .umbralsuites-btn-secondary {
     @apply bg-white border border-black text-black px-6 py-3 rounded-xl text-sm font-bold hover:bg-black hover:text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2;
   }
 
-  .homad-btn-outline {
+  .umbralsuites-btn-outline {
     @apply border border-gray-900 px-6 py-3 rounded-xl text-sm font-bold hover:bg-gray-900 hover:text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2;
   }
 
-  .homad-badge {
+  .umbralsuites-badge {
     @apply text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider w-fit;
   }
 
-  .homad-badge-black {
-    @apply homad-badge bg-black text-white;
+  .umbralsuites-badge-black {
+    @apply umbralsuites-badge bg-black text-white;
   }
 
-  .homad-badge-green {
-    @apply homad-badge bg-[#22C55E] text-white;
+  .umbralsuites-badge-green {
+    @apply umbralsuites-badge bg-[#22C55E] text-white;
   }
 
-  .homad-input-group {
+  .umbralsuites-input-group {
     @apply flex flex-col gap-1;
   }
 
-  .homad-input-label {
+  .umbralsuites-input-label {
     @apply text-[10px] text-gray-400 font-black uppercase tracking-widest pl-1 mb-1;
   }
 
-  .homad-input {
+  .umbralsuites-input {
     @apply w-full px-6 py-4 bg-white rounded-xl text-sm font-bold border border-black outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all duration-300;
   }
 
-  .homad-select {
-    @apply homad-input appearance-none cursor-pointer pr-10;
+  .umbralsuites-select {
+    @apply umbralsuites-input appearance-none cursor-pointer pr-10;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23000000' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 1rem center;
     background-size: 1em;
   }
 
-  .homad-select option {
+  .umbralsuites-select option {
     @apply font-semibold py-2 bg-white text-black;
   }
 
-  .homad-input-with-icon {
-    @apply homad-input pl-11;
+  .umbralsuites-input-with-icon {
+    @apply umbralsuites-input pl-11;
   }
 
-  .homad-h1 {
+  .umbralsuites-h1 {
     @apply text-4xl md:text-7xl font-bold text-gray-900 tracking-tighter leading-[1.1];
   }
 
-  .homad-h2 {
+  .umbralsuites-h2 {
     @apply text-4xl font-semibold text-gray-900 tracking-tight;
   }
 
-  .homad-p-muted {
+  .umbralsuites-p-muted {
     @apply text-gray-400 text-sm leading-relaxed;
   }
 
-  .homad-icon-bg {
+  .umbralsuites-icon-bg {
     @apply p-3 bg-gray-50 rounded-2xl shadow-sm text-gray-400;
   }
 }

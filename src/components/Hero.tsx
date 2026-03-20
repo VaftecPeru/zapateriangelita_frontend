@@ -9,7 +9,6 @@ const Hero = ({ onSearch }: { onSearch: (criteria: any) => void }) => {
   });
 
   const handleSearch = () => {
-    console.log('Searching for:', formData);
     onSearch(formData);
     // Scroll to results
     const resultsSection = document.getElementById('apartamentos');
@@ -32,7 +31,7 @@ const Hero = ({ onSearch }: { onSearch: (criteria: any) => void }) => {
 
       <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-center">
         <div className="text-center max-w-4xl mb-12 md:mb-16">
-          <h1 className="homad-h1 text-white mb-8 drop-shadow-2xl">
+          <h1 className="umbralsuites-h1 text-white mb-8 drop-shadow-2xl">
             Encuentra tu espacio<br />
             <span className="relative inline-block animate-underline-grow mt-2 text-minimal-beige drop-shadow-xl px-4 transition-all duration-700">
               Ideal
@@ -49,7 +48,7 @@ const Hero = ({ onSearch }: { onSearch: (criteria: any) => void }) => {
 
 
               <div className="p-5 md:p-6 flex flex-col gap-1 border-b md:border-b-0 md:border-r border-gray-100 group cursor-pointer hover:bg-gray-50 transition-colors">
-                <label className="homad-input-label pl-0">Ubicación</label>
+                <label className="umbralsuites-input-label pl-0">Ubicación</label>
                 <div className="flex items-center gap-2">
                   <MapPin className="text-gray-400 group-hover:text-black transition-colors" size={18} />
                   <input
@@ -64,7 +63,7 @@ const Hero = ({ onSearch }: { onSearch: (criteria: any) => void }) => {
 
 
               <div className="p-5 md:p-6 flex flex-col gap-1 border-b md:border-b-0 md:border-r border-gray-100 group cursor-pointer hover:bg-gray-50 transition-colors relative">
-                <label className="homad-input-label pl-0">Tipo de propiedad</label>
+                <label className="umbralsuites-input-label pl-0">Tipo de propiedad</label>
                 <div className="flex items-center gap-2">
                   <Home className="text-gray-400 group-hover:text-black transition-colors" size={18} />
                   <div className="relative w-full">
@@ -84,7 +83,7 @@ const Hero = ({ onSearch }: { onSearch: (criteria: any) => void }) => {
 
 
               <div className="p-5 md:p-6 flex flex-col gap-1 border-b md:border-b-0 md:border-r border-gray-100 group cursor-pointer hover:bg-gray-50 transition-colors">
-                <label className="homad-input-label pl-0">Fecha de entrada</label>
+                <label className="umbralsuites-input-label pl-0">Fecha de entrada</label>
                 <div className="flex items-center gap-2">
                   <Calendar className="text-gray-400 group-hover:text-black transition-colors" size={18} />
                   <input

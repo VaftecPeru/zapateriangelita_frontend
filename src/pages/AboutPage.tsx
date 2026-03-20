@@ -34,10 +34,10 @@ const AboutPage = () => {
                         <div className="lg:col-span-7 space-y-8">
                             <div className="space-y-4">
                                 <h2 className="text-3xl font-black tracking-tight text-black">
-                                    ¿Qué es Homad?
+                                    ¿Qué es Umbral Suites?
                                 </h2>
                                 <p className="text-base text-gray-600 font-medium leading-relaxed">
-                                    Somos el primer ecosistema premium diseñado para la nueva generación de buscadores de hogares. En Homad, curamos experiencias habitacionales que conectan personas con espacios que inspiran, garantizando seguridad y diseño formal en cada paso.
+                                    Somos el primer ecosistema premium diseñado para la nueva generación de buscadores de hogares. En Umbral Suites, curamos experiencias habitacionales que conectan personas con espacios que inspiran, garantizando seguridad y diseño formal en cada paso.
                                 </p>
                             </div>
 

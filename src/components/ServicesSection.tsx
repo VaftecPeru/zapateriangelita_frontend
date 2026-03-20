@@ -1,8 +1,9 @@
 import { useRef, useEffect, useState } from 'react';
 import { Wifi, Sparkles, Car, Utensils, Dumbbell, Box, ChevronLeft, ChevronRight, Search, Home, Smartphone, Star } from 'lucide-react';
-import { additionalServiceService, AdditionalService } from '../services/crudService';
+import { additionalServiceService, AdditionalService, leadService } from '../services/crudService';
+import { useSettings } from '../hooks/useSettings';
 
-const ziroomServices = [
+const umbralSuitesServices = [
     {
         title: "Limpieza",
         shortDesc: "Disfruta de frescura y regresa a la libertad.",
@@ -48,23 +49,24 @@ const ziroomServices = [
 
 
 const ServicesSection = () => {
-    const ziroomScrollRef = useRef<HTMLDivElement>(null);
+    const umbralSuitesScrollRef = useRef<HTMLDivElement>(null);
     const additionalScrollRef = useRef<HTMLDivElement>(null);
     const [dynamicServices, setDynamicServices] = useState<AdditionalService[]>([]);
+    const { settings } = useSettings();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchServices = async () => {
+        const fetchData = async () => {
             try {
-                const response = await additionalServiceService.getAll();
-                setDynamicServices(response.data);
+                const servicesRes = await additionalServiceService.getAll();
+                setDynamicServices(servicesRes.data);
             } catch (err) {
                 console.error("Error fetching services:", err);
             } finally {
                 setLoading(false);
             }
         };
-        fetchServices();
+        fetchData();
     }, []);
 
 
@@ -77,6 +79,28 @@ const ServicesSection = () => {
         if (lowercaseName.includes('gym') || lowercaseName.includes('gimnasio')) return <Dumbbell size={24} />;
         if (lowercaseName.includes('paquete') || lowercaseName.includes('recepción')) return <Box size={24} />;
         return <Star size={24} />;
+    };
+
+    const handleWhatsAppRequest = (serviceName?: string, price?: number, serviceId?: number) => {
+        if (serviceId) {
+            leadService.trackLead('service', serviceId).catch(console.error);
+        }
+        
+        const phoneNumber = settings.whatsapp_number;
+        
+        if (!phoneNumber) {
+            alert("El número de contacto no está configurado.");
+            return;
+        }
+
+        let message = "Hola, buen día. Me interesa obtener información sobre los servicios de Umbral Suites.";
+        
+        if (serviceName) {
+            message = `Hola, buen día. Me interesa solicitar el servicio de "${serviceName}" de Umbral Suites.${price ? ` (Precio: S/${price})` : ''} ¿Podrían brindarme más información sobre disponibilidad y proceso de contratación?`;
+        }
+
+        const whatsappUrl = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
     };
 
     const scroll = (direction: 'left' | 'right', ref: React.RefObject<HTMLDivElement>) => {
@@ -93,14 +117,17 @@ const ServicesSection = () => {
           
                 <div className="mb-6 relative">
                     <div className="text-center mb-8 px-4">
-                        <h2 className="homad-h2 text-5xl md:text-6xl mb-4">
-                            Servicios Ziroom
+                        <h2 className="umbralsuites-h2 text-5xl md:text-6xl mb-4">
+                            Servicios Umbral Suites
                         </h2>
                         <p className="text-xl text-gray-800 font-medium mb-8 max-w-3xl mx-auto">
                             Contrata limpieza, mudanza y mantenimiento en minutos
                         </p>
                         <div className="flex justify-center">
-                            <button className="bg-[#6b8552] text-white px-10 py-4 rounded-xl text-2xl font-bold shadow-lg hover:bg-minimal-olive transition-all">
+                            <button 
+                                onClick={() => handleWhatsAppRequest()}
+                                className="bg-[#6b8552] text-white px-10 py-4 rounded-xl text-2xl font-bold shadow-lg hover:bg-minimal-olive transition-all active:scale-95"
+                            >
                                 Solicitar servicio
                             </button>
                         </div>
@@ -108,13 +135,13 @@ const ServicesSection = () => {
 
                     <div className="flex justify-end gap-3 mb-6 px-4">
                         <button
-                            onClick={() => scroll('left', ziroomScrollRef)}
+                            onClick={() => scroll('left', umbralSuitesScrollRef)}
                             className="p-3 bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors shadow-sm text-gray-400"
                         >
                             <ChevronLeft size={24} />
                         </button>
                         <button
-                            onClick={() => scroll('right', ziroomScrollRef)}
+                            onClick={() => scroll('right', umbralSuitesScrollRef)}
                             className="p-3 bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors shadow-sm text-gray-400"
                         >
                             <ChevronRight size={24} />
@@ -122,10 +149,10 @@ const ServicesSection = () => {
                     </div>
 
                     <div
-                        ref={ziroomScrollRef}
+                        ref={umbralSuitesScrollRef}
                         className="flex overflow-x-auto gap-6 xl:gap-8 no-scrollbar snap-x snap-mandatory pb-4 px-4"
                     >
-                        {ziroomServices.map((service, idx) => (
+                        {umbralSuitesServices.map((service, idx) => (
                             <div key={idx} className="min-w-[85vw] sm:min-w-[calc(50%-12px)] lg:min-w-[calc(25%-18px)] bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 group flex flex-col snap-center select-none">
                                 <div className={`px-8 py-6 ${service.bg}`}>
                                     <div className="flex items-center gap-4">
@@ -144,10 +171,16 @@ const ServicesSection = () => {
                                     />
                                 </div>
 
-                                <div className="px-8 py-7 bg-white flex-grow">
-                                    <p className="text-sm text-gray-500 font-medium leading-relaxed">
+                                <div className="px-8 py-7 bg-white flex-grow flex flex-col">
+                                    <p className="text-sm text-gray-500 font-medium leading-relaxed mb-6">
                                         {service.description}
                                     </p>
+                                    <button 
+                                        onClick={() => handleWhatsAppRequest(service.title)}
+                                        className={`mt-auto w-fit text-sm font-black uppercase tracking-widest pb-1 border-b-2 border-transparent hover:border-current transition-all ${service.accent}`}
+                                    >
+                                        Solicitar
+                                    </button>
                                 </div>
                             </div>
                         ))}
@@ -181,8 +214,8 @@ const ServicesSection = () => {
                 <div className="relative mt-24 pt-20 border-t border-black/5">
                     <div className="flex justify-between items-end mb-12">
                         <div className="max-w-2xl">
-                            <h2 className="homad-h2 mb-4">Servicios Adicionales</h2>
-                            <p className="homad-p-muted text-base">
+                            <h2 className="umbralsuites-h2 mb-4">Servicios Adicionales</h2>
+                            <p className="umbralsuites-p-muted text-base">
                                 Mejora tu experiencia con nuestros servicios premium diseñados para tu comodidad
                             </p>
                         </div>
@@ -223,21 +256,24 @@ const ServicesSection = () => {
                                             {getServiceIcon(s.name, idx)}
                                         </div>
                                         {idx < 2 && (
-                                            <span className="homad-badge bg-orie-red text-white py-1.5 rounded-lg tracking-widest text-center">
+                                            <span className="umbralsuites-badge bg-orie-red text-white py-1.5 rounded-lg tracking-widest text-center">
                                                 Popular
                                             </span>
                                         )}
                                     </div>
 
                                     <h3 className="text-lg font-bold text-gray-900 mb-2">{s.name}</h3>
-                                    <p className="homad-p-muted mb-6 flex-grow text-sm">
+                                    <p className="umbralsuites-p-muted mb-6 flex-grow text-sm">
                                         {s.description || "Mejora tu estancia con este servicio exclusivo diseñado para tu confort."}
                                     </p>
 
-                                    <div className="flex justify-between items-center pt-6 border-t border-gray-100">
-                                        <span className="text-sm font-bold text-gray-900">${s.price}</span>
-                                        <button className="text-sm font-black text-gray-900 hover:tracking-wider transition-all uppercase tracking-widest">
-                                            Detalles
+                                        <div className="flex justify-between items-center pt-6 border-t border-gray-100 gap-4">
+                                            <span className="text-sm font-bold text-gray-900">S/{s.price}</span>
+                                            <button 
+                                                onClick={() => handleWhatsAppRequest(s.name, s.price, s.id)}
+                                                className="text-sm font-black text-gray-900 hover:tracking-wider transition-all uppercase tracking-widest bg-white border border-black px-4 py-2 rounded-lg"
+                                            >
+                                            Solicitar
                                         </button>
                                     </div>
                                 </div>
