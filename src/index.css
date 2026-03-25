@@ -42,7 +42,7 @@
   }
 
   .umbralsuites-input-label {
-    @apply text-[10px] text-gray-400 font-black uppercase tracking-widest pl-1 mb-1;
+    @apply text-[10px] text-black font-black uppercase tracking-widest pl-1 mb-1;
   }
 
   .umbralsuites-input {
@@ -74,11 +74,11 @@
   }
 
   .umbralsuites-p-muted {
-    @apply text-gray-400 text-sm leading-relaxed;
+    @apply text-black text-sm leading-relaxed;
   }
 
   .umbralsuites-icon-bg {
-    @apply p-3 bg-gray-50 rounded-2xl shadow-sm text-gray-400;
+    @apply p-3 bg-gray-50 rounded-2xl shadow-sm text-black;
   }
 }
 
@@ -215,7 +215,7 @@ body {
   margin: 0;
   font-family: 'Inter', sans-serif;
   @apply antialiased text-black min-h-screen text-[15px];
-  background-color: #F2EEE5;
+  background-color: #EAE2D6;
 }
 
 ::selection {

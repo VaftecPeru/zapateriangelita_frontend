@@ -259,8 +259,8 @@ const RegisterPage = () => {
                     <div className="pt-2">
                         <button
                             type="submit"
-                            disabled={loading || !formData.birthdate}
-                            className="w-full bg-minimal-olive text-white py-6 rounded-2xl font-black text-xl hover:bg-minimal-olive/80 transition-all hover:shadow-2xl active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-minimal-olive/10"
+                            disabled={loading}
+                            className="w-full bg-black text-white py-4 rounded-xl font-bold hover:bg-gray-900 transition-all active:scale-[0.98] disabled:opacity-50"
                         >
                             {loading ? 'Creando cuenta...' : 'Finalizar Registro'}
                         </button>

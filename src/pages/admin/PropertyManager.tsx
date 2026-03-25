@@ -1,56 +1,92 @@
 import { useEffect, useState } from 'react';
 import { propertyService, Property } from '../../services/crudService';
-import { Plus, Edit, Trash2, MapPin, Loader2, X, ChevronDown, Image as ImageIcon, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, MapPin, Loader2, X, ChevronDown, Image as ImageIcon, Upload, AlertTriangle } from 'lucide-react';
 
 const PropertyManager = () => {
     const [properties, setProperties] = useState<Property[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProperty, setEditingProperty] = useState<Property | null>(null);
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [preview, setPreview] = useState<string | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [propertyToDelete, setPropertyToDelete] = useState<number | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [selectedFiles, setSelectedFiles] = useState<(File | null)[]>(Array(5).fill(null));
+    const [previews, setPreviews] = useState<(string | null)[]>(Array(5).fill(null));
     const [formData, setFormData] = useState<Property>({
         title: '',
         type: '',
         location: '',
         price: 0,
+        discounted_price: 0,
         beds: 1,
         baths: 1,
         area: '',
         status: '',
-        img: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2070&auto=format&fit=crop',
+        img: '',
+        images: [],
+        amenities: '',
+        rating: 0,
+        reviews: 0,
     });
 
+
     useEffect(() => {
-        loadProperties();
+        loadData();
     }, []);
 
-    const loadProperties = async () => {
+    const loadData = async () => {
         try {
             setLoading(true);
-            const response = await propertyService.getAll();
-            setProperties(response.data);
+            const propRes = await propertyService.getAll();
+            const data = Array.isArray(propRes.data) ? propRes.data : ((propRes.data as any).data || []);
+            setProperties(data);
             setLoading(false);
         } catch (err) {
-            console.error('Error loading properties:', err);
+            console.error('Error loading data:', err);
             setLoading(false);
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!window.confirm('¿Estás seguro de eliminar esta propiedad?')) return;
+    const confirmDelete = (id: number) => {
+        setPropertyToDelete(id);
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleDelete = async () => {
+        if (!propertyToDelete) return;
         try {
-            await propertyService.delete(id);
-            setProperties(properties.filter(p => p.id !== id));
+            setIsDeleting(true);
+            await propertyService.delete(propertyToDelete);
+            setProperties(properties.filter(p => p.id !== propertyToDelete));
+            setIsDeleteModalOpen(false);
+            setPropertyToDelete(null);
         } catch (err) {
             alert('Error al eliminar la propiedad.');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
     const handleOpenModal = (property?: Property) => {
         if (property) {
             setEditingProperty(property);
-            setFormData(property);
+            setFormData({
+                ...property,
+                discounted_price: property.discounted_price ?? 0,
+                rating: property.rating ?? 0,
+                reviews: property.reviews ?? 0,
+            });
+            // Load existing images into previews
+            const newPreviews = Array(5).fill(null);
+            if (property.images && Array.isArray(property.images)) {
+                property.images.forEach((img, i) => {
+                    if (i < 5) newPreviews[i] = img;
+                });
+            } else if (property.img) {
+                newPreviews[0] = property.img;
+            }
+            setPreviews(newPreviews);
+            setSelectedFiles(Array(5).fill(null));
         } else {
             setEditingProperty(null);
             setFormData({
@@ -58,12 +94,19 @@ const PropertyManager = () => {
                 type: '',
                 location: '',
                 price: 0,
+                discounted_price: 0,
                 beds: 1,
                 baths: 1,
                 area: '',
                 status: '',
-                img: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2070&auto=format&fit=crop',
+                img: '',
+                images: [],
+                amenities: '',
+                rating: 0,
+                reviews: 0,
             });
+            setPreviews(Array(5).fill(null));
+            setSelectedFiles(Array(5).fill(null));
         }
         setIsModalOpen(true);
     };
@@ -71,17 +114,22 @@ const PropertyManager = () => {
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setEditingProperty(null);
-        setSelectedFile(null);
-        setPreview(null);
+        setSelectedFiles(Array(5).fill(null));
+        setPreviews(Array(5).fill(null));
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
         const file = e.target.files?.[0];
         if (file) {
-            setSelectedFile(file);
+            const newFiles = [...selectedFiles];
+            newFiles[index] = file;
+            setSelectedFiles(newFiles);
+
             const reader = new FileReader();
             reader.onloadend = () => {
-                setPreview(reader.result as string);
+                const newPreviews = [...previews];
+                newPreviews[index] = reader.result as string;
+                setPreviews(newPreviews);
             };
             reader.readAsDataURL(file);
         }
@@ -89,24 +137,55 @@ const PropertyManager = () => {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: name === 'price' || name === 'beds' || name === 'baths' ? Number(value) : value }));
+        
+        setFormData(prev => { 
+            return {
+                ...prev, 
+                [name]: ['price', 'discounted_price', 'beds', 'baths', 'rating', 'reviews'].includes(name) ? Number(value) : value 
+            };
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
             const data = new FormData();
-            Object.entries(formData).forEach(([key, value]) => {
-                if (key !== 'img' && value !== null && value !== undefined) {
-                    data.append(key, value.toString());
+            
+            // Campos que siempre se envían
+            data.append('title', String(formData.title));
+            data.append('type', String(formData.type));
+            data.append('location', String(formData.location));
+            data.append('price', String(formData.price));
+            data.append('beds', String(formData.beds));
+            data.append('baths', String(formData.baths));
+            data.append('area', String(formData.area));
+            data.append('status', String(formData.status));
+            data.append('rating', String(formData.rating ?? 0));
+            data.append('reviews', String(formData.reviews ?? 0));
+            
+            // Campo opcional: discounted_price
+            if (formData.discounted_price && formData.discounted_price > 0) {
+                data.append('discounted_price', String(formData.discounted_price));
+            }
+            
+            // Amenidades
+            if (formData.amenities) {
+                data.append('amenities', String(formData.amenities));
+            }
+
+            selectedFiles.forEach((file) => {
+                if (file instanceof File) {
+                    data.append('new_images[]', file);
                 }
             });
 
-            if (selectedFile) {
-                data.append('img', selectedFile);
-            } else if (!editingProperty) {
-                alert("Por favor selecciona una imagen");
-                return;
+            if (selectedFiles[0] instanceof File) {
+                data.append('img_file', selectedFiles[0]);
+            }
+
+            console.log("Sending FormData to server:");
+            for (let [key, value] of data.entries()) {
+                console.log(`${key}:`, value);
             }
 
             if (editingProperty && editingProperty.id) {
@@ -115,17 +194,33 @@ const PropertyManager = () => {
                 await propertyService.create(data);
             }
             handleCloseModal();
-            loadProperties();
-        } catch (error) {
+            loadData();
+        } catch (error: any) {
             console.error("Error saving property:", error);
-            alert("Hubo un error al guardar la propiedad.");
+            let message = "Hubo un error al guardar la propiedad.";
+            
+            if (error.response?.data?.errors) {
+                const errors = error.response.data.errors;
+                const errorMessages = Object.keys(errors).map(key => `${key}: ${errors[key].join(', ')}`);
+                message = `Errores de validación:\n${errorMessages.join('\n')}`;
+            } else if (error.response?.data?.message) {
+                message = error.response.data.message;
+            } else if (error.response?.data?.error) {
+                message = error.response.data.error;
+            }
+            
+            if (error.response?.data) {
+                console.log("Error Details:", error.response.data);
+            }
+            
+            alert(message);
         }
     };
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[2rem] border border-gray-100">
-                <Loader2 className="animate-spin text-minimal-olive mb-4" size={40} />
+            <div className="flex flex-col items-center justify-center py-20 bg-minimal-beige/30 rounded-[2rem] border border-minimal-olive/10">
+                <Loader2 className="animate-spin text-minimal-gold mb-4" size={40} />
                 <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Cargando propiedades...</p>
             </div>
         );
@@ -133,79 +228,107 @@ const PropertyManager = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+            <div className="flex justify-between items-center bg-white/80 backdrop-blur-sm p-6 rounded-[2rem] border border-minimal-olive/10 shadow-sm">
                 <div>
                     <h2 className="text-xl font-black text-black">Gestión de Propiedades</h2>
                     <p className="text-gray-400 text-xs font-medium">Administra tus propiedades destacadas del catálogo.</p>
                 </div>
                 <button
                     onClick={() => handleOpenModal()}
-                    className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-minimal-olive transition-all shadow-lg hover:shadow-minimal-olive/20"
+                    className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-minimal-olive transition-all shadow-lg"
                 >
                     <Plus size={16} />
                     Nueva Propiedad
                 </button>
             </div>
 
-            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+            <div className="bg-white/40 backdrop-blur-sm rounded-[2rem] border border-minimal-olive/10 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="border-b border-gray-50 bg-gray-50/50">
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Propiedad</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Tipo / Estado</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Ubicación</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Precio</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Acciones</th>
+                            <tr className="border-b border-minimal-olive/5 bg-minimal-olive/5">
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Propiedad</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Tipo / Estado</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Ubicación</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Comodidades</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Precio</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-minimal-olive/5">
                             {properties.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-400 font-medium">No hay propiedades registradas.</td>
+                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-medium">No hay propiedades registradas.</td>
                                 </tr>
                             ) : (
                                 properties.map((p) => (
-                                    <tr key={p.id} className="hover:bg-gray-50 transition-colors group">
+                                    <tr key={p.id} className="hover:bg-minimal-olive/[0.02] transition-colors group">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                                                <div className="w-12 h-12 rounded-xl overflow-hidden bg-white border border-minimal-olive/10 flex-shrink-0 shadow-sm">
                                                     <img src={p.img} alt={p.title} className="w-full h-full object-cover" />
                                                 </div>
                                                 <div>
-                                                    <p className="font-black text-black text-sm">{p.title}</p>
+                                                    <p className="font-black text-black text-sm leading-tight mb-0.5">{p.title}</p>
                                                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">{p.area}</p>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                         <td className="px-6 py-4">
                                             <div className="flex flex-col gap-1">
-                                                <span className="text-[10px] font-black text-gray-500 uppercase">{p.type}</span>
-                                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full w-fit ${p.status === 'Disponible' ? 'bg-minimal-olive/10 text-minimal-olive' : 'bg-gray-100 text-gray-400'}`}>
+                                                <span className="text-[10px] font-black text-gray-400 uppercase">
+                                                    {p.type}
+                                                </span>
+                                                <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest w-fit shadow-sm ${p.status === 'Disponible' ? 'bg-minimal-olive text-white' : 'bg-gray-100 text-gray-400'}`}>
                                                     {p.status}
                                                 </span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-1.5 text-gray-400 text-xs font-bold">
-                                                <MapPin size={12} className="text-minimal-olive" />
+                                                <MapPin size={12} className="text-minimal-gold" />
                                                 {p.location}
                                             </div>
                                         </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                                {p.amenities ? p.amenities.split(',').slice(0, 3).map((a, i) => (
+                                                    <span key={i} className="text-[9px] bg-gray-50 text-gray-400 px-2 py-0.5 rounded-md border border-gray-100 font-bold uppercase">
+                                                        {a.trim()}
+                                                    </span>
+                                                )) : <span className="text-[9px] text-gray-300">Sin Comodidades</span>}
+                                                {p.amenities && p.amenities.split(',').length > 3 && (
+                                                    <span className="text-[9px] text-minimal-gold font-bold">+{p.amenities.split(',').length - 3}</span>
+                                                )}
+                                            </div>
+                                        </td>
                                         <td className="px-6 py-4 text-sm font-black text-black">
-                                            S/{p.price}
+                                            <div className="flex items-center gap-0.5">
+                                                {p.discounted_price && Number(p.discounted_price) > 0 ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-gray-400 text-[10px] line-through">S/{p.price}</span>
+                                                        <span className="text-minimal-gold text-[10px]">S/</span>
+                                                        <span>{Number(p.discounted_price).toFixed(2)}</span>
+                                                        <span className="text-[9px] font-bold text-white bg-red-500 px-1.5 rounded">-{(((p.price - Number(p.discounted_price)) / p.price) * 100).toFixed(0)}%</span>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <span className="text-minimal-gold text-[10px]">S/</span>{p.price}
+                                                    </>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     onClick={() => handleOpenModal(p)}
-                                                    className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-minimal-olive/10 hover:text-minimal-olive transition-all"
+                                                    className="bg-black text-white p-3 rounded-xl hover:bg-minimal-olive transition-all active:scale-95 shadow-md"
                                                 >
                                                     <Edit size={14} />
                                                 </button>
-                                                <button
-                                                    onClick={() => p.id && handleDelete(p.id)}
-                                                    className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-red-50 hover:text-red-500 transition-all"
+                                                 <button
+                                                    onClick={() => p.id && confirmDelete(p.id)}
+                                                    className="p-3 bg-white text-gray-400 border border-red-50 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all shadow-sm"
                                                 >
                                                     <Trash2 size={14} />
                                                 </button>
@@ -222,10 +345,13 @@ const PropertyManager = () => {
             {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-[2rem] p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-black text-black tracking-tight">{editingProperty ? 'Editar Propiedad' : 'Nueva Propiedad'}</h2>
-                            <button onClick={handleCloseModal} className="p-2 bg-gray-100 text-gray-500 rounded-full hover:bg-gray-200 transition-colors">
+                    <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-minimal-olive/10">
+                        <div className="flex justify-between items-center mb-8 pb-4 border-b border-gray-50">
+                            <div>
+                                <h2 className="text-2xl font-black text-black tracking-tight">{editingProperty ? 'Editar Propiedad' : 'Nueva Propiedad'}</h2>
+                                <p className="text-[10px] text-minimal-gold font-bold uppercase tracking-widest mt-1">Completa los campos para actualizar el catálogo</p>
+                            </div>
+                            <button onClick={handleCloseModal} className="p-2 bg-gray-50 text-gray-500 rounded-full hover:bg-red-50 hover:text-red-500 transition-all">
                                 <X size={20} />
                             </button>
                         </div>
@@ -237,7 +363,7 @@ const PropertyManager = () => {
                                     <input type="text" name="title" value={formData.title} onChange={handleInputChange} required className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tipo</label>
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tipo de Propiedad</label>
                                     <div className="relative">
                                         <select 
                                             name="type" 
@@ -246,9 +372,10 @@ const PropertyManager = () => {
                                             required
                                             className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold appearance-none cursor-pointer"
                                         >
-                                            <option value="" disabled>Elegir</option>
-                                            <option value="Habitaciones">Habitaciones</option>
-                                            <option value="Departamento">Departamentos</option>
+                                            <option value="" disabled>Elegir Tipo</option>
+                                            <option value="Apartamento">Apartamento</option>
+                                            <option value="Habitación">Habitación</option>
+                                            <option value="Estudio">Estudio</option>
                                         </select>
                                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                                     </div>
@@ -258,8 +385,18 @@ const PropertyManager = () => {
                                     <input type="text" name="location" value={formData.location} onChange={handleInputChange} required className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Precio</label>
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Precio Base</label>
                                     <input type="number" name="price" value={formData.price} onChange={handleInputChange} required min="0" step="0.01" className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Precio con Descuento (Opcional)</label>
+                                    <input type="number" name="discounted_price" value={formData.discounted_price || ''} onChange={handleInputChange} min="0" step="0.01" placeholder="Dejar vacío si no hay descuento" className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold" />
+                                    {formData.discounted_price && formData.discounted_price > 0 && formData.discounted_price < formData.price && (
+                                        <div className="flex items-center justify-between text-[11px] font-bold bg-red-50 px-3 py-2 rounded">
+                                            <span className="text-red-700">Descuento: {(((formData.price - formData.discounted_price) / formData.price) * 100).toFixed(0)}%</span>
+                                            <span className="text-green-700">Ahorro: S/. {(formData.price - formData.discounted_price).toFixed(2)}</span>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Área (ej. 120 m2)</label>
@@ -273,7 +410,7 @@ const PropertyManager = () => {
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Baños</label>
                                     <input type="number" name="baths" value={formData.baths} onChange={handleInputChange} required min="0" className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold" />
                                 </div>
-                                <div className="space-y-2">
+                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Estado</label>
                                     <div className="relative">
                                         <select 
@@ -291,35 +428,72 @@ const PropertyManager = () => {
                                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                                     </div>
                                 </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Puntaje (1.0 - 5.0)</label>
+                                    <input type="number" name="rating" value={formData.rating || ''} onChange={handleInputChange} required min="1" max="5" step="0.1" className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Reseñas (Cant.)</label>
+                                    <input type="number" name="reviews" value={formData.reviews || ''} onChange={handleInputChange} required min="0" className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold" />
+                                </div>
                                 <div className="space-y-2 md:col-span-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Imagen de la Propiedad</label>
-                                    <div className="flex flex-col gap-4">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-24 h-24 rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden group relative">
-                                                {preview || (editingProperty?.img) ? (
-                                                    <img src={preview || formData.img} alt="Preview" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <ImageIcon className="text-gray-300" size={32} />
-                                                )}
-                                                <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                                                    <Upload className="text-white" size={20} />
-                                                    <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
-                                                </label>
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="text-xs font-bold text-black mb-1">
-                                                    {selectedFile ? selectedFile.name : 'Sube una imagen representativa'}
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Comodidades (separadas por comas)</label>
+                                    <input type="text" name="amenities" value={formData.amenities || ''} onChange={handleInputChange} placeholder="Ej: Wi-Fi, Piscina, Estacionamiento" className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold" />
+                                    <p className="text-[9px] text-gray-400 font-medium mt-1 ml-1 lowercase">
+                                        Palabras mágicas para iconos: wifi, tv, piscina, gym, cocina, aire, café, seguridad, terraza, mascotas, oficina, ascensor, muebles.
+                                    </p>
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                        Imágenes de la Propiedad (Máx 5) <span className="text-minimal-olive ml-2 normal-case font-normal text-[10px]">*Solo formatos .png y .jpg</span>
+                                    </label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                                        {[0, 1, 2, 3, 4].map((index) => (
+                                            <div key={index} className="space-y-2">
+                                                <div className="aspect-square rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden group relative transition-all hover:border-minimal-olive/50">
+                                                    {previews[index] ? (
+                                                        <img src={previews[index] || ''} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <ImageIcon className="text-gray-300" size={24} />
+                                                    )}
+                                                    <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                                                        <Upload className="text-white" size={18} />
+                                                        <input 
+                                                            type="file" 
+                                                            className="hidden" 
+                                                            onChange={(e) => handleFileChange(e, index)} 
+                                                            accept="image/png, image/jpeg" 
+                                                        />
+                                                    </label>
+                                                    
+                                                    {previews[index] && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const newPrevs = [...previews];
+                                                                newPrevs[index] = null;
+                                                                setPreviews(newPrevs);
+                                                                const newFiles = [...selectedFiles];
+                                                                newFiles[index] = null;
+                                                                setSelectedFiles(newFiles);
+                                                                
+                                                                
+                                                            }}
+                                                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        >
+                                                            <X size={12} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <p className="text-[10px] text-center font-bold text-gray-400 uppercase tracking-tighter">
+                                                    {index === 0 ? 'Principal' : `Imagen ${index + 1}`}
                                                 </p>
-                                                <p className="text-[10px] text-gray-400 font-medium leading-relaxed">
-                                                    Recomendamos imágenes de alta calidad (JPG, PNG) con un tamaño mínimo de 800x600px.
-                                                </p>
-                                                <label className="mt-3 inline-block px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-pointer transition-colors text-gray-600">
-                                                    Seleccionar Archivo
-                                                    <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
-                                                </label>
                                             </div>
-                                        </div>
+                                        ))}
                                     </div>
+                                    <p className="text-[10px] text-gray-400 font-medium leading-relaxed mt-2 text-center md:text-left">
+                                        Recomendamos imágenes de alta calidad (JPG, PNG). La primera imagen será la portada principal.
+                                    </p>
                                 </div>
                             </div>
                             <div className="pt-6 flex justify-end gap-3 border-t border-gray-100">
@@ -331,6 +505,34 @@ const PropertyManager = () => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+            {isDeleteModalOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300 text-center">
+                        <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <AlertTriangle size={40} />
+                        </div>
+                        <h2 className="text-2xl font-black text-black mb-2">¿Estás seguro?</h2>
+                        <p className="text-gray-400 text-sm font-medium mb-8">
+                            Esta acción eliminará la propiedad de forma permanente. No podrás deshacer este cambio.
+                        </p>
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={() => setIsDeleteModalOpen(false)}
+                                className="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-200 transition-all font-bold"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                onClick={handleDelete}
+                                disabled={isDeleting}
+                                className="flex-1 py-4 bg-red-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-600 transition-all shadow-xl shadow-red-200 disabled:opacity-50 font-bold"
+                            >
+                                {isDeleting ? 'Eliminando...' : 'Eliminar'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

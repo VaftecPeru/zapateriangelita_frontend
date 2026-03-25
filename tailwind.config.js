@@ -12,10 +12,11 @@ export default {
                     purple: '#8B5CF6',
                 },
                 minimal: {
-                    beige: '#F2EEE5',
+                    beige: '#EAE2D6',
                     card: '#FFFFFF',
                     header: '#F5F1EA',
                     dark: '#1A1A1A',
+                    gold: '#D4AF37',
                     olive: '#708238',
                     cinnamon: '#D2691E',
                     serene: '#9BB7D4',

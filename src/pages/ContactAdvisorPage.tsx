@@ -12,12 +12,16 @@ import {
     ArrowRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { leadService } from '../services/crudService';
 import { useSettings } from '../hooks/useSettings';
 
 const ContactAdvisorPage = () => {
     const { settings } = useSettings();
 
     const handleWhatsAppContact = (topic: string) => {
+        // Track Lead
+        leadService.trackLead('service', 0).catch(console.error);
+
         const phoneNumber = settings.whatsapp_number;
         if (!phoneNumber) {
             alert("El número de contacto no está configurado.");

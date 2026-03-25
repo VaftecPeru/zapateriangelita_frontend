@@ -82,9 +82,8 @@ const ServicesSection = () => {
     };
 
     const handleWhatsAppRequest = (serviceName?: string, price?: number, serviceId?: number) => {
-        if (serviceId) {
-            leadService.trackLead('service', serviceId).catch(console.error);
-        }
+        // Track Lead - now tracking even for general cases or static services
+        leadService.trackLead('service', serviceId || 0).catch(console.error);
         
         const phoneNumber = settings.whatsapp_number;
         
@@ -116,21 +115,13 @@ const ServicesSection = () => {
             <div className="max-w-7xl mx-auto">
           
                 <div className="mb-6 relative">
-                    <div className="text-center mb-8 px-4">
-                        <h2 className="umbralsuites-h2 text-5xl md:text-6xl mb-4">
-                            Servicios Umbral Suites
+                    <div className="text-left mb-8 px-4">
+                        <h2 className="text-4xl md:text-5xl font-black text-minimal-gold tracking-tighter mb-4 leading-[0.9]">
+                            Servicios <span className="text-[#20B2AA]">Umbral Suites</span>
                         </h2>
-                        <p className="text-xl text-gray-800 font-medium mb-8 max-w-3xl mx-auto">
+                        <p className="text-xl text-black font-medium mb-8 max-w-3xl">
                             Contrata limpieza, mudanza y mantenimiento en minutos
                         </p>
-                        <div className="flex justify-center">
-                            <button 
-                                onClick={() => handleWhatsAppRequest()}
-                                className="bg-[#6b8552] text-white px-10 py-4 rounded-xl text-2xl font-bold shadow-lg hover:bg-minimal-olive transition-all active:scale-95"
-                            >
-                                Solicitar servicio
-                            </button>
-                        </div>
                     </div>
 
                     <div className="flex justify-end gap-3 mb-6 px-4">
@@ -172,7 +163,7 @@ const ServicesSection = () => {
                                 </div>
 
                                 <div className="px-8 py-7 bg-white flex-grow flex flex-col">
-                                    <p className="text-sm text-gray-500 font-medium leading-relaxed mb-6">
+                                    <p className="text-sm text-black font-medium leading-relaxed mb-6">
                                         {service.description}
                                     </p>
                                     <button 
@@ -201,8 +192,8 @@ const ServicesSection = () => {
                                     {s.icon}
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-black text-gray-900 leading-none mb-2">{s.val}</p>
-                                    <p className="text-sm font-medium text-gray-400 capitalize">{s.label}</p>
+                                    <p className="text-2xl font-black text-black leading-none mb-2">{s.val}</p>
+                                    <p className="text-sm font-medium text-black capitalize">{s.label}</p>
                                 </div>
                                 {i < 3 && <div className="hidden lg:block w-px h-12 bg-gray-100 ml-auto mr-0"></div>}
                             </div>
@@ -214,7 +205,9 @@ const ServicesSection = () => {
                 <div className="relative mt-24 pt-20 border-t border-black/5">
                     <div className="flex justify-between items-end mb-12">
                         <div className="max-w-2xl">
-                            <h2 className="umbralsuites-h2 mb-4">Servicios Adicionales</h2>
+                            <h2 className="text-4xl md:text-5xl font-black text-black tracking-tighter mb-4 leading-[0.9]">
+                        Servicios <span className="text-[#20B2AA]">Adicionales</span>
+                    </h2>
                             <p className="umbralsuites-p-muted text-base">
                                 Mejora tu experiencia con nuestros servicios premium diseñados para tu comodidad
                             </p>
@@ -252,26 +245,26 @@ const ServicesSection = () => {
                                     className="min-w-[85vw] md:min-w-[calc(33.333%-16px)] bg-minimal-olive/[0.15] rounded-2xl p-8 flex flex-col h-full border border-black hover:bg-minimal-olive/[0.2] transition-all snap-center"
                                 >
                                     <div className="flex justify-between items-start mb-6">
-                                        <div className="mb-6 text-minimal-olive bg-minimal-olive/10 p-3 rounded-xl border border-minimal-olive/20">
+                                        <div className="mb-6 text-minimal-gold bg-minimal-olive/10 p-3 rounded-xl border border-minimal-olive/20">
                                             {getServiceIcon(s.name, idx)}
                                         </div>
-                                        {idx < 2 && (
-                                            <span className="umbralsuites-badge bg-orie-red text-white py-1.5 rounded-lg tracking-widest text-center">
-                                                Popular
+                                        {s.tag && (
+                                            <span className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-red-500 text-white border border-red-600 shadow-sm">
+                                                {s.tag}
                                             </span>
                                         )}
                                     </div>
 
-                                    <h3 className="text-lg font-bold text-gray-900 mb-2">{s.name}</h3>
+                                    <h3 className="text-lg font-bold text-black mb-2">{s.name}</h3>
                                     <p className="umbralsuites-p-muted mb-6 flex-grow text-sm">
                                         {s.description || "Mejora tu estancia con este servicio exclusivo diseñado para tu confort."}
                                     </p>
 
                                         <div className="flex justify-between items-center pt-6 border-t border-gray-100 gap-4">
-                                            <span className="text-sm font-bold text-gray-900">S/{s.price}</span>
+                                            <span className="text-sm font-bold text-black">S/{s.price}</span>
                                             <button 
                                                 onClick={() => handleWhatsAppRequest(s.name, s.price, s.id)}
-                                                className="text-sm font-black text-gray-900 hover:tracking-wider transition-all uppercase tracking-widest bg-white border border-black px-4 py-2 rounded-lg"
+                                                className="text-sm font-black text-black hover:tracking-wider transition-all uppercase tracking-widest bg-white border border-black px-4 py-2 rounded-lg"
                                             >
                                             Solicitar
                                         </button>

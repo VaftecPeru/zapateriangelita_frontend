@@ -34,7 +34,9 @@ const LoginPage = () => {
                 navigate('/');
             }
         } catch (err: any) {
-            setError(err.message);
+            // ✅ Mejor manejo de errores
+            const message = err.response?.data?.message || err.response?.data?.errors?.email?.[0] || err.message || 'Error al iniciar sesión';
+            setError(message);
         } finally {
             setLoading(false);
         }
@@ -52,7 +54,7 @@ const LoginPage = () => {
                 </Link>
 
                 <div className="text-center mb-10 pt-10">
-                    <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white font-bold text-xl mx-auto mb-6">H</div>
+                    <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white font-bold text-xl mx-auto mb-6">U</div>
                     <h1 className="text-3xl font-black text-black tracking-tighter">Bienvenido</h1>
                     <p className="text-gray-400 font-medium mt-2">Ingresa tus credenciales para continuar</p>
                 </div>

@@ -9,9 +9,11 @@ import {
 } from 'lucide-react';
 
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import PropertyManager from './PropertyManager';
 import ServiceManager from './ServiceManager';
 import SettingsManager from './SettingsManager';
+import MessagesManager from './MessagesManager';
 import { useAuth } from '../../hooks/useAuth';
 import { statsService, DashboardStats } from '../../services/crudService';
 import * as XLSX from 'xlsx';
@@ -66,10 +68,10 @@ const Counter = ({ value, duration = 2000, prefix = "", suffix = "", decimals = 
 
 const ConcentricChart = ({ stats }: { stats: DashboardStats | null }) => {
     const layers = [
-        { label: `${stats?.revenue.total || 0} Interacciones`, size: 'w-48 h-48 md:w-56 md:h-56', color: 'bg-minimal-olive/10' },
-        { label: `${stats?.revenue.expenses || 0} Visitas`, size: 'w-40 h-40 md:w-48 md:h-48', color: 'bg-minimal-olive/20' },
-        { label: `${stats?.charts.benefitsDistribution.taxes || 0} Ocupadas`, size: 'w-32 h-32 md:w-36 md:h-36', color: 'bg-minimal-olive/30' },
-        { label: `${stats?.charts.benefitsDistribution.costs || 0} Libres`, size: 'w-24 h-24 md:w-28 md:h-28', color: 'bg-minimal-olive' },
+        { label: `${stats?.revenue?.total || 0} Interacciones`, size: 'w-48 h-48 md:w-56 md:h-56', color: 'bg-minimal-olive/10' },
+        { label: `${stats?.revenue?.expenses || 0} Visitas`, size: 'w-40 h-40 md:w-48 md:h-48', color: 'bg-minimal-olive/20' },
+        { label: `${stats?.charts?.benefitsDistribution?.taxes || 0} Ocupadas`, size: 'w-32 h-32 md:w-36 md:h-36', color: 'bg-minimal-olive/30' },
+        { label: `${stats?.charts?.benefitsDistribution?.costs || 0} Libres`, size: 'w-24 h-24 md:w-28 md:h-28', color: 'bg-minimal-olive' },
     ];
 
     return (
@@ -88,7 +90,7 @@ const ConcentricChart = ({ stats }: { stats: DashboardStats | null }) => {
                         >
                             {i === 3 && (
                                 <>
-                                    <span className="text-xl sm:text-2xl font-black leading-none">{stats?.charts.benefitsDistribution.costs || 0}</span>
+                                    <span className="text-xl sm:text-2xl font-black leading-none">{stats?.charts?.benefitsDistribution?.costs || 0}</span>
                                     <span className="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase mt-0.5 sm:mt-1">Libres</span>
                                 </>
                             )}
@@ -102,7 +104,7 @@ const ConcentricChart = ({ stats }: { stats: DashboardStats | null }) => {
                             className="absolute right-0 translate-x-[90%] sm:translate-x-full w-max text-left"
                             style={{ top: i === 0 ? '1rem' : i === 1 ? '3.5rem' : '5.5rem', zIndex: 20 }}
                         >
-                            <span className={`text-[10px] sm:text-[11px] font-black bg-white/60 px-2 py-1 rounded backdrop-blur-sm ${i === 0 ? 'text-minimal-olive/50' : i === 1 ? 'text-minimal-olive/70' : 'text-minimal-olive'}`}>
+                            <span className={`text-[10px] sm:text-[11px] font-black bg-white/60 px-2 py-1 rounded backdrop-blur-sm ${i === 0 ? 'text-minimal-gold/50' : i === 1 ? 'text-minimal-gold/70' : 'text-minimal-gold'}`}>
                                 {layer.label}
                             </span>
                         </div>
@@ -114,7 +116,7 @@ const ConcentricChart = ({ stats }: { stats: DashboardStats | null }) => {
 };
 
 const SimpleBarChart = ({ stats }: { stats: DashboardStats | null }) => {
-    const bars = stats?.charts.monthlyRevenue || [40, 60, 45, 80, 50, 90, 70];
+    const bars = stats?.charts?.monthlyRevenue || [40, 60, 45, 80, 50, 90, 70];
     const labels = (stats?.charts as any)?.monthlyLabels || ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL'];
     const maxVal = Math.max(...bars, 5);
     
@@ -155,7 +157,7 @@ const SimpleBarChart = ({ stats }: { stats: DashboardStats | null }) => {
                     </div>
                     <div className="flex items-center justify-between px-1 mt-2 text-[9px] font-black text-gray-300 tracking-wider">
                         {labels.map((lbl: string, i: number) => (
-                            <span key={i} className={`flex-1 text-center ${i === labels.length - 1 ? 'text-minimal-olive' : ''}`}>
+                            <span key={i} className={`flex-1 text-center ${i === labels.length - 1 ? 'text-minimal-gold' : ''}`}>
                                 {lbl}
                             </span>
                         ))}
@@ -168,10 +170,21 @@ const SimpleBarChart = ({ stats }: { stats: DashboardStats | null }) => {
 
 const AdminDashboard = () => {
     const { user, logout } = useAuth();
-    const [activeTab, setActiveTab] = useState<'stats' | 'properties' | 'services' | 'settings'>('stats');
+    const location = useLocation();
+    const state = location.state as { activeTab?: string; selectedLeadId?: number };
+    
+    const [activeTab, setActiveTab] = useState<'stats' | 'properties' | 'services' | 'settings' | 'messages'>(
+        (state?.activeTab as any) || 'stats'
+    );
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const dashboardRef = useRef<HTMLDivElement>(null);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+    useEffect(() => {
+        if (state?.activeTab) {
+            setActiveTab(state.activeTab as any);
+        }
+    }, [state]);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -193,18 +206,18 @@ const AdminDashboard = () => {
             try {
                 // 1. Resumen General
                 const wsResumen = XLSX.utils.json_to_sheet([
-                    { Metrica: 'Total Propiedades', Valor: stats.charts.benefitsDistribution.total },
-                    { Metrica: 'Propiedades Libres (Costos)', Valor: stats.charts.benefitsDistribution.costs },
-                    { Metrica: 'Propiedades Ocupadas', Valor: stats.charts.benefitsDistribution.taxes },
-                    { Metrica: 'Interacciones WhatsApp (Lds)', Valor: stats.revenue.total },
-                    { Metrica: 'Visitas a Propiedades', Valor: stats.revenue.expenses }
+                    { Metrica: 'Total Propiedades', Valor: stats.charts?.benefitsDistribution?.total || 0 },
+                    { Metrica: 'Propiedades Libres (Costos)', Valor: stats.charts?.benefitsDistribution?.costs || 0 },
+                    { Metrica: 'Propiedades Ocupadas', Valor: stats.charts?.benefitsDistribution?.taxes || 0 },
+                    { Metrica: 'Interacciones WhatsApp (Lds)', Valor: stats.revenue?.total || 0 },
+                    { Metrica: 'Visitas a Propiedades', Valor: stats.revenue?.expenses || 0 }
                 ]);
                 
                 // 2. Interacciones Mensuales (Últimos 7 meses)
                 const wsMeses = XLSX.utils.json_to_sheet(
                     ((stats.charts as any).monthlyLabels || []).map((label: string, i: number) => ({
                         Mes: label,
-                        Interacciones: stats.charts.monthlyRevenue[i]
+                        Interacciones: stats.charts?.monthlyRevenue?.[i] || 0
                     }))
                 );
 
@@ -233,14 +246,14 @@ const AdminDashboard = () => {
     const statCards = [
         { 
             label: 'Interacciones WhatsApp', 
-            value: stats?.revenue.total || 0, 
-            change: stats?.revenue.change || '+0%', 
+            value: stats?.revenue?.total || 0, 
+            change: stats?.revenue?.change || '+0%', 
             icon: <ArrowUpRight className="text-green-500" /> 
         },
         { 
             label: 'Visitas a Propiedades', 
-            value: stats?.revenue.expenses || 0, 
-            change: stats?.revenue.expensesChange || '+0%', 
+            value: stats?.revenue?.expenses || 0, 
+            change: stats?.revenue?.expensesChange || '+0%', 
             icon: <ArrowDownRight className="text-minimal-olive" /> 
         },
     ];
@@ -252,7 +265,7 @@ const AdminDashboard = () => {
                 <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                     <div className="space-y-1">
                         <h1 className="text-2xl md:text-3xl font-black text-black tracking-tight flex items-center gap-3">
-                            Hola, <span className="text-minimal-olive">{user?.name.split(' ')[0] || 'Admin'}</span> 👋
+                            Hola, <span className="text-minimal-gold">{user?.name.split(' ')[0] || 'Admin'}</span> 👋
                         </h1>
                         <p className="text-sm md:text-base text-gray-400 font-medium">¡Que tengas un excelente día de gestión!</p>
                     </div>
@@ -294,13 +307,14 @@ const AdminDashboard = () => {
                         { id: 'stats', label: 'Estadísticas' },
                         { id: 'properties', label: 'Propiedades' },
                         { id: 'services', label: 'Servicios' },
-                        { id: 'settings', label: 'Ajustes' }
+                        { id: 'settings', label: 'Ajustes' },
+                        { id: 'messages', label: 'Mensajes' }
                     ].map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={`px-6 py-3 text-sm font-black uppercase tracking-widest transition-all border-b-2 whitespace-nowrap ${activeTab === tab.id
-                                ? 'border-minimal-olive text-black'
+                                ? 'border-minimal-gold text-black'
                                 : 'border-transparent text-gray-400 hover:text-gray-600'
                                 }`}
                         >
@@ -328,7 +342,7 @@ const AdminDashboard = () => {
                                         <div>
                                             <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">Interacciones</p>
                                             <p className="text-3xl font-black tracking-tighter">
-                                                <Counter value={stats?.revenue.total || 0} prefix="" decimals={0} />
+                                                <Counter value={stats?.revenue?.total || 0} prefix="" decimals={0} />
                                             </p>
                                         </div>
                                         <div className="flex justify-between items-end pt-4 border-t border-white/10">
@@ -359,7 +373,7 @@ const AdminDashboard = () => {
                                         <div className="flex items-center gap-2">
                                             <div className="flex items-center gap-1 text-xs font-bold">
                                                 {stat.icon}
-                                                <span className={stat.change.startsWith('+') ? 'text-green-500' : 'text-minimal-olive'}>{stat.change}</span>
+                                                <span className={stat.change.startsWith('+') ? 'text-green-500' : 'text-minimal-gold'}>{stat.change}</span>
                                             </div>
                                             <span className="text-[10px] text-gray-300 font-bold uppercase">vs últ. semana</span>
                                         </div>
@@ -381,7 +395,7 @@ const AdminDashboard = () => {
                                             <div className="absolute inset-0 rounded-full border-[16px] border-minimal-olive border-t-transparent border-l-transparent rotate-45" />
                                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                                 <span className="text-3xl font-black text-black">
-                                                    <Counter value={stats?.charts.benefitsDistribution.total || 0} prefix="" suffix="" decimals={0} />
+                                                    <Counter value={stats?.charts?.benefitsDistribution?.total || 0} prefix="" suffix="" decimals={0} />
                                                 </span>
                                                 <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Propiedades</span>
                                             </div>
@@ -389,9 +403,9 @@ const AdminDashboard = () => {
                                     </div>
                                     <div className="grid grid-cols-3 gap-4 pt-10 border-t border-gray-50">
                                         {[
-                                            { val: stats?.charts.benefitsDistribution.total || 0, label: 'Total' },
-                                            { val: stats?.charts.benefitsDistribution.costs || 0, label: 'Disponibles' },
-                                            { val: stats?.charts.benefitsDistribution.taxes || 0, label: 'Ocupadas' }
+                                            { val: stats?.charts?.benefitsDistribution?.total || 0, label: 'Total' },
+                                            { val: stats?.charts?.benefitsDistribution?.costs || 0, label: 'Disponibles' },
+                                            { val: stats?.charts?.benefitsDistribution?.taxes || 0, label: 'Ocupadas' }
                                         ].map((item, i) => (
                                             <div key={i} className="text-center">
                                                 <p className="text-sm font-black text-black">
@@ -406,14 +420,14 @@ const AdminDashboard = () => {
                                 <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border border-gray-100 shadow-sm flex flex-col">
                                     <div className="flex justify-between items-center mb-6 md:mb-8">
                                         <h3 className="font-black text-black">Actividad Reciente</h3>
-                                        <span className="text-[10px] font-black text-minimal-olive uppercase tracking-widest bg-minimal-olive/10 px-3 py-1 rounded-lg">Hoy</span>
+                                        <span className="text-[10px] font-black text-minimal-gold uppercase tracking-widest bg-minimal-olive/10 px-3 py-1 rounded-lg">Hoy</span>
                                     </div>
                                     <div className="space-y-6 flex-1">
                                         {(stats?.recentActivity || []).map((item: any, i: number) => (
                                             <div key={i} className="flex gap-4 group cursor-pointer">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-minimal-olive mt-2 group-hover:scale-150 transition-all" />
                                                 <div className="space-y-1">
-                                                    <p className="text-sm font-bold text-black leading-tight group-hover:text-minimal-olive transition-colors">{item.text}</p>
+                                                    <p className="text-sm font-bold text-black leading-tight group-hover:text-minimal-gold transition-colors">{item.text}</p>
                                                     <p className="text-[10px] text-gray-400 font-bold">{item.time}</p>
                                                 </div>
                                             </div>
@@ -441,6 +455,7 @@ const AdminDashboard = () => {
                         {activeTab === 'properties' && <PropertyManager />}
                         {activeTab === 'services' && <ServiceManager />}
                         {activeTab === 'settings' && <SettingsManager />}
+                        {activeTab === 'messages' && <MessagesManager />}
                     </div>
 
 

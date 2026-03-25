@@ -127,7 +127,7 @@ const HowItWorksPage = () => {
                     <h2 className="text-2xl md:text-4xl font-black text-black tracking-tighter leading-tight mb-6">
                         Redefiniendo el proceso de alquiler.
                     </h2>
-                    <p className="text-lg text-gray-400 font-medium leading-relaxed max-w-2xl italic">
+                    <p className="text-lg text-black font-medium leading-relaxed max-w-2xl italic">
                         Sin complicaciones, sin sorpresas. Curamos cada paso para asegurar tu próximo hogar con total transparencia.
                     </p>
                 </div>
@@ -149,7 +149,7 @@ const HowItWorksPage = () => {
                                 </h3>
                             </div>
 
-                            <p className="text-base text-gray-500 font-medium leading-relaxed max-w-md">
+                            <p className="text-base text-black font-medium leading-relaxed max-w-md">
                                 {step.description}
                             </p>
 
@@ -157,7 +157,7 @@ const HowItWorksPage = () => {
                                 {step.features.map((feat, fIdx) => (
                                     <div key={fIdx} className={`p-5 ${step.bg} border ${step.border} rounded-2xl shadow-sm hover:translate-y-[-2px] transition-all duration-300`}>
                                         <p className="text-sm font-black text-black mb-0.5">{feat.label}</p>
-                                        <p className="text-xs text-gray-400 font-medium">{feat.desc}</p>
+                                        <p className="text-xs text-black font-medium">{feat.desc}</p>
                                     </div>
                                 ))}
                             </div>
@@ -199,11 +199,11 @@ const HowItWorksPage = () => {
                             { icon: <ShieldCheck size={24} />, title: "SEGURIDAD TOTAL", desc: "Garantía de depósito y protección legal en cada contrato." }
                         ].map((item, i) => (
                             <div key={i} className="text-center md:text-left space-y-4">
-                                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white mx-auto md:mx-0">
+                                <div className="w-12 h-12 bg-minimal-olive/10 text-minimal-gold rounded-2xl flex items-center justify-center font-black text-lg border border-minimal-olive/20">
                                     {item.icon}
                                 </div>
                                 <h4 className="text-xl font-black text-white tracking-tight">{item.title}</h4>
-                                <p className="text-white/40 text-[13px] font-medium leading-relaxed">{item.desc}</p>
+                                <p className="text-white/80 text-[13px] font-medium leading-relaxed">{item.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -213,13 +213,13 @@ const HowItWorksPage = () => {
             <section className="py-32 px-6 text-center">
                 <h2 className="text-4xl md:text-7xl font-black text-black tracking-tighter leading-none mb-10">
                     TU PRÓXIMO HOGAR <br />
-                    EMPIEZA <span className="text-minimal-olive italic underline-offset-8">AQUÍ.</span>
+                    EMPIEZA <span className="text-minimal-gold italic underline underline-offset-8">AQUÍ.</span>
                 </h2>
                 <div className="flex flex-col md:flex-row items-center justify-center gap-6">
                     <Link to="/register" className="umbralsuites-btn-primary px-10 py-5 rounded-2xl text-base group shadow-2xl shadow-black/20">
                         Crear Cuenta Gratuita <Sparkles size={16} className="group-hover:rotate-12 transition-transform" />
                     </Link>
-                    <Link to="/" className="text-[11px] font-black uppercase tracking-widest border-b border-black pb-0.5 hover:text-minimal-olive hover:border-minimal-olive transition-colors">
+                    <Link to="/" className="text-[11px] font-black uppercase tracking-widest border-b border-black pb-0.5 hover:text-minimal-gold hover:border-minimal-gold transition-colors">
                         Ver alojamientos disponibles
                     </Link>
                 </div>

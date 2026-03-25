@@ -39,10 +39,10 @@ const FAQPage = () => {
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-minimal-serene/20 text-black rounded-full text-[10px] font-black uppercase tracking-widest border border-black/10">
                         Centro de Ayuda
                     </div>
-                    <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-black">
+                    <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-minimal-gold">
                         Preguntas Frecuentes
                     </h1>
-                    <p className="text-lg text-gray-500 font-medium leading-relaxed">
+                    <p className="text-lg text-black font-medium leading-relaxed">
                         Encuentra respuestas rápidas y formales a las dudas más comunes sobre nuestro servicio premium.
                     </p>
                 </div>
@@ -58,14 +58,14 @@ const FAQPage = () => {
                                 className="w-full px-6 py-5 flex items-center justify-between text-left"
                             >
                                 <span className={`text-base font-bold text-black tracking-tight ${openIndex === index ? '' : 'truncate pr-4'}`}>{faq.question}</span>
-                                <div className={`p-1.5 rounded-full transition-colors shrink-0 ${openIndex === index ? 'bg-black text-white' : 'bg-gray-50 text-gray-400'}`}>
+                                <div className={`p-1.5 rounded-full transition-colors shrink-0 ${openIndex === index ? 'bg-minimal-olive text-white' : 'bg-gray-100 text-black'}`}>
                                     {openIndex === index ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                 </div>
                             </button>
                             {openIndex === index && (
                                 <div className="px-6 pb-6 animate-fade-in">
                                     <div className="h-px bg-gray-100 mb-4" />
-                                    <p className="text-gray-600 leading-relaxed font-medium text-sm">
+                                    <p className="text-black leading-relaxed font-medium text-sm">
                                         {faq.answer}
                                     </p>
                                 </div>
@@ -75,16 +75,16 @@ const FAQPage = () => {
                 </div>
 
 
-                <div className="mt-16 p-8 py-10 bg-black rounded-[2.5rem] text-white text-center relative overflow-hidden max-w-4xl mx-auto shadow-2xl">
+                <div className="mt-16 p-8 py-10 bg-minimal-olive rounded-[2.5rem] text-white text-center relative overflow-hidden max-w-4xl mx-auto shadow-2xl">
                     <div className="relative z-10 space-y-6">
                         <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-2 backdrop-blur-md">
                             <MessageCircle size={24} className="text-white" />
                         </div>
                         <h2 className="text-2xl font-bold tracking-tight">¿No encontraste lo que buscabas?</h2>
-                        <p className="text-gray-400 max-w-lg mx-auto font-medium text-sm leading-relaxed">
+                        <p className="text-white/80 max-w-lg mx-auto font-medium text-sm leading-relaxed">
                             Nuestro equipo de asesores expertos está disponible para brindarte atención formal y personalizada en cada paso del camino.
                         </p>
-                        <button className="bg-white text-black px-8 py-3.5 rounded-xl font-black text-base hover:bg-minimal-beige transition-all active:scale-[0.98] shadow-lg shadow-white/5">
+                        <button className="bg-white text-minimal-gold px-8 py-3.5 rounded-xl font-black text-base hover:bg-minimal-beige transition-all active:scale-[0.98] shadow-lg shadow-white/5">
                             Hablar con un Asesor
                         </button>
                     </div>

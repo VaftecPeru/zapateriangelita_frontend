@@ -36,7 +36,7 @@ const ProfilePage = () => {
                             <div className="w-24 h-24 bg-black rounded-[2rem] flex items-center justify-center text-white font-black text-3xl border border-black shadow-2xl mb-6">
                                 {getInitials(user.name)}
                             </div>
-                            <h2 className="text-2xl font-black text-black tracking-tighter mb-1">{user.name}</h2>
+                            <h2 className="text-2xl font-black text-minimal-gold tracking-tighter mb-1">{user.name}</h2>
                             <p className="text-gray-400 font-medium text-sm mb-6">{user.email}</p>
 
                             <div className="w-full grid grid-cols-2 gap-3 mb-6">
@@ -102,7 +102,7 @@ const ProfilePage = () => {
                         {activeTab === 'info' && (
                             <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
                                 <div>
-                                    <h3 className="text-[10px] text-minimal-olive font-black uppercase tracking-[0.4em] mb-10 flex items-center gap-3">
+                                    <h3 className="text-[10px] text-minimal-gold font-black uppercase tracking-[0.4em] mb-10 flex items-center gap-3">
                                         <div className="w-2 h-2 bg-minimal-olive rounded-full" /> Datos Personales
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -110,31 +110,31 @@ const ProfilePage = () => {
                                             <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest flex items-center gap-2">
                                                 <User size={12} /> Nombre Completo
                                             </p>
-                                            <p className="text-xl font-black text-black tracking-tight">{user.name}</p>
+                                            <p className="text-xl font-black text-minimal-gold tracking-tight">{user.name}</p>
                                         </div>
                                         <div className="space-y-2 border-l-4 border-minimal-olive/5 pl-8 hover:border-minimal-olive transition-colors duration-500">
                                             <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest flex items-center gap-2">
                                                 <Mail size={12} /> Email
                                             </p>
-                                            <p className="text-xl font-black text-black tracking-tight">{user.email}</p>
+                                            <p className="text-xl font-black text-minimal-gold tracking-tight">{user.email}</p>
                                         </div>
                                         <div className="space-y-2 border-l-4 border-minimal-olive/5 pl-8 hover:border-minimal-olive transition-colors duration-500">
                                             <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest flex items-center gap-2">
                                                 <Calendar size={12} /> Fecha de Nacimiento
                                             </p>
-                                            <p className="text-xl font-black text-black tracking-tight">{(user as any).birthdate || 'No especificada'}</p>
+                                            <p className="text-xl font-black text-minimal-gold tracking-tight">{(user as any).birthdate || 'No especificada'}</p>
                                         </div>
                                         <div className="space-y-2 border-l-4 border-minimal-olive/5 pl-8 hover:border-minimal-olive transition-colors duration-500">
                                             <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest flex items-center gap-2">
                                                 <User size={12} /> Género
                                             </p>
-                                            <p className="text-xl font-black text-black tracking-tight">{(user as any).gender || 'No especificado'}</p>
+                                            <p className="text-xl font-black text-minimal-gold tracking-tight">{(user as any).gender || 'No especificado'}</p>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <h3 className="text-[10px] text-minimal-olive font-black uppercase tracking-[0.4em] mb-10 flex items-center gap-3">
+                                    <h3 className="text-[10px] text-minimal-gold font-black uppercase tracking-[0.4em] mb-10 flex items-center gap-3">
                                         <div className="w-2 h-2 bg-minimal-olive rounded-full" /> Ubicación
                                     </h3>
                                     <div className="bg-minimal-olive/[0.03] rounded-[2rem] p-10 flex flex-col md:flex-row md:items-center gap-8 border border-minimal-olive/5">
@@ -143,7 +143,7 @@ const ProfilePage = () => {
                                         </div>
                                         <div>
                                             <p className="text-[10px] text-minimal-olive font-black uppercase tracking-[0.2em] mb-2">Residencia actual</p>
-                                            <p className="text-3xl font-black text-black tracking-tighter leading-none mb-2">
+                                            <p className="text-3xl font-black text-minimal-gold tracking-tighter leading-none mb-2">
                                                 {(user as any).district}, {(user as any).province}
                                             </p>
                                             <p className="text-gray-500 font-bold text-lg">{(user as any).department}, Perú</p>
@@ -155,7 +155,7 @@ const ProfilePage = () => {
 
                         {activeTab === 'purchases' && (
                             <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center animate-in fade-in zoom-in-95 duration-500">
-                                <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center mb-8 text-gray-200 border border-gray-100">
+                                <div className="w-20 h-20 bg-minimal-olive/10 text-minimal-gold rounded-3xl flex items-center justify-center font-black text-2xl border border-minimal-olive/20">
                                     <Package size={40} />
                                 </div>
                                 <h3 className="text-2xl font-black text-black mb-3 italic tracking-tighter">Sin compras registradas</h3>
@@ -188,14 +188,14 @@ const ProfilePage = () => {
                                                     </button>
                                                 </div>
                                                 <div className="px-3 pb-3">
-                                                    <h4 className="text-xl font-black text-black group-hover:text-minimal-olive transition-colors leading-[0.9] mb-3">{fav.title}</h4>
+                                                <h4 className="text-xl font-black text-minimal-gold group-hover:text-minimal-gold/80 transition-colors leading-[0.9] mb-3">{fav.title}</h4>
                                                     <div className="flex justify-between items-end">
                                                         <div className="space-y-1">
                                                             <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-bold uppercase tracking-widest">
                                                                 <MapPin size={10} className="text-minimal-olive" />
                                                                 {fav.location}
                                                             </div>
-                                                            <p className="text-lg font-black text-black tracking-tighter">{fav.price}</p>
+                                                            <p className="text-lg font-black text-minimal-gold tracking-tighter">{fav.price}</p>
                                                         </div>
                                                         <button className="p-3 bg-black text-white rounded-xl hover:bg-minimal-olive transition-colors">
                                                             <ExternalLink size={16} />

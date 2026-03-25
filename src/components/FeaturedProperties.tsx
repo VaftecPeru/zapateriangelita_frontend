@@ -12,7 +12,8 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
   useEffect(() => {
     apiClient.get('/properties')
       .then(res => {
-        setProperties(res.data);
+        const data = Array.isArray(res.data) ? res.data : (res.data.data || []);
+        setProperties(data);
         setLoading(false)
       })
       .catch(err => {
@@ -41,9 +42,7 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
 
   const filteredProperties = properties.filter(p => {
     if (!searchCriteria) return true;
-    const location = (p.location || '').toLowerCase();
-    const searchLocation = (searchCriteria.location || '').toLowerCase();
-    const matchesLocation = !searchLocation || location.includes(searchLocation);
+    const matchesLocation = !searchCriteria.location || p.location.toLowerCase().includes(searchCriteria.location.toLowerCase());
     const matchesType = !searchCriteria.propertyType || p.type === searchCriteria.propertyType;
     return matchesLocation && matchesType;
   });
@@ -53,7 +52,7 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
       <section className="py-24 px-6 bg-white text-center">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-100 rounded-full w-48 mx-auto" />
-          <p className="umbralsuites-p-muted">Cargando propiedades...</p>
+          <p className="homad-p-muted">Cargando propiedades...</p>
         </div>
       </section>
     );
@@ -65,7 +64,7 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-6">
           <div className="max-w-2xl">
             <h2 className="text-4xl md:text-5xl font-black text-black tracking-tighter mb-4 leading-[0.9]">
-              Propiedades <span className="text-minimal-olive italic">Destacadas</span>
+              Propiedades <span className="text-[#20B2AA]">Destacadas</span>
             </h2>
             <p className="text-gray-500 font-medium">
               {filteredProperties.length === 0
@@ -98,81 +97,96 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
             <div
               key={p.id}
               onClick={() => onOpenDetails(p)}
-              className="min-w-[85vw] md:min-w-[340px] group bg-white rounded-[1.2rem] md:rounded-[1.5rem] overflow-hidden border border-black hover:shadow-[10px_10px_0px_0px_rgba(255,145,77,0.25)] hover:-translate-y-1 active:scale-[0.98] active:translate-y-0 active:shadow-none transition-all duration-300 cursor-pointer p-1.5 md:p-2 snap-center"
+              className="min-w-[80vw] md:min-w-0 md:w-[340px] flex flex-col group bg-white rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer snap-center"
             >
-              <div className="relative aspect-[16/10] overflow-hidden rounded-[1rem] md:rounded-[1.2rem] shrink-0">
+              {/* Image */}
+              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
                 <img
                   src={p.img || 'https://images.unsplash.com/photo-1560448204-603b3fc33ddc?q=80&w=800'}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   alt={p.title}
                   onError={(e: any) => {
                     e.target.src = 'https://images.unsplash.com/photo-1560448204-603b3fc33ddc?q=80&w=800';
                   }}
                 />
 
-                <div className="absolute top-5 left-5">
-                  <span className="bg-black/90 backdrop-blur-md text-white text-[10px] font-black px-4 py-2 rounded-xl uppercase tracking-[0.2em] border border-white/20">
+                {/* Type badge top-left */}
+                <div className="absolute top-3 left-3">
+                  <span className="bg-white/90 backdrop-blur-sm text-gray-700 text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
                     {p.type}
                   </span>
                 </div>
 
-                <div className="absolute bottom-5 left-5">
-                  <span className={`text-[10px] font-black px-4 py-2 rounded-xl uppercase tracking-widest text-white border border-black/10 backdrop-blur-xl ${p.status === 'Disponible' ? 'bg-minimal-olive' : 'bg-gray-400'}`}>
+                {/* Status pill top-right */}
+                <div className="absolute top-3 right-3">
+                  <span className={`text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest text-white shadow-sm ${p.status === 'Disponible' ? 'bg-minimal-olive' : 'bg-gray-400'}`}>
                     {p.status}
                   </span>
                 </div>
 
+                {/* Heart */}
                 <button
                   onClick={(e) => handleToggleFavorite(e, p)}
-                  className="absolute top-4 right-4 p-2 transition-all z-10 hover:scale-125 active:scale-75 cursor-pointer group/heart"
+                  className="absolute bottom-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm transition-all hover:scale-110 active:scale-90 cursor-pointer"
                 >
                   <Heart
-                    size={22}
-                    className={`${isFavorite(p.id) ? 'text-red-500 fill-red-500' : 'text-white drop-shadow-md'} transition-all stroke-black stroke-[1.5px] group-active/heart:fill-red-400`}
+                    size={16}
+                    className={`${p.id !== undefined && isFavorite(p.id) ? 'text-red-500 fill-red-500' : 'text-gray-500'} transition-all`}
                   />
                 </button>
               </div>
 
-              <div className="px-3 py-4 md:px-4 md:py-6">
-                <div className="flex justify-between items-start mb-4 md:mb-6">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-base md:text-xl font-black text-black leading-tight mb-1 md:mb-2 group-hover:text-[#FF914D] transition-colors line-clamp-2">
-                      {p.title}
-                    </h3>
-                    <div className="flex items-center gap-1.5 md:gap-2 text-gray-400 text-[8px] md:text-[10px] font-black uppercase tracking-widest leading-none">
-                      <MapPin className="text-minimal-olive w-2.5 h-2.5 md:w-3 md:h-3" />
-                      <span className="truncate">{p.location}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 md:gap-1.5 bg-gray-50 px-2 py-1 md:px-3 md:py-1.5 rounded-lg md:rounded-xl border border-black/5 shrink-0">
-                    <Star className="text-minimal-olive fill-minimal-olive w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
-                    <span className="text-xs md:text-sm font-black text-black">{p.rating}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 mb-4 md:mb-6">
-                  <div className="bg-gray-50/50 py-3 rounded-xl border border-black/5 flex flex-col items-center justify-center gap-1 md:gap-1.5 group-hover:bg-[#FF914D]/5 transition-colors">
-                    <Bed className="text-minimal-olive w-4 h-4 md:w-[18px] md:h-[18px]" />
-                    <span className="text-[10px] md:text-xs font-black text-black">{p.beds}</span>
-                  </div>
-                  <div className="bg-gray-50/50 py-3 rounded-xl border border-black/5 flex flex-col items-center justify-center gap-1 md:gap-1.5 group-hover:bg-minimal-olive/5 transition-colors">
-                    <Bath className="text-minimal-olive w-4 h-4 md:w-[18px] md:h-[18px]" />
-                    <span className="text-[10px] md:text-xs font-black text-black">{p.baths}</span>
-                  </div>
-                  <div className="bg-gray-50/50 py-3 rounded-xl border border-black/5 flex flex-col items-center justify-center gap-1 md:gap-1.5 group-hover:bg-minimal-olive/5 transition-colors">
-                    <Square className="text-minimal-olive w-4 h-4 md:w-[18px] md:h-[18px]" />
-                    <span className="text-[8px] md:text-[10px] font-black text-black uppercase">{p.area}</span>
+              {/* Info */}
+              <div className="pt-4 pb-2 pl-6 pr-4 flex flex-col flex-grow">
+                {/* Title & Rating */}
+                <div className="flex justify-between items-start gap-2 mb-1">
+                  <h3 className="text-base font-bold text-gray-900 leading-tight line-clamp-2 flex-1">
+                    {p.title}
+                  </h3>
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    {[...Array(5)].map((_, i) => (
+                      <Star 
+                        key={i} 
+                        size={12} 
+                        className={`${i < Math.round(p.rating) ? 'text-[#FFC107] fill-[#FFC107]' : 'text-gray-200 fill-gray-200'}`} 
+                      />
+                    ))}
+                    <span className="text-[10px] font-black text-black ml-1.5">{p.rating}</span>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center bg-black pl-4 pr-1.5 py-2.5 md:pl-5 md:pr-2 md:py-3 rounded-xl border border-black/5 group-hover:bg-[#FF914D] active:scale-[0.97] transition-all duration-300">
-                  <div className="text-left">
-                    <p className="text-[8px] md:text-[9px] text-white/40 font-black uppercase tracking-widest leading-none mb-0.5">Precio Total</p>
-                    <p className="text-lg md:text-xl font-black text-white tracking-tighter leading-none">S/{p.price}</p>
+                {/* Location */}
+                <div className="flex items-center gap-1.5 text-gray-400 text-xs font-semibold mb-3">
+                  <MapPin className="text-minimal-gold w-3 h-3 shrink-0" />
+                  <span className="truncate">{p.location}</span>
+                </div>
+
+                {/* Amenities row */}
+                <div className="flex items-center gap-4 text-gray-500 text-xs font-semibold mb-4 border-t border-gray-100 pt-3">
+                  <span className="flex items-center gap-1"><Bed size={14} className="text-gray-400" /> {p.beds} hab.</span>
+                  <span className="flex items-center gap-1"><Bath size={14} className="text-gray-400" /> {p.baths} baños</span>
+                  <span className="flex items-center gap-1"><Square size={14} className="text-gray-400" /> {p.area}</span>
+                </div>
+
+                {/* Price */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xs text-gray-400 font-semibold">desde</span>
+                    {p.discounted_price && Number(p.discounted_price) > 0 ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm text-gray-400 font-semibold line-through">S/{Number(p.price).toFixed(2)}</span>
+                        <span className="text-xl font-black text-gray-900">S/{Number(p.discounted_price).toFixed(2)}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xl font-black text-gray-900">S/{Number(p.price).toFixed(2)}</span>
+                    )}
+                    <span className="text-xs text-gray-400 font-semibold">/mes</span>
                   </div>
-                  <div className="w-7 h-7 md:w-8 md:h-8 bg-white rounded-lg flex items-center justify-center text-black">
-                    <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                  </div>
+                  {p.discounted_price && Number(p.discounted_price) > 0 && (
+                    <span className="text-xs font-black px-2.5 py-1 rounded-lg text-white bg-red-500 whitespace-nowrap shadow-sm">
+                      -{(((p.price - Number(p.discounted_price)) / p.price) * 100).toFixed(0)}%
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -183,8 +197,7 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
           <Link
             to="/properties"
           >
-            <button 
-              // onClick={() => window.location.href = '/properties'}
+            <button
               className="flex items-center gap-3 px-10 py-5 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-minimal-olive hover:scale-105 active:scale-95 transition-all shadow-2xl hover:shadow-minimal-olive/20 group"
             >
               Explorar propiedades

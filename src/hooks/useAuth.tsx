@@ -26,16 +26,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
-        const token = localStorage.getItem('token');
         const storedFavs = localStorage.getItem('favorites');
 
-        if (storedUser && token) {
+        if (storedUser) {
             try {
                 setUser(JSON.parse(storedUser));
             } catch (e) {
                 console.error("Failed to parse stored user", e);
                 localStorage.removeItem('user');
-                localStorage.removeItem('token');
             }
         }
 
@@ -51,16 +49,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setLoading(false);
     }, []);
 
-    const login = (userData: User, token: string) => {
+    const login = (userData: User) => {
         localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('token', token);
+        // ✅ Token ahora en http-only cookie (no necesita storage)
         setUser(userData);
     };
 
     const logout = () => {
         localStorage.removeItem('user');
-        localStorage.removeItem('token');
         localStorage.removeItem('favorites');
+        // ✅ Token se elimina automáticamente (cookie http-only)
         setUser(null);
         setFavorites([]);
     };

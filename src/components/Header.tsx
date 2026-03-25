@@ -1,13 +1,41 @@
-import { useState } from 'react';
-import { Heart, Bell, User, LogOut, Menu, X, Square, Mail, Info, BarChart3 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Heart, Bell, User, LogOut, Menu, X, Square, Mail, Info, BarChart3, Home, Clock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Link, useLocation } from 'react-router-dom';
+import { leadService, Lead } from '../services/crudService';
 
 const Header = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   const location = useLocation();
+  const isHome = location.pathname === '/';
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'admin') {
+      fetchLeads();
+      const interval = setInterval(fetchLeads, 60000); // Check every minute
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated, user]);
+
+  const fetchLeads = async () => {
+    try {
+      const res = await leadService.getAll();
+      const data = (res.data as any)?.data ?? res.data;
+      if (Array.isArray(data)) {
+        setLeads(data.slice(0, 5)); // Show only 5 most recent
+        setUnreadCount(data.filter(l => !l.is_read).length);
+      }
+    } catch (e) {
+      console.error('Error fetching leads for notifications', e);
+    }
+  };
 
   const getInitials = (name: string) => {
     const parts = name.split(' ');
@@ -17,18 +45,19 @@ const Header = () => {
     return name.slice(0, 2).toUpperCase();
   };
 
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
-
   if (isAuthPage) return null;
+
+  // El texto es oscuro si no estamos en la página de inicio (portada)
+  const isDarkText = !isHome;
 
   return (
     <>
-      <header className="fixed top-0 w-full z-[1000] bg-minimal-beige/95 backdrop-blur-md px-6 py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+      <header className={`absolute top-0 w-full z-[1000] px-6 md:px-12 py-6 bg-transparent`}>
+        <div className="max-w-[90rem] mx-auto flex justify-between items-center">
 
           <Link to="/" className="flex items-center gap-2 cursor-pointer relative z-50">
-            <div className="w-8 h-8 bg-black rounded flex items-center justify-center text-white font-bold">U</div>
-            <span className="text-black font-bold text-xl tracking-tighter">Umbral Suites</span>
+            <div className={`w-8 h-8 ${isDarkText ? 'bg-black text-white' : 'bg-white text-black'} rounded flex items-center justify-center font-bold transition-colors shadow-sm`}>U</div>
+            <span className={`${isDarkText ? 'text-black' : 'text-white'} font-bold text-xl tracking-tighter drop-shadow-md transition-colors`}>Umbral Suites</span>
           </Link>
 
 
@@ -43,19 +72,19 @@ const Header = () => {
                 <Link
                   key={link.label}
                   to={link.href}
-                  className="text-gray-900 font-bold text-sm hover:text-black active:scale-95 transition-all duration-300 relative group py-2"
+                  className={`${isDarkText ? 'text-black/80 hover:text-black' : 'text-white/90 hover:text-white'} font-bold text-base lg:text-lg active:scale-95 transition-all duration-300 relative group py-2 drop-shadow-md`}
                 >
                   {link.label}
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all duration-300 group-hover:w-full"></span>
+                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 ${isDarkText ? 'bg-black' : 'bg-white'} transition-all duration-300 group-hover:w-full shadow-[0_0_8px_rgba(255,255,255,0.8)]`}></span>
                 </Link>
               ) : (
                 <a
                   key={link.label}
                   href={`/#${link.id}`}
-                  className="text-gray-900 font-bold text-sm hover:text-black active:scale-95 transition-all duration-300 relative group py-2"
+                  className={`${isDarkText ? 'text-black/80 hover:text-black' : 'text-white/90 hover:text-white'} font-bold text-base lg:text-lg active:scale-95 transition-all duration-300 relative group py-2 drop-shadow-md`}
                 >
                   {link.label}
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all duration-300 group-hover:w-full"></span>
+                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 ${isDarkText ? 'bg-black' : 'bg-white'} transition-all duration-300 group-hover:w-full shadow-[0_0_8px_rgba(255,255,255,0.8)]`}></span>
                 </a>
               )
             ))}
@@ -63,12 +92,88 @@ const Header = () => {
 
 
           <div className="flex items-center gap-1 md:gap-4">
-            <div className="flex items-center gap-1.5 px-2 md:px-3 py-2 text-red-500 hover:bg-red-50 hover:scale-110 active:scale-90 rounded-xl transition-all cursor-pointer">
-              <Heart size={20} className="fill-red-500" />
+            <div className={`flex items-center gap-1.5 px-2 md:px-3 py-2 text-red-500 hover:bg-black/5 hover:scale-110 active:scale-90 rounded-xl transition-all cursor-pointer`}>
+              <Heart size={20} className="fill-red-500 drop-shadow-md" />
             </div>
-            <div className="flex items-center gap-1.5 px-2 md:px-3 py-2 text-black/50 hover:text-black hover:bg-black/5 hover:scale-110 active:scale-90 rounded-xl transition-all cursor-pointer relative">
-              <Bell size={20} />
-              <span className="absolute top-2 right-2 md:right-3 w-2 h-2 bg-black rounded-full border-2 border-minimal-beige"></span>
+            
+            <div className="relative">
+              <button 
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                className={`flex items-center gap-1.5 px-2 md:px-3 py-2 ${isDarkText ? 'text-black/80 hover:text-black' : 'text-white/80 hover:text-white'} hover:bg-black/5 hover:scale-110 active:scale-90 rounded-xl transition-all cursor-pointer relative drop-shadow-md`}
+              >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                  <span className={`absolute top-1.5 right-1.5 md:right-2 w-4 h-4 bg-red-500 text-white text-[8px] font-black flex items-center justify-center rounded-full border-2 border-white animate-bounce`}>
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {isNotificationsOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsNotificationsOpen(false)}></div>
+                  <div className="absolute right-0 mt-3 w-80 bg-white rounded-[2rem] shadow-2xl border border-gray-100 py-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="px-6 py-2 border-b border-gray-50 mb-3 flex justify-between items-center">
+                      <div>
+                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Notificaciones</p>
+                        <h4 className="text-sm font-black text-black">Mensajes Recientes</h4>
+                      </div>
+                      {unreadCount > 0 && <span className="bg-minimal-gold/10 text-minimal-gold text-[10px] font-black px-2 py-0.5 rounded-full">{unreadCount} nuevos</span>}
+                    </div>
+                    
+                    <div className="max-h-[350px] overflow-y-auto px-2 space-y-1">
+                      {leads.length > 0 ? (
+                        leads.map((lead) => (
+                          <Link 
+                            key={lead.id} 
+                            to="/admin/dashboard" 
+                            state={{ activeTab: 'messages', selectedLeadId: lead.id }}
+                            onClick={() => setIsNotificationsOpen(false)}
+                            className={`flex items-start gap-3 p-4 rounded-[1.5rem] transition-all hover:bg-gray-50 group ${!lead.is_read ? 'bg-minimal-gold/[0.03]' : ''}`}
+                          >
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shrink-0 shadow-sm ${!lead.is_read ? 'bg-minimal-gold text-white' : 'bg-gray-100 text-gray-400'}`}>
+                              {(lead.first_name?.[0] ?? '?').toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                               <div className="flex justify-between items-start">
+                                  <p className={`text-xs text-black truncate ${!lead.is_read ? 'font-black' : 'font-bold'}`}>
+                                    {lead.first_name} {lead.last_name}
+                                  </p>
+                                  <span className="text-[8px] text-gray-300 font-bold uppercase shrink-0"><Clock size={8} className="inline mr-0.5" />{new Date(lead.created_at!).toLocaleDateString()}</span>
+                               </div>
+                               <p className="text-[10px] text-gray-400 font-medium truncate mt-0.5 flex items-center gap-1">
+                                  <Home size={10} className="text-minimal-gold" /> {lead.property_title ?? 'Sin título'}
+                               </p>
+                               {!lead.is_read && (
+                                 <div className="mt-2 flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 bg-minimal-gold rounded-full"></span>
+                                    <span className="text-[8px] font-black text-minimal-gold uppercase tracking-widest">Nuevo mensaje</span>
+                                 </div>
+                               )}
+                            </div>
+                          </Link>
+                        ))
+                      ) : (
+                        <div className="py-10 text-center">
+                          <Mail className="mx-auto text-gray-200 mb-2" size={32} />
+                          <p className="text-xs text-gray-400 font-bold">No hay notificaciones</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-3 pt-3 border-t border-gray-50 px-6">
+                      <Link 
+                        to="/admin/dashboard" 
+                        state={{ activeTab: 'messages' }}
+                        onClick={() => setIsNotificationsOpen(false)}
+                        className="block w-full text-center py-2 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-minimal-olive transition-all"
+                      >
+                        Ver todos los mensajes
+                      </Link>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
 
@@ -77,14 +182,14 @@ const Header = () => {
                 <>
                   <Link
                     to="/login"
-                    className="umbralsuites-btn-secondary px-5 py-2.5 flex items-center gap-2 hover:bg-black hover:text-white hover:scale-105 active:scale-95 border-black transition-all duration-300"
+                    className={`${isDarkText ? 'text-black/80 hover:text-black' : 'text-white hover:text-white/80'} font-bold text-sm transition-colors flex items-center gap-2 drop-shadow-md mr-2`}
                   >
                     <User size={18} /> Iniciar sesión
                   </Link>
 
                   <Link
                     to="/register"
-                    className="bg-minimal-olive text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-minimal-olive/80 hover:scale-105 transition-all active:scale-95 flex items-center justify-center gap-2"
+                    className={`${isDarkText ? 'bg-black text-white' : 'bg-black/40 text-white'} backdrop-blur-md border border-white/20 px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-black/90 hover:border-white/40 hover:scale-105 transition-all active:scale-95 flex items-center justify-center`}
                   >
                     Registrarse
                   </Link>
@@ -97,14 +202,14 @@ const Header = () => {
                   >
                     <div className="flex flex-col items-end leading-tight">
                       <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest group-hover:text-black/40 transition-colors">Hola,</span>
-                      <span className="text-sm font-black text-black">{user?.name.split(' ')[0]}</span>
+                      <span className={`text-sm font-black ${isDarkText ? 'text-black' : 'text-white'}`}>{user?.name.split(' ')[0]}</span>
                     </div>
-                    <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white font-black text-sm border border-black group-hover:bg-white group-hover:text-black transition-all shadow-lg shadow-black/5">
+                    <div className={`w-10 h-10 ${isDarkText ? 'bg-black' : 'bg-white'} rounded-xl flex items-center justify-center ${isDarkText ? 'text-white' : 'text-black'} font-black text-sm border border-black/10 group-hover:bg-black group-hover:text-white transition-all shadow-lg shadow-black/5`}>
                       {user ? getInitials(user.name) : '??'}
                     </div>
                   </button>
 
-                  {/* Dropdown Menu */}
+                  
                   {isProfileOpen && (
                     <>
                       <div
@@ -119,7 +224,7 @@ const Header = () => {
                         {user?.role === 'admin' && (
                           <Link
                             to="/admin/dashboard"
-                            className="flex items-center gap-3 px-5 py-3 text-sm font-bold text-minimal-olive hover:bg-minimal-olive/5 transition-colors"
+                            className="flex items-center gap-3 px-5 py-3 text-sm font-bold text-minimal-gold hover:bg-minimal-gold/5 transition-colors"
                             onClick={() => setIsProfileOpen(false)}
                           >
                             <BarChart3 size={18} /> Dashboard Admin
@@ -151,9 +256,9 @@ const Header = () => {
 
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 text-black hover:bg-gray-50 rounded-lg transition-colors relative z-50"
+              className={`md:hidden p-2 ${isDarkText ? 'text-black' : 'text-white'} hover:bg-black/5 rounded-lg transition-colors relative z-50 drop-shadow-md`}
             >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {isMobileMenuOpen ? <X size={24} className="text-black" /> : <Menu size={24} />}
             </button>
           </div>
         </div>

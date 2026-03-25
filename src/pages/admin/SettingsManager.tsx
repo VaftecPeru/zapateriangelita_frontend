@@ -168,9 +168,11 @@ const SettingsManager = () => {
                                     </span>
                                 </div>
                                 <div className="flex flex-col items-start sm:items-end gap-2">
-                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                        <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Sincronizado</span>
+                                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border ${settings.whatsapp_number ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : 'bg-red-500/10 border-red-500/20 text-red-600'}`}>
+                                        <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${settings.whatsapp_number ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                                        <span className="text-[9px] font-black uppercase tracking-widest">
+                                            {settings.whatsapp_number ? 'Sincronizado' : 'No Sincronizado'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>

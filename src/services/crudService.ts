@@ -10,9 +10,12 @@ export interface Property {
     baths: number;
     area: string;
     price: number;
+    discounted_price?: number;
     rating?: number;
     reviews?: number;
     img: string;
+    images?: string[];
+    amenities?: string;
 }
 
 export const propertyService = {
@@ -29,6 +32,7 @@ export interface AdditionalService {
     name: string;
     description?: string;
     price: number;
+    tag?: string;
 }
 
 export const additionalServiceService = {
@@ -48,15 +52,17 @@ export interface DashboardStats {
     };
     inventory: {
         properties: number;
-        rooms: number;
         services: number;
+        rooms?: number;
     };
     charts: {
         monthlyRevenue: number[];
+        monthlyLabels: string[];
         benefitsDistribution: {
             total: number;
             costs: number;
             taxes: number;
+            maintenance: number;
         };
     };
     recentActivity: {
@@ -74,7 +80,34 @@ export const settingsService = {
     update: (key: string, value: string) => apiClient.post(`/settings/${key}?_method=PUT`, { value }),
 };
 
+export interface Lead {
+    id?: number;
+    type: string;
+    item_id: number;
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+    check_in?: string;
+    check_out?: string;
+    guests?: number;
+    property_title?: string;
+    created_at?: string;
+    is_read?: boolean;
+}
+
 export const leadService = {
-    trackLead: (type: 'property' | 'service', itemId: number) => apiClient.post('/leads', { type, item_id: itemId }),
+    trackLead: (type: 'property' | 'service', itemId: number, contactData?: {
+        first_name?: string;
+        last_name?: string;
+        phone?: string;
+        check_in?: string;
+        check_out?: string;
+        guests?: number;
+        property_title?: string;
+    }) => apiClient.post('/leads', { type, item_id: itemId, ...contactData }),
+    getAll: () => apiClient.get<Lead[]>('/leads'),
+    update: (id: number, data: Partial<Lead>) => apiClient.put<Lead>(`/leads/${id}`, data),
+    delete: (id: number) => apiClient.delete(`/leads/${id}`),
 };
+
 
