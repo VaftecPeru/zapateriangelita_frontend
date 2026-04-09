@@ -25,6 +25,7 @@ const PropertyManager = () => {
         img: '',
         images: [],
         amenities: '',
+        description: '',
         rating: 0,
         reviews: 0,
     });
@@ -75,8 +76,9 @@ const PropertyManager = () => {
                 discounted_price: property.discounted_price ?? 0,
                 rating: property.rating ?? 0,
                 reviews: property.reviews ?? 0,
+                description: property.description ?? '',
             });
-            // Load existing images into previews
+           
             const newPreviews = Array(5).fill(null);
             if (property.images && Array.isArray(property.images)) {
                 property.images.forEach((img, i) => {
@@ -102,6 +104,7 @@ const PropertyManager = () => {
                 img: '',
                 images: [],
                 amenities: '',
+                description: '',
                 rating: 0,
                 reviews: 0,
             });
@@ -121,6 +124,12 @@ const PropertyManager = () => {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
         const file = e.target.files?.[0];
         if (file) {
+            
+            if (file.size > 20 * 1024 * 1024) {
+                alert("La imagen excede el límite de 20MB. Por favor sube una imagen más pequeña.");
+                return;
+            }
+            
             const newFiles = [...selectedFiles];
             newFiles[index] = file;
             setSelectedFiles(newFiles);
@@ -135,7 +144,7 @@ const PropertyManager = () => {
         }
     };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         
         setFormData(prev => { 
@@ -151,7 +160,7 @@ const PropertyManager = () => {
         try {
             const data = new FormData();
             
-            // Campos que siempre se envían
+          
             data.append('title', String(formData.title));
             data.append('type', String(formData.type));
             data.append('location', String(formData.location));
@@ -163,14 +172,18 @@ const PropertyManager = () => {
             data.append('rating', String(formData.rating ?? 0));
             data.append('reviews', String(formData.reviews ?? 0));
             
-            // Campo opcional: discounted_price
+           
             if (formData.discounted_price && formData.discounted_price > 0) {
                 data.append('discounted_price', String(formData.discounted_price));
             }
             
-            // Amenidades
+          
             if (formData.amenities) {
                 data.append('amenities', String(formData.amenities));
+            }
+        
+            if (formData.description) {
+                data.append('description', String(formData.description));
             }
 
             selectedFiles.forEach((file) => {
@@ -342,7 +355,7 @@ const PropertyManager = () => {
                 </div>
             </div>
 
-            {/* Modal */}
+          
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-minimal-olive/10">
@@ -437,6 +450,10 @@ const PropertyManager = () => {
                                     <input type="number" name="reviews" value={formData.reviews || ''} onChange={handleInputChange} required min="0" className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold" />
                                 </div>
                                 <div className="space-y-2 md:col-span-2">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Descripción</label>
+                                    <textarea name="description" value={formData.description || ''} onChange={handleInputChange} rows={5} className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold resize-y" placeholder="Describe la propiedad..."></textarea>
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Comodidades (separadas por comas)</label>
                                     <input type="text" name="amenities" value={formData.amenities || ''} onChange={handleInputChange} placeholder="Ej: Wi-Fi, Piscina, Estacionamiento" className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold" />
                                     <p className="text-[9px] text-gray-400 font-medium mt-1 ml-1 lowercase">
@@ -492,7 +509,7 @@ const PropertyManager = () => {
                                         ))}
                                     </div>
                                     <p className="text-[10px] text-gray-400 font-medium leading-relaxed mt-2 text-center md:text-left">
-                                        Recomendamos imágenes de alta calidad (JPG, PNG). La primera imagen será la portada principal.
+                                        Recomendamos imágenes de alta calidad (JPG, PNG). El tamaño máximo por imagen es de 20MB. La primera imagen será la portada principal.
                                     </p>
                                 </div>
                             </div>

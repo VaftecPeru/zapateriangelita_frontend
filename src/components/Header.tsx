@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Heart, Bell, User, LogOut, Menu, X, Square, Mail, Info, BarChart3, Home, Clock } from 'lucide-react';
+import { Heart, Bell, User, LogOut, Menu, X, Square, Mail, Info, BarChart3, Home, Clock, Flame, ChevronDown } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Link, useLocation } from 'react-router-dom';
 import { leadService, Lead } from '../services/crudService';
@@ -9,6 +9,8 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [activeMobileSubmenu, setActiveMobileSubmenu] = useState<string | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -47,7 +49,6 @@ const Header = () => {
 
   if (isAuthPage) return null;
 
-  // El texto es oscuro si no estamos en la página de inicio (portada)
   const isDarkText = !isHome;
 
   return (
@@ -59,34 +60,73 @@ const Header = () => {
             <div className={`w-8 h-8 ${isDarkText ? 'bg-black text-white' : 'bg-white text-black'} rounded flex items-center justify-center font-bold transition-colors shadow-sm`}>U</div>
             <span className={`${isDarkText ? 'text-black' : 'text-white'} font-bold text-xl tracking-tighter drop-shadow-md transition-colors`}>Umbral Suites</span>
           </Link>
+          
+          <nav className="hidden md:flex items-center gap-8">
+            <Link
+              to="/?offer=true"
+              className={`flex items-center gap-2 px-4 py-2 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-500 font-black text-sm hover:bg-orange-500 hover:text-white transition-all duration-300 active:scale-95 group shadow-sm`}
+            >
+              <Flame size={16} className="fill-orange-500 group-hover:fill-white transition-colors" />
+              Ofertas únicas
+            </Link>
 
-
-          <nav className="hidden md:flex items-center gap-10">
             {[
-              { label: "Propiedades", href: "/properties" },
-              { label: "Servicios", id: "servicios" },
+              { 
+                label: "Propiedades", 
+                href: "/properties",
+                dropdown: [
+                  { label: "Departamentos", href: "/properties?category=departamento" },
+                  { label: "Suites de Lujo", href: "/properties?category=suite" },
+                  { label: "Estudios de Diseño", href: "/properties?category=estudio" },
+                  { label: "Catálogo Completo", href: "/properties", highlight: true }
+                ]
+              },
               { label: "Sobre nosotros", href: "/about" },
               { label: "Contacto", id: "contacto" }
-            ].map((link) => (
-              link.href ? (
-                <Link
-                  key={link.label}
-                  to={link.href}
-                  className={`${isDarkText ? 'text-black/80 hover:text-black' : 'text-white/90 hover:text-white'} font-bold text-base lg:text-lg active:scale-95 transition-all duration-300 relative group py-2 drop-shadow-md`}
-                >
-                  {link.label}
-                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 ${isDarkText ? 'bg-black' : 'bg-white'} transition-all duration-300 group-hover:w-full shadow-[0_0_8px_rgba(255,255,255,0.8)]`}></span>
-                </Link>
-              ) : (
-                <a
-                  key={link.label}
-                  href={`/#${link.id}`}
-                  className={`${isDarkText ? 'text-black/80 hover:text-black' : 'text-white/90 hover:text-white'} font-bold text-base lg:text-lg active:scale-95 transition-all duration-300 relative group py-2 drop-shadow-md`}
-                >
-                  {link.label}
-                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 ${isDarkText ? 'bg-black' : 'bg-white'} transition-all duration-300 group-hover:w-full shadow-[0_0_8px_rgba(255,255,255,0.8)]`}></span>
-                </a>
-              )
+            ].map((link: any) => (
+              <div 
+                key={link.label} 
+                className="relative group h-full flex items-center"
+                onMouseEnter={() => link.dropdown && setOpenDropdown(link.label)}
+                onMouseLeave={() => setOpenDropdown(null)}
+              >
+                {link.href ? (
+                  <Link
+                    to={link.href}
+                    className={`${isDarkText ? 'text-black/80 hover:text-black' : 'text-white/90 hover:text-white'} flex items-center gap-1 font-bold text-base active:scale-95 transition-all duration-300 relative py-2 drop-shadow-md`}
+                  >
+                    {link.label}
+                    {link.dropdown && <ChevronDown size={14} className={`mt-0.5 transition-transform duration-300 ${openDropdown === link.label ? 'rotate-180' : ''}`} />}
+                    <span className={`absolute bottom-0 left-0 w-0 h-0.5 ${isDarkText ? 'bg-black' : 'bg-white'} transition-all duration-300 group-hover:w-full opacity-0 group-hover:opacity-100`}></span>
+                  </Link>
+                ) : (
+                  <a
+                    href={`/#${link.id}`}
+                    className={`${isDarkText ? 'text-black/80 hover:text-black' : 'text-white/90 hover:text-white'} flex items-center gap-1 font-bold text-base active:scale-95 transition-all duration-300 relative py-2 drop-shadow-md`}
+                  >
+                    {link.label}
+                    {link.dropdown && <ChevronDown size={14} className={`mt-0.5 transition-transform duration-300 ${openDropdown === link.label ? 'rotate-180' : ''}`} />}
+                    <span className={`absolute bottom-0 left-0 w-0 h-0.5 ${isDarkText ? 'bg-black' : 'bg-white'} transition-all duration-300 group-hover:w-full opacity-0 group-hover:opacity-100`}></span>
+                  </a>
+                )}
+
+                {link.dropdown && openDropdown === link.label && (
+                  <div className="absolute top-[100%] left-0 pt-2 min-w-[220px] z-[1100] animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="bg-[#1c1c1c] text-white rounded-[1.5rem] shadow-2xl border border-white/5 py-4 px-2 ring-1 ring-black/5">
+                      {link.dropdown.map((subItem: any) => (
+                        <Link
+                          key={subItem.label}
+                          to={subItem.href}
+                          onClick={() => setOpenDropdown(null)}
+                          className={`block w-full text-left px-5 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 ${subItem.highlight ? 'text-orange-400 mt-2 pt-4 border-t border-white/5' : 'text-white/80 hover:text-white'}`}
+                        >
+                          {subItem.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
 
@@ -279,34 +319,76 @@ const Header = () => {
             <div className="w-8 h-8 bg-black rounded flex items-center justify-center text-white font-bold">U</div>
             <span className="text-black font-bold text-xl tracking-tighter">Umbral Suites</span>
           </div>
-          <nav className="flex flex-col gap-2">
+          <nav className="flex flex-col gap-1">
             {[
-              { label: "Propiedades", icon: <Square size={22} />, id: "apartamentos" },
-              { label: "Servicios", icon: <Bell size={22} />, id: "servicios" },
-              { label: "Sobre nosotros", icon: <Info size={22} />, href: "/about" },
-              { label: "Contacto", icon: <Mail size={22} />, id: "contacto" }
-            ].map((link) => (
-              link.href ? (
-                <Link
-                  key={link.label}
-                  to={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-4 text-xl font-black text-black py-5 border-b border-gray-100/50 active:bg-gray-50 rounded-xl px-2 transition-colors"
-                >
-                  <span className="text-gray-400">{link.icon}</span>
-                  {link.label}
-                </Link>
-              ) : (
-                <a
-                  key={link.label}
-                  href={`/#${link.id}`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-4 text-xl font-black text-black py-5 border-b border-gray-100/50 active:bg-gray-50 rounded-xl px-2 transition-colors"
-                >
-                  <span className="text-gray-400">{link.icon}</span>
-                  {link.label}
-                </a>
-              )
+              { label: "Ofertas únicas", icon: <Flame size={20} className="text-orange-500" />, href: "/?offer=true" },
+              { 
+                label: "Propiedades", 
+                icon: <Square size={20} />, 
+                dropdown: [
+                  { label: "Departamentos", href: "/properties?category=departamento" },
+                  { label: "Suites de Lujo", href: "/properties?category=suite" },
+                  { label: "Estudios de Diseño", href: "/properties?category=estudio" },
+                  { label: "Catálogo Completo", href: "/properties" }
+                ]
+              },
+              { label: "Sobre nosotros", icon: <Info size={20} />, href: "/about" },
+              { label: "Contacto", icon: <Mail size={20} />, id: "contacto" }
+            ].map((link: any) => (
+              <div key={link.label} className="border-b border-gray-50 last:border-0">
+                {link.dropdown ? (
+                  <>
+                    <button
+                      onClick={() => setActiveMobileSubmenu(activeMobileSubmenu === link.label ? null : link.label)}
+                      className="w-full flex items-center justify-between gap-4 text-lg font-black text-black py-4 active:bg-gray-50 rounded-xl px-2 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <span className="text-gray-400">{link.icon}</span>
+                        {link.label}
+                      </div>
+                      <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${activeMobileSubmenu === link.label ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {activeMobileSubmenu === link.label && (
+                      <div className="flex flex-col gap-1 pl-12 pb-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                        {link.dropdown.map((subItem: any) => (
+                          <Link
+                            key={subItem.label}
+                            to={subItem.href}
+                            onClick={() => {
+                              setIsMobileMenuOpen(false);
+                              setActiveMobileSubmenu(null);
+                            }}
+                            className="text-sm font-bold text-gray-500 py-3 hover:text-black transition-colors"
+                          >
+                            {subItem.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  link.href ? (
+                    <Link
+                      to={link.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center gap-4 text-lg font-black text-black py-4 active:bg-gray-50 rounded-xl px-2 transition-colors"
+                    >
+                      <span className="text-gray-400">{link.icon}</span>
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <a
+                      href={`/#${link.id}`}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center gap-4 text-lg font-black text-black py-4 active:bg-gray-50 rounded-xl px-2 transition-colors"
+                    >
+                      <span className="text-gray-400">{link.icon}</span>
+                      {link.label}
+                    </a>
+                  )
+                )}
+              </div>
             ))}
           </nav>
 

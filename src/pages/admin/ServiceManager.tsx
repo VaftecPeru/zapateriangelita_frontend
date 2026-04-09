@@ -218,7 +218,7 @@ const ServiceManager = () => {
                 </div>
             </div>
 
-            {/* Modal Principal */}
+           
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
                     <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300">

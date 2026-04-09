@@ -19,7 +19,7 @@ const ContactAdvisorPage = () => {
     const { settings } = useSettings();
 
     const handleWhatsAppContact = (topic: string) => {
-        // Track Lead
+       
         leadService.trackLead('service', 0).catch(console.error);
 
         const phoneNumber = settings.whatsapp_number;
@@ -33,7 +33,7 @@ const ContactAdvisorPage = () => {
 
     return (
         <div className="min-h-screen bg-white">
-            {/* Hero Section */}
+        
             <section className="pt-40 pb-20 px-6 bg-minimal-beige/20 overflow-hidden">
                 <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
                     <div className="flex-1 space-y-8 animate-in fade-in slide-in-from-left-8 duration-700">
@@ -60,7 +60,7 @@ const ContactAdvisorPage = () => {
                     </div>
                     <div className="flex-1 relative animate-in fade-in slide-in-from-right-8 duration-700">
                         <div className="relative z-10 rounded-[3rem] overflow-hidden border-2 border-black shadow-[20px_20px_0px_0px_rgba(0,0,0,0.05)]">
-                            {/* He cambiado la ruta de la imagen local por un placeholder realista para evitar errores de despliegue */}
+                            
                             <img
                                 src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80"
                                 alt="Rentas Illustration"
@@ -73,7 +73,7 @@ const ContactAdvisorPage = () => {
                 </div>
             </section>
 
-            {/* Login Bar Section */}
+           
             <section className="py-10 bg-black text-white overflow-hidden relative">
                 <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-center gap-8 relative z-10">
                     <p className="text-xl font-bold tracking-tight">¿Ya eres usuario de Rentas? Accede a tu panel</p>
@@ -84,7 +84,7 @@ const ContactAdvisorPage = () => {
                 <div className="absolute top-0 right-1/4 w-full h-full bg-minimal-olive/20 skew-x-12 transform origin-right" />
             </section>
 
-            {/* Services Icons Section */}
+       
             <section className="py-32 px-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
@@ -122,7 +122,7 @@ const ContactAdvisorPage = () => {
                 </div>
             </section>
 
-            {/* Testimonials / Video Section Snippet */}
+           
             <section className="py-20 px-6 bg-minimal-olive/5">
                 <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
                     <div className="flex-1 relative group cursor-pointer">
@@ -148,10 +148,9 @@ const ContactAdvisorPage = () => {
                 </div>
             </section>
 
-            {/* Tech / App Section */}
             <section className="py-32 px-6">
                 <div className="max-w-7xl mx-auto space-y-32">
-                    {/* Technology Section */}
+                  
                     <div className="flex flex-col lg:flex-row items-center gap-16">
                         <div className="flex-1 space-y-10">
                             <h2 className="text-4xl lg:text-6xl font-black text-black tracking-tighter leading-none">
@@ -186,7 +185,7 @@ const ContactAdvisorPage = () => {
                         </div>
                     </div>
 
-                    {/* App Section */}
+             
                     <div className="flex flex-col lg:flex-row-reverse items-center gap-16 pt-20">
                         <div className="flex-1 space-y-10">
                             <h2 className="text-4xl lg:text-6xl font-black text-black tracking-tighter leading-none">
@@ -222,7 +221,6 @@ const ContactAdvisorPage = () => {
                 </div>
             </section>
 
-            {/* Comparison Section */}
             <section className="py-32 px-6 bg-black text-white">
                 <div className="max-w-7xl mx-auto space-y-16">
                     <div className="text-center space-y-4">
@@ -276,7 +274,7 @@ const ContactAdvisorPage = () => {
                 </div>
             </section>
 
-            {/* Final CTA Section */}
+           
             <section className="py-24 px-6 bg-minimal-beige/20 text-center">
                 <div className="max-w-3xl mx-auto space-y-10">
                     <h2 className="text-4xl md:text-5xl font-black text-black leading-tight tracking-tighter">

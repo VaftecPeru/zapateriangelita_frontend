@@ -19,7 +19,7 @@ const AboutPage = () => {
                         </div>
                         <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-black max-w-2xl leading-none animate-slide-up">
                             Más que una casa, <br />
-                            <span className="text-minimal-olive">un nuevo comienzo.</span>
+                            <span className="text-[#C19A6B]">un nuevo comienzo.</span>
                         </h1>
                     </div>
                 </div>

@@ -64,7 +64,7 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-6">
           <div className="max-w-2xl">
             <h2 className="text-4xl md:text-5xl font-black text-black tracking-tighter mb-4 leading-[0.9]">
-              Propiedades <span className="text-[#20B2AA]">Destacadas</span>
+              Propiedades <span className="text-[#164E63]">Destacadas</span>
             </h2>
             <p className="text-gray-500 font-medium">
               {filteredProperties.length === 0
@@ -72,34 +72,33 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
                 : `Explora nuestras ${filteredProperties.length} mejores opciones disponibles ahora.`}
             </p>
           </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => scroll('left')}
-              className="p-4 bg-white border border-black rounded-2xl hover:bg-black hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              onClick={() => scroll('right')}
-              className="p-4 bg-white border border-black rounded-2xl hover:bg-black hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
         </div>
 
-        <div
-          ref={scrollRef}
-          className="flex gap-8 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-10 px-2"
-        >
+        <div className="relative group/carousel">
+          <button
+            onClick={() => scroll('left')}
+            className="hidden md:flex absolute -left-5 top-[40%] -translate-y-1/2 z-10 p-3 bg-white border border-gray-100 rounded-full shadow-lg text-gray-800 hover:bg-black hover:text-white transition-all opacity-0 group-hover/carousel:opacity-100"
+          >
+            <ChevronLeft size={24} />
+          </button>
+
+          <button
+            onClick={() => scroll('right')}
+            className="hidden md:flex absolute -right-5 top-[40%] -translate-y-1/2 z-10 p-3 bg-white border border-gray-100 rounded-full shadow-lg text-gray-800 hover:bg-black hover:text-white transition-all opacity-0 group-hover/carousel:opacity-100"
+          >
+            <ChevronRight size={24} />
+          </button>
+
+          <div
+            ref={scrollRef}
+            className="flex gap-8 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-10 px-4 -mx-4 md:px-2 md:mx-0"
+          >
           {filteredProperties.map((p) => (
             <div
               key={p.id}
               onClick={() => onOpenDetails(p)}
               className="min-w-[80vw] md:min-w-0 md:w-[340px] flex flex-col group bg-white rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer snap-center"
             >
-              {/* Image */}
               <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
                 <img
                   src={p.img || 'https://images.unsplash.com/photo-1560448204-603b3fc33ddc?q=80&w=800'}
@@ -110,21 +109,18 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
                   }}
                 />
 
-                {/* Type badge top-left */}
                 <div className="absolute top-3 left-3">
                   <span className="bg-white/90 backdrop-blur-sm text-gray-700 text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
                     {p.type}
                   </span>
                 </div>
 
-                {/* Status pill top-right */}
                 <div className="absolute top-3 right-3">
                   <span className={`text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest text-white shadow-sm ${p.status === 'Disponible' ? 'bg-minimal-olive' : 'bg-gray-400'}`}>
                     {p.status}
                   </span>
                 </div>
 
-                {/* Heart */}
                 <button
                   onClick={(e) => handleToggleFavorite(e, p)}
                   className="absolute bottom-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm transition-all hover:scale-110 active:scale-90 cursor-pointer"
@@ -136,9 +132,7 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
                 </button>
               </div>
 
-              {/* Info */}
               <div className="pt-4 pb-2 pl-6 pr-4 flex flex-col flex-grow">
-                {/* Title & Rating */}
                 <div className="flex justify-between items-start gap-2 mb-1">
                   <h3 className="text-base font-bold text-gray-900 leading-tight line-clamp-2 flex-1">
                     {p.title}
@@ -155,13 +149,11 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
                   </div>
                 </div>
 
-                {/* Location */}
                 <div className="flex items-center gap-1.5 text-gray-400 text-xs font-semibold mb-3">
                   <MapPin className="text-minimal-gold w-3 h-3 shrink-0" />
                   <span className="truncate">{p.location}</span>
                 </div>
 
-                {/* Amenities row */}
                 <div className="flex items-center gap-4 text-gray-500 text-xs font-semibold mb-4 border-t border-gray-100 pt-3">
                   <span className="flex items-center gap-1"><Bed size={14} className="text-gray-400" /> {p.beds} hab.</span>
                   <span className="flex items-center gap-1"><Bath size={14} className="text-gray-400" /> {p.baths} baños</span>
@@ -191,6 +183,7 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
               </div>
             </div>
           ))}
+        </div>
         </div>
 
         <div className="mt-20 flex justify-center">

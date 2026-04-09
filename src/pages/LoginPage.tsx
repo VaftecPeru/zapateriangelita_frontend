@@ -112,9 +112,15 @@ const LoginPage = () => {
                     >
                         {loading ? 'Entrando...' : 'Iniciar sesión'}
                     </button>
+
+                    <div className="text-center pt-2">
+                         <Link to="/forgot-password" className="text-gray-400 font-bold text-sm hover:text-black transition-colors">
+                               ¿Olvidaste tu contraseña?
+                         </Link>
+                    </div>
                 </form>
 
-                <div className="mt-10 text-center">
+                <div className="mt-8 text-center">
                     <p className="text-gray-400 font-medium text-sm">
                         ¿No tienes una cuenta?{' '}
                         <Link to="/register" className="text-black font-black hover:underline underline-offset-4">

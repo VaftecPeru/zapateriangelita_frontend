@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Hero from '../components/Hero';
 import FeaturedProperties from '../components/FeaturedProperties';
-import WhyChooseUs from '../components/WhyChooseUs';
-import ServicesSection from '../components/ServicesSection';
+import ValuesBar from '../components/ValuesBar';
+import HowItWorksSection from '../components/HowItWorksSection';
+import ConfidenceSection from '../components/ConfidenceSection';
+import ExperienceSection from '../components/ExperienceSection';
+import StatsSection from '../components/StatsSection';
 import CTASection from '../components/CTASection';
 import PropertyDetails from '../components/PropertyDetails';
 import { useAuth } from '../hooks/useAuth';
@@ -39,18 +42,26 @@ const HomePage = () => {
                 onSearch={(criteria: any) => setSearchCriteria(criteria)} 
                 properties={properties}
             />
+            <ValuesBar />
             <FeaturedProperties
                 searchCriteria={searchCriteria}
                 onOpenDetails={(p: any) => setSelectedProperty(p)}
             />
-            <WhyChooseUs />
-            <ServicesSection />
+            <HowItWorksSection />
+            <ConfidenceSection />
+            <ExperienceSection 
+                properties={properties} 
+                onOpenProperty={setSelectedProperty} 
+            />
+            <StatsSection />
             <CTASection />
 
             {selectedProperty && (
                 <PropertyDetails
                     property={selectedProperty}
+                    allProperties={properties}
                     onClose={() => setSelectedProperty(null)}
+                    onSelectProperty={(p) => setSelectedProperty(p)}
                 />
             )}
         </main>

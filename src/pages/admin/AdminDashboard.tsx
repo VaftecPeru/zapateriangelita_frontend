@@ -14,6 +14,7 @@ import PropertyManager from './PropertyManager';
 import ServiceManager from './ServiceManager';
 import SettingsManager from './SettingsManager';
 import MessagesManager from './MessagesManager';
+import FunnelLeadsManager from './FunnelLeadsManager';
 import { useAuth } from '../../hooks/useAuth';
 import { statsService, DashboardStats } from '../../services/crudService';
 import * as XLSX from 'xlsx';
@@ -81,7 +82,6 @@ const ConcentricChart = ({ stats }: { stats: DashboardStats | null }) => {
             </div>
             <div className="flex-1 flex items-center justify-center relative w-full h-[220px]">
                 <div className="relative flex items-center justify-center w-56 h-56 sm:w-64 sm:h-64 -ml-16 sm:-ml-24">
-                    {/* Circles */}
                     {layers.map((layer, i) => (
                         <div
                             key={`circle-${i}`}
@@ -97,7 +97,6 @@ const ConcentricChart = ({ stats }: { stats: DashboardStats | null }) => {
                         </div>
                     ))}
                     
-                    {/* Labels floating on the right edge */}
                     {layers.slice(0, 3).map((layer, i) => (
                         <div 
                             key={`lbl-${i}`} 
@@ -173,7 +172,7 @@ const AdminDashboard = () => {
     const location = useLocation();
     const state = location.state as { activeTab?: string; selectedLeadId?: number };
     
-    const [activeTab, setActiveTab] = useState<'stats' | 'properties' | 'services' | 'settings' | 'messages'>(
+    const [activeTab, setActiveTab] = useState<'stats' | 'properties' | 'services' | 'settings' | 'messages' | 'funnelLeads'>(
         (state?.activeTab as any) || 'stats'
     );
     const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -202,9 +201,8 @@ const AdminDashboard = () => {
         if (!stats) return;
         
         setIsGeneratingReport(true);
-        setTimeout(() => { // UI feedback delay
+        setTimeout(() => { 
             try {
-                // 1. Resumen General
                 const wsResumen = XLSX.utils.json_to_sheet([
                     { Metrica: 'Total Propiedades', Valor: stats.charts?.benefitsDistribution?.total || 0 },
                     { Metrica: 'Propiedades Libres (Costos)', Valor: stats.charts?.benefitsDistribution?.costs || 0 },
@@ -213,7 +211,6 @@ const AdminDashboard = () => {
                     { Metrica: 'Visitas a Propiedades', Valor: stats.revenue?.expenses || 0 }
                 ]);
                 
-                // 2. Interacciones Mensuales (Últimos 7 meses)
                 const wsMeses = XLSX.utils.json_to_sheet(
                     ((stats.charts as any).monthlyLabels || []).map((label: string, i: number) => ({
                         Mes: label,
@@ -221,7 +218,6 @@ const AdminDashboard = () => {
                     }))
                 );
 
-                // 3. Actividad Reciente
                 const wsActividad = XLSX.utils.json_to_sheet(
                     (stats.recentActivity || []).map((item: any) => ({
                         Actividad: item.text,
@@ -308,7 +304,8 @@ const AdminDashboard = () => {
                         { id: 'properties', label: 'Propiedades' },
                         { id: 'services', label: 'Servicios' },
                         { id: 'settings', label: 'Ajustes' },
-                        { id: 'messages', label: 'Mensajes' }
+                        { id: 'funnelLeads', label: 'Interesados Reserva' },
+                        { id: 'messages', label: 'Chat' }
                     ].map((tab) => (
                         <button
                             key={tab.id}
@@ -455,6 +452,7 @@ const AdminDashboard = () => {
                         {activeTab === 'properties' && <PropertyManager />}
                         {activeTab === 'services' && <ServiceManager />}
                         {activeTab === 'settings' && <SettingsManager />}
+                        {activeTab === 'funnelLeads' && <FunnelLeadsManager />}
                         {activeTab === 'messages' && <MessagesManager />}
                     </div>
 

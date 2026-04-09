@@ -16,6 +16,7 @@ export interface Property {
     img: string;
     images?: string[];
     amenities?: string;
+    description?: string;
 }
 
 export const propertyService = {
@@ -80,10 +81,15 @@ export const settingsService = {
     update: (key: string, value: string) => apiClient.post(`/settings/${key}?_method=PUT`, { value }),
 };
 
+export const userService = {
+    updateProfile: (data: any) => apiClient.post('/user/update', data),
+};
+
 export interface Lead {
     id?: number;
     type: string;
     item_id: number;
+    email?: string;
     first_name?: string;
     last_name?: string;
     phone?: string;
@@ -91,6 +97,7 @@ export interface Lead {
     check_out?: string;
     guests?: number;
     property_title?: string;
+    additional_services?: any[];
     created_at?: string;
     is_read?: boolean;
 }
@@ -99,13 +106,16 @@ export const leadService = {
     trackLead: (type: 'property' | 'service', itemId: number, contactData?: {
         first_name?: string;
         last_name?: string;
+        email?: string;
         phone?: string;
         check_in?: string;
         check_out?: string;
         guests?: number;
         property_title?: string;
+        additional_services?: any[];
     }) => apiClient.post('/leads', { type, item_id: itemId, ...contactData }),
     getAll: () => apiClient.get<Lead[]>('/leads'),
+    getMyBookings: () => apiClient.get<Lead[]>('/my-bookings'),
     update: (id: number, data: Partial<Lead>) => apiClient.put<Lead>(`/leads/${id}`, data),
     delete: (id: number) => apiClient.delete(`/leads/${id}`),
 };

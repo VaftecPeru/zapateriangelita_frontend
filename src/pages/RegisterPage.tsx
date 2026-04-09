@@ -136,7 +136,7 @@ const RegisterPage = () => {
 
                 <form onSubmit={handleSubmit} className="space-y-8">
 
-                    {/* ── 1. PERSONAL ── */}
+                  
                     <div className="space-y-5">
                         <h2 className="text-xs font-black text-black uppercase tracking-[0.3em] flex items-center gap-2">
                             <div className="w-1.5 h-1.5 bg-black rounded-full" /> Personal
@@ -178,13 +178,13 @@ const RegisterPage = () => {
                         </div>
                     </div>
 
-                    {/* ── 2. UBICACIÓN ── */}
+                
                     <div className="space-y-5">
                         <h2 className="text-xs font-black text-black uppercase tracking-[0.3em] flex items-center gap-2">
                             <div className="w-1.5 h-1.5 bg-black rounded-full" /> Ubicación
                         </h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {/* País */}
+                         
                             <div className="space-y-2">
                                 <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest pl-1">País</label>
                                 <div className="relative">
@@ -196,7 +196,7 @@ const RegisterPage = () => {
                                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
                                 </div>
                             </div>
-                            {/* Departamento */}
+                          
                             <div className="space-y-2">
                                 <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest pl-1">Departamento</label>
                                 <select name="department" required value={formData.department} disabled={ubigeoLoading}
@@ -206,7 +206,7 @@ const RegisterPage = () => {
                                     {departments.map(dept => <option key={dept} value={dept}>{dept}</option>)}
                                 </select>
                             </div>
-                            {/* Provincia */}
+                          
                             <div className="space-y-2">
                                 <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest pl-1">Provincia</label>
                                 <select name="province" required value={formData.province} disabled={!formData.department || ubigeoLoading}
@@ -216,7 +216,7 @@ const RegisterPage = () => {
                                     {provinces.map(prov => <option key={prov} value={prov}>{prov}</option>)}
                                 </select>
                             </div>
-                            {/* Distrito */}
+                         
                             <div className="space-y-2">
                                 <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest pl-1">Distrito</label>
                                 <select name="district" required value={formData.district} disabled={!formData.province || ubigeoLoading}
@@ -229,7 +229,7 @@ const RegisterPage = () => {
                         </div>
                     </div>
 
-                    {/* ── 3. SEGURIDAD ── */}
+                  
                     <div className="space-y-5">
                         <h2 className="text-xs font-black text-black uppercase tracking-[0.3em] flex items-center gap-2">
                             <div className="w-1.5 h-1.5 bg-black rounded-full" /> Seguridad

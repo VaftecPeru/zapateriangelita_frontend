@@ -205,6 +205,43 @@
   .animate-paper-unfold {
     animation: paper-unfold 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
   }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-marquee {
+    display: flex;
+    white-space: nowrap;
+    width: max-content;
+    animation: marquee 30s linear infinite;
+  }
+
+  .animate-marquee:hover {
+    animation-play-state: paused;
+  }
+
+  @keyframes expand-center {
+    0% {
+      clip-path: inset(0 50% 0 50%);
+      opacity: 0;
+      transform: translateY(10px) scale(0.98);
+    }
+    100% {
+      clip-path: inset(0 0% 0 0%);
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .animate-expand-center {
+    animation: expand-center 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 }
 
 html {
@@ -220,4 +257,22 @@ body {
 
 ::selection {
   background-color: rgba(155, 183, 212, 0.3);
+}
+
+.customize-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.customize-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.customize-scrollbar::-webkit-scrollbar-thumb {
+  background: #E3E2E0;
+  border-radius: 10px;
+}
+
+.customize-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #E3E2E0 transparent;
 }

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Search, MapPin, Home, ChevronDown } from 'lucide-react';
-import fotoportada from '../assets/fotoportada.png';
+import { useNavigate } from 'react-router-dom';
+import fotoportada from '../assets/portada.jpg';
 
-const Hero = ({ onSearch, properties = [] }: { onSearch: (criteria: any) => void, properties?: any[] }) => {
+const Hero = ({ onSearch, properties = [] }: { onSearch?: (criteria: any) => void, properties?: any[] }) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     location: '',
     propertyType: '',
@@ -16,8 +18,8 @@ const Hero = ({ onSearch, properties = [] }: { onSearch: (criteria: any) => void
   const FULL_TITLE = '¡Bienvenidos a Umbral Suites!';
   const [typedTitle, setTypedTitle] = useState('');
   const [typingDone, setTypingDone] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
-  // Get today's date in YYYY-MM-DD format to disable past dates
   const getTodayDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
@@ -34,7 +36,15 @@ const Hero = ({ onSearch, properties = [] }: { onSearch: (criteria: any) => void
         clearInterval(interval);
       }
     }, 55);
-    return () => clearInterval(interval);
+
+    const timer = setTimeout(() => {
+      setShowSearch(true);
+    }, 800);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timer);
+    };
   }, []);
 
   const handleSearch = () => {
@@ -60,12 +70,15 @@ const Hero = ({ onSearch, properties = [] }: { onSearch: (criteria: any) => void
     }
 
     setErrors({ location: false, propertyType: false });
-    onSearch(formData);
 
-    const resultsSection = document.getElementById('apartamentos');
-    if (resultsSection) {
-      resultsSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    // Redirect to properties page with search params
+    const params = new URLSearchParams();
+    if (formData.location) params.set('search', formData.location);
+    if (formData.propertyType && formData.propertyType !== 'Todos') params.set('type', formData.propertyType);
+
+    navigate(`/properties?${params.toString()}`);
+
+    if (onSearch) onSearch(formData);
   };
 
   return (
@@ -83,8 +96,12 @@ const Hero = ({ onSearch, properties = [] }: { onSearch: (criteria: any) => void
       <div className="relative z-10 w-full max-w-[90rem] mx-auto flex flex-col justify-center h-full px-6 md:px-12 pt-32 pb-12">
 
 
-        <div className="w-full max-w-5xl mx-auto mb-6 md:mb-10 mt-16">
-          <div className="w-full bg-black/40 backdrop-blur-md rounded-[2.5rem] md:rounded-full shadow-2xl border border-white/20 p-1">
+        <div 
+          className={`w-full max-w-5xl mx-auto mb-6 md:mb-10 mt-16 ${
+            showSearch ? 'animate-expand-center' : 'opacity-0'
+          }`}
+        >
+          <div className="w-full bg-black/60 backdrop-blur-xl rounded-[2.5rem] md:rounded-full shadow-2xl border border-white/10 p-1 md:p-2">
             <div className="flex flex-col md:flex-row items-center">
 
 
@@ -134,26 +151,25 @@ const Hero = ({ onSearch, properties = [] }: { onSearch: (criteria: any) => void
               </div>
 
 
-              <div className="w-full md:w-auto flex-1 p-2 md:p-3 flex flex-col justify-center group cursor-pointer hover:bg-white/5 transition-colors rounded-b-[2.5rem] md:rounded-b-none md:rounded-r-full">
-                <div className="flex items-center gap-2 pr-4 md:pr-6">
-                  <div className="w-4 h-4 flex-shrink-0 ml-2 md:ml-4" />
-                  <div className="flex flex-col flex-1 overflow-hidden">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 truncate pl-1">Fecha de entrada</span>
+              <div className="w-full md:w-auto flex-[1.2] p-2 md:p-4 flex flex-col justify-center group cursor-pointer hover:bg-white/5 transition-colors rounded-b-[2.5rem] md:rounded-b-none md:rounded-r-full">
+                <div className="flex items-center gap-3 pr-2 md:pr-4">
+                  <div className="flex flex-col flex-1 overflow-hidden ml-2 md:ml-4">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 truncate pl-1 mb-0.5">Fecha de entrada</span>
                     <input
                       type="date"
                       value={formData.date}
                       onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                       min={getTodayDate()}
-                      className="bg-transparent border-none outline-none text-sm font-bold text-white w-full cursor-pointer placeholder:text-gray-300"
+                      className="bg-transparent border-none outline-none text-sm font-bold text-white w-full cursor-pointer placeholder:text-gray-400 mt-[-2px]"
                       style={{ colorScheme: 'dark' }}
                     />
                   </div>
 
                   <button
                     onClick={handleSearch}
-                    className="bg-minimal-olive text-white w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center hover:bg-minimal-olive/90 hover:scale-105 transition-all active:scale-95 shadow-lg flex-shrink-0 ml-4 border border-minimal-olive"
+                    className="bg-minimal-olive text-white w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center hover:bg-minimal-olive/90 hover:scale-110 transition-all active:scale-95 shadow-xl flex-shrink-0 ml-4 border border-minimal-olive group/btn"
                   >
-                    <Search size={24} />
+                    <Search size={22} className="group-hover/btn:scale-110 transition-transform" />
                   </button>
                 </div>
               </div>

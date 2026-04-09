@@ -14,10 +14,10 @@ const MessagesManager = () => {
         try {
             const res = await leadService.getAll();
             const data = (res.data as any)?.data ?? res.data;
-            const validLeads = Array.isArray(data) ? data.filter(l => l.first_name || l.phone) : [];
+            const validLeads = Array.isArray(data) ? data.filter(l => (l.first_name || l.phone) && l.type === 'property') : [];
             setLeads(validLeads);
         } catch (e) {
-            setError('No se pudo cargar los mensajes. Verifica tu sesión.');
+            setError('No se pudo cargar el chat. Verifica tu sesión.');
         } finally {
             setLoading(false);
         }
@@ -32,7 +32,7 @@ const MessagesManager = () => {
             setConfirmDelete(null);
             if (selectedLead?.id === id) setSelectedLead(null);
         } catch (err) {
-            alert('Error al eliminar el mensaje.');
+            alert('Error al eliminar el chat.');
         }
     };
 
@@ -54,10 +54,10 @@ const MessagesManager = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 backdrop-blur-sm p-6 rounded-[2rem] border border-minimal-olive/10 shadow-sm">
                 <div>
                     <h2 className="text-2xl font-black text-black tracking-tight flex items-center gap-3">
-                        <MessageSquare size={26} className="text-minimal-gold" /> Mensajes
+                        <MessageSquare size={26} className="text-minimal-gold" /> Chat
                     </h2>
                     <p className="text-xs text-gray-400 font-medium mt-1">
-                        Solicitudes de interés enviadas por los usuarios ({leads.length} en total)
+                        Solicitudes de alquiler específicas ({leads.length} en total)
                     </p>
                 </div>
                 <button
@@ -172,12 +172,12 @@ const MessagesManager = () => {
                 </div>
             )}
 
-        {/* Modal de Detalle de Mensaje */}
+        
         {selectedLead && (
             <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedLead(null)} />
                 <div className="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 border border-minimal-olive/10">
-                    {/* Header Modal */}
+                  
                     <div className="bg-minimal-olive/5 px-8 py-8 flex justify-between items-center border-b border-minimal-olive/5">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center shadow-lg">
@@ -202,7 +202,7 @@ const MessagesManager = () => {
                         </div>
                     </div>
 
-                    {/* Content Modal */}
+                   
                     <div className="p-8 space-y-6">
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-1">
@@ -274,7 +274,7 @@ const MessagesManager = () => {
             </div>
         )}
 
-        {/* Confirm Delete Modal */}
+     
         {confirmDelete && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[4000] flex items-center justify-center p-4">
                 <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl border border-minimal-olive/10 animate-in fade-in zoom-in duration-200">

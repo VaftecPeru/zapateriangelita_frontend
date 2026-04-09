@@ -49,16 +49,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setLoading(false);
     }, []);
 
-    const login = (userData: User) => {
+    const login = (userData: User, token: string) => {
         localStorage.setItem('user', JSON.stringify(userData));
-        // ✅ Token ahora en http-only cookie (no necesita storage)
+        localStorage.setItem('token', token);
         setUser(userData);
     };
 
     const logout = () => {
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
         localStorage.removeItem('favorites');
-        // ✅ Token se elimina automáticamente (cookie http-only)
         setUser(null);
         setFavorites([]);
     };

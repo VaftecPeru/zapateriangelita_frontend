@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ShieldCheck, ArrowRight, Star, Clock, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import houseAsset from '../assets/freepik_departmanto.png';
+import houseAsset from '../assets/freepik_departmanto.jpg';
 
 const HowItWorksPage = () => {
     const [currentSlide, setCurrentSlide] = useState(0);

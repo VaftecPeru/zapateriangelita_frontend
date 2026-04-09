@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const FAQPage = () => {
     const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -39,7 +39,7 @@ const FAQPage = () => {
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-minimal-serene/20 text-black rounded-full text-[10px] font-black uppercase tracking-widest border border-black/10">
                         Centro de Ayuda
                     </div>
-                    <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-minimal-gold">
+                    <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-[#9BB7D4]">
                         Preguntas Frecuentes
                     </h1>
                     <p className="text-lg text-black font-medium leading-relaxed">
@@ -72,25 +72,6 @@ const FAQPage = () => {
                             )}
                         </div>
                     ))}
-                </div>
-
-
-                <div className="mt-16 p-8 py-10 bg-minimal-olive rounded-[2.5rem] text-white text-center relative overflow-hidden max-w-4xl mx-auto shadow-2xl">
-                    <div className="relative z-10 space-y-6">
-                        <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-2 backdrop-blur-md">
-                            <MessageCircle size={24} className="text-white" />
-                        </div>
-                        <h2 className="text-2xl font-bold tracking-tight">¿No encontraste lo que buscabas?</h2>
-                        <p className="text-white/80 max-w-lg mx-auto font-medium text-sm leading-relaxed">
-                            Nuestro equipo de asesores expertos está disponible para brindarte atención formal y personalizada en cada paso del camino.
-                        </p>
-                        <button className="bg-white text-minimal-gold px-8 py-3.5 rounded-xl font-black text-base hover:bg-minimal-beige transition-all active:scale-[0.98] shadow-lg shadow-white/5">
-                            Hablar con un Asesor
-                        </button>
-                    </div>
-
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-minimal-serene/10 rounded-full blur-[80px] -mr-32 -mt-32" />
-                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-minimal-olive/10 rounded-full blur-[60px] -ml-24 -mb-24" />
                 </div>
             </div>
         </div>
