@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
-import apiClient from '../services/apiClient';
+import { authService } from '../services/authService';
 
 
 const LoginPage = () => {
@@ -22,7 +22,7 @@ const LoginPage = () => {
         setLoading(true);
 
         try {
-            const response = await apiClient.post('/login', formData);
+            const response = await authService.login(formData);
             const data = response.data;
 
             authLogin(data.user, data.token);

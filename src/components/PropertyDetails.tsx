@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Bed, Bath, Square, MapPin, Star, CheckCircle2, Users, User, Phone, Wifi, Car, Tv, Droplets, Dumbbell, Coffee, Wind, Utensils, Shield, Sun, PawPrint, Home, Laptop, ArrowUpCircle, ClipboardList, FileText, ChevronRight, Mail } from 'lucide-react';
+import { X, Bed, Bath, Square, MapPin, Star, CheckCircle2, Users, User, Phone, Wifi, Car, Tv, Droplets, Dumbbell, Coffee, Wind, Utensils, Shield, Sun, PawPrint, Home, Laptop, ArrowUpCircle, ClipboardList, FileText, ChevronRight, Mail, Info } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
+import { useAuth } from '../hooks/useAuth';
 import { propertyService, leadService, additionalServiceService, AdditionalService } from '../services/crudService';
+import AuthModal from './AuthModal';
 
 interface PropertyDetailsProps {
     property: any;
@@ -54,6 +56,9 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, allProperti
     const [touchStart, setTouchStart] = useState(0);
     const [availableServices, setAvailableServices] = useState<AdditionalService[]>([]);
     const [selectedServiceIds, setSelectedServiceIds] = useState<number[]>([]);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [showNotification, setShowNotification] = useState<{ message: string, type: 'info' | 'success' | 'error' } | null>(null);
+    const { user, isAuthenticated } = useAuth();
 
     const rawImages: string[] = [];
     if (property.img) rawImages.push(property.img);
@@ -73,7 +78,15 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, allProperti
         additionalServiceService.getAll()
             .then(res => setAvailableServices(res.data))
             .catch(err => console.error('Error fetching services:', err));
-    }, [property?.id]);
+        
+        // Auto-populate user data if authenticated
+        if (isAuthenticated && user) {
+            const nameParts = user.name.split(' ');
+            setFirstName(nameParts[0] || '');
+            setLastName(nameParts.slice(1).join(' ') || '');
+            setEmail(user.email || '');
+        }
+    }, [property?.id, isAuthenticated, user]);
 
     const toggleService = (id: number) => {
         setSelectedServiceIds(prev =>
@@ -128,6 +141,17 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, allProperti
         }
 
         setErrors({});
+
+        if (!isAuthenticated) {
+            setShowNotification({ 
+                message: "No tienes una cuenta activa. Por favor, regístrate para continuar con tu reserva.", 
+                type: 'info' 
+            });
+            setIsAuthModalOpen(true);
+            // Auto-hide notification after 4 seconds
+            setTimeout(() => setShowNotification(null), 4000);
+            return;
+        }
 
         if (settingsLoading) return;
 
@@ -759,6 +783,32 @@ Quedo atento a su confirmación de disponibilidad y a los pasos para garantizar 
                             ))}
                         </div>
                     )}
+                </div>
+            )}
+
+            <AuthModal 
+                isOpen={isAuthModalOpen} 
+                onClose={() => setIsAuthModalOpen(false)}
+                initialMode="register"
+                onSuccess={() => {
+                    // After successful login/register, the useEffect will trigger 
+                    // and populate the fields. The user can then click reserve again.
+                    setIsAuthModalOpen(false);
+                }}
+            />
+
+            {/* Premium Toast Notification */}
+            {showNotification && (
+                <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[6000] animate-in fade-in slide-in-from-top-10 duration-500">
+                    <div className="bg-black/90 backdrop-blur-xl border border-white/20 text-white px-8 py-5 rounded-2xl shadow-2xl flex items-center gap-4 min-w-[320px] max-w-md">
+                        <div className="w-8 h-8 bg-minimal-olive rounded-xl flex items-center justify-center shrink-0">
+                            <Info size={18} className="text-white" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-black uppercase tracking-widest text-minimal-olive mb-1">Aviso</p>
+                            <p className="text-sm font-bold leading-tight">{showNotification.message}</p>
+                        </div>
+                    </div>
                 </div>
             )}
         </>

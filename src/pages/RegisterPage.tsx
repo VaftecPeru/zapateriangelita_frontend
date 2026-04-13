@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Mail, Lock, User, ArrowLeft, ChevronDown, Globe } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
-import { API_URL } from '../config/api';
+import { authService } from '../services/authService';
 
 type UbigeoData = Record<string, Record<string, string[]>>;
 
@@ -83,29 +83,16 @@ const RegisterPage = () => {
         setLoading(true);
 
         try {
-            const response = await fetch(`${API_URL}/register`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                if (data.errors) {
-                    const firstError = Object.values(data.errors)[0] as string[];
-                    throw new Error(firstError[0]);
-                }
-                throw new Error(data.message || 'Error al procesar la solicitud');
-            }
+            const response = await authService.register(formData);
+            const data = response.data;
 
             authLogin(data.user, data.token);
             navigate('/');
         } catch (err: any) {
-            setError(err.message);
+            const errorMsg = err.response?.data?.errors 
+                ? (Object.values(err.response.data.errors)[0] as any)[0] 
+                : err.response?.data?.message || err.message || 'Error al procesar la solicitud';
+            setError(errorMsg);
         } finally {
             setLoading(false);
         }

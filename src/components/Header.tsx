@@ -49,7 +49,7 @@ const Header = () => {
 
   if (isAuthPage) return null;
 
-  const isDarkText = !isHome;
+  const isDarkText = !isHome && location.pathname !== '/propietarios';
 
   return (
     <>
@@ -81,6 +81,7 @@ const Header = () => {
                   { label: "Catálogo Completo", href: "/properties", highlight: true }
                 ]
               },
+              { label: "Propietarios de inmuebles", href: "/propietarios" },
               { label: "Sobre nosotros", href: "/about" },
               { label: "Contacto", id: "contacto" }
             ].map((link: any) => (
@@ -332,6 +333,7 @@ const Header = () => {
                   { label: "Catálogo Completo", href: "/properties" }
                 ]
               },
+              { label: "Propietarios de inmuebles", icon: <Square size={20} />, href: "/propietarios" },
               { label: "Sobre nosotros", icon: <Info size={20} />, href: "/about" },
               { label: "Contacto", icon: <Mail size={20} />, id: "contacto" }
             ].map((link: any) => (
