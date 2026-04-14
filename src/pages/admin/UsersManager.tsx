@@ -1,0 +1,176 @@
+import { useState, useEffect } from 'react';
+import { Users, Search, RefreshCw, Mail, MapPin, Calendar, User as UserIcon } from 'lucide-react';
+import { userService, User } from '../../services/crudService';
+
+const UsersManager = () => {
+    const [users, setUsers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const fetchUsers = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await userService.getAll();
+            // Assuming response structure like crudService.ts which returns apiClient.get<User[]>
+            const data = (res as any).data ?? res;
+            setUsers(Array.isArray(data) ? data : []);
+        } catch (e) {
+            setError('No se pudo cargar la lista de usuarios. Verifica tus permisos de administrador.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const filteredUsers = users.filter(user => 
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.district.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const formatDate = (dateStr: string) => {
+        return new Date(dateStr).toLocaleDateString('es-PE', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        });
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Header section */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 backdrop-blur-sm p-6 rounded-[2rem] border border-minimal-olive/10 shadow-sm">
+                <div>
+                    <h2 className="text-2xl font-black text-black tracking-tight flex items-center gap-3">
+                        <Users size={26} className="text-minimal-gold" /> Usuarios Registrados
+                    </h2>
+                    <p className="text-xs text-gray-400 font-medium mt-1">
+                        Listado completo de personas que han creado una cuenta en Homad ({users.length} usuarios)
+                    </p>
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <button
+                        onClick={fetchUsers}
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-black text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-minimal-olive transition-all shadow-lg flex-1 sm:flex-none"
+                    >
+                        <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+                        Actualizar
+                    </button>
+                </div>
+            </div>
+
+            {/* Search and Filters */}
+            <div className="bg-white/40 backdrop-blur-sm p-4 rounded-3xl border border-minimal-olive/10 shadow-sm">
+                <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input
+                        type="text"
+                        placeholder="Buscar por nombre, correo o distrito..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full bg-white border border-gray-100 rounded-2xl py-3 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-minimal-olive/20 outline-none transition-all shadow-sm"
+                    />
+                </div>
+            </div>
+
+            {loading && (
+                <div className="flex items-center justify-center py-20 bg-white/40 backdrop-blur-sm rounded-[2rem] border border-minimal-olive/10">
+                    <div className="w-10 h-10 border-4 border-minimal-gold border-t-transparent rounded-full animate-spin" />
+                </div>
+            )}
+
+            {error && !loading && (
+                <div className="bg-red-50 border border-red-100 rounded-[2rem] p-6 text-red-600 font-bold text-sm shadow-sm">
+                    {error}
+                </div>
+            )}
+
+            {!loading && !error && filteredUsers.length === 0 && (
+                <div className="bg-white/40 backdrop-blur-sm border border-minimal-olive/10 rounded-[2rem] p-12 text-center shadow-sm">
+                    <Users size={48} className="text-gray-200 mx-auto mb-4" />
+                    <p className="text-gray-400 font-bold text-lg">No se encontraron usuarios.</p>
+                    <p className="text-gray-300 font-medium text-sm mt-1">
+                        {searchTerm ? 'Intenta con otros términos de búsqueda.' : 'Aún no hay usuarios registrados en el sistema.'}
+                    </p>
+                </div>
+            )}
+
+            {!loading && filteredUsers.length > 0 && (
+                <div className="bg-white/40 backdrop-blur-sm rounded-[2rem] border border-minimal-olive/10 shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[1000px]">
+                            <thead>
+                                <tr className="border-b border-minimal-olive/5 bg-minimal-olive/5">
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Usuario</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Ubicación</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Género</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">F. Nacimiento</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Rol</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Registro</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-minimal-olive/5">
+                                {filteredUsers.map((user) => (
+                                    <tr key={user.id} className="hover:bg-minimal-olive/[0.02] transition-colors group">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-white border border-minimal-olive/20 rounded-2xl flex items-center justify-center font-black text-xs shadow-sm group-hover:bg-black group-hover:text-white transition-all">
+                                                    {user.name.slice(0, 2).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-black text-sm leading-tight">{user.name}</p>
+                                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                                        <Mail size={10} className="text-minimal-gold" />
+                                                        <span className="text-[10px] text-gray-400 font-bold">{user.email}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-start gap-2">
+                                                <MapPin size={12} className="text-minimal-gold mt-0.5" />
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-bold text-black">{user.district}</span>
+                                                    <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{user.province}, {user.department}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 bg-gray-50 px-2.5 py-1 rounded-lg">
+                                                {user.gender === 'male' ? 'Masculino' : user.gender === 'female' ? 'Femenino' : user.gender}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <Calendar size={12} className="text-gray-300" />
+                                                <span className="text-xs font-bold text-gray-600">{user.birthdate}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className={`flex items-center gap-2 px-3 py-1 rounded-full w-fit ${user.role === 'admin' ? 'bg-black text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                                <UserIcon size={10} />
+                                                <span className="text-[9px] font-black uppercase tracking-widest">{user.role}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-[10px] font-bold text-gray-400">
+                                                {formatDate(user.created_at)}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default UsersManager;

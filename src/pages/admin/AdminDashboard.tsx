@@ -15,6 +15,7 @@ import ServiceManager from './ServiceManager';
 import SettingsManager from './SettingsManager';
 import MessagesManager from './MessagesManager';
 import FunnelLeadsManager from './FunnelLeadsManager';
+import UsersManager from './UsersManager';
 import { useAuth } from '../../hooks/useAuth';
 import { statsService, DashboardStats } from '../../services/crudService';
 import * as XLSX from 'xlsx';
@@ -172,7 +173,7 @@ const AdminDashboard = () => {
     const location = useLocation();
     const state = location.state as { activeTab?: string; selectedLeadId?: number };
     
-    const [activeTab, setActiveTab] = useState<'stats' | 'properties' | 'services' | 'settings' | 'messages' | 'funnelLeads'>(
+    const [activeTab, setActiveTab] = useState<'stats' | 'properties' | 'services' | 'settings' | 'messages' | 'funnelLeads' | 'users'>(
         (state?.activeTab as any) || 'stats'
     );
     const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -305,6 +306,7 @@ const AdminDashboard = () => {
                         { id: 'services', label: 'Servicios' },
                         { id: 'settings', label: 'Ajustes' },
                         { id: 'funnelLeads', label: 'Interesados Reserva' },
+                        { id: 'users', label: 'Usuarios' },
                         { id: 'messages', label: 'Chat' }
                     ].map((tab) => (
                         <button
@@ -453,6 +455,7 @@ const AdminDashboard = () => {
                         {activeTab === 'services' && <ServiceManager />}
                         {activeTab === 'settings' && <SettingsManager />}
                         {activeTab === 'funnelLeads' && <FunnelLeadsManager />}
+                        {activeTab === 'users' && <UsersManager />}
                         {activeTab === 'messages' && <MessagesManager />}
                     </div>
 

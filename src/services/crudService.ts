@@ -81,8 +81,22 @@ export const settingsService = {
     update: (key: string, value: string) => apiClient.post(`/settings/${key}?_method=PUT`, { value }),
 };
 
+export interface User {
+    id: number;
+    name: string;
+    email: string;
+    gender: string;
+    birthdate: string;
+    department: string;
+    province: string;
+    district: string;
+    role: string;
+    created_at: string;
+}
+
 export const userService = {
     updateProfile: (data: any) => apiClient.post('/user/update', data),
+    getAll: () => apiClient.get<User[]>('/users'),
 };
 
 export interface Lead {

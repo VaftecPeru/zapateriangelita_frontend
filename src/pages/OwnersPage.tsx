@@ -9,10 +9,10 @@ import {
   Users,
   Sparkles
 } from 'lucide-react';
-import portadaBg from '../assets/portada.jpg';
+import portadaBg from '../assets/familia3.jpg';
 import estadisticasBg from '../assets/estadisticas.jpg';
-import vinsotrosBg from '../assets/vinosotros.jpg';
-import comofuncionaBg from '../assets/comofunciona.jpg';
+import familiaBg from '../assets/familia.jpg';
+import comofuncionaBg from '../assets/familia2.jpg';
 
 const AnimatedCounter = ({ end, duration = 2000, suffix = "" }: { end: number, duration?: number, suffix?: string }) => {
   const [count, setCount] = useState(0);
@@ -81,11 +81,6 @@ const OwnersPage = () => {
 
         <div className="max-w-[90rem] mx-auto w-full relative z-10 text-white">
           <div className="max-w-4xl space-y-10 animate-in fade-in slide-in-from-left duration-1000">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-orange-500/30 bg-orange-500/10 backdrop-blur-md text-[10px] font-black tracking-[0.2em] uppercase text-orange-400">
-              <Sparkles size={14} className="fill-orange-400" />
-              Gestión Patrimonial Inteligente
-            </div>
-
             <h1 className="text-5xl md:text-8xl font-black tracking-tighter leading-[0.9]">
               Propietarios <br />
               de <span className="text-orange-500 relative">
@@ -142,7 +137,7 @@ const OwnersPage = () => {
             <div className="relative group">
               <div className="absolute -inset-4 bg-minimal-gold/10 rounded-[3rem] blur-2xl group-hover:bg-minimal-gold/20 transition-all duration-700"></div>
               <img
-                src={vinsotrosBg}
+                src={familiaBg}
                 alt="Maximizar Ingresos"
                 className="relative z-10 w-full rounded-[2.5rem] shadow-2xl object-cover h-[300px] md:h-[500px]"
               />
