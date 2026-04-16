@@ -155,7 +155,7 @@ const PropertiesPage = () => {
                                 </button>
                                 {openDropdown === 'tipo' && (
                                     <div className="absolute top-[calc(100%+8px)] left-0 z-50 bg-white border border-gray-100 rounded-2xl shadow-xl p-2 min-w-[160px]">
-                                        {['Todos', 'Apartamento', 'Habitación', 'Estudio'].map(t => (
+                                        {['Todos', 'Departamento', 'Habitación', 'Estudio'].map(t => (
                                             <button key={t}
                                                 onClick={() => { setFilters({ ...filters, type: t }); setOpenDropdown(null); }}
                                                 className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${filters.type === t ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
@@ -250,7 +250,7 @@ const PropertiesPage = () => {
                                 <div>
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Tipo de Estancia</p>
                                     <div className="flex flex-wrap gap-2">
-                                        {['Todos', 'Apartamento', 'Habitación', 'Estudio'].map(t => (
+                                        {['Todos', 'Departamento', 'Habitación', 'Estudio'].map(t => (
                                             <button key={t} onClick={() => setFilters({ ...filters, type: t })}
                                                 className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${filters.type === t ? 'bg-black text-white' : 'bg-gray-100 text-gray-500'}`}>{t}</button>
                                         ))}

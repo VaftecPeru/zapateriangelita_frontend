@@ -2,36 +2,56 @@ import { useState, useEffect } from 'react';
 import { Users, Search, RefreshCw, Mail, MapPin, Calendar, User as UserIcon } from 'lucide-react';
 import { userService, User } from '../../services/crudService';
 
-const UsersManager = () => {
-    const [users, setUsers] = useState<User[]>([]);
-    const [loading, setLoading] = useState(true);
+interface UsersManagerProps {
+    initialData?: User[];
+}
+
+const UsersManager = ({ initialData }: UsersManagerProps) => {
+    const [users, setUsers] = useState<User[]>(initialData || []);
+    const [loading, setLoading] = useState(!initialData);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
 
     const fetchUsers = async () => {
+        if (initialData && users.length > 0) return; // Skip if we have data from props
         setLoading(true);
         setError(null);
         try {
             const res = await userService.getAll();
-            // Assuming response structure like crudService.ts which returns apiClient.get<User[]>
-            const data = (res as any).data ?? res;
-            setUsers(Array.isArray(data) ? data : []);
-        } catch (e) {
-            setError('No se pudo cargar la lista de usuarios. Verifica tus permisos de administrador.');
+            const data = (res as any)?.data?.data || (res as any)?.data || res;
+            const usersList = Array.isArray(data) ? data : [];
+            setUsers(usersList);
+            if (usersList.length === 0) {
+                console.warn('API responded with 0 users');
+            }
+        } catch (e: any) {
+            console.error('DEBUG: Fetch Users Error:', e);
+            if (!initialData) {
+                const errorMsg = e.response?.data?.message || e.message || 'Error desconocido';
+                setError(`No se pudo cargar la lista de usuarios: ${errorMsg}`);
+            }
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchUsers();
-    }, []);
+        if (initialData) {
+            setUsers(initialData);
+            setLoading(false);
+        } else {
+            fetchUsers();
+        }
+    }, [initialData]);
 
-    const filteredUsers = users.filter(user => 
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.district.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredUsers = users.filter(user => {
+        const search = searchTerm.toLowerCase();
+        return (
+            (user.name?.toLowerCase() || '').includes(search) ||
+            (user.email?.toLowerCase() || '').includes(search) ||
+            (user.district?.toLowerCase() || '').includes(search)
+        );
+    });
 
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleDateString('es-PE', {
@@ -120,10 +140,10 @@ const UsersManager = () => {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 bg-white border border-minimal-olive/20 rounded-2xl flex items-center justify-center font-black text-xs shadow-sm group-hover:bg-black group-hover:text-white transition-all">
-                                                    {user.name.slice(0, 2).toUpperCase()}
+                                                    {(user.name || 'U').slice(0, 2).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <p className="font-bold text-black text-sm leading-tight">{user.name}</p>
+                                                    <p className="font-bold text-black text-sm leading-tight">{user.name || 'Usuario sin nombre'}</p>
                                                     <div className="flex items-center gap-1.5 mt-0.5">
                                                         <Mail size={10} className="text-minimal-gold" />
                                                         <span className="text-[10px] text-gray-400 font-bold">{user.email}</span>

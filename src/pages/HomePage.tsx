@@ -24,7 +24,7 @@ const HomePage = () => {
             navigate('/admin/dashboard');
         }
         loadProperties();
-    }, [isAuthenticated, user, navigate]);
+    }, [isAuthenticated, user?.role, navigate]);
 
     const loadProperties = async () => {
         try {
@@ -46,6 +46,7 @@ const HomePage = () => {
             <FeaturedProperties
                 searchCriteria={searchCriteria}
                 onOpenDetails={(p: any) => setSelectedProperty(p)}
+                properties={properties}
             />
             <HowItWorksSection />
             <ConfidenceSection />

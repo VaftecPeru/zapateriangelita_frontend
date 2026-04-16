@@ -4,23 +4,30 @@ import { useAuth } from '../hooks/useAuth';
 import apiClient from '../services/apiClient';
 import { Link } from 'react-router-dom';
 
-const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
-  const [properties, setProperties] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+const FeaturedProperties = ({ searchCriteria, onOpenDetails, properties: initialProperties = [] }: any) => {
+  const [properties, setProperties] = useState<any[]>(initialProperties);
+  const [loading, setLoading] = useState(false);
   const { favorites, toggleFavorite, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    apiClient.get('/properties')
-      .then(res => {
-        const data = Array.isArray(res.data) ? res.data : (res.data.data || []);
-        setProperties(data);
-        setLoading(false)
-      })
-      .catch(err => {
-        console.error("Error fetching properties:", err);
-        setLoading(false);
-      });
-  }, []);
+    if (initialProperties.length > 0) {
+      setProperties(initialProperties);
+      setLoading(false);
+    } else {
+        // Solo cargar si no se pasaron props (fallback)
+        setLoading(true);
+        apiClient.get('/properties')
+          .then(res => {
+            const data = Array.isArray(res.data) ? res.data : (res.data.data || []);
+            setProperties(data);
+            setLoading(false)
+          })
+          .catch(err => {
+            console.error("Error fetching properties:", err);
+            setLoading(false);
+          });
+    }
+  }, [initialProperties]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -59,7 +66,7 @@ const FeaturedProperties = ({ searchCriteria, onOpenDetails }: any) => {
   }
 
   return (
-    <section id="apartamentos" className="py-24 px-6 bg-minimal-beige relative overflow-hidden">
+    <section id="departamentos" className="py-24 px-6 bg-minimal-beige relative overflow-hidden">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-6">
           <div className="max-w-2xl">
