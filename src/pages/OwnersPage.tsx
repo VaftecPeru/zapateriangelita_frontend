@@ -7,7 +7,7 @@ import {
   BarChart3,
   Settings,
   Users,
-  Sparkles
+  // Sparkles
 } from 'lucide-react';
 import portadaBg from '../assets/familia3.jpg';
 import estadisticasBg from '../assets/estadisticas.jpg';
