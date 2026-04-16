@@ -75,9 +75,9 @@ const Header = () => {
                 label: "Propiedades", 
                 href: "/properties",
                 dropdown: [
-                  { label: "Departamentos", href: "/properties?category=departamento" },
-                  { label: "Suites de Lujo", href: "/properties?category=suite" },
-                  { label: "Estudios de Diseño", href: "/properties?category=estudio" },
+                  { label: "Departamentos", href: "/properties?type=Departamento" },
+                  { label: "Habitaciones", href: "/properties?type=Habitación" },
+                  { label: "Estudios", href: "/properties?type=Estudio" },
                   { label: "Catálogo Completo", href: "/properties", highlight: true }
                 ]
               },
@@ -327,9 +327,9 @@ const Header = () => {
                 label: "Propiedades", 
                 icon: <Square size={20} />, 
                 dropdown: [
-                  { label: "Departamentos", href: "/properties?category=departamento" },
-                  { label: "Suites de Lujo", href: "/properties?category=suite" },
-                  { label: "Estudios de Diseño", href: "/properties?category=estudio" },
+                  { label: "Departamentos", href: "/properties?type=Departamento" },
+                  { label: "Habitaciones", href: "/properties?type=Habitación" },
+                  { label: "Estudios", href: "/properties?type=Estudio" },
                   { label: "Catálogo Completo", href: "/properties" }
                 ]
               },

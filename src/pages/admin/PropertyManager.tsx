@@ -160,7 +160,6 @@ const PropertyManager = () => {
         try {
             const data = new FormData();
             
-          
             data.append('title', String(formData.title));
             data.append('type', String(formData.type));
             data.append('location', String(formData.location));
@@ -172,12 +171,10 @@ const PropertyManager = () => {
             data.append('rating', String(formData.rating ?? 0));
             data.append('reviews', String(formData.reviews ?? 0));
             
-           
             if (formData.discounted_price && formData.discounted_price > 0) {
                 data.append('discounted_price', String(formData.discounted_price));
             }
             
-          
             if (formData.amenities) {
                 data.append('amenities', String(formData.amenities));
             }
@@ -186,28 +183,41 @@ const PropertyManager = () => {
                 data.append('description', String(formData.description));
             }
 
-            selectedFiles.forEach((file) => {
+            // Generar metadata de casillas para sincronizar orden y reemplazos
+            const imageSlots: string[] = [];
+            previews.forEach((preview, index) => {
+                if (selectedFiles[index] instanceof File) {
+                    imageSlots.push('__NEW__');
+                } else if (preview && typeof preview === 'string' && preview.length > 0) {
+                    imageSlots.push(preview); // URL existente
+                } else {
+                    imageSlots.push('__EMPTY__');
+                }
+            });
+            
+            console.log("=== IMAGE SLOTS DEBUG ===");
+            console.log("Previews:", previews);
+            console.log("SelectedFiles:", selectedFiles.map(f => f ? f.name : null));
+            console.log("ImageSlots:", imageSlots);
+            
+            data.append('image_slots', JSON.stringify(imageSlots));
+
+            // Agregar archivos nuevos en orden
+            selectedFiles.forEach((file, index) => {
                 if (file instanceof File) {
                     data.append('new_images[]', file);
+                    console.log(`Appending new_images[]: ${file.name} (from slot ${index})`);
                 }
             });
 
-            if (selectedFiles[0] instanceof File) {
-                data.append('img_file', selectedFiles[0]);
-            }
-
-            console.log("Sending FormData to server:");
-            for (let [key, value] of data.entries()) {
-                console.log(`${key}:`, value);
-            }
-
             if (editingProperty && editingProperty.id) {
+                data.append('_method', 'PUT');
                 await propertyService.update(editingProperty.id, data);
             } else {
                 await propertyService.create(data);
             }
             handleCloseModal();
-            loadData();
+            await loadData(); // Recargar datos frescos del servidor
         } catch (error: any) {
             console.error("Error saving property:", error);
             let message = "Hubo un error al guardar la propiedad.";
@@ -386,7 +396,7 @@ const PropertyManager = () => {
                                             className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-minimal-olive/20 focus:border-minimal-olive outline-none transition-all text-sm font-semibold appearance-none cursor-pointer"
                                         >
                                             <option value="" disabled>Elegir Tipo</option>
-                                            <option value="Apartamento">Apartamento</option>
+                                            <option value="Departamento">Departamento</option>
                                             <option value="Habitación">Habitación</option>
                                             <option value="Estudio">Estudio</option>
                                         </select>
@@ -473,7 +483,7 @@ const PropertyManager = () => {
                                                     ) : (
                                                         <ImageIcon className="text-gray-300" size={24} />
                                                     )}
-                                                    <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                                                    <label className="absolute inset-0 z-10 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
                                                         <Upload className="text-white" size={18} />
                                                         <input 
                                                             type="file" 
@@ -486,17 +496,17 @@ const PropertyManager = () => {
                                                     {previews[index] && (
                                                         <button
                                                             type="button"
-                                                            onClick={() => {
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
                                                                 const newPrevs = [...previews];
                                                                 newPrevs[index] = null;
                                                                 setPreviews(newPrevs);
                                                                 const newFiles = [...selectedFiles];
                                                                 newFiles[index] = null;
                                                                 setSelectedFiles(newFiles);
-                                                                
-                                                                
                                                             }}
-                                                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            className="absolute top-1 right-1 z-20 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-lg"
                                                         >
                                                             <X size={12} />
                                                         </button>

@@ -97,7 +97,7 @@ const Hero = ({ onSearch, properties = [] }: { onSearch?: (criteria: any) => voi
 
 
         <div 
-          className={`w-full max-w-5xl mx-auto mb-6 md:mb-10 mt-16 ${
+          className={`w-full max-w-5xl mx-auto mb-6 md:mb-10 mt-10 ${
             showSearch ? 'animate-expand-center' : 'opacity-0'
           }`}
         >
@@ -140,7 +140,7 @@ const Hero = ({ onSearch, properties = [] }: { onSearch?: (criteria: any) => voi
                         style={{ colorScheme: 'dark' }}
                       >
                         <option value="" disabled hidden className="text-gray-400 bg-minimal-dark">{errors.propertyType ? "no se encontró" : "Elegir"}</option>
-                        <option value="Apartamento" className="text-white bg-minimal-dark">Apartamento</option>
+                        <option value="Departamento" className="text-white bg-minimal-dark">Departamento</option>
                         <option value="Habitación" className="text-white bg-minimal-dark">Habitación</option>
                         <option value="Estudio" className="text-white bg-minimal-dark">Estudio</option>
                       </select>

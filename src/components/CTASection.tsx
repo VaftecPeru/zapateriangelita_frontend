@@ -70,6 +70,7 @@ const CTASection = () => {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     const totalSteps = 6;
 
@@ -83,6 +84,7 @@ const CTASection = () => {
     };
 
     const handleOptionSelect = (field: string, value: string) => {
+        setSubmitError(null);
         if (field === 'phone') {
             const formatted = formatPhoneNumber(value);
             setFormData((prev: any) => ({ ...prev, [field]: formatted }));
@@ -92,6 +94,7 @@ const CTASection = () => {
     };
 
     const nextStep = () => {
+        setSubmitError(null);
         if (currentStep < totalSteps) {
             setCurrentStep(currentStep + 1);
         } else {
@@ -100,6 +103,7 @@ const CTASection = () => {
     };
 
     const prevStep = () => {
+        setSubmitError(null);
         if (currentStep > 1) {
             setCurrentStep(currentStep - 1);
         }
@@ -128,6 +132,7 @@ const CTASection = () => {
         if (!isStepValid()) return;
 
         setIsSubmitting(true);
+        setSubmitError(null);
         try {
             const finalLocation = formData.location === 'Otros' ? `Otros: ${formData.otherLocation}` : formData.location;
             
@@ -151,8 +156,10 @@ const CTASection = () => {
                 ]
             });
             setIsSuccess(true);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error sending funnel lead:', error);
+            const msg = error.response?.data?.message || 'Hubo un problema al enviar tu solicitud. Por favor intenta de nuevo.';
+            setSubmitError(msg);
         } finally {
             setIsSubmitting(false);
         }
@@ -328,7 +335,22 @@ const CTASection = () => {
                     <h3 className="text-3xl font-black text-black mb-4 tracking-tighter">¡Solicitud recibida!</h3>
                     <p className="text-gray-500 font-medium mb-10">Gracias por interesarte en ser parte de la familia Umbral suites, en breve nos comunicaremos contigo via wspp.</p>
                     <button
-                        onClick={() => { setCurrentStep(1); setIsSuccess(false); setFormData({}); }}
+                        onClick={() => { 
+                            setCurrentStep(1); 
+                            setIsSuccess(false); 
+                            setFormData({
+                                duration: '',
+                                location: '',
+                                otherLocation: '',
+                                spaceType: '',
+                                budget: '',
+                                timeline: '',
+                                name: '',
+                                phone: '',
+                                email: ''
+                            }); 
+                            setSubmitError(null);
+                        }}
                         className="text-[#708238] font-black uppercase text-xs tracking-widest hover:underline"
                     >
                         Volver a empezar
@@ -393,6 +415,14 @@ const CTASection = () => {
 
                         <div className="min-h-[340px]">
                             {renderStep()}
+                            
+                            {submitError && (
+                                <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <p className="text-xs text-red-600 font-bold text-center">
+                                        {submitError}
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="mt-8 flex gap-3">
@@ -400,7 +430,7 @@ const CTASection = () => {
                                 <button
                                     onClick={prevStep}
                                     disabled={isSubmitting}
-                                    className="flex-1 py-4 rounded-xl font-bold text-gray-500 border border-gray-100 hover:bg-gray-50 transition-all active:scale-[0.98] text-sm"
+                                    className="flex-1 py-4 rounded-xl font-bold text-gray-500 border border-gray-100 hover:bg-gray-50 transition-all active:scale-[0.98] text-sm disabled:opacity-50"
                                 >
                                     Regresar
                                 </button>
