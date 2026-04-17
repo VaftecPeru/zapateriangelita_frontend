@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { User, Mail, Calendar, MapPin, Package, Heart, ChevronRight, Settings, ExternalLink, Users } from 'lucide-react';
+import { User, Mail, Calendar, MapPin, Package, Heart, ChevronRight, Settings, ExternalLink, Users, ChevronDown } from 'lucide-react';
 import { leadService, Lead, userService } from '../services/crudService';
+import { useUbigeo } from '../hooks/useUbigeo';
 const ProfilePage = () => {
     const { user, favorites, toggleFavorite } = useAuth();
     const [activeTab, setActiveTab] = useState<'info' | 'purchases' | 'favorites'>('info');
@@ -15,6 +16,8 @@ const ProfilePage = () => {
         province: '',
         district: ''
     });
+
+    const { departments, provinces, districts, loading: ubigeoLoading } = useUbigeo(formData.department, formData.province);
 
     useEffect(() => {
         if (user) {
@@ -172,36 +175,57 @@ const ProfilePage = () => {
                                                     <label className="text-xs font-bold text-gray-500 uppercase">Fecha de Nacimiento</label>
                                                     <input type="date" value={formData.birthdate} onChange={e => setFormData({...formData, birthdate: e.target.value})} className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:border-black outline-none font-bold text-black" />
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Género</label>
-                                                    <select value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})} className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:border-black outline-none font-bold text-black">
-                                                        <option value="">Seleccionar...</option>
-                                                        <option value="Masculino">Masculino</option>
-                                                        <option value="Femenino">Femenino</option>
-                                                        <option value="Otro">Otro</option>
-                                                        <option value="Prefiero no decirlo">Prefiero no decirlo</option>
-                                                    </select>
-                                                </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Género</label>
+                                            <div className="relative">
+                                                <select value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})} className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border border-transparent focus:border-minimal-olive outline-none font-bold text-sm transition-all appearance-none cursor-pointer">
+                                                    <option value="">Seleccionar...</option>
+                                                    <option value="Masculino">Masculino</option>
+                                                    <option value="Femenino">Femenino</option>
+                                                    <option value="Otro">Otro</option>
+                                                    <option value="Prefiero no decirlo">Prefiero no decirlo</option>
+                                                </select>
+                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                            </div>
+                                        </div>
                                             </div>
                                         </div>
                                         <div className="bg-white p-8 rounded-3xl border border-black">
                                             <h3 className="text-xl font-black text-black mb-6 flex items-center gap-2"><MapPin size={24}/> Editar Ubicación</h3>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Departamento</label>
-                                                    <input type="text" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:border-black outline-none font-bold text-black" placeholder="Ej. Lima" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Provincia</label>
-                                                    <input type="text" value={formData.province} onChange={e => setFormData({...formData, province: e.target.value})} className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:border-black outline-none font-bold text-black" placeholder="Ej. Lima" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Distrito</label>
-                                                    <input type="text" value={formData.district} onChange={e => setFormData({...formData, district: e.target.value})} className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:border-black outline-none font-bold text-black" placeholder="Ej. Miraflores" />
-                                                </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Departamento</label>
+                                            <div className="relative">
+                                                <select required value={formData.department} disabled={ubigeoLoading} onChange={e => setFormData({...formData, department: e.target.value, province: '', district: ''})} className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border border-transparent focus:border-minimal-olive outline-none font-bold text-sm transition-all appearance-none cursor-pointer disabled:opacity-50">
+                                                    <option value="" disabled hidden>{ubigeoLoading ? 'Cargando...' : 'Seleccionar...'}</option>
+                                                    {departments.map(dept => <option key={dept} value={dept}>{dept}</option>)}
+                                                </select>
+                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                                             </div>
                                         </div>
-                                        <div className="flex justify-end gap-return items-center gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Provincia</label>
+                                            <div className="relative">
+                                                <select required value={formData.province} disabled={!formData.department || ubigeoLoading} onChange={e => setFormData({...formData, province: e.target.value, district: ''})} className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border border-transparent focus:border-minimal-olive outline-none font-bold text-sm transition-all appearance-none cursor-pointer disabled:opacity-50">
+                                                    <option value="" disabled hidden>Seleccionar...</option>
+                                                    {provinces.map(prov => <option key={prov} value={prov}>{prov}</option>)}
+                                                </select>
+                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Distrito</label>
+                                            <div className="relative">
+                                                <select required value={formData.district} disabled={!formData.province || ubigeoLoading} onChange={e => setFormData({...formData, district: e.target.value})} className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border border-transparent focus:border-minimal-olive outline-none font-bold text-sm transition-all appearance-none cursor-pointer disabled:opacity-50">
+                                                    <option value="" disabled hidden>Seleccionar...</option>
+                                                    {districts.map(dist => <option key={dist} value={dist}>{dist}</option>)}
+                                                </select>
+                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                            </div>
+                                        </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-end items-center gap-4">
                                             <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-3 font-bold text-gray-500 hover:text-black transition-colors rounded-xl border-2 border-transparent hover:border-gray-200">Cancelar</button>
                                             <button type="submit" className="px-8 py-3 bg-black text-white font-bold rounded-xl hover:bg-minimal-olive transition-colors shadow-[4px_4px_0px_0px_rgba(107,114,84,1)] active:translate-x-1 active:translate-y-1 active:shadow-none">Guardar Cambios</button>
                                         </div>

@@ -3,8 +3,7 @@ import { Mail, Lock, User, ArrowLeft, ChevronDown, Globe } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
-
-type UbigeoData = Record<string, Record<string, string[]>>;
+import { useUbigeo } from '../hooks/useUbigeo';
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
@@ -20,31 +19,12 @@ const RegisterPage = () => {
         district: ''
     });
 
-    const [ubigeo, setUbigeo] = useState<UbigeoData>({});
-    const [ubigeoLoading, setUbigeoLoading] = useState(true);
-
-    useEffect(() => {
-        fetch('/data/peru-ubigeo.json')
-            .then(res => res.json())
-            .then((data: UbigeoData) => {
-                setUbigeo(data);
-                setUbigeoLoading(false);
-            })
-            .catch(() => {
-                setUbigeoLoading(false);
-            });
-    }, []);
-
-    const departments = Object.keys(ubigeo).sort();
-    const provinces = formData.department && ubigeo[formData.department]
-        ? Object.keys(ubigeo[formData.department]).sort()
-        : [];
-    const districts = formData.department && formData.province && ubigeo[formData.department]?.[formData.province]
-        ? [...ubigeo[formData.department][formData.province]].sort()
-        : [];
+    const { departments, provinces, districts, loading: ubigeoLoading } = useUbigeo(formData.department, formData.province);
 
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
+    const [registeredData, setRegisteredData] = useState<any>(null);
     const { login: authLogin } = useAuth();
     const navigate = useNavigate();
 
@@ -86,8 +66,8 @@ const RegisterPage = () => {
             const response = await authService.register(formData);
             const data = response.data;
 
-            authLogin(data.user, data.token);
-            navigate('/');
+            setRegisteredData(data);
+            setIsSuccess(true);
         } catch (err: any) {
             const errorMsg = err.response?.data?.errors 
                 ? (Object.values(err.response.data.errors)[0] as any)[0] 
@@ -101,6 +81,32 @@ const RegisterPage = () => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
+
+    if (isSuccess) {
+        return (
+            <div className="min-h-screen bg-minimal-beige flex items-start justify-center p-6 py-10 pt-16 md:pt-20">
+                <div className="max-w-xl w-full bg-white rounded-2xl p-10 md:p-16 relative border border-black text-center">
+                    <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-100">
+                        <Mail size={40} />
+                    </div>
+                    <h2 className="text-3xl font-black text-black mb-4 tracking-tighter">¡Registro Exitoso!</h2>
+                    <p className="text-gray-500 font-medium mb-8 leading-relaxed">
+                        Tu cuenta ha sido creada correctamente. <strong>Te hemos enviado un correo electrónico</strong> con tus credenciales de acceso.<br /><br />
+                        Por favor, revisa tu <span className="text-black font-bold">bandeja de entrada</span> o la carpeta de <span className="text-black font-bold">SPAM / Correo no deseado</span>.
+                    </p>
+                    <button
+                        onClick={() => {
+                            authLogin(registeredData.user, registeredData.token);
+                            navigate('/');
+                        }}
+                        className="w-full bg-black text-white py-4 rounded-xl font-bold hover:bg-gray-900 transition-all active:scale-[0.98]"
+                    >
+                        Ingresar a Umbral Suites
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-minimal-beige flex items-start justify-center p-6 py-10 pt-16 md:pt-20">
