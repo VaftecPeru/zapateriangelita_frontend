@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Target, Phone, X, RefreshCw, User, MessageCircle, Info } from 'lucide-react';
+import { Target, Phone, X, RefreshCw, User, MessageCircle, Info, Trash2 } from 'lucide-react';
 import { leadService, Lead } from '../../services/crudService';
 
 interface FunnelLeadsManagerProps {
@@ -187,9 +187,10 @@ const FunnelLeadsManager = ({ initialData }: FunnelLeadsManagerProps) => {
                                             <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                                                 <button
                                                     onClick={() => lead.id && setConfirmDelete(lead.id)}
-                                                    className="p-3 bg-white text-gray-400 border border-red-50 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all shadow-sm"
+                                                    className="p-2.5 bg-white text-gray-400 border border-red-50 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all shadow-sm"
+                                                    title="Eliminar interesado"
                                                 >
-                                                    <X size={14} />
+                                                    <Trash2 size={14} />
                                                 </button>
                                             </td>
                                         </tr>
@@ -286,7 +287,7 @@ const FunnelLeadsManager = ({ initialData }: FunnelLeadsManagerProps) => {
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[4000] flex items-center justify-center p-4">
                 <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl border border-minimal-olive/10">
                     <div className="w-16 h-16 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                        <X size={32} />
+                        <Trash2 size={32} />
                     </div>
                     <h3 className="text-xl font-black text-black text-center mb-2">¿Eliminar Interesado?</h3>
                     <p className="text-sm text-gray-400 text-center mb-8 font-medium">Este prospecto se borrará de tu CRM.</p>
