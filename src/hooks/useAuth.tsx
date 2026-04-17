@@ -13,6 +13,7 @@ interface AuthContextType {
     favorites: any[];
     login: (userData: User, token: string) => void;
     logout: () => void;
+    updateUser: (userData: Partial<User>) => void;
     toggleFavorite: (property: any) => void;
     isAuthenticated: boolean;
 }
@@ -63,6 +64,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setFavorites([]);
     };
 
+    const updateUser = (updatedData: Partial<User>) => {
+        setUser(prev => {
+            if (!prev) return prev;
+            const newUser = { ...prev, ...updatedData };
+            localStorage.setItem('user', JSON.stringify(newUser));
+            return newUser;
+        });
+    };
+
     const toggleFavorite = (property: any) => {
         setFavorites(prev => {
             const isFavorite = prev.some(p => p.id === property.id);
@@ -78,7 +88,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, favorites, login, logout, toggleFavorite, isAuthenticated: !!user }}>
+        <AuthContext.Provider value={{ user, loading, favorites, login, logout, updateUser, toggleFavorite, isAuthenticated: !!user }}>
             {children}
         </AuthContext.Provider>
     );

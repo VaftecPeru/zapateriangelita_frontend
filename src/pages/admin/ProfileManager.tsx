@@ -5,7 +5,7 @@ import { userService } from '../../services/crudService';
 import { User, Mail, Calendar, MapPin, Settings, Save, Loader2, CheckCircle } from 'lucide-react';
 
 const ProfileManager = () => {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -43,13 +43,14 @@ const ProfileManager = () => {
                 province: formData.province || null,
                 district: formData.district || null
             };
-            await userService.updateProfile(dataToSubmit);
+            const response = await userService.updateProfile(dataToSubmit);
+            if (response && response.data) {
+                updateUser(response.data);
+            }
+            
             setSuccess(true);
             setIsEditing(false);
             setTimeout(() => setSuccess(false), 3000);
-            // Refresh local auth state if possible, or just let the reload happen
-            // For now, a reload is the simplest way to sync everything
-            window.location.reload(); 
         } catch (error) {
             console.error('Error updating profile:', error);
             alert('Error al actualizar el perfil.');
