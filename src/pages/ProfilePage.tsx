@@ -1,11 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { User, Mail, Calendar, MapPin, Package, Heart, ChevronRight, Settings, ExternalLink, Users, ChevronDown } from 'lucide-react';
 import { leadService, Lead, userService } from '../services/crudService';
 import { useUbigeo } from '../hooks/useUbigeo';
+
 const ProfilePage = () => {
-    const { user, favorites, toggleFavorite } = useAuth();
+    const { user, loading, favorites, toggleFavorite } = useAuth();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'info' | 'purchases' | 'favorites'>('info');
+
+    useEffect(() => {
+        if (!loading && !user) {
+            navigate('/');
+        }
+    }, [user, loading, navigate]);
+
     const [bookings, setBookings] = useState<Lead[]>([]);
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
@@ -27,7 +37,7 @@ const ProfilePage = () => {
         }
     }, [user]);
 
-    if (!user) {
+    if (loading || !user) {
         return (
             <div className="min-h-screen bg-minimal-beige flex items-center justify-center p-6">
                 <div className="text-center animate-pulse">

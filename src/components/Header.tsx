@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Heart, Bell, User, LogOut, Menu, X, Square, Mail, Info, BarChart3, Home, Clock, Flame, ChevronDown } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { leadService, Lead } from '../services/crudService';
 
 const Header = () => {
   const { user, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -37,6 +38,11 @@ const Header = () => {
     } catch (e) {
       console.error('Error fetching leads for notifications', e);
     }
+  };
+
+  const logoutAndRedirect = () => {
+    logout();
+    navigate('/');
   };
 
   const getInitials = (name: string) => {
@@ -280,7 +286,7 @@ const Header = () => {
                         </Link>
                         <button
                           onClick={() => {
-                            logout();
+                            logoutAndRedirect();
                             setIsProfileOpen(false);
                           }}
                           className="w-full flex items-center gap-3 px-5 py-3 text-sm font-bold text-red-500 hover:bg-red-50 active:scale-95 transition-all mt-2 border-t border-gray-50 pt-4"
@@ -435,7 +441,7 @@ const Header = () => {
                   </Link>
                   <button
                     onClick={() => {
-                      logout();
+                      logoutAndRedirect();
                       setIsMobileMenuOpen(false);
                     }}
                     className="flex flex-col items-center justify-center gap-2 bg-red-50 p-5 rounded-2xl font-black text-sm border border-red-100 text-red-500 active:scale-95 transition-all shadow-sm"
