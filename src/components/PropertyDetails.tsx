@@ -171,7 +171,8 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, allProperti
                     check_out: checkOut,
                     guests,
                     property_title: property.title,
-                    additional_services: selectedServicesDetails
+                    additional_services: selectedServicesDetails,
+                    property_id: property?.id
                 });
                 
                 if (response.data?.plain_password) {

@@ -23,7 +23,8 @@ const FunnelLeadsManager = ({ initialData }: FunnelLeadsManagerProps) => {
             
             // Un filtro más inclusivo para no perder registros por campos nulos secundarios
             const validLeads = Array.isArray(data) 
-                ? data.filter(l => l.type === 'service' || (!l.type && l.property_title?.includes('Funnel'))) 
+                // ? data.filter(l => l.type === 'service' || (!l.type && l.property_title?.includes('Funnel')))
+                ? data
                 : [];
             setLeads(validLeads);
         } catch (e) {

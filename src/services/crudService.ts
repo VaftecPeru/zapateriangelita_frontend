@@ -126,6 +126,7 @@ export const leadService = {
         check_out?: string;
         guests?: number;
         property_title?: string;
+        property_id?: number;
         additional_services?: any[];
     }) => apiClient.post('/leads', { type, item_id: itemId, ...contactData }),
     getAll: () => apiClient.get<Lead[]>('/leads'),
