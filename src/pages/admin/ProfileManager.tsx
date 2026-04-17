@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { userService } from '../../services/crudService';
-import { User, Mail, Calendar, MapPin, Settings, Save, X, Loader2, CheckCircle } from 'lucide-react';
+// import { User, Mail, Calendar, MapPin, Settings, Save, X, Loader2, CheckCircle } from 'lucide-react';
+import { User, Mail, Calendar, MapPin, Settings, Save, Loader2, CheckCircle } from 'lucide-react';
 
 const ProfileManager = () => {
     const { user } = useAuth();

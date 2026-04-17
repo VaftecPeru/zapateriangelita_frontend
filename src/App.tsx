@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+// import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -58,10 +59,10 @@ const AppContent = () => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      {/* <Router basename="/suites"> */}
         <ScrollToTop />
         <AppContent />
-      </Router>
+      {/* </Router> */}
     </AuthProvider>
   );
 }
