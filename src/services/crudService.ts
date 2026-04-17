@@ -97,6 +97,7 @@ export interface User {
 export const userService = {
     updateProfile: (data: any) => apiClient.post('/user/update', data),
     getAll: () => apiClient.get<User[]>('/users'),
+    delete: (id: number) => apiClient.delete(`/users/${id}`),
 };
 
 export interface Lead {
