@@ -234,7 +234,7 @@ const RegisterPage = () => {
                                     <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                                     <input type="password" name="password" required value={formData.password} onChange={handleChange}
                                         className="w-full pl-12 pr-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all font-bold text-sm"
-                                        placeholder="Mínimo 8 caracteres" />
+                                        placeholder="Mínimo 6 caracteres" />
                                 </div>
                             </div>
                             <div className="space-y-2">

@@ -257,7 +257,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
                     <input type="password" name="password" required value={formData.password} onChange={handleRegisterChange}
                       className="w-full pl-10 pr-4 py-3.5 bg-gray-50 border border-transparent rounded-xl focus:border-black outline-none transition-all font-bold text-xs"
-                      placeholder="Mínimo 8 caracteres" />
+                      placeholder="Mínimo 6 caracteres" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
