@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Search, RefreshCw, Mail, MapPin, Calendar, User as UserIcon, X, Trash2 } from 'lucide-react';
+import { Users, Search, RefreshCw, Mail, MapPin, Calendar, User as UserIcon, Trash2 } from 'lucide-react';
 import { userService, User } from '../../services/crudService';
 
 interface UsersManagerProps {
@@ -69,13 +69,13 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
         }
     };
 
-    const formatDate = (dateStr: string) => {
-        return new Date(dateStr).toLocaleDateString('es-PE', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric'
-        });
-    };
+    // const formatDate = (dateStr: string) => {
+    //     return new Date(dateStr).toLocaleDateString('es-PE', {
+    //         day: '2-digit',
+    //         month: 'long',
+    //         year: 'numeric'
+    //     });
+    // };
 
     return (
         <div className="space-y-6">
