@@ -95,8 +95,8 @@ const ResetPasswordPage = () => {
                                     value={formData.password}
                                     onChange={handleChange}
                                     className="w-full pl-14 pr-14 py-4 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all font-bold text-sm"
-                                    placeholder="••••••••"
-                                    minLength={8}
+                                    placeholder="••••••"
+                                    minLength={6}
                                 />
                                 <button
                                     type="button"
@@ -119,8 +119,8 @@ const ResetPasswordPage = () => {
                                     value={formData.password_confirmation}
                                     onChange={handleChange}
                                     className="w-full pl-14 pr-14 py-4 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all font-bold text-sm"
-                                    placeholder="••••••••"
-                                    minLength={8}
+                                    placeholder="••••••"
+                                    minLength={6}
                                 />
                                 <button
                                     type="button"
