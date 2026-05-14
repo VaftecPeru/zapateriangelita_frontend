@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+// import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -14,6 +15,7 @@ import ProfilePage from './pages/ProfilePage';
 import ContactAdvisorPage from './pages/ContactAdvisorPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import PropertiesPage from './pages/PropertiesPage';
+import OwnersPage from './pages/OwnersPage';
 import AdminRoute from './components/AdminRoute';
 import ScrollToTop from './components/ScrollToTop';
 import HowItWorksPage from './pages/HowItWorksPage';
@@ -46,6 +48,7 @@ const AppContent = () => {
           } />
           <Route path="/contact-advisor" element={<ContactAdvisorPage />} />
           <Route path="/properties" element={<PropertiesPage />} />
+          <Route path="/propietarios" element={<OwnersPage />} />
         </Routes>
       </div>
       {!isAdmin && <Footer />}
@@ -56,10 +59,10 @@ const AppContent = () => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      {/* <Router basename="/suites"> */}
         <ScrollToTop />
         <AppContent />
-      </Router>
+      {/* </Router> */}
     </AuthProvider>
   );
 }

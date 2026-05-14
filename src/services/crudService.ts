@@ -81,8 +81,23 @@ export const settingsService = {
     update: (key: string, value: string) => apiClient.post(`/settings/${key}?_method=PUT`, { value }),
 };
 
+export interface User {
+    id: number;
+    name: string;
+    email: string;
+    gender: string;
+    birthdate: string;
+    department: string;
+    province: string;
+    district: string;
+    role: string;
+    created_at: string;
+}
+
 export const userService = {
     updateProfile: (data: any) => apiClient.post('/user/update', data),
+    getAll: () => apiClient.get<User[]>('/users'),
+    delete: (id: number) => apiClient.delete(`/users/${id}`),
 };
 
 export interface Lead {
@@ -112,6 +127,7 @@ export const leadService = {
         check_out?: string;
         guests?: number;
         property_title?: string;
+        property_id?: number;
         additional_services?: any[];
     }) => apiClient.post('/leads', { type, item_id: itemId, ...contactData }),
     getAll: () => apiClient.get<Lead[]>('/leads'),

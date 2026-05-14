@@ -1,30 +1,50 @@
 import { useState, useEffect } from 'react';
-import { Target, Phone, X, RefreshCw, User, MessageCircle, Info } from 'lucide-react';
+import { Target, Phone, X, RefreshCw, User, MessageCircle, Info, Trash2 } from 'lucide-react';
 import { leadService, Lead } from '../../services/crudService';
 
-const FunnelLeadsManager = () => {
-    const [leads, setLeads] = useState<Lead[]>([]);
-    const [loading, setLoading] = useState(true);
+interface FunnelLeadsManagerProps {
+    initialData?: Lead[];
+}
+
+const FunnelLeadsManager = ({ initialData }: FunnelLeadsManagerProps) => {
+    const [leads, setLeads] = useState<Lead[]>(initialData || []);
+    const [loading, setLoading] = useState(!initialData);
     const [error, setError] = useState<string | null>(null);
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
     const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
 
-    const fetchLeads = async () => {
+    const fetchLeads = async (force = false) => {
+        if (!force && initialData && leads.length > 0) return; // Skip only for initial mount if data exists
         setLoading(true);
         try {
             const res = await leadService.getAll();
-            const data = (res.data as any)?.data ?? res.data;
-            // Filtrar solo los leads del funnel (type === 'service')
-            const validLeads = Array.isArray(data) ? data.filter(l => (l.first_name || l.phone) && l.type === 'service') : [];
+            // Extracción robusta que soporta respuesta directa o envuelta (.data o .data.data)
+            const data = (res as any)?.data?.data || (res as any)?.data || res;
+            
+            // Un filtro más inclusivo para no perder registros por campos nulos secundarios
+            const validLeads = Array.isArray(data) 
+                // ? data.filter(l => l.type === 'service' || (!l.type && l.property_title?.includes('Funnel')))
+                ? data
+                : [];
             setLeads(validLeads);
         } catch (e) {
-            setError('No se pudo cargar los listados. Verifica tu sesión.');
+            if (!initialData) {
+                setError('No se pudo cargar los listados. Verifica tu sesión.');
+            }
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => { fetchLeads(); }, []);
+    useEffect(() => {
+        if (initialData) {
+            const validLeads = initialData.filter(l => l.type === 'service' || (!l.type && l.property_title?.includes('Funnel')));
+            setLeads(validLeads);
+            setLoading(false);
+        } else {
+            fetchLeads();
+        }
+    }, [initialData]);
 
     const handleDelete = async (id: number) => {
         try {
@@ -79,7 +99,7 @@ const FunnelLeadsManager = () => {
                     </p>
                 </div>
                 <button
-                    onClick={fetchLeads}
+                    onClick={() => fetchLeads(true)}
                     className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-minimal-olive transition-all shadow-lg"
                 >
                     <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
@@ -168,9 +188,10 @@ const FunnelLeadsManager = () => {
                                             <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                                                 <button
                                                     onClick={() => lead.id && setConfirmDelete(lead.id)}
-                                                    className="p-3 bg-white text-gray-400 border border-red-50 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all shadow-sm"
+                                                    className="p-2.5 bg-white text-gray-400 border border-red-50 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all shadow-sm"
+                                                    title="Eliminar interesado"
                                                 >
-                                                    <X size={14} />
+                                                    <Trash2 size={14} />
                                                 </button>
                                             </td>
                                         </tr>
@@ -267,7 +288,7 @@ const FunnelLeadsManager = () => {
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[4000] flex items-center justify-center p-4">
                 <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl border border-minimal-olive/10">
                     <div className="w-16 h-16 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                        <X size={32} />
+                        <Trash2 size={32} />
                     </div>
                     <h3 className="text-xl font-black text-black text-center mb-2">¿Eliminar Interesado?</h3>
                     <p className="text-sm text-gray-400 text-center mb-8 font-medium">Este prospecto se borrará de tu CRM.</p>

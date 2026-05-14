@@ -15,6 +15,8 @@ import ServiceManager from './ServiceManager';
 import SettingsManager from './SettingsManager';
 import MessagesManager from './MessagesManager';
 import FunnelLeadsManager from './FunnelLeadsManager';
+import UsersManager from './UsersManager';
+import ProfileManager from './ProfileManager';
 import { useAuth } from '../../hooks/useAuth';
 import { statsService, DashboardStats } from '../../services/crudService';
 import * as XLSX from 'xlsx';
@@ -78,7 +80,7 @@ const ConcentricChart = ({ stats }: { stats: DashboardStats | null }) => {
     return (
         <div className="flex flex-col w-full h-full">
             <div className="flex justify-between items-center mb-6">
-                <h3 className="font-bold text-gray-400 text-xs">RENDIMIENTO</h3>
+                <h3 className="font-black text-black text-xs uppercase tracking-widest">Rendimiento</h3>
             </div>
             <div className="flex-1 flex items-center justify-center relative w-full h-[220px]">
                 <div className="relative flex items-center justify-center w-56 h-56 sm:w-64 sm:h-64 -ml-16 sm:-ml-24">
@@ -123,17 +125,17 @@ const SimpleBarChart = ({ stats }: { stats: DashboardStats | null }) => {
         <div className="bg-white rounded-3xl p-6 border border-gray-50 shadow-sm space-y-4">
             <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
-                    <h3 className="font-bold text-gray-400 text-xs">Interacciones Mensuales</h3>
-                    <div className="flex items-center gap-1.5 opacity-60">
+                    <h3 className="font-black text-black text-xs">Interacciones Mensuales</h3>
+                    <div className="flex items-center gap-1.5 opacity-80">
                         <div className="w-2 h-2 rounded-full bg-minimal-olive"></div>
-                        <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Mensual</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-black">Mensual</span>
                     </div>
                 </div>
-                <Search size={14} className="text-gray-300" />
+                <Search size={14} className="text-black/40" />
             </div>
             
             <div className="flex gap-4">
-                <div className="flex flex-col justify-between text-[10px] font-bold text-gray-300 h-24 py-1.5 ml-1">
+                <div className="flex flex-col justify-between text-[10px] font-black text-black/60 h-24 py-1.5 ml-1">
                     <span>{maxVal}</span>
                     <span>{Math.round(maxVal / 2)}</span>
                     <span>0</span>
@@ -144,7 +146,7 @@ const SimpleBarChart = ({ stats }: { stats: DashboardStats | null }) => {
                         {bars.map((val: number, i: number) => (
                             <div key={i} className="w-full flex justify-center h-full items-end group">
                                 <div
-                                    className={`w-full max-w-[20px] rounded-t-lg transition-all duration-1000 ${i === bars.length - 1 ? 'bg-minimal-olive' : 'bg-gray-100 group-hover:bg-gray-200'}`}
+                                    className={`w-full max-w-[20px] rounded-t-lg transition-all duration-1000 ${i === bars.length - 1 ? 'bg-minimal-olive' : 'bg-minimal-olive/20 group-hover:bg-minimal-olive/40'}`}
                                     style={{ height: `${(val / maxVal) * 100}%` }}
                                 >
                                     <div className="opacity-0 group-hover:opacity-100 absolute -mt-6 bg-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded transition-opacity pointer-events-none">
@@ -154,9 +156,9 @@ const SimpleBarChart = ({ stats }: { stats: DashboardStats | null }) => {
                             </div>
                         ))}
                     </div>
-                    <div className="flex items-center justify-between px-1 mt-2 text-[9px] font-black text-gray-300 tracking-wider">
+                    <div className="flex items-center justify-between px-1 mt-2 text-[9px] font-black text-black/60 tracking-wider">
                         {labels.map((lbl: string, i: number) => (
-                            <span key={i} className={`flex-1 text-center ${i === labels.length - 1 ? 'text-minimal-gold' : ''}`}>
+                            <span key={i} className={`flex-1 text-center ${i === labels.length - 1 ? 'text-minimal-gold border-b-2 border-minimal-gold' : ''}`}>
                                 {lbl}
                             </span>
                         ))}
@@ -172,7 +174,7 @@ const AdminDashboard = () => {
     const location = useLocation();
     const state = location.state as { activeTab?: string; selectedLeadId?: number };
     
-    const [activeTab, setActiveTab] = useState<'stats' | 'properties' | 'services' | 'settings' | 'messages' | 'funnelLeads'>(
+    const [activeTab, setActiveTab] = useState<'stats' | 'properties' | 'services' | 'settings' | 'messages' | 'funnelLeads' | 'users' | 'profile'>(
         (state?.activeTab as any) || 'stats'
     );
     const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -286,6 +288,12 @@ const AdminDashboard = () => {
                                 </button>
                                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                                     <button
+                                        onClick={() => setActiveTab('profile')}
+                                        className="w-full text-left px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-50"
+                                    >
+                                        Mi Perfil
+                                    </button>
+                                    <button
                                         onClick={() => logout()}
                                         className="w-full text-left px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors"
                                     >
@@ -305,6 +313,7 @@ const AdminDashboard = () => {
                         { id: 'services', label: 'Servicios' },
                         { id: 'settings', label: 'Ajustes' },
                         { id: 'funnelLeads', label: 'Interesados Reserva' },
+                        { id: 'users', label: 'Usuarios' },
                         { id: 'messages', label: 'Chat' }
                     ].map((tab) => (
                         <button
@@ -359,7 +368,7 @@ const AdminDashboard = () => {
                                 {statCards.map((stat, i) => (
                                     <div key={i} className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 group">
                                         <div className="flex justify-between items-start mb-4 md:mb-6">
-                                            <p className="text-gray-400 text-xs font-black uppercase tracking-widest">{stat.label}</p>
+                                            <p className="text-black/40 text-xs font-black uppercase tracking-widest">{stat.label}</p>
                                             <div className="p-2 bg-gray-50 rounded-xl group-hover:bg-minimal-olive/5 transition-colors">
                                                 <MoreHorizontal size={16} className="text-gray-400" />
                                             </div>
@@ -370,9 +379,9 @@ const AdminDashboard = () => {
                                         <div className="flex items-center gap-2">
                                             <div className="flex items-center gap-1 text-xs font-bold">
                                                 {stat.icon}
-                                                <span className={stat.change.startsWith('+') ? 'text-green-500' : 'text-minimal-gold'}>{stat.change}</span>
+                                                <span className={stat.change.startsWith('+') ? 'text-green-600' : 'text-minimal-gold'}>{stat.change}</span>
                                             </div>
-                                            <span className="text-[10px] text-gray-300 font-bold uppercase">vs últ. semana</span>
+                                            <span className="text-[10px] text-black/30 font-black uppercase tracking-widest">vs últ. semana</span>
                                         </div>
                                     </div>
                                 ))}
@@ -452,8 +461,10 @@ const AdminDashboard = () => {
                         {activeTab === 'properties' && <PropertyManager />}
                         {activeTab === 'services' && <ServiceManager />}
                         {activeTab === 'settings' && <SettingsManager />}
-                        {activeTab === 'funnelLeads' && <FunnelLeadsManager />}
-                        {activeTab === 'messages' && <MessagesManager />}
+                        {activeTab === 'funnelLeads' && <FunnelLeadsManager initialData={(stats as any)?.all_leads} />}
+                        {activeTab === 'users' && <UsersManager initialData={(stats as any)?.all_users} />}
+                        {activeTab === 'messages' && <MessagesManager initialData={(stats as any)?.all_leads} />}
+                        {activeTab === 'profile' && <ProfileManager />}
                     </div>
 
 

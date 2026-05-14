@@ -2,28 +2,48 @@ import { useState, useEffect } from 'react';
 import { MessageSquare, Phone, Users, Home, RefreshCw, X, Calendar, User, MessageCircle } from 'lucide-react';
 import { leadService, Lead } from '../../services/crudService';
 
-const MessagesManager = () => {
-    const [leads, setLeads] = useState<Lead[]>([]);
-    const [loading, setLoading] = useState(true);
+interface MessagesManagerProps {
+    initialData?: Lead[];
+}
+
+const MessagesManager = ({ initialData }: MessagesManagerProps) => {
+    const [leads, setLeads] = useState<Lead[]>(initialData || []);
+    const [loading, setLoading] = useState(!initialData);
     const [error, setError] = useState<string | null>(null);
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
     const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
 
-    const fetchLeads = async () => {
+    const fetchLeads = async (force = false) => {
+        if (!force && initialData && leads.length > 0) return; // Skip only for initial mount if data exists
         setLoading(true);
         try {
             const res = await leadService.getAll();
-            const data = (res.data as any)?.data ?? res.data;
-            const validLeads = Array.isArray(data) ? data.filter(l => (l.first_name || l.phone) && l.type === 'property') : [];
+            // Extracción robusta que soporta respuesta directa o envuelta (.data o .data.data)
+            const data = (res as any)?.data?.data || (res as any)?.data || res;
+            
+            // Filtramos por tipo 'property' (las reservas específicas que van al Chat)
+            const validLeads = Array.isArray(data) 
+                ? data.filter(l => l.type === 'property' || (!l.type && l.item_id > 0 && !l.property_title?.includes('Funnel'))) 
+                : [];
             setLeads(validLeads);
         } catch (e) {
-            setError('No se pudo cargar el chat. Verifica tu sesión.');
+            if (!initialData) {
+                setError('No se pudo cargar el chat. Verifica tu sesión.');
+            }
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => { fetchLeads(); }, []);
+    useEffect(() => {
+        if (initialData) {
+            const validLeads = initialData.filter(l => l.type === 'property' || (!l.type && l.item_id > 0 && !l.property_title?.includes('Funnel')));
+            setLeads(validLeads);
+            setLoading(false);
+        } else {
+            fetchLeads();
+        }
+    }, [initialData]);
 
     const handleDelete = async (id: number) => {
         try {
@@ -61,7 +81,7 @@ const MessagesManager = () => {
                     </p>
                 </div>
                 <button
-                    onClick={fetchLeads}
+                    onClick={() => fetchLeads(true)}
                     className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-minimal-olive transition-all shadow-lg"
                 >
                     <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />

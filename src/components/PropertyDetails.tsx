@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Bed, Bath, Square, MapPin, Star, CheckCircle2, Users, User, Phone, Wifi, Car, Tv, Droplets, Dumbbell, Coffee, Wind, Utensils, Shield, Sun, PawPrint, Home, Laptop, ArrowUpCircle, ClipboardList, FileText, ChevronRight, Mail } from 'lucide-react';
+import { X, Bed, Bath, Square, MapPin, Star, CheckCircle2, Users, User, Phone, Wifi, Car, Tv, Droplets, Dumbbell, Coffee, Wind, Utensils, Shield, Sun, PawPrint, Home, Laptop, ArrowUpCircle, ClipboardList, FileText, ChevronRight, Mail, Info } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
+import { useAuth } from '../hooks/useAuth';
 import { propertyService, leadService, additionalServiceService, AdditionalService } from '../services/crudService';
+import AuthModal from './AuthModal';
 
 interface PropertyDetailsProps {
     property: any;
@@ -54,6 +56,9 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, allProperti
     const [touchStart, setTouchStart] = useState(0);
     const [availableServices, setAvailableServices] = useState<AdditionalService[]>([]);
     const [selectedServiceIds, setSelectedServiceIds] = useState<number[]>([]);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [showNotification, setShowNotification] = useState<{ message: string, type: 'info' | 'success' | 'error' } | null>(null);
+    const { user, isAuthenticated } = useAuth();
 
     const rawImages: string[] = [];
     if (property.img) rawImages.push(property.img);
@@ -73,7 +78,15 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, allProperti
         additionalServiceService.getAll()
             .then(res => setAvailableServices(res.data))
             .catch(err => console.error('Error fetching services:', err));
-    }, [property?.id]);
+        
+        // Auto-populate user data if authenticated
+        if (isAuthenticated && user) {
+            const nameParts = user.name.split(' ');
+            setFirstName(nameParts[0] || '');
+            setLastName(nameParts.slice(1).join(' ') || '');
+            setEmail(user.email || '');
+        }
+    }, [property?.id, isAuthenticated, user]);
 
     const toggleService = (id: number) => {
         setSelectedServiceIds(prev =>
@@ -105,7 +118,7 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, allProperti
         }
     };
 
-    const handleReserve = () => {
+    const handleReserve = async () => {
         const newErrors: any = {};
         if (!firstName) newErrors.firstName = "Campo obligatorio";
         if (!lastName) newErrors.lastName = "Campo obligatorio";
@@ -129,24 +142,45 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, allProperti
 
         setErrors({});
 
+        if (!isAuthenticated) {
+            setShowNotification({ 
+                message: "No tienes una cuenta activa. Por favor, regístrate para continuar con tu reserva.", 
+                type: 'info' 
+            });
+            setIsAuthModalOpen(true);
+            setTimeout(() => setShowNotification(null), 4000);
+            return;
+        }
+
         if (settingsLoading) return;
+
+        let generatedPassword = null;
 
         if (property?.id) {
             const selectedServicesDetails = availableServices
                 .filter(s => selectedServiceIds.includes(s.id as number))
                 .map(s => ({ name: s.name, price: s.price }));
 
-            leadService.trackLead('property', property.id, {
-                first_name: firstName,
-                last_name: lastName,
-                email,
-                phone,
-                check_in: checkIn,
-                check_out: checkOut,
-                guests,
-                property_title: property.title,
-                additional_services: selectedServicesDetails
-            }).catch(console.error);
+            try {
+                const response = await leadService.trackLead('property', property.id, {
+                    first_name: firstName,
+                    last_name: lastName,
+                    email,
+                    phone,
+                    check_in: checkIn,
+                    check_out: checkOut,
+                    guests,
+                    property_title: property.title,
+                    additional_services: selectedServicesDetails,
+                    property_id: property?.id
+                });
+                
+                if (response.data?.plain_password) {
+                    generatedPassword = response.data.plain_password;
+                }
+            } catch (err) {
+                console.error('Error tracking lead:', err);
+            }
         }
 
         const phoneNumber = settings.whatsapp_number;
@@ -164,6 +198,10 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property, allProperti
             .filter(s => selectedServiceIds.includes(s.id as number))
             .reduce((acc, s) => acc + s.price, 0);
 
+        const passwordMsg = generatedPassword 
+            ? `\n\n🔑 *Mis Credenciales de Acceso*:\nUsuario: ${email}\nContraseña: ${generatedPassword}\n(Guarda estos datos para ver tu historial en la web)`
+            : '';
+
         const message = `Hola, buen día. Deseo realizar una reserva en Umbral Suite.
 
 Cliente: ${firstName} ${lastName}
@@ -173,7 +211,7 @@ Tipo de habitación: ${property.title}.
 
 Fecha de ingreso (Check-in): ${checkIn}
 Fecha de salida (Check-out): ${checkOut}
-Cantidad de personas: ${guests}${selectedServicesText ? `\n\nServicios Extra:\n${selectedServicesText}\nTotal en Servicios: S/ ${servicesTotal}` : ''}
+Cantidad de personas: ${guests}${selectedServicesText ? `\n\nServicios Extra:\n${selectedServicesText}\nTotal en Servicios: S/ ${servicesTotal}` : ''}${passwordMsg}
 
 Quedo atento a su confirmación de disponibilidad y a los pasos para garantizar la reserva. ¡Muchas gracias!`;
 
@@ -666,33 +704,33 @@ Quedo atento a su confirmación de disponibilidad y a los pasos para garantizar 
                                     </div>
 
                                     {availableServices.length > 0 && (
-                                        <div className="flex flex-col gap-3 mt-2">
-                                            <label className="text-[10px] sm:text-[11px] text-gray-400 font-black uppercase tracking-widest pl-1">Servicios Extra (Opcional)</label>
-                                            <div className="grid grid-cols-1 gap-2 max-h-[220px] lg:max-h-[260px] overflow-y-auto pr-1 customize-scrollbar">
+                                        <div className="flex flex-col gap-2 mt-1">
+                                            <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest pl-1">Servicios Extra (Opcional)</label>
+                                            <div className="grid grid-cols-1 gap-1.5 max-h-[180px] lg:max-h-[220px] overflow-y-auto pr-1 customize-scrollbar">
                                                 {availableServices.map((service) => (
                                                     <div 
                                                         key={service.id}
                                                         onClick={() => toggleService(service.id as number)}
-                                                        className={`flex items-center justify-between p-3 sm:p-4 rounded-xl border transition-all cursor-pointer ${
+                                                        className={`flex items-center justify-between p-2 sm:p-2.5 rounded-lg border transition-all cursor-pointer ${
                                                             selectedServiceIds.includes(service.id as number)
                                                                 ? 'border-minimal-olive bg-minimal-olive/5 shadow-sm'
-                                                                : 'border-gray-100 bg-gray-50/30 hover:border-minimal-olive/30'
+                                                                : 'border-gray-50 bg-gray-50/20 hover:border-minimal-olive/20'
                                                         }`}
                                                     >
-                                                        <div className="flex items-center gap-3">
-                                                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
+                                                        <div className="flex items-center gap-2">
+                                                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                                                                 selectedServiceIds.includes(service.id as number)
                                                                     ? 'bg-minimal-olive border-minimal-olive text-white'
                                                                     : 'border-gray-300 bg-white'
                                                             }`}>
-                                                                {selectedServiceIds.includes(service.id as number) && <Star size={12} fill="currentColor" />}
+                                                                {selectedServiceIds.includes(service.id as number) && <Star size={10} fill="currentColor" />}
                                                             </div>
                                                             <div>
-                                                                <p className="text-sm font-bold text-black">{service.name}</p>
-                                                                <p className="text-[10px] text-gray-400 font-medium">{service.description || 'Consulta detalles con el administrador'}</p>
+                                                                <p className="text-xs font-bold text-black leading-none mb-0.5">{service.name}</p>
+                                                                <p className="text-[9px] text-gray-400 font-medium leading-tight">{service.description || 'Consulta detalles con el administrador'}</p>
                                                             </div>
                                                         </div>
-                                                        <span className="text-sm font-black text-minimal-olive">S/ {service.price}</span>
+                                                        <span className="text-xs font-black text-minimal-olive shrink-0 ml-2">S/ {service.price}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -759,6 +797,32 @@ Quedo atento a su confirmación de disponibilidad y a los pasos para garantizar 
                             ))}
                         </div>
                     )}
+                </div>
+            )}
+
+            <AuthModal 
+                isOpen={isAuthModalOpen} 
+                onClose={() => setIsAuthModalOpen(false)}
+                initialMode="register"
+                onSuccess={() => {
+                    // After successful login/register, the useEffect will trigger 
+                    // and populate the fields. The user can then click reserve again.
+                    setIsAuthModalOpen(false);
+                }}
+            />
+
+            {/* Premium Toast Notification */}
+            {showNotification && (
+                <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[6000] animate-in fade-in slide-in-from-top-10 duration-500">
+                    <div className="bg-black/90 backdrop-blur-xl border border-white/20 text-white px-8 py-5 rounded-2xl shadow-2xl flex items-center gap-4 min-w-[320px] max-w-md">
+                        <div className="w-8 h-8 bg-minimal-olive rounded-xl flex items-center justify-center shrink-0">
+                            <Info size={18} className="text-white" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-black uppercase tracking-widest text-minimal-olive mb-1">Aviso</p>
+                            <p className="text-sm font-bold leading-tight">{showNotification.message}</p>
+                        </div>
+                    </div>
                 </div>
             )}
         </>
