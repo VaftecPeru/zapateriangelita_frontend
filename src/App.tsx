@@ -10,7 +10,6 @@ import PrivacyPage from './pages/PrivacyPage';
 import ProfilePage from './pages/ProfilePage';
 import ContactAdvisorPage from './pages/ContactAdvisorPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import PropertiesPage from './pages/PropertiesPage';
 import AdminRoute from './components/AdminRoute';
 import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider } from './hooks/useAuth';
@@ -37,7 +36,6 @@ const AppContent = () => {
             </AdminRoute>
           } />
           <Route path="/contact-advisor" element={<ContactAdvisorPage />} />
-          <Route path="/properties" element={<PropertiesPage />} />
         </Routes>
       </div>
     </div>
