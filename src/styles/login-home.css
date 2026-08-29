@@ -1,0 +1,414 @@
+/* ============================================
+   LOGIN STYLE - AISLADO
+   NO AFECTA EL HEADER DEL HOME
+   ============================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@600;700&display=swap");
+
+/* ----- CONTENEDOR PRINCIPAL ----- */
+.login-page {
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    background: #EAE2D6;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    margin: 0;
+}
+
+/* ----- TARJETA DE LOGIN ----- */
+.login-page .login-card {
+    width: 100%;
+    max-width: 440px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 48px 40px 40px;
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.25s ease;
+}
+
+.login-page .login-card:hover {
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.12);
+}
+
+/* ============================================
+   LOGO - Estilo del home adaptado al login
+   ============================================ */
+
+.login-page .logo {
+    width: max-content;
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+    letter-spacing: .03em;
+    color: #121212;
+    text-decoration: none;
+    margin: 0 auto 32px;
+    text-align: center;
+}
+
+.login-page .logo__small {
+    margin-bottom: 1px;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #6e6e6e;
+}
+
+.login-page .logo strong {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    color: #121212;
+}
+
+.login-page .logo strong span {
+    color: #e30613;
+}
+
+.login-page .logo__tagline {
+    margin-top: 3px;
+    font-size: 7px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: #6e6e6e;
+}
+
+.login-page .logo--light {
+    color: #fff;
+}
+
+.login-page .logo--light .logo__small,
+.login-page .logo--light .logo__tagline {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.login-page .logo--light strong {
+    color: #fff;
+}
+
+/* ----- BOTÓN VOLVER ----- */
+.login-page .back-button {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    background: #f7f7f7;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 12px;
+    color: rgba(0, 0, 0, 0.4);
+    transition: all 0.25s ease;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.login-page .back-button:hover {
+    color: #121212;
+    border-color: #121212;
+    transform: translateX(-2px);
+}
+
+.login-page .back-button svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* ----- TÍTULO ----- */
+.login-page .login-title {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.login-page .login-title h1 {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #121212;
+    margin-bottom: 6px;
+}
+
+.login-page .login-title p {
+    color: #6e6e6e;
+    font-size: 14px;
+    font-weight: 400;
+    margin: 0;
+}
+
+/* ----- ERROR ----- */
+.login-page .error-message {
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.login-page .error-message svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* ----- FORMULARIO ----- */
+.login-page .login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+/* ----- CAMPOS ----- */
+.login-page .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.login-page .field-group label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #6e6e6e;
+    padding-left: 4px;
+}
+
+.login-page .field-group .input-wrapper {
+    position: relative;
+}
+
+.login-page .field-group .input-wrapper .input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #c5c5c5;
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+    transition: color 0.25s ease;
+}
+
+.login-page .field-group input {
+    width: 100%;
+    padding: 16px 18px 16px 48px;
+    background: #f7f7f7;
+    border: 2px solid transparent;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #121212;
+    outline: none;
+    transition: all 0.25s ease;
+    font-family: "Inter", system-ui, sans-serif;
+}
+
+.login-page .field-group input::placeholder {
+    color: #b5b5b5;
+    font-weight: 400;
+}
+
+.login-page .field-group input:focus {
+    background: #ffffff;
+    border-color: #121212;
+    box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.04);
+}
+
+.login-page .field-group input:focus~.input-icon,
+.login-page .field-group input:focus+.input-icon {
+    color: #121212;
+}
+
+/* ----- BOTÓN MOSTRAR CONTRASEÑA ----- */
+.login-page .toggle-password {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #c5c5c5;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.25s ease;
+    display: grid;
+    place-items: center;
+}
+
+.login-page .toggle-password:hover {
+    color: #121212;
+}
+
+.login-page .toggle-password svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* ----- BOTÓN ENVIAR ----- */
+.login-page .btn-submit {
+    width: 100%;
+    padding: 18px;
+    margin-top: 6px;
+    background: #e30613;
+    color: #ffffff;
+    border: none;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+    font-family: "Inter", system-ui, sans-serif;
+}
+
+.login-page .btn-submit:hover {
+    background: #bd0711;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(227, 6, 19, 0.3);
+}
+
+.login-page .btn-submit:active {
+    transform: scale(0.98);
+}
+
+.login-page .btn-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ----- ENLACES ----- */
+.login-page .login-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.login-page .login-links a {
+    color: #6e6e6e;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.25s ease;
+}
+
+.login-page .login-links a:hover {
+    color: #121212;
+}
+
+/* ----- FOOTER DEL LOGIN ----- */
+.login-page .login-footer {
+    text-align: center;
+    margin-top: 24px;
+}
+
+.login-page .login-footer p {
+    color: #6e6e6e;
+    font-size: 14px;
+    font-weight: 400;
+    margin: 0;
+}
+
+.login-page .login-footer a {
+    color: #121212;
+    font-weight: 700;
+    text-decoration: none;
+    transition: color 0.25s ease;
+}
+
+.login-page .login-footer a:hover {
+    color: #e30613;
+    text-decoration: underline;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 500px) {
+    .login-page {
+        padding: 12px;
+        align-items: flex-start;
+        padding-top: 40px;
+    }
+
+    .login-page .login-card {
+        padding: 36px 24px 30px;
+        border-radius: 14px;
+    }
+
+    .login-page .back-button {
+        top: 14px;
+        left: 14px;
+        width: 38px;
+        height: 38px;
+    }
+
+    .login-page .logo strong {
+        font-size: 26px;
+    }
+
+    .login-page .login-title h1 {
+        font-size: 26px;
+    }
+
+    .login-page .login-title p {
+        font-size: 13px;
+    }
+
+    .login-page .field-group input {
+        padding: 14px 14px 14px 44px;
+        font-size: 13px;
+        border-radius: 12px;
+    }
+
+    .login-page .field-group .input-wrapper .input-icon {
+        left: 14px;
+        width: 18px;
+        height: 18px;
+    }
+
+    .login-page .btn-submit {
+        padding: 16px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 380px) {
+    .login-page .login-card {
+        padding: 28px 16px 24px;
+    }
+
+    .login-page .logo strong {
+        font-size: 22px;
+    }
+
+    .login-page .login-title h1 {
+        font-size: 22px;
+    }
+
+    .login-page .field-group input {
+        padding: 12px 12px 12px 40px;
+        font-size: 12px;
+    }
+}

@@ -5,12 +5,13 @@ export interface RegisterData {
     email: string;
     password: string;
     password_confirmation: string;
+    phone?: string;
+    country?: string;
+    state?: string;
+    municipality?: string;
+    city?: string;
     gender?: string;
     birthdate?: string;
-    country?: string;
-    department?: string;
-    province?: string;
-    district?: string;
 }
 
 export interface LoginData {

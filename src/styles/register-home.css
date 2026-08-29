@@ -1,0 +1,420 @@
+/* ============================================
+   REGISTER STYLE - AISLADO
+   NO AFECTA EL HEADER DEL HOME
+   ============================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@600;700&display=swap");
+
+/* ----- CONTENEDOR PRINCIPAL ----- */
+.register-page {
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    background: #EAE2D6;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    margin: 0;
+}
+
+/* ----- TARJETA DE REGISTER ----- */
+.register-page .register-card {
+    width: 100%;
+    max-width: 840px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 48px 48px 40px;
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.25s ease;
+}
+
+.register-page .register-card:hover {
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.12);
+}
+
+/* ============================================
+   LOGO - Estilo del home adaptado al register
+   ============================================ */
+
+.register-page .logo {
+    width: max-content;
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+    letter-spacing: .03em;
+    color: #121212;
+    text-decoration: none;
+    margin: 0 auto 32px;
+    text-align: center;
+}
+
+.register-page .logo__small {
+    margin-bottom: 1px;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #6e6e6e;
+}
+
+.register-page .logo strong {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    color: #121212;
+}
+
+.register-page .logo strong span {
+    color: #e30613;
+}
+
+.register-page .logo__tagline {
+    margin-top: 3px;
+    font-size: 7px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: #6e6e6e;
+}
+
+.register-page .logo--light {
+    color: #fff;
+}
+
+.register-page .logo--light .logo__small,
+.register-page .logo--light .logo__tagline {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.register-page .logo--light strong {
+    color: #fff;
+}
+
+/* ----- BOTÓN VOLVER ----- */
+.register-page .back-button {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    background: #f7f7f7;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 12px;
+    color: rgba(0, 0, 0, 0.4);
+    transition: all 0.25s ease;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.register-page .back-button:hover {
+    color: #491214;
+    border-color: #121212;
+    transform: translateX(-2px);
+}
+
+.register-page .back-button svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* ----- HEADER ----- */
+.register-page .register-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.register-page .register-header h1 {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #491214;
+    margin-bottom: 6px;
+}
+
+.register-page .register-header p {
+    color: #6e6e6e;
+    font-size: 14px;
+    font-weight: 400;
+    margin: 0;
+}
+
+/* ----- ERROR ----- */
+.register-page .error-message {
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.register-page .error-message svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* ----- FORMULARIO ----- */
+.register-page .register-form {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+/* ----- SECCIÓN DEL FORMULARIO ----- */
+.register-page .form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.register-page .form-section-title {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    color: #491214;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.register-page .form-section-title .dot {
+    width: 6px;
+    height: 6px;
+    background: #491214;
+    border-radius: 50%;
+}
+
+/* ----- GRID DE CAMPOS ----- */
+.register-page .fields-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.register-page .fields-grid--full {
+    grid-template-columns: 1fr;
+}
+
+/* ----- CAMPOS ----- */
+.register-page .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.register-page .field-group label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #6e6e6e;
+    padding-left: 4px;
+}
+
+.register-page .field-group .input-wrapper {
+    position: relative;
+}
+
+.register-page .field-group .input-wrapper .input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #c5c5c5;
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+    transition: color 0.25s ease;
+}
+
+.register-page .field-group input,
+.register-page .field-group select {
+    width: 100%;
+    padding: 14px 16px 14px 48px;
+    background: #f7f7f7;
+    border: 2px solid transparent;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #121212;
+    outline: none;
+    transition: all 0.25s ease;
+    font-family: "Inter", system-ui, sans-serif;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.register-page .field-group select {
+    padding-right: 40px;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+}
+
+.register-page .field-group input::placeholder {
+    color: #b5b5b5;
+    font-weight: 400;
+}
+
+.register-page .field-group input:focus,
+.register-page .field-group select:focus {
+    background: #ffffff;
+    border-color: #121212;
+    box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.04);
+}
+
+.register-page .field-group input:focus~.input-icon,
+.register-page .field-group input:focus+.input-icon {
+    color: #121212;
+}
+
+.register-page .field-group select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ----- BOTÓN ENVIAR ----- */
+.register-page .btn-submit {
+    width: 100%;
+    padding: 18px;
+    margin-top: 6px;
+    background: #e30613;
+    color: #ffffff;
+    border: none;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: "Inter", system-ui, sans-serif;
+}
+
+.register-page .btn-submit:hover {
+    background: #bd0711;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(227, 6, 19, 0.3);
+}
+
+.register-page .btn-submit:active {
+    transform: scale(0.98);
+}
+
+.register-page .btn-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ----- FOOTER DEL REGISTER ----- */
+.register-page .register-footer {
+    text-align: center;
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.register-page .register-footer p {
+    color: #6e6e6e;
+    font-size: 14px;
+    font-weight: 400;
+    margin: 0;
+}
+
+.register-page .register-footer a {
+    color: #121212;
+    font-weight: 700;
+    text-decoration: none;
+    transition: color 0.25s ease;
+}
+
+.register-page .register-footer a:hover {
+    color: #e30613;
+    text-decoration: underline;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .register-page .register-card {
+        padding: 36px 24px 30px;
+    }
+
+    .register-page .fields-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .register-page .logo strong {
+        font-size: 26px;
+    }
+
+    .register-page .register-header h1 {
+        font-size: 26px;
+    }
+}
+
+@media (max-width: 500px) {
+    .register-page {
+        padding: 12px;
+        align-items: flex-start;
+        padding-top: 40px;
+    }
+
+    .register-page .register-card {
+        padding: 28px 16px 24px;
+        border-radius: 14px;
+    }
+
+    .register-page .back-button {
+        top: 14px;
+        left: 14px;
+        width: 38px;
+        height: 38px;
+    }
+
+    .register-page .logo strong {
+        font-size: 22px;
+    }
+
+    .register-page .register-header h1 {
+        font-size: 22px;
+    }
+
+    .register-page .register-header p {
+        font-size: 13px;
+    }
+
+    .register-page .field-group input,
+    .register-page .field-group select {
+        padding: 12px 14px 12px 42px;
+        font-size: 12px;
+    }
+
+    .register-page .field-group .input-wrapper .input-icon {
+        left: 14px;
+        width: 16px;
+        height: 16px;
+    }
+
+    .register-page .btn-submit {
+        padding: 14px;
+        font-size: 13px;
+    }
+}

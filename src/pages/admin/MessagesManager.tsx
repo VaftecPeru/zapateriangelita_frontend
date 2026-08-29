@@ -71,18 +71,18 @@ const MessagesManager = ({ initialData }: MessagesManagerProps) => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 backdrop-blur-sm p-6 rounded-[2rem] border border-minimal-olive/10 shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 backdrop-blur-sm p-6 rounded-[2rem] border border-gray-200 shadow-sm">
                 <div>
                     <h2 className="text-2xl font-black text-black tracking-tight flex items-center gap-3">
-                        <MessageSquare size={26} className="text-minimal-gold" /> Chat
+                        <MessageSquare size={26} className="text-store-red" /> Chat
                     </h2>
                     <p className="text-xs text-gray-400 font-medium mt-1">
-                        Solicitudes de alquiler específicas ({leads.length} en total)
+                        Solicitudes de consultas o compras ({leads.length} en total)
                     </p>
                 </div>
                 <button
                     onClick={() => fetchLeads(true)}
-                    className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-minimal-olive transition-all shadow-lg"
+                    className="flex items-center gap-2 px-6 py-3 bg-store-red text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-store-redDark transition-all shadow-lg"
                 >
                     <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
                     Actualizar
@@ -90,8 +90,8 @@ const MessagesManager = ({ initialData }: MessagesManagerProps) => {
             </div>
 
             {loading && (
-                <div className="flex items-center justify-center py-20 bg-white/40 backdrop-blur-sm rounded-[2rem] border border-minimal-olive/10">
-                    <div className="w-10 h-10 border-4 border-minimal-gold border-t-transparent rounded-full animate-spin" />
+                <div className="flex items-center justify-center py-20 bg-white/40 backdrop-blur-sm rounded-[2rem] border border-gray-200">
+                    <div className="w-10 h-10 border-4 border-store-red border-t-transparent rounded-full animate-spin" />
                 </div>
             )}
 
@@ -102,7 +102,7 @@ const MessagesManager = ({ initialData }: MessagesManagerProps) => {
             )}
 
             {!loading && !error && leads.length === 0 && (
-                <div className="bg-white/40 backdrop-blur-sm border border-minimal-olive/10 rounded-[2rem] p-12 text-center shadow-sm">
+                <div className="bg-white/40 backdrop-blur-sm border border-gray-200 rounded-[2rem] p-12 text-center shadow-sm">
                     <MessageSquare size={48} className="text-gray-200 mx-auto mb-4" />
                     <p className="text-gray-400 font-bold text-lg">Aún no hay mensajes.</p>
                     <p className="text-gray-300 font-medium text-sm mt-1">Aparecerán aquí cuando un usuario complete el formulario de interés.</p>
@@ -110,21 +110,21 @@ const MessagesManager = ({ initialData }: MessagesManagerProps) => {
             )}
 
             {!loading && leads.length > 0 && (
-                <div className="bg-white/40 backdrop-blur-sm rounded-[2rem] border border-minimal-olive/10 shadow-sm overflow-hidden">
+                <div className="bg-white/40 backdrop-blur-sm rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200">
                         <table className="w-full text-left border-collapse min-w-[800px]">
                             <thead>
-                                <tr className="border-b border-minimal-olive/5 bg-minimal-olive/5">
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Solicitante</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Propiedad</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Estadía</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Huéspedes</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Contacto</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Fecha</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Acciones</th>
+                                <tr className="border-b border-gray-100 bg-store-red/5">
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Solicitante</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Propiedad</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Estadía</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Huéspedes</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Contacto</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Fecha</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-minimal-olive/5">
+                            <tbody className="divide-y divide-gray-100">
                                 {leads.map((lead) => (
                                     <tr 
                                         key={lead.id} 
@@ -132,11 +132,11 @@ const MessagesManager = ({ initialData }: MessagesManagerProps) => {
                                             setSelectedLead(lead);
                                             handleMarkAsRead(lead);
                                         }}
-                                        className={`hover:bg-minimal-olive/[0.02] transition-colors group cursor-pointer ${!lead.is_read ? 'bg-minimal-gold/[0.03]' : ''}`}
+                                        className={`hover:bg-store-red/[0.02] transition-colors group cursor-pointer ${!lead.is_read ? 'bg-store-red/[0.05]' : ''}`}
                                     >
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className={`w-8 h-8 ${!lead.is_read ? 'bg-minimal-gold text-white' : 'bg-white text-minimal-gold'} border border-minimal-gold/20 rounded-xl flex items-center justify-center font-black text-[10px] shadow-sm transition-colors`}>
+                                                <div className={`w-8 h-8 ${!lead.is_read ? 'bg-store-red text-white' : 'bg-white text-store-red'} border border-store-red/20 rounded-xl flex items-center justify-center font-black text-[10px] shadow-sm transition-colors`}>
                                                     {(lead.first_name?.[0] ?? '?').toUpperCase()}
                                                 </div>
                                                 <div>
@@ -148,8 +148,8 @@ const MessagesManager = ({ initialData }: MessagesManagerProps) => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2 text-xs font-bold text-black bg-white/50 px-2 py-1 rounded-lg border border-minimal-olive/5 w-fit shadow-sm">
-                                                <Home size={12} className="text-minimal-gold" />
+                                            <div className="flex items-center gap-2 text-xs font-bold text-black bg-white/50 px-2 py-1 rounded-lg border border-gray-100 w-fit shadow-sm">
+                                                <Home size={12} className="text-store-red" />
                                                 <span className="truncate max-w-[150px]">{lead.property_title ?? `Propiedad #${lead.item_id}`}</span>
                                             </div>
                                         </td>
@@ -167,7 +167,7 @@ const MessagesManager = ({ initialData }: MessagesManagerProps) => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
-                                                <Phone size={12} className="text-minimal-gold" />
+                                                <Phone size={12} className="text-store-red" />
                                                 {lead.phone ?? '—'}
                                             </div>
                                         </td>
@@ -196,16 +196,16 @@ const MessagesManager = ({ initialData }: MessagesManagerProps) => {
         {selectedLead && (
             <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedLead(null)} />
-                <div className="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 border border-minimal-olive/10">
+                <div className="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 border border-gray-200">
                   
-                    <div className="bg-minimal-olive/5 px-8 py-8 flex justify-between items-center border-b border-minimal-olive/5">
+                    <div className="bg-store-red/5 px-8 py-8 flex justify-between items-center border-b border-gray-100">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center shadow-lg">
                                 <User size={24} />
                             </div>
                             <div>
                                 <h3 className="text-xl font-black text-black leading-tight">Solicitud de Reserva</h3>
-                                <p className="text-[10px] text-minimal-gold font-bold uppercase tracking-widest mt-1">ID: #{selectedLead.id}</p>
+                                <p className="text-[10px] text-store-red font-bold uppercase tracking-widest mt-1">ID: #{selectedLead.id}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -216,7 +216,7 @@ const MessagesManager = ({ initialData }: MessagesManagerProps) => {
                             >
                                 <X size={20} />
                             </button>
-                            <button onClick={() => setSelectedLead(null)} className="p-2 bg-white/50 hover:bg-gray-100 text-gray-500 rounded-full transition-all border border-minimal-olive/5">
+                            <button onClick={() => setSelectedLead(null)} className="p-2 bg-white/50 hover:bg-gray-100 text-gray-500 rounded-full transition-all border border-gray-100">
                                 <X size={20} />
                             </button>
                         </div>
@@ -241,7 +241,7 @@ const MessagesManager = ({ initialData }: MessagesManagerProps) => {
                         <div className="space-y-2 p-4 bg-gray-50 rounded-2xl border border-gray-100">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Propiedad de Interés</label>
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-minimal-gold shadow-sm border border-gray-100">
+                                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-store-red shadow-sm border border-gray-100">
                                     <Home size={24} />
                                 </div>
                                 <div>
@@ -253,12 +253,12 @@ const MessagesManager = ({ initialData }: MessagesManagerProps) => {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="p-4 border border-gray-100 rounded-2xl">
-                                <Calendar className="text-minimal-gold mb-2" size={16} />
+                                <Calendar className="text-store-red mb-2" size={16} />
                                 <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Check-in</label>
                                 <p className="text-xs font-bold text-black">{formatDate(selectedLead.check_in)}</p>
                             </div>
                             <div className="p-4 border border-gray-100 rounded-2xl">
-                                <Calendar className="text-minimal-gold mb-2" size={16} />
+                                <Calendar className="text-store-red mb-2" size={16} />
                                 <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Check-out</label>
                                 <p className="text-xs font-bold text-black">{formatDate(selectedLead.check_out)}</p>
                             </div>
@@ -266,7 +266,7 @@ const MessagesManager = ({ initialData }: MessagesManagerProps) => {
 
                         <div className="flex items-center justify-between p-4 bg-black text-white rounded-2xl">
                             <div className="flex items-center gap-3">
-                                <Users size={18} className="text-minimal-gold" />
+                                <Users size={18} className="text-white/60" />
                                 <span className="text-xs font-bold">Cantidad de Huéspedes</span>
                             </div>
                             <span className="text-lg font-black">{selectedLead.guests ?? 1}</span>
@@ -285,7 +285,7 @@ const MessagesManager = ({ initialData }: MessagesManagerProps) => {
                             href={`https://wa.me/${selectedLead.phone?.replace(/[^0-9]/g, '')}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-6 py-3 bg-black text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-minimal-olive transition-all shadow-lg active:scale-95 flex items-center gap-2"
+                            className="px-6 py-3 bg-store-red text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-store-redDark transition-all shadow-lg active:scale-95 flex items-center gap-2"
                         >
                             <MessageCircle size={14} /> Responder
                         </a>
@@ -297,7 +297,7 @@ const MessagesManager = ({ initialData }: MessagesManagerProps) => {
      
         {confirmDelete && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[4000] flex items-center justify-center p-4">
-                <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl border border-minimal-olive/10 animate-in fade-in zoom-in duration-200">
+                <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl border border-gray-200 animate-in fade-in zoom-in duration-200">
                     <div className="w-16 h-16 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
                         <X size={32} />
                     </div>

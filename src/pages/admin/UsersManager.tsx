@@ -15,7 +15,7 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
     const [deleting, setDeleting] = useState(false);
 
     const fetchUsers = async () => {
-        if (initialData && users.length > 0) return; // Skip if we have data from props
+        if (initialData && users.length > 0) return;
         setLoading(true);
         setError(null);
         try {
@@ -51,7 +51,9 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
         return (
             (user.name?.toLowerCase() || '').includes(search) ||
             (user.email?.toLowerCase() || '').includes(search) ||
-            (user.district?.toLowerCase() || '').includes(search)
+            (user.city?.toLowerCase() || '').includes(search) ||
+            (user.municipality?.toLowerCase() || '').includes(search) ||
+            (user.state?.toLowerCase() || '').includes(search)
         );
     });
 
@@ -69,30 +71,22 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
         }
     };
 
-    // const formatDate = (dateStr: string) => {
-    //     return new Date(dateStr).toLocaleDateString('es-PE', {
-    //         day: '2-digit',
-    //         month: 'long',
-    //         year: 'numeric'
-    //     });
-    // };
-
     return (
         <div className="space-y-6">
             {/* Header section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 backdrop-blur-sm p-6 rounded-[2rem] border border-minimal-olive/10 shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 backdrop-blur-sm p-6 rounded-[2rem] border border-gray-200 shadow-sm">
                 <div>
                     <h2 className="text-2xl font-black text-black tracking-tight flex items-center gap-3">
-                        <Users size={26} className="text-minimal-gold" /> Usuarios Registrados
+                        <Users size={26} className="text-store-red" /> Usuarios Registrados
                     </h2>
                     <p className="text-xs text-gray-400 font-medium mt-1">
-                        Listado completo de personas que han creado una cuenta en Homad ({users.length} usuarios)
+                        Listado completo de personas registradas en Zapatería ANGELITA ({users.length} usuarios)
                     </p>
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
                     <button
                         onClick={fetchUsers}
-                        className="flex items-center justify-center gap-2 px-6 py-3 bg-black text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-minimal-olive transition-all shadow-lg flex-1 sm:flex-none"
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-store-red text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-store-redDark transition-all shadow-lg flex-1 sm:flex-none"
                     >
                         <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
                         Actualizar
@@ -101,22 +95,22 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
             </div>
 
             {/* Search and Filters */}
-            <div className="bg-white/40 backdrop-blur-sm p-4 rounded-3xl border border-minimal-olive/10 shadow-sm">
+            <div className="bg-white/40 backdrop-blur-sm p-4 rounded-3xl border border-gray-200 shadow-sm">
                 <div className="relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                         type="text"
-                        placeholder="Buscar por nombre, correo o distrito..."
+                        placeholder="Buscar por nombre, correo, estado, municipio o ciudad..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-white border border-gray-100 rounded-2xl py-3 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-minimal-olive/20 outline-none transition-all shadow-sm"
+                        className="w-full bg-white border border-gray-200 rounded-2xl py-3 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all shadow-sm"
                     />
                 </div>
             </div>
 
             {loading && (
-                <div className="flex items-center justify-center py-20 bg-white/40 backdrop-blur-sm rounded-[2rem] border border-minimal-olive/10">
-                    <div className="w-10 h-10 border-4 border-minimal-gold border-t-transparent rounded-full animate-spin" />
+                <div className="flex items-center justify-center py-20 bg-white/40 backdrop-blur-sm rounded-[2rem] border border-gray-200">
+                    <div className="w-10 h-10 border-4 border-store-red border-t-transparent rounded-full animate-spin" />
                 </div>
             )}
 
@@ -127,7 +121,7 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
             )}
 
             {!loading && !error && filteredUsers.length === 0 && (
-                <div className="bg-white/40 backdrop-blur-sm border border-minimal-olive/10 rounded-[2rem] p-12 text-center shadow-sm">
+                <div className="bg-white/40 backdrop-blur-sm border border-gray-200 rounded-[2rem] p-12 text-center shadow-sm">
                     <Users size={48} className="text-gray-200 mx-auto mb-4" />
                     <p className="text-gray-400 font-bold text-lg">No se encontraron usuarios.</p>
                     <p className="text-gray-300 font-medium text-sm mt-1">
@@ -137,25 +131,25 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
             )}
 
             {!loading && filteredUsers.length > 0 && (
-                <div className="bg-white/40 backdrop-blur-sm rounded-[2rem] border border-minimal-olive/10 shadow-sm overflow-hidden">
+                <div className="bg-white/40 backdrop-blur-sm rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse min-w-[1000px]">
                             <thead>
-                                <tr className="border-b border-minimal-olive/5 bg-minimal-olive/5">
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Usuario</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Ubicación</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Género</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">F. Nacimiento</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Rol</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60 text-right">Acciones</th>
+                                <tr className="border-b border-gray-100 bg-store-red/5">
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Usuario</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Ubicación</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Género</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">F. Nacimiento</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Rol</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80 text-right">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-minimal-olive/5">
+                            <tbody className="divide-y divide-gray-100">
                                 {filteredUsers.map((user) => (
-                                    <tr key={user.id} className="hover:bg-minimal-olive/[0.02] transition-colors group">
+                                    <tr key={user.id} className="hover:bg-store-red/[0.02] transition-colors group">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-white border border-minimal-olive/20 rounded-2xl flex items-center justify-center font-black text-xs shadow-sm group-hover:bg-black group-hover:text-white transition-all">
+                                                <div className="w-10 h-10 bg-white border border-gray-200 rounded-2xl flex items-center justify-center font-black text-xs shadow-sm group-hover:bg-store-red group-hover:text-white transition-all">
                                                     {(user.name || 'U').slice(0, 2).toUpperCase()}
                                                 </div>
                                                 <div>
@@ -171,20 +165,26 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
                                             <div className="flex items-start gap-2">
                                                 <MapPin size={12} className="text-minimal-gold mt-0.5" />
                                                 <div className="flex flex-col">
-                                                    <span className="text-xs font-bold text-black">{user.district}</span>
-                                                    <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{user.province}, {user.department}</span>
+                                                    <span className="text-xs font-bold text-black">{user.city || 'N/A'}</span>
+                                                    <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
+                                                        {user.municipality || 'N/A'}, {user.state || 'N/A'}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 bg-gray-50 px-2.5 py-1 rounded-lg">
-                                                {user.gender === 'male' ? 'Masculino' : user.gender === 'female' ? 'Femenino' : user.gender}
+                                                {user.gender === 'Masculino' ? 'Masculino' :
+                                                    user.gender === 'Femenino' ? 'Femenino' :
+                                                        user.gender || 'N/A'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
                                                 <Calendar size={12} className="text-gray-300" />
-                                                <span className="text-xs font-bold text-gray-600">{user.birthdate}</span>
+                                                <span className="text-xs font-bold text-gray-600">
+                                                    {user.birthdate || 'N/A'}
+                                                </span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -194,13 +194,15 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <button
-                                                onClick={() => setConfirmDelete(user.id)}
-                                                className="p-2.5 bg-white text-gray-400 border border-red-50 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all shadow-sm"
-                                                title="Eliminar usuario"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
+                                            {user.role !== 'admin' && (
+                                                <button
+                                                    onClick={() => setConfirmDelete(user.id)}
+                                                    className="p-2.5 bg-white text-gray-400 border border-red-50 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all shadow-sm"
+                                                    title="Eliminar usuario"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

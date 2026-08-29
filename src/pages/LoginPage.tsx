@@ -3,14 +3,21 @@ import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
+import '../styles/login-home.css';
 
+const Logo = ({ light = false }: { light?: boolean }) => {
+    return (
+        <a className={`logo ${light ? "logo--light" : ""}`} href="/" aria-label="Zapatería Angelita - inicio">
+            <span className="logo__small">Zapatería</span>
+            <strong>ANGELITA</strong>
+            <span className="logo__tagline">Calzando tus pies desde 1980</span>
+        </a>
+    );
+};
 
 const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
-    const [formData, setFormData] = useState({
-        email: '',
-        password: '',
-    });
+    const [formData, setFormData] = useState({ email: '', password: '' });
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const { login: authLogin } = useAuth();
@@ -22,83 +29,83 @@ const LoginPage = () => {
         setLoading(true);
 
         try {
-            const response = await authService.login(formData);
-            const data = response.data;
-
+            const { data } = await authService.login(formData);
             authLogin(data.user, data.token);
-
-            // Redirect based on role
-            if (data.user.role === 'admin') {
-                navigate('/admin/dashboard');
-            } else {
-                navigate('/');
-            }
+            navigate(data.user.role === 'admin' ? '/admin/dashboard' : '/');
         } catch (err: any) {
-            // ✅ Mejor manejo de errores
-            const message = err.response?.data?.message || err.response?.data?.errors?.email?.[0] || err.message || 'Error al iniciar sesión';
-            setError(message);
+            const msg = err.response?.data?.message
+                || err.response?.data?.errors?.email?.[0]
+                || err.message
+                || 'Error al iniciar sesión';
+            setError(msg);
         } finally {
             setLoading(false);
         }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
     return (
-        <div className="min-h-screen bg-minimal-beige flex items-start justify-center p-6 py-10 pt-16 md:pt-24">
-            <div className="max-w-md w-full bg-white rounded-2xl p-10 relative border border-black">
-                <Link to="/" className="absolute top-8 left-8 p-3 bg-minimal-beige rounded-xl text-black/40 hover:text-black transition-colors border border-black/10">
+        <div className="login-page">
+            <div className="login-card">
+                <Link to="/" className="back-button" aria-label="Volver al inicio">
                     <ArrowLeft size={20} />
                 </Link>
+                <Logo />
 
-                <div className="text-center mb-10 pt-10">
-                    <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white font-bold text-xl mx-auto mb-6">U</div>
-                    <h1 className="text-3xl font-black text-black tracking-tighter">Bienvenido</h1>
-                    <p className="text-gray-400 font-medium mt-2">Ingresa tus credenciales para continuar</p>
+                <div className="login-title">
+                    <h1>Bienvenido</h1>
+                    <p>Ingresa tus credenciales para continuar</p>
                 </div>
 
                 {error && (
-                    <div className="mb-6 p-4 bg-red-50 text-red-600 text-sm rounded-2xl border border-red-100 italic font-medium">
+                    <div className="error-message">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
                         {error}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="space-y-2">
-                        <label className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] pl-1">Email</label>
-                        <div className="relative">
-                            <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300" size={20} />
+                <form onSubmit={handleSubmit} className="login-form">
+                    <div className="field-group">
+                        <label htmlFor="email">Email</label>
+                        <div className="input-wrapper">
+                            <Mail className="input-icon" size={20} />
                             <input
+                                id="email"
                                 type="email"
                                 name="email"
                                 required
                                 value={formData.email}
                                 onChange={handleChange}
-                                className="w-full pl-14 pr-6 py-4 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all font-bold text-sm"
                                 placeholder="tu@email.com"
                             />
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] pl-1">Contraseña</label>
-                        <div className="relative">
-                            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300" size={20} />
+                    <div className="field-group">
+                        <label htmlFor="password">Contraseña</label>
+                        <div className="input-wrapper">
+                            <Lock className="input-icon" size={20} />
                             <input
+                                id="password"
                                 type={showPassword ? 'text' : 'password'}
                                 name="password"
                                 required
                                 value={formData.password}
                                 onChange={handleChange}
-                                className="w-full pl-14 pr-14 py-4 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all font-bold text-sm"
                                 placeholder="••••••••"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-black"
+                                className="toggle-password"
+                                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                             >
                                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                             </button>
@@ -108,22 +115,22 @@ const LoginPage = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-black text-white py-5 rounded-2xl font-black text-lg hover:bg-gray-900 transition-all hover:shadow-xl active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mt-4 shadow-lg shadow-black/10"
+                        className="btn-submit"
                     >
                         {loading ? 'Entrando...' : 'Iniciar sesión'}
                     </button>
 
-                    <div className="text-center pt-2">
-                         <Link to="/forgot-password" className="text-gray-400 font-bold text-sm hover:text-black transition-colors">
-                               ¿Olvidaste tu contraseña?
-                         </Link>
+                    <div className="login-links">
+                        <Link to="/forgot-password">
+                            ¿Olvidaste tu contraseña?
+                        </Link>
                     </div>
                 </form>
 
-                <div className="mt-8 text-center">
-                    <p className="text-gray-400 font-medium text-sm">
+                <div className="login-footer">
+                    <p>
                         ¿No tienes una cuenta?{' '}
-                        <Link to="/register" className="text-black font-black hover:underline underline-offset-4">
+                        <Link to="/register">
                             Regístrate gratis
                         </Link>
                     </p>

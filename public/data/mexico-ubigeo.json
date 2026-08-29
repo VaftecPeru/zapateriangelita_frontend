@@ -1,0 +1,69 @@
+{
+  "Ciudad de México": {
+    "Ciudad de México": [
+      "Álvaro Obregón",
+      "Azcapotzalco",
+      "Benito Juárez",
+      "Coyoacán",
+      "Cuauhtémoc",
+      "Gustavo A. Madero",
+      "Iztacalco",
+      "Iztapalapa",
+      "Magdalena Contreras",
+      "Miguel Hidalgo",
+      "Milpa Alta",
+      "Tláhuac",
+      "Tlalpan",
+      "Venustiano Carranza",
+      "Xochimilco"
+    ]
+  },
+  "Jalisco": {
+    "Guadalajara": [
+      "Guadalajara",
+      "Zapopan",
+      "San Pedro Tlaquepaque",
+      "Tonalá",
+      "Tlajomulco de Zúñiga",
+      "El Salto"
+    ],
+    "Puerto Vallarta": [
+      "Puerto Vallarta",
+      "Cabo Corrientes",
+      "Tomatlán"
+    ]
+  },
+  "Nuevo León": {
+    "Monterrey": [
+      "Monterrey",
+      "Apodaca",
+      "García",
+      "General Escobedo",
+      "Guadalupe",
+      "Juárez",
+      "San Nicolás de los Garza",
+      "San Pedro Garza García",
+      "Santa Catarina"
+    ]
+  },
+  "Estado de México": {
+    "Toluca": [
+      "Toluca",
+      "Metepec",
+      "Zinacantepec",
+      "Lerma"
+    ],
+    "Naucalpan": [
+      "Naucalpan de Juárez",
+      "Huixquilucan"
+    ],
+    "Tlalnepantla": [
+      "Tlalnepantla de Baz",
+      "Atizapán de Zaragoza"
+    ],
+    "Ecatepec": [
+      "Ecatepec de Morelos",
+      "Tecámac"
+    ]
+  }
+}

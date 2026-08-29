@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Calendar, MapPin, Package, Heart, ChevronRight, Settings, ExternalLink, Users, ChevronDown } from 'lucide-react';
+import { User, Mail, Calendar, MapPin, Package, Heart, ChevronRight, Settings, ExternalLink, Users, ChevronDown, Phone } from 'lucide-react';
 import { leadService, Lead, userService } from '../services/crudService';
 import { useUbigeo } from '../hooks/useUbigeo';
 
@@ -22,12 +22,13 @@ const ProfilePage = () => {
         name: '',
         birthdate: '',
         gender: '',
-        department: '',
-        province: '',
-        district: ''
+        state: '',
+        municipality: '',
+        city: '',
+        phone: '',
     });
 
-    const { departments, provinces, districts, loading: ubigeoLoading } = useUbigeo(formData.department, formData.province);
+    const { states, municipalities, cities, loading: ubigeoLoading } = useUbigeo(formData.state, formData.municipality);
 
     useEffect(() => {
         if (user) {
@@ -53,9 +54,10 @@ const ProfilePage = () => {
             name: user.name || '',
             birthdate: (user as any).birthdate || '',
             gender: (user as any).gender || '',
-            department: (user as any).department || '',
-            province: (user as any).province || '',
-            district: (user as any).district || ''
+            state: (user as any).state || '',
+            municipality: (user as any).municipality || '',
+            city: (user as any).city || '',
+            phone: (user as any).phone || '',
         });
         setActiveTab('info');
         setIsEditing(true);
@@ -68,9 +70,10 @@ const ProfilePage = () => {
                 ...formData,
                 birthdate: formData.birthdate || null,
                 gender: formData.gender || null,
-                department: formData.department || null,
-                province: formData.province || null,
-                district: formData.district || null
+                state: formData.state || null,
+                municipality: formData.municipality || null,
+                city: formData.city || null,
+                phone: formData.phone || null,
             };
             await userService.updateProfile(dataToSubmit);
             window.location.reload();
@@ -157,11 +160,10 @@ const ProfilePage = () => {
                             <button
                                 key={item.id}
                                 onClick={() => { setActiveTab(item.id as any); setIsEditing(false); }}
-                                className={`flex-1 py-3.5 px-2 rounded-[1.3rem] flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest transition-all duration-300 ${
-                                    activeTab === item.id 
-                                        ? 'bg-minimal-olive text-white shadow-lg shadow-minimal-olive/20' 
+                                className={`flex-1 py-3.5 px-2 rounded-[1.3rem] flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === item.id
+                                        ? 'bg-minimal-olive text-white shadow-lg shadow-minimal-olive/20'
                                         : 'bg-white text-black/50 hover:bg-white hover:text-black'
-                                }`}
+                                    }`}
                             >
                                 {item.icon}
                                 <span>{item.label}</span>
@@ -177,64 +179,70 @@ const ProfilePage = () => {
                                         <div className="bg-white p-8 rounded-3xl border border-black">
                                             <h3 className="text-xl font-black text-black mb-6">Editar Información Personal</h3>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <div className="space-y-2">
+                                                <div className="space-y-2 md:col-span-2">
                                                     <label className="text-xs font-bold text-gray-500 uppercase">Nombre Completo</label>
-                                                    <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:border-black outline-none font-bold text-black" required />
+                                                    <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:border-black outline-none font-bold text-black" required />
                                                 </div>
                                                 <div className="space-y-2">
                                                     <label className="text-xs font-bold text-gray-500 uppercase">Fecha de Nacimiento</label>
-                                                    <input type="date" value={formData.birthdate} onChange={e => setFormData({...formData, birthdate: e.target.value})} className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:border-black outline-none font-bold text-black" />
+                                                    <input type="date" value={formData.birthdate} onChange={e => setFormData({ ...formData, birthdate: e.target.value })} className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:border-black outline-none font-bold text-black" />
                                                 </div>
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Género</label>
-                                            <div className="relative">
-                                                <select value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})} className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border border-transparent focus:border-minimal-olive outline-none font-bold text-sm transition-all appearance-none cursor-pointer">
-                                                    <option value="">Seleccionar...</option>
-                                                    <option value="Masculino">Masculino</option>
-                                                    <option value="Femenino">Femenino</option>
-                                                    <option value="Otro">Otro</option>
-                                                    <option value="Prefiero no decirlo">Prefiero no decirlo</option>
-                                                </select>
-                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Género</label>
+                                                    <div className="relative">
+                                                        <select value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })} className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border border-transparent focus:border-minimal-olive outline-none font-bold text-sm transition-all appearance-none cursor-pointer">
+                                                            <option value="">Seleccionar...</option>
+                                                            <option value="Masculino">Masculino</option>
+                                                            <option value="Femenino">Femenino</option>
+                                                            <option value="Otro">Otro</option>
+                                                            <option value="Prefiero no decirlo">Prefiero no decirlo</option>
+                                                        </select>
+                                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2 md:col-span-2">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Teléfono / Celular</label>
+                                                    <input type="tel" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:border-black outline-none font-bold text-black" placeholder="Ej. 999 888 777" />
+                                                </div>
                                             </div>
                                         </div>
-                                            </div>
-                                        </div>
+
                                         <div className="bg-white p-8 rounded-3xl border border-black">
-                                            <h3 className="text-xl font-black text-black mb-6 flex items-center gap-2"><MapPin size={24}/> Editar Ubicación</h3>
+                                            <h3 className="text-xl font-black text-black mb-6 flex items-center gap-2"><MapPin size={24} /> Editar Ubicación</h3>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Departamento</label>
-                                            <div className="relative">
-                                                <select required value={formData.department} disabled={ubigeoLoading} onChange={e => setFormData({...formData, department: e.target.value, province: '', district: ''})} className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border border-transparent focus:border-minimal-olive outline-none font-bold text-sm transition-all appearance-none cursor-pointer disabled:opacity-50">
-                                                    <option value="" disabled hidden>{ubigeoLoading ? 'Cargando...' : 'Seleccionar...'}</option>
-                                                    {departments.map(dept => <option key={dept} value={dept}>{dept}</option>)}
-                                                </select>
-                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Estado</label>
+                                                    <div className="relative">
+                                                        <select required value={formData.state} disabled={ubigeoLoading} onChange={e => setFormData({ ...formData, state: e.target.value, municipality: '', city: '' })} className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border border-transparent focus:border-minimal-olive outline-none font-bold text-sm transition-all appearance-none cursor-pointer disabled:opacity-50">
+                                                            <option value="" disabled hidden>{ubigeoLoading ? 'Cargando...' : 'Seleccionar...'}</option>
+                                                            {states.map(state => <option key={state} value={state}>{state}</option>)}
+                                                        </select>
+                                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Municipio</label>
+                                                    <div className="relative">
+                                                        <select required value={formData.municipality} disabled={!formData.state || ubigeoLoading} onChange={e => setFormData({ ...formData, municipality: e.target.value, city: '' })} className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border border-transparent focus:border-minimal-olive outline-none font-bold text-sm transition-all appearance-none cursor-pointer disabled:opacity-50">
+                                                            <option value="" disabled hidden>Seleccionar...</option>
+                                                            {municipalities.map(m => <option key={m} value={m}>{m}</option>)}
+                                                        </select>
+                                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Ciudad</label>
+                                                    <div className="relative">
+                                                        <select required value={formData.city} disabled={!formData.municipality || ubigeoLoading} onChange={e => setFormData({ ...formData, city: e.target.value })} className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border border-transparent focus:border-minimal-olive outline-none font-bold text-sm transition-all appearance-none cursor-pointer disabled:opacity-50">
+                                                            <option value="" disabled hidden>Seleccionar...</option>
+                                                            {cities.map(c => <option key={c} value={c}>{c}</option>)}
+                                                        </select>
+                                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Provincia</label>
-                                            <div className="relative">
-                                                <select required value={formData.province} disabled={!formData.department || ubigeoLoading} onChange={e => setFormData({...formData, province: e.target.value, district: ''})} className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border border-transparent focus:border-minimal-olive outline-none font-bold text-sm transition-all appearance-none cursor-pointer disabled:opacity-50">
-                                                    <option value="" disabled hidden>Seleccionar...</option>
-                                                    {provinces.map(prov => <option key={prov} value={prov}>{prov}</option>)}
-                                                </select>
-                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Distrito</label>
-                                            <div className="relative">
-                                                <select required value={formData.district} disabled={!formData.province || ubigeoLoading} onChange={e => setFormData({...formData, district: e.target.value})} className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border border-transparent focus:border-minimal-olive outline-none font-bold text-sm transition-all appearance-none cursor-pointer disabled:opacity-50">
-                                                    <option value="" disabled hidden>Seleccionar...</option>
-                                                    {districts.map(dist => <option key={dist} value={dist}>{dist}</option>)}
-                                                </select>
-                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
-                                            </div>
-                                        </div>
-                                            </div>
-                                        </div>
+
                                         <div className="flex justify-end items-center gap-4">
                                             <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-3 font-bold text-gray-500 hover:text-black transition-colors rounded-xl border-2 border-transparent hover:border-gray-200">Cancelar</button>
                                             <button type="submit" className="px-8 py-3 bg-black text-white font-bold rounded-xl hover:bg-minimal-olive transition-colors shadow-[4px_4px_0px_0px_rgba(107,114,84,1)] active:translate-x-1 active:translate-y-1 active:shadow-none">Guardar Cambios</button>
@@ -271,6 +279,12 @@ const ProfilePage = () => {
                                                     </p>
                                                     <p className="text-lg font-black text-black tracking-tight">{(user as any).gender || 'No especificado'}</p>
                                                 </div>
+                                                <div className="bg-white p-4 rounded-2xl border border-black/5 space-y-1 hover:border-minimal-olive transition-all duration-300 shadow-sm">
+                                                    <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest flex items-center gap-2">
+                                                        <Phone size={10} /> Teléfono
+                                                    </p>
+                                                    <p className="text-lg font-black text-black tracking-tight">{(user as any).phone || 'No especificado'}</p>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -285,9 +299,9 @@ const ProfilePage = () => {
                                                 <div>
                                                     <p className="text-[9px] text-minimal-olive font-black uppercase tracking-[0.2em] mb-1">Residencia actual</p>
                                                     <p className="text-2xl font-black text-black tracking-tighter leading-none mb-1">
-                                                        {(user as any).district}, {(user as any).province}
+                                                        {(user as any).city || 'Ciudad no especificada'}, {(user as any).municipality || 'Municipio no especificado'}
                                                     </p>
-                                                    <p className="text-gray-500 font-bold text-sm">{(user as any).department}, Perú</p>
+                                                    <p className="text-gray-500 font-bold text-sm">{(user as any).state || 'Estado no especificado'}, México</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -301,7 +315,7 @@ const ProfilePage = () => {
                                 <h3 className="text-[10px] text-minimal-olive font-black uppercase tracking-[0.4em] mb-8 flex items-center gap-3">
                                     <div className="w-2 h-2 bg-minimal-olive rounded-full" /> Mis Reservas
                                 </h3>
-                                
+
                                 {bookings.length > 0 ? (
                                     <div className="grid grid-cols-1 gap-3">
                                         {bookings.map(booking => (
@@ -313,8 +327,8 @@ const ProfilePage = () => {
                                                     <div>
                                                         <h4 className="text-lg font-black text-black leading-tight mb-1">{booking.property_title || `Propiedad #${booking.item_id}`}</h4>
                                                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-                                                            <span className="flex items-center gap-1"><Calendar size={12}/> {booking.check_in} - {booking.check_out}</span>
-                                                            <span className="flex items-center gap-1"><Users size={12}/> {booking.guests || 1} Personas</span>
+                                                            <span className="flex items-center gap-1"><Calendar size={12} /> {booking.check_in} - {booking.check_out}</span>
+                                                            <span className="flex items-center gap-1"><Users size={12} /> {booking.guests || 1} Personas</span>
                                                         </div>
 
                                                         {booking.additional_services && booking.additional_services.length > 0 && (
@@ -369,7 +383,7 @@ const ProfilePage = () => {
                                                     </button>
                                                 </div>
                                                 <div className="px-3 pb-3">
-                                                <h4 className="text-xl font-black text-black group-hover:text-black/80 transition-colors leading-[0.9] mb-3">{fav.title}</h4>
+                                                    <h4 className="text-xl font-black text-black group-hover:text-black/80 transition-colors leading-[0.9] mb-3">{fav.title}</h4>
                                                     <div className="flex justify-between items-end">
                                                         <div className="space-y-1">
                                                             <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-bold uppercase tracking-widest">
@@ -393,7 +407,7 @@ const ProfilePage = () => {
                                         </div>
                                         <h3 className="text-2xl font-black text-black mb-3 italic tracking-tighter">Tu lista está vacía</h3>
                                         <p className="text-sm text-gray-400 font-medium max-w-xs mx-auto leading-relaxed">
-                                            Explora propiedades y haz clic en el corazón para guardarlas en esta sección.
+                                            Explora productos y haz clic en el corazón para guardarlos en esta sección.
                                         </p>
                                     </div>
                                 )}

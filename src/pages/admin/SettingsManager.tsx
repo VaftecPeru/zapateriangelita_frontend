@@ -69,8 +69,8 @@ const SettingsManager = () => {
         return (
             <div className="flex flex-col items-center justify-center p-12 space-y-4">
                 <div className="relative">
-                    <div className="w-12 h-12 border-4 border-minimal-olive/20 border-t-minimal-olive rounded-full animate-spin"></div>
-                    <Settings2 className="absolute inset-0 m-auto text-minimal-olive animate-pulse" size={20} />
+                    <div className="w-12 h-12 border-4 border-store-red/20 border-t-store-red rounded-full animate-spin"></div>
+                    <Settings2 className="absolute inset-0 m-auto text-store-red animate-pulse" size={20} />
                 </div>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Cargando configuración...</p>
             </div>
@@ -81,7 +81,7 @@ const SettingsManager = () => {
         <div className="w-full max-w-md mx-auto lg:max-w-none animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-minimal-olive/10 rounded-2xl flex items-center justify-center text-minimal-olive border border-minimal-olive/20 flex-shrink-0">
+                <div className="w-10 h-10 bg-store-red/10 rounded-2xl flex items-center justify-center text-store-red border border-store-red/20 flex-shrink-0">
                     <Settings2 size={20} />
                 </div>
                 <div>
@@ -102,8 +102,8 @@ const SettingsManager = () => {
                     <div className="space-y-4">
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-2">
-                                <div className="p-2 bg-gray-50 rounded-xl group-hover:bg-minimal-olive/10 transition-colors flex-shrink-0">
-                                    <Smartphone size={16} className="text-gray-400 group-hover:text-minimal-olive transition-colors" />
+                                <div className="p-2 bg-gray-50 rounded-xl group-hover:bg-store-red/10 transition-colors flex-shrink-0">
+                                    <Smartphone size={16} className="text-gray-400 group-hover:text-store-red transition-colors" />
                                 </div>
                                 <span className="text-[10px] sm:text-[11px] font-black text-black uppercase tracking-widest truncate">Número de WhatsApp</span>
                             </div>
@@ -111,7 +111,7 @@ const SettingsManager = () => {
                             {!isEditing && (
                                 <button 
                                     onClick={() => setIsEditing(true)}
-                                    className="px-3 sm:px-4 py-1.5 bg-minimal-olive/5 hover:bg-minimal-olive/10 text-minimal-olive rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap"
+                                    className="px-3 sm:px-4 py-1.5 bg-store-red/5 hover:bg-store-red/10 text-store-red rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap"
                                 >
                                     Editar
                                 </button>
@@ -126,7 +126,7 @@ const SettingsManager = () => {
                                             type="text" 
                                             value={inputValue} 
                                             onChange={(e) => setInputValue(e.target.value)}
-                                            className="w-full pl-4 pr-4 py-3 sm:py-4 bg-gray-50 border-2 border-transparent rounded-2xl sm:rounded-[1.25rem] text-sm font-black text-black placeholder:text-gray-300 focus:bg-white focus:border-minimal-olive outline-none transition-all"
+                                            className="w-full pl-4 pr-4 py-3 sm:py-4 bg-gray-50 border-2 border-transparent rounded-2xl sm:rounded-[1.25rem] text-sm font-black text-black placeholder:text-gray-300 focus:bg-white focus:border-store-red outline-none transition-all"
                                             placeholder="Ej: 51968231620"
                                             autoFocus
                                         />
@@ -135,7 +135,7 @@ const SettingsManager = () => {
                                         <button 
                                             onClick={handleSave}
                                             disabled={saving}
-                                            className="flex-1 sm:flex-none h-12 uppercase sm:h-auto sm:w-12 sm:aspect-square bg-black text-white rounded-2xl flex items-center justify-center hover:bg-minimal-olive transition-all disabled:opacity-50 text-[10px] font-black tracking-widest sm:text-base"
+                                            className="flex-1 sm:flex-none h-12 uppercase sm:h-auto sm:w-12 sm:aspect-square bg-store-red text-white rounded-2xl flex items-center justify-center hover:bg-store-redDark transition-all disabled:opacity-50 text-[10px] font-black tracking-widest sm:text-base"
                                         >
                                             {saving ? <Loader2 size={16} className="animate-spin" /> : (
                                                 <>

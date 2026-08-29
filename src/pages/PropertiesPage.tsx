@@ -3,13 +3,11 @@ import { useSearchParams } from 'react-router-dom';
 import { MapPin, Star, Bed, Bath, Square, Heart, SlidersHorizontal, Search, X, ChevronDown, Tag } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import apiClient from '../services/apiClient';
-import PropertyDetails from '../components/PropertyDetails';
 import { Property } from '../services/crudService';
 
 const PropertiesPage = () => {
     const [properties, setProperties] = useState<Property[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
     const [searchParams] = useSearchParams();
     const { favorites, toggleFavorite, isAuthenticated } = useAuth();
 
@@ -130,7 +128,6 @@ const PropertiesPage = () => {
 
                     <div className="mb-6" ref={filterBarRef}>
                         <div className="hidden md:flex items-center bg-white border border-gray-200 rounded-full shadow-md divide-x divide-gray-200 overflow-visible">
-                            {/* ... (Filters) ... */}
                             <div className="flex items-center gap-2 px-5 py-3 flex-1 min-w-0">
                                 <MapPin size={15} className="text-gray-400 shrink-0" />
                                 <input
@@ -313,7 +310,7 @@ const PropertiesPage = () => {
                             {filteredProperties.map((p) => (
                                 <div
                                     key={p.id}
-                                    onClick={() => setSelectedProperty(p)}
+                                    onClick={() => {}}
                                     className="flex flex-col group bg-white rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
                                 >
                                     <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
@@ -382,29 +379,24 @@ const PropertiesPage = () => {
                 {/* Right Panel: Sticky Map */}
                 <div className="hidden lg:block lg:w-[45%] xl:w-[40%] relative pt-6">
                     <div className="sticky top-[120px] h-[calc(100vh-140px)] w-full rounded-[2.5rem] overflow-hidden shadow-inner border border-gray-200 bg-[#E3E2E0] relative">
-                        {/* Base simulada del mapa con un tono más "realista" */}
+                        {/* Base simulada del mapa */}
                         <div className="absolute inset-0 bg-[#E3E2E0]" style={{ backgroundImage: 'radial-gradient(#CFCFCF 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
-                            
-                            {/* Calles principales */}
                             <div className="absolute top-1/4 left-0 right-0 h-10 bg-white/60 transform -rotate-12 border-y border-white/80"></div>
                             <div className="absolute top-1/2 left-0 right-0 h-10 bg-white/60 transform rotate-6 border-y border-white/80"></div>
                             <div className="absolute top-0 bottom-0 left-1/3 w-14 bg-white/60 transform rotate-12 border-x border-white/80"></div>
                             <div className="absolute top-0 bottom-0 left-[60%] w-10 bg-white/60 transform -rotate-3 border-x border-white/80"></div>
 
-                            {/* Áreas Verdes (Parques) */}
                             <div className="absolute top-[15%] right-[15%] w-32 h-32 bg-[#CFDBC5] rounded-[30% 70% 70% 30% / 30% 30% 70% 70%] border border-[#B8C7AD] opacity-70"></div>
                             <div className="absolute bottom-[20%] left-[10%] w-40 h-24 bg-[#CFDBC5] rounded-[60% 40% 30% 70% / 60% 30% 70% 40%] border border-[#B8C7AD] opacity-70"></div>
 
-                            {/* Cuerpos de Agua */}
                             <div className="absolute -bottom-10 -right-20 w-64 h-64 bg-[#D4E2EC] rounded-full border border-[#BDD1DE] opacity-60"></div>
                             
-                            {/* Etiquetas de Áreas */}
                             <p className="absolute top-[35%] left-[45%] text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] select-none opacity-40">Distrito Centro</p>
                             <p className="absolute bottom-[40%] right-[15%] text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] select-none opacity-40">Zona Residencial</p>
                             <p className="absolute top-[20%] right-[20%] text-[8px] font-bold text-[#8FA47F] uppercase tracking-[0.1em] select-none">Parque Homad</p>
                         </div>
 
-                        {/* Marcadores de precio silulados e interactivos */}
+                        {/* Marcadores de precio */}
                         {filteredProperties.slice(0, 10).map((p, idx) => {
                             const positions = [
                                 { top: '22%', left: '28%' }, { top: '38%', right: '22%' },
@@ -417,7 +409,7 @@ const PropertiesPage = () => {
                             return (
                                 <div 
                                     key={`map-pin-${p.id}`} 
-                                    onClick={() => setSelectedProperty(p)}
+                                    onClick={() => {}}
                                     className="absolute z-10 cursor-pointer transform hover:scale-110 hover:z-30 transition-all bg-black text-white px-3.5 py-2 rounded-xl text-[11px] font-black shadow-[0_8px_16px_rgba(0,0,0,0.2)] border-[2.5px] border-white group animate-in fade-in zoom-in duration-500 hover:shadow-[0_12px_24px_rgba(0,0,0,0.3)]"
                                     style={pos}
                                 >
@@ -431,20 +423,7 @@ const PropertiesPage = () => {
                         })}
                     </div>
                 </div>
-
-
-
-
             </div>
-
-            {selectedProperty && (
-                <PropertyDetails
-                    property={selectedProperty}
-                    allProperties={properties}
-                    onClose={() => setSelectedProperty(null)}
-                    onSelectProperty={(p) => setSelectedProperty(p)}
-                />
-            )}
         </div>
     );
 };

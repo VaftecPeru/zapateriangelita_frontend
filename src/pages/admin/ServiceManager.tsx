@@ -124,7 +124,7 @@ const ServiceManager = () => {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[2rem] border border-gray-100">
-                <Loader2 className="animate-spin text-minimal-gold mb-4" size={40} />
+                <Loader2 className="animate-spin text-store-red mb-4" size={40} />
                 <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Cargando servicios...</p>
             </div>
         );
@@ -139,7 +139,7 @@ const ServiceManager = () => {
                 </div>
                 <button
                     onClick={() => handleOpenModal()}
-                    className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-minimal-olive transition-all shadow-lg hover:shadow-minimal-olive/20 active:scale-95"
+                    className="flex items-center gap-2 bg-store-red text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-store-redDark transition-all shadow-lg hover:shadow-store-red/20 active:scale-95"
                 >
                     <Plus size={16} />
                     Nuevo Servicio
@@ -168,7 +168,7 @@ const ServiceManager = () => {
                                     <tr key={s.id} className="hover:bg-gray-50/80 transition-colors group">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="p-2.5 bg-gray-50 rounded-xl text-minimal-gold group-hover:bg-minimal-olive group-hover:text-white transition-all shadow-sm">
+                                                <div className="p-2.5 bg-gray-50 rounded-xl text-store-red group-hover:bg-store-red group-hover:text-white transition-all shadow-sm">
                                                     <Sparkles size={18} />
                                                 </div>
                                                 <p className="font-black text-black text-sm">{s.name}</p>
@@ -243,7 +243,7 @@ const ServiceManager = () => {
                                         onChange={handleInputChange} 
                                         required 
                                         placeholder="Ej. Desayuno Premium"
-                                        className="w-full px-5 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:ring-4 focus:ring-minimal-olive/10 focus:border-minimal-olive outline-none transition-all text-sm font-bold placeholder:text-gray-300" 
+                                        className="w-full px-5 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:ring-4 focus:ring-store-red/10 focus:border-store-red outline-none transition-all text-sm font-bold placeholder:text-gray-300" 
                                     />
                                 </div>
                                 
@@ -283,7 +283,7 @@ const ServiceManager = () => {
                                         required 
                                         min="0" 
                                         step="0.01" 
-                                        className="w-full px-5 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:ring-4 focus:ring-minimal-olive/10 focus:border-minimal-olive outline-none transition-all text-sm font-bold" 
+                                        className="w-full px-5 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:ring-4 focus:ring-store-red/10 focus:border-store-red outline-none transition-all text-sm font-bold" 
                                     />
                                 </div>
 
@@ -295,7 +295,7 @@ const ServiceManager = () => {
                                         onChange={handleInputChange} 
                                         rows={4} 
                                         placeholder="Describe brevemente el servicio..."
-                                        className="w-full px-5 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:ring-4 focus:ring-minimal-olive/10 focus:border-minimal-olive outline-none transition-all text-sm font-bold resize-none placeholder:text-gray-300" 
+                                        className="w-full px-5 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:ring-4 focus:ring-store-red/10 focus:border-store-red outline-none transition-all text-sm font-bold resize-none placeholder:text-gray-300" 
                                     />
                                 </div>
                             </div>
@@ -310,7 +310,7 @@ const ServiceManager = () => {
                                 </button>
                                 <button 
                                     type="submit" 
-                                    className="flex-[2] py-4 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-minimal-olive transition-all shadow-xl shadow-black/5 active:scale-95"
+                                    className="flex-[2] py-4 bg-store-red text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-store-redDark transition-all shadow-xl shadow-black/5 active:scale-95"
                                 >
                                     {editingService ? 'Actualizar Servicio' : 'Crear Servicio'}
                                 </button>
