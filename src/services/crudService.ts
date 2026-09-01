@@ -1,10 +1,39 @@
 import apiClient from './apiClient';
 
+export interface Category {
+    id?: number;
+    name: string;
+    slug?: string;
+    icon?: string;
+    image?: string;
+    description?: string;
+    order?: number;
+    is_active?: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
+
+
+export interface Subcategory {
+    id?: number;
+    category_id: number;
+    name: string;
+    talla?: string;
+    order?: number;
+    is_active?: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
+
 
 export interface Product {
     id?: number;
     name: string;
     category: string;
+    category_id?: number;    
+    subcategory_id?: number;
     brand: string;
     price: number;
     discounted_price?: number;
@@ -22,7 +51,6 @@ export interface Product {
 }
 
 
-
 export interface AdditionalService {
     id?: number;
     name: string;
@@ -30,7 +58,6 @@ export interface AdditionalService {
     price: number;
     tag?: string;
 }
-
 
 
 export interface DashboardStats {
@@ -78,7 +105,6 @@ export interface User {
 }
 
 
-
 export interface Lead {
     id?: number;
     type: string;
@@ -98,6 +124,30 @@ export interface Lead {
 
 
 
+export const categoryService = {
+    getAll: () => apiClient.get<Category[]>('/categories'),
+    getById: (id: number) => apiClient.get<Category>(`/categories/${id}`),
+    getPublic: () => apiClient.get<Category[]>('/public/categories'),
+    create: (data: Category) => apiClient.post<Category>('/categories', data),
+    update: (id: number, data: Partial<Category>) => apiClient.put<Category>(`/categories/${id}`, data),
+    delete: (id: number) => apiClient.delete(`/categories/${id}`),
+};
+
+
+export const subcategoryService = {
+    getAll: () => apiClient.get<Subcategory[]>('/subcategories'),
+    getById: (id: number) => apiClient.get<Subcategory>(`/subcategories/${id}`),
+    getByCategory: (categoryId: number) => apiClient.get<Subcategory[]>(`/subcategories?category_id=${categoryId}`),
+    getPublic: (categoryId?: number) => {
+        const url = categoryId ? `/public/subcategories?category_id=${categoryId}` : '/public/subcategories';
+        return apiClient.get<Subcategory[]>(url);
+    },
+    create: (data: Subcategory) => apiClient.post<Subcategory>('/subcategories', data),
+    update: (id: number, data: Partial<Subcategory>) => apiClient.put<Subcategory>(`/subcategories/${id}`, data),
+    delete: (id: number) => apiClient.delete(`/subcategories/${id}`),
+};
+
+
 export const productService = {
     getAll: () => apiClient.get<Product[]>('/products'),
     getById: (id: number) => apiClient.get<Product>(`/products/${id}`),
@@ -111,7 +161,6 @@ export const productService = {
     },
     delete: (id: number) => apiClient.delete(`/products/${id}`),
 };
-
 
 
 
@@ -130,6 +179,7 @@ export const statsService = {
 };
 
 
+
 export const settingsService = {
     getAll: () => apiClient.get<{ success: boolean; data: { [key: string]: string } }>('/settings'),
     update: (key: string, value: string) => apiClient.post(`/settings/${key}?_method=PUT`, { value }),
@@ -142,7 +192,6 @@ export const userService = {
     getAll: () => apiClient.get<User[]>('/users'),
     delete: (id: number) => apiClient.delete(`/users/${id}`),
 };
-
 
 
 export const leadService = {
@@ -165,8 +214,11 @@ export const leadService = {
 };
 
 
+
 export default {
     productService,
+    categoryService,
+    subcategoryService,
     additionalServiceService,
     statsService,
     settingsService,

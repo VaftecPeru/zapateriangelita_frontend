@@ -262,7 +262,7 @@ const AdminDashboard = () => {
                 <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                     <div className="space-y-1">
                         <h1 className="text-2xl md:text-3xl font-black text-black tracking-tight flex items-center gap-3">
-                            Hola, <span className="text-store-red">{user?.name.split(' ')[0] || 'Admin'}</span> 👋
+                            Hola, <span className="text-store-red">{user?.name.split(' ')[0] || 'Admin'}</span>
                         </h1>
                         <p className="text-sm md:text-base text-gray-500 font-medium">¡Que tengas un excelente día de gestión en Zapatería ANGELITA!</p>
                     </div>

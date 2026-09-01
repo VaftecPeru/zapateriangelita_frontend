@@ -1,5 +1,5 @@
 // src/App.tsx
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -12,16 +12,35 @@ import ContactAdvisorPage from './pages/ContactAdvisorPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRoute from './components/AdminRoute';
 import ScrollToTop from './components/ScrollToTop';
-import { AuthProvider } from './hooks/useAuth';
+import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CartProvider } from './hooks/useCart';
 
+// ❌ ELIMINAR este componente (no se usa)
+// const RoleRedirect = () => { ... };
+
 const AppContent = () => {
+  const { user, isAuthenticated } = useAuth();
 
   return (
     <div className="min-h-screen bg-minimal-beige flex flex-col">
       <div className="flex-grow">
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          {/* Ruta raíz - redirige según rol si está autenticado */}
+          <Route
+            path="/"
+            element={
+              isAuthenticated ? (
+                user?.role === 'admin' ? (
+                  <Navigate to="/admin/dashboard" replace />
+                ) : (
+                  <Navigate to="/profile" replace />
+                )
+              ) : (
+                <HomePage />
+              )
+            }
+          />
+
           <Route path="/categoria/:categoryName" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />

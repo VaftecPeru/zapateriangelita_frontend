@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
@@ -20,8 +20,19 @@ const LoginPage = () => {
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const { login: authLogin } = useAuth();
+    const { login: authLogin, user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
+
+    // ✅ Redirigir si ya está autenticado (según rol)
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            if (user.role === 'admin') {
+                navigate('/admin/dashboard', { replace: true });
+            } else {
+                navigate('/profile', { replace: true });
+            }
+        }
+    }, [isAuthenticated, user, navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,7 +42,7 @@ const LoginPage = () => {
         try {
             const { data } = await authService.login(formData);
             authLogin(data.user, data.token);
-            navigate(data.user.role === 'admin' ? '/admin/dashboard' : '/');
+            // La redirección la maneja el useEffect
         } catch (err: any) {
             const msg = err.response?.data?.message
                 || err.response?.data?.errors?.email?.[0]
@@ -47,12 +58,28 @@ const LoginPage = () => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
+    // Si ya está autenticado, mostrar loader mientras redirige
+    if (isAuthenticated) {
+        return (
+            <div className="login-page">
+                <div className="login-card" style={{ textAlign: 'center', padding: '40px' }}>
+                    <div className="animate-pulse">
+                        <p className="text-lg font-bold text-gray-400 uppercase tracking-widest">
+                            Redirigiendo...
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="login-page">
             <div className="login-card">
                 <Link to="/" className="back-button" aria-label="Volver al inicio">
                     <ArrowLeft size={20} />
                 </Link>
+
                 <Logo />
 
                 <div className="login-title">

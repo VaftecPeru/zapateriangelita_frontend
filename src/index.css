@@ -430,6 +430,7 @@ body {
 }
 
 .header-actions button,
+.header-actions .header-user-icon,
 .mobile-menu-button {
   display: grid;
   place-items: center;
@@ -441,7 +442,8 @@ body {
   transition: color .2s ease;
 }
 
-.header-actions button:hover {
+.header-actions button:hover,
+.header-actions .header-user-icon:hover {
   color: #e30613;
 }
 
@@ -504,6 +506,7 @@ body {
   transform: translateX(-105%);
   background: #fff;
   transition: transform .25s ease;
+  overflow-y: auto;
 }
 
 .mobile-drawer.is-open {
@@ -515,6 +518,16 @@ body {
 }
 
 .mobile-drawer.is-open .mobile-drawer__panel {
+  transform: translateX(0);
+}
+
+/* Carrito: panel anclado a la derecha, entra desde la derecha */
+.mobile-drawer__panel--right {
+  padding: 0;
+  transform: translateX(105%);
+}
+
+.mobile-drawer.is-open .mobile-drawer__panel--right {
   transform: translateX(0);
 }
 
@@ -539,6 +552,26 @@ body {
   padding: 15px 2px;
   border-bottom: 1px solid #e9e9e9;
   font-weight: 600;
+}
+
+/* Acceso a iniciar sesión / mi cuenta dentro del menú móvil */
+.mobile-drawer__auth {
+  padding: 6px 0 0;
+}
+
+.mobile-drawer__auth a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 2px;
+  border-top: 1px solid #e9e9e9;
+  font-weight: 700;
+  color: #e30613;
+  transition: color .2s ease;
+}
+
+.mobile-drawer__auth a:hover {
+  color: #bd0711;
 }
 
 .search-panel {

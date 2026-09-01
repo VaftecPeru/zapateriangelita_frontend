@@ -39,33 +39,68 @@ const money = new Intl.NumberFormat("es-PE", {
   minimumFractionDigits: 2,
 });
 
-// ===== MARCAS =====
+
+
+const subcategoriasMujer = [
+  "Alpargatas", "Botas", "Botines", "Casual", "Chunky",
+  "Confort", "Flats y Balerinas", "Mocasín", "Pantuflas",
+  "Sandalias", "Senderismo", "Tenis deportivos", "Tenis urbanos",
+  "Zapatillas", "Zapatillas de fiesta"
+];
+
+const subcategoriasHombre = [
+  "Botas", "Botines", "Casual", "Industrial", "Mocasín",
+  "Pantufla", "Sandalia", "Senderismo", "Tacos de fútbol",
+  "Tenis deportivo", "Tenis urbanos", "Zapatos de vestir"
+];
+
+
+const subcategoriasNiños = [
+  { talla: "Bebé (8-13)", items: ["Botas", "Casual", "Sandalias", "Tenis"] },
+  { talla: "Preescolar (14-17)", items: ["Balerinas", "Botas", "Botines", "Casual", "Tenis", "Sandalias"] },
+  { talla: "Niña (18-21)", items: ["Alpargatas", "Balerinas y flats", "Botas", "Casual", "Graduación", "Lluvia", "Pantufla", "Sandalia", "Tenis deportivos", "Tenis urbanos"] },
+  { talla: "Niño (18-21)", items: ["Botas", "Casual", "Sandalias", "Tacos de fútbol", "Tenis deportivos", "Tenis urbanos"] },
+];
+
 const brands = ["Nike", "adidas", "PUMA", "SKECHERS", "CAT", "flexi"];
 
-// ===== MENÚ PRINCIPAL CON SUBMENÚS =====
+
 const menuItems = [
   { name: "Inicio", href: "/" },
   {
     name: "Mujer",
     href: "/categoria/mujer",
-    submenu: brands.map(brand => ({ name: brand, href: `/categoria/mujer?marca=${brand.toLowerCase()}` }))
+    submenu: subcategoriasMujer.map(item => ({
+      name: item,
+      href: `/categoria/mujer?tipo=${item.toLowerCase().replace(/\s/g, '-')}`
+    }))
   },
   {
     name: "Hombre",
     href: "/categoria/hombre",
-    submenu: brands.map(brand => ({ name: brand, href: `/categoria/hombre?marca=${brand.toLowerCase()}` }))
+    submenu: subcategoriasHombre.map(item => ({
+      name: item,
+      href: `/categoria/hombre?tipo=${item.toLowerCase().replace(/\s/g, '-')}`
+    }))
   },
   {
     name: "Niños",
     href: "/categoria/niños",
-    submenu: brands.map(brand => ({ name: brand, href: `/categoria/niños?marca=${brand.toLowerCase()}` }))
+    submenu: subcategoriasNiños.map(group => ({
+      talla: group.talla,
+      items: group.items.map(item => ({
+        name: item,
+        href: `/categoria/niños?tipo=${item.toLowerCase().replace(/\s/g, '-')}&talla=${group.talla.split(' ')[0]}`
+      }))
+    }))
   },
   { name: "Ofertas", href: "/ofertas" },
   { name: "Novedades", href: "/novedades" },
   { name: "Contacto", href: "/contacto" },
 ];
 
-// ===== COMPONENTES =====
+
+
 function InstagramIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -149,7 +184,7 @@ function ProductCard({ product, onFavorite, isFavorite, onAddToCart }: any) {
   );
 }
 
-// ===== COMPONENTE PRINCIPAL =====
+
 export default function StoreHome() {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
@@ -183,6 +218,14 @@ export default function StoreHome() {
     }, 6500);
     return () => window.clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const shouldLock = menuOpen || cartOpen;
+    document.body.style.overflow = shouldLock ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen, cartOpen]);
 
   const goToSlide = (direction: number) => {
     setSlide((current) => (current + direction + heroSlides.length) % heroSlides.length);
@@ -230,7 +273,6 @@ export default function StoreHome() {
     <div className="store-page">
       <a className="skip-link" href="#contenido">Saltar al contenido</a>
 
-      {/* ===== HEADER ===== */}
       <header className="site-header" id="inicio">
         <div className="announcement-bar">
           <div className="shell announcement-bar__inner">
@@ -249,58 +291,92 @@ export default function StoreHome() {
           </button>
           <Logo />
           <nav className="desktop-nav" aria-label="Navegación principal">
-            {menuItems.map((item) => (
-              <div key={item.name} className="nav-item">
-                {item.submenu ? (
-                  <>
-                    <button
-                      className={`nav-link ${activeCategory === item.name ? "is-active" : ""}`}
-                      onClick={() => toggleDropdown(item.name)}
-                      aria-expanded={openDropdown === item.name}
+            {menuItems.map((item) => {
+              const isChildrenMenu = item.name === "Niños" && Array.isArray(item.submenu) && item.submenu.length > 0 && "talla" in (item.submenu[0] as object);
+
+              return (
+                <div
+                  key={item.name}
+                  className="nav-item"
+                  onMouseEnter={() => item.submenu && setOpenDropdown(item.name)}
+                  onMouseLeave={() => setOpenDropdown(null)}
+                >
+                  {item.submenu ? (
+                    <>
+                      <button
+                        className={`nav-link ${activeCategory === item.name ? "is-active" : ""}`}
+                        onClick={() => {
+                          toggleDropdown(item.name);
+                          handleCategoryClick(item.name);
+                        }}
+                        aria-expanded={openDropdown === item.name}
+                      >
+                        {item.name} <ChevronDown size={13} />
+                      </button>
+                      {openDropdown === item.name && (
+                        <div className="dropdown-menu">
+                          {isChildrenMenu ? (
+                            item.submenu.map((group: any) => (
+                              <div key={group.talla} className="dropdown-group">
+                                <span className="dropdown-group-title">{group.talla}</span>
+                                {group.items.map((sub: any) => (
+                                  <a
+                                    key={sub.name}
+                                    href={sub.href}
+                                    className="dropdown-item"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      navigate(sub.href);
+                                      setOpenDropdown(null);
+                                    }}
+                                  >
+                                    {sub.name}
+                                  </a>
+                                ))}
+                              </div>
+                            ))
+                          ) : (
+                            item.submenu.map((sub: any) => (
+                              <a
+                                key={sub.name}
+                                href={sub.href}
+                                className="dropdown-item"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  navigate(sub.href);
+                                  setOpenDropdown(null);
+                                }}
+                              >
+                                {sub.name}
+                              </a>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <a
+                      className={`nav-link ${activeCategory === item.name || (activeCategory === 'All' && item.name === 'Inicio') ? "is-active" : ""}`}
+                      href={item.href}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (item.name === 'Inicio') {
+                          navigate('/');
+                        } else {
+                          navigate(item.href);
+                        }
+                      }}
                     >
-                      {item.name} <ChevronDown size={13} />
-                    </button>
-                    {openDropdown === item.name && (
-                      <div className="dropdown-menu">
-                        {item.submenu.map((sub: any) => (
-                          <a
-                            key={sub.name}
-                            href={sub.href}
-                            className="dropdown-item"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleCategoryClick(item.name);
-                              setOpenDropdown(null);
-                            }}
-                          >
-                            {sub.name}
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <a
-                    className={`nav-link ${activeCategory === item.name || (activeCategory === 'All' && item.name === 'Inicio') ? "is-active" : ""}`}
-                    href={item.href}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (item.name === 'Inicio') {
-                        navigate('/');
-                      } else {
-                        navigate(item.href);
-                      }
-                    }}
-                  >
-                    {item.name}
-                  </a>
-                )}
-              </div>
-            ))}
+                      {item.name}
+                    </a>
+                  )}
+                </div>
+              );
+            })}
           </nav>
           <div className="header-actions">
             <button type="button" aria-label="Buscar" onClick={() => setSearchOpen((value) => !value)}><Search /></button>
-            <Link to={isAuthenticated ? "/profile" : "/login"} className="desktop-only" aria-label="Mi cuenta"><UserRound /></Link>
+            <Link to={isAuthenticated ? "/profile" : "/login"} className="header-user-icon" aria-label={isAuthenticated ? "Mi cuenta" : "Iniciar sesión"}><UserRound /></Link>
             <button className="header-actions__cart" type="button" aria-label={`Carrito, ${cartCount} productos`} onClick={() => setCartOpen(true)}>
               <ShoppingBag />{cartCount > 0 && <span>{cartCount}</span>}
             </button>
@@ -315,7 +391,6 @@ export default function StoreHome() {
           </form>
         )}
 
-        {/* Menú móvil */}
         <div className={`mobile-drawer ${menuOpen ? "is-open" : ""}`} aria-hidden={!menuOpen}>
           <button className="mobile-drawer__backdrop" type="button" aria-label="Cerrar menú" onClick={() => setMenuOpen(false)} />
           <div className="mobile-drawer__panel">
@@ -345,13 +420,22 @@ export default function StoreHome() {
                 </a>
               ))}
             </nav>
+            <div className="mobile-drawer__auth">
+              <Link
+                to={isAuthenticated ? "/profile" : "/login"}
+                onClick={() => setMenuOpen(false)}
+                aria-label={isAuthenticated ? "Mi cuenta" : "Iniciar sesión"}
+              >
+                <UserRound size={19} />
+                {isAuthenticated ? "Mi cuenta" : "Iniciar sesión"}
+              </Link>
+            </div>
           </div>
         </div>
 
-        {/* ===== CART DRAWER ===== */}
         <div className={`mobile-drawer ${cartOpen ? "is-open" : ""}`} aria-hidden={!cartOpen} style={{ zIndex: 10000 }}>
           <button className="mobile-drawer__backdrop" type="button" aria-label="Cerrar carrito" onClick={() => setCartOpen(false)} />
-          <div className="mobile-drawer__panel" style={{ right: 0, left: 'auto', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column' }}>
+          <div className="mobile-drawer__panel mobile-drawer__panel--right" style={{ right: 0, left: 'auto', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column' }}>
             <div className="mobile-drawer__header" style={{ padding: '20px', borderBottom: '1px solid #eee' }}>
               <h2 style={{ fontSize: '18px', margin: 0 }}>Mi Carrito ({cartCount})</h2>
               <button type="button" onClick={() => setCartOpen(false)} aria-label="Cerrar carrito"><X /></button>
@@ -396,11 +480,9 @@ export default function StoreHome() {
         </div>
       </header>
 
-      {/* ===== CONTENIDO PRINCIPAL ===== */}
       <main id="contenido">
         {isHomePage ? (
           <>
-            {/* HERO */}
             <section className="hero shell" aria-label="Colecciones destacadas">
               <div
                 className="hero__image"
@@ -467,7 +549,7 @@ export default function StoreHome() {
               </div>
             </section>
 
-            {/* PRODUCTOS DESTACADOS */}
+            {/* PRODUCTOS */}
             <section className="products shell section-block" id="productos">
               <SectionTitle title="Productos destacados" action="Ver catálogo completo" />
               <div className="product-grid">
@@ -548,7 +630,6 @@ export default function StoreHome() {
             </section>
           </>
         ) : (
-          /* ===== VISTA DE CATEGORÍA ===== */
           <section className="products shell section-block" style={{ paddingTop: '40px', minHeight: '60vh' }}>
             <SectionTitle
               title={`Calzado para ${activeCategory}`}
@@ -570,7 +651,6 @@ export default function StoreHome() {
         )}
       </main>
 
-      {/* ===== FOOTER ===== */}
       <footer className="footer">
         <div className="shell footer__grid">
           <div className="footer__brand">
@@ -609,7 +689,7 @@ export default function StoreHome() {
         </div>
       </footer>
 
-      {/* ===== CART TOAST NOTIFICATION ===== */}
+      {/* Toast Notification */}
       <div
         style={{
           position: 'fixed',
@@ -638,7 +718,6 @@ export default function StoreHome() {
             maxWidth: '340px',
             fontFamily: 'Inter, system-ui, sans-serif',
           }}>
-            {/* Icono rojo */}
             <div style={{
               width: '40px', height: '40px', minWidth: '40px',
               background: '#e30613', borderRadius: '10px',
@@ -650,7 +729,6 @@ export default function StoreHome() {
                 <path d="M16 10a4 4 0 0 1-8 0" />
               </svg>
             </div>
-            {/* Texto */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: '#e30613', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Agregado al carrito
@@ -659,7 +737,6 @@ export default function StoreHome() {
                 {toast.product.name}
               </p>
             </div>
-            {/* Botón ver carrito */}
             <button
               onClick={() => { setCartOpen(true); setToast(null); }}
               style={{
@@ -673,7 +750,6 @@ export default function StoreHome() {
             >
               Ver carrito
             </button>
-            {/* Cerrar */}
             <button
               onClick={() => setToast(null)}
               style={{
@@ -689,7 +765,6 @@ export default function StoreHome() {
           </div>
         )}
       </div>
-
     </div>
   );
 }

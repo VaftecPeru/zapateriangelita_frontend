@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { productService, Product } from '../../services/crudService';
+import { productService, Product, categoryService, subcategoryService, Category, Subcategory } from '../../services/crudService';
 import { Plus, Edit, Trash2, Loader2, X, ChevronDown, Image as ImageIcon, Upload, AlertTriangle } from 'lucide-react';
 
 const ProductManager = () => {
     const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -15,6 +17,7 @@ const ProductManager = () => {
     const [formData, setFormData] = useState<Product>({
         name: '',
         category: '',
+        category_id: undefined,
         brand: '',
         price: 0,
         discounted_price: 0,
@@ -38,11 +41,21 @@ const ProductManager = () => {
     const loadData = async () => {
         try {
             setLoading(true);
-            const res = await productService.getAll();
-            const data = Array.isArray(res.data) ? res.data : ((res.data as any).data || []);
-            setProducts(data);
+            const [productsRes, categoriesRes, subcategoriesRes] = await Promise.all([
+                productService.getAll(),
+                categoryService.getAll(),
+                subcategoryService.getAll(),
+            ]);
+
+            const productsData = Array.isArray(productsRes.data) ? productsRes.data : ((productsRes.data as any).data || []);
+            const categoriesData = Array.isArray(categoriesRes.data) ? categoriesRes.data : ((categoriesRes.data as any).data || []);
+            const subcategoriesData = Array.isArray(subcategoriesRes.data) ? subcategoriesRes.data : ((subcategoriesRes.data as any).data || []);
+
+            setProducts(productsData);
+            setCategories(categoriesData);
+            setSubcategories(subcategoriesData);
         } catch (err) {
-            console.error('Error loading products:', err);
+            console.error('Error loading data:', err);
         } finally {
             setLoading(false);
         }
@@ -78,6 +91,7 @@ const ProductManager = () => {
                 reviews: product.reviews ?? 0,
                 description: product.description ?? '',
                 discount: product.discount ?? null,
+                category_id: product.category_id,
             });
 
             const newPreviews = Array(5).fill(null);
@@ -95,6 +109,7 @@ const ProductManager = () => {
             setFormData({
                 name: '',
                 category: '',
+                category_id: undefined,
                 brand: '',
                 price: 0,
                 discounted_price: 0,
@@ -153,6 +168,16 @@ const ProductManager = () => {
         }));
     };
 
+    const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const categoryId = Number(e.target.value);
+        const selectedCategory = categories.find(c => c.id === categoryId);
+        setFormData(prev => ({
+            ...prev,
+            category_id: categoryId,
+            category: selectedCategory?.name || '',
+        }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
@@ -160,13 +185,14 @@ const ProductManager = () => {
 
             data.append('name', String(formData.name));
             data.append('category', String(formData.category));
+            data.append('category_id', String(formData.category_id || ''));
             data.append('brand', String(formData.brand));
             data.append('price', String(formData.price));
             data.append('stock', String(formData.stock));
-            data.append('size', String(formData.size));
-            data.append('color', String(formData.color));
-            data.append('material', String(formData.material));
-            data.append('gender', String(formData.gender));
+            data.append('size', String(formData.size || ''));
+            data.append('color', String(formData.color || ''));
+            data.append('material', String(formData.material || ''));
+            data.append('gender', String(formData.gender || ''));
             data.append('rating', String(formData.rating ?? 0));
             data.append('reviews', String(formData.reviews ?? 0));
 
@@ -201,6 +227,7 @@ const ProductManager = () => {
             });
 
             if (editingProduct && editingProduct.id) {
+                data.append('_method', 'PUT');
                 await productService.update(editingProduct.id, data);
             } else {
                 await productService.create(data);
@@ -220,6 +247,11 @@ const ProductManager = () => {
             alert(message);
         }
     };
+
+    // Obtener subcategorías filtradas por categoría seleccionada
+    const filteredSubcategories = subcategories.filter(
+        sub => sub.category_id === formData.category_id
+    );
 
     if (loading) {
         return (
@@ -353,16 +385,45 @@ const ProductManager = () => {
                                     <input type="text" name="name" value={formData.name} onChange={handleInputChange} required className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" placeholder="Ej: Botín Mujer Catalina" />
                                 </div>
 
-                                {/* Categoría */}
+                                {/* Categoría (desde BD) */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Categoría</label>
                                     <div className="relative">
-                                        <select name="category" value={formData.category} onChange={handleInputChange} required className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold appearance-none cursor-pointer">
-                                            <option value="" disabled>Seleccionar</option>
-                                            <option value="Mujer">Mujer</option>
-                                            <option value="Hombre">Hombre</option>
-                                            <option value="Niños">Niños</option>
-                                            <option value="Deportivos">Deportivos</option>
+                                        <select
+                                            name="category_id"
+                                            value={formData.category_id || ''}
+                                            onChange={handleCategoryChange}
+                                            required
+                                            className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold appearance-none cursor-pointer"
+                                        >
+                                            <option value="">Seleccionar categoría</option>
+                                            {categories.map((cat) => (
+                                                <option key={cat.id} value={cat.id}>
+                                                    {cat.icon} {cat.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                    </div>
+                                </div>
+
+                                {/* Subcategoría (filtrada por categoría) */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Subcategoría</label>
+                                    <div className="relative">
+                                        <select
+                                            name="subcategory_id"
+                                            value={formData.subcategory_id || ''}
+                                            onChange={handleInputChange}
+                                            className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold appearance-none cursor-pointer"
+                                            disabled={!formData.category_id}
+                                        >
+                                            <option value="">Sin subcategoría</option>
+                                            {filteredSubcategories.map((sub) => (
+                                                <option key={sub.id} value={sub.id}>
+                                                    {sub.name} {sub.talla && `(${sub.talla})`}
+                                                </option>
+                                            ))}
                                         </select>
                                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                                     </div>
@@ -419,21 +480,6 @@ const ProductManager = () => {
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Material</label>
                                     <input type="text" name="material" value={formData.material} onChange={handleInputChange} required className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" placeholder="Ej: Cuero, Tela, Sintético" />
-                                </div>
-
-                                {/* Género */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Género</label>
-                                    <div className="relative">
-                                        <select name="gender" value={formData.gender} onChange={handleInputChange} required className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold appearance-none cursor-pointer">
-                                            <option value="" disabled>Seleccionar</option>
-                                            <option value="Femenino">Femenino</option>
-                                            <option value="Masculino">Masculino</option>
-                                            <option value="Unisex">Unisex</option>
-                                            <option value="Niños">Niños</option>
-                                        </select>
-                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
-                                    </div>
                                 </div>
 
                                 {/* Etiqueta de descuento */}
