@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
+import { categoryService, productService, Category, Product } from "../services/crudService";
 import {
   ArrowRight,
   ChevronDown,
@@ -25,11 +26,10 @@ import {
 
 // @ts-ignore
 import {
-  categories,
+  categories as staticCategories,
   finderItems,
   heroSlides,
   instagramImages,
-  products,
   testimonials,
 } from "../data/catalog";
 
@@ -159,17 +159,19 @@ function ProductCard({ product, onFavorite, isFavorite, onAddToCart }: any) {
         <button
           className={`favorite-button ${isFavorite ? "is-active" : ""}`}
           type="button"
-          onClick={() => onFavorite(product.id)}
+          onClick={(event) => { event.preventDefault(); onFavorite(product.id); }}
           aria-label={`${isFavorite ? "Quitar" : "Agregar"} ${product.name} de favoritos`}
         >
           <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
         </button>
-        <img src={product.image} alt={product.name} loading="lazy" />
-        <button className="quick-add" type="button" onClick={() => onAddToCart(product)}>Agregar al carrito</button>
+        <Link to={`/producto/${product.id}`} className="product-card__image-link" aria-label={`Ver detalles de ${product.name}`}>
+          <img src={product.image} alt={product.name} loading="lazy" />
+        </Link>
+        <button className="quick-add" type="button" onClick={(event) => { event.preventDefault(); onAddToCart(product); }}>Agregar al carrito</button>
       </div>
       <div className="product-card__body">
         <span className="product-card__category">{product.category}</span>
-        <h3>{product.name}</h3>
+        <h3><Link to={`/producto/${product.id}`}>{product.name}</Link></h3>
         <div className="stars" aria-label={`${product.rating} de 5 estrellas`}>
           {Array.from({ length: product.rating }).map((_, index) => (
             <Star key={index} size={12} fill="currentColor" aria-hidden="true" />
@@ -186,6 +188,8 @@ function ProductCard({ product, onFavorite, isFavorite, onAddToCart }: any) {
 
 
 export default function StoreHome() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
   const [slide, setSlide] = useState<number>(0);
@@ -199,6 +203,46 @@ export default function StoreHome() {
   const [toast, setToast] = useState<{ product: any } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => {
+    const loadCatalog = async () => {
+      try {
+        const [productsResponse, categoriesResponse] = await Promise.all([
+          productService.getAll(),
+          categoryService.getPublic(),
+        ]);
+        const productsData = Array.isArray(productsResponse.data)
+          ? productsResponse.data
+          : (productsResponse.data as any)?.data || [];
+        const categoriesData = Array.isArray(categoriesResponse.data)
+          ? categoriesResponse.data
+          : (categoriesResponse.data as any)?.data || [];
+
+        setProducts(productsData.map((product: Product) => ({
+          ...product,
+          image: product.img || product.images?.[0] || staticCategories[0]?.image,
+          category: typeof product.category === "object"
+            ? product.category.name
+            : product.category || categoriesData.find((category: Category) => category.id === product.category_id)?.name || "Sin categoría",
+          price: Number(product.discounted_price || product.price),
+          oldPrice: product.discounted_price ? Number(product.price) : null,
+          rating: Math.round(Number(product.rating || 0)),
+        })));
+        setCategories(categoriesData.map((category: Category, index: number) => {
+          const visual = staticCategories.find((item) => item.name.toLowerCase() === category.name.toLowerCase()) || staticCategories[index % staticCategories.length];
+          return {
+            ...category,
+            image: category.image || visual?.image,
+            color: visual?.color || "#f5eee8",
+          };
+        }));
+      } catch (error) {
+        console.error("Error loading public catalog:", error);
+      }
+    };
+
+    loadCatalog();
+  }, []);
+
   const handleAddToCart = (product: any) => {
     addToCart(product);
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -206,8 +250,12 @@ export default function StoreHome() {
     toastTimer.current = setTimeout(() => setToast(null), 3200);
   };
 
+  const selectedCategory = categories.find((category) =>
+    category.slug?.toLowerCase() === categoryName?.toLowerCase() ||
+    category.name.toLowerCase() === categoryName?.toLowerCase()
+  );
   const activeCategory = categoryName
-    ? categoryName.charAt(0).toUpperCase() + categoryName.slice(1).toLowerCase()
+    ? selectedCategory?.name || categoryName.charAt(0).toUpperCase() + categoryName.slice(1).toLowerCase()
     : 'All';
 
   const isHomePage = activeCategory === 'All';
@@ -256,7 +304,9 @@ export default function StoreHome() {
 
   const filteredProducts = isHomePage
     ? products
-    : products.filter((p: any) => p.category.toLowerCase() === activeCategory.toLowerCase());
+    : products.filter((product: Product) => selectedCategory
+      ? product.category_id === selectedCategory.id
+      : String(product.category).toLowerCase() === activeCategory.toLowerCase());
 
   const handleCheckout = () => {
     if (!isAuthenticated) {

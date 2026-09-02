@@ -768,10 +768,17 @@ img {
 
 .product-card__media {
   position: relative;
+  display: block;
   aspect-ratio: .92 / 1;
   overflow: hidden;
   background: var(--surface);
   border-radius: 8px;
+}
+
+.product-card__image-link {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .product-card__media img {
@@ -857,6 +864,11 @@ img {
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.product-card h3 a {
+  color: inherit;
+  text-decoration: none;
 }
 
 .stars {

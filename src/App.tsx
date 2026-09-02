@@ -9,6 +9,7 @@ import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import ProfilePage from './pages/ProfilePage';
 import ContactAdvisorPage from './pages/ContactAdvisorPage';
+import ProductDetailPage from './pages/ProductDetailPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRoute from './components/AdminRoute';
 import ScrollToTop from './components/ScrollToTop';
@@ -42,6 +43,7 @@ const AppContent = () => {
           />
 
           <Route path="/categoria/:categoryName" element={<HomePage />} />
+          <Route path="/producto/:productId" element={<ProductDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />

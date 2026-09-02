@@ -28,26 +28,35 @@ export interface Subcategory {
 
 
 
+export interface Brand {
+    id?: number;
+    name: string;
+    slug?: string;
+    is_active?: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export interface Product {
     id?: number;
     name: string;
-    category: string;
-    category_id?: number;    
+    category?: string | { id?: number; name: string; slug?: string };
+    category_id?: number;
     subcategory_id?: number;
-    brand: string;
+    brand_id?: number;
+    brand?: string | { id?: number; name: string; slug?: string };
     price: number;
     discounted_price?: number;
     stock: number;
     size: string;
     color: string;
     material: string;
-    gender: string;
     img: string;
     images?: string[];
     description?: string;
     rating: number;
     reviews: number;
-    discount?: string | null;
+    discount?: string;
 }
 
 
@@ -148,6 +157,14 @@ export const subcategoryService = {
 };
 
 
+export const brandService = {
+    getAll: () => apiClient.get<Brand[]>('/brands'),
+    getById: (id: number) => apiClient.get<Brand>(`/brands/${id}`),
+    create: (data: Brand) => apiClient.post<Brand>('/brands', data),
+    update: (id: number, data: Partial<Brand>) => apiClient.put<Brand>(`/brands/${id}`, data),
+    delete: (id: number) => apiClient.delete(`/brands/${id}`),
+};
+
 export const productService = {
     getAll: () => apiClient.get<Product[]>('/products'),
     getById: (id: number) => apiClient.get<Product>(`/products/${id}`),
@@ -219,6 +236,7 @@ export default {
     productService,
     categoryService,
     subcategoryService,
+    brandService,
     additionalServiceService,
     statsService,
     settingsService,

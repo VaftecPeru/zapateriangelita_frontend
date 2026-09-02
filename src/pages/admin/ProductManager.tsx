@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { productService, Product, categoryService, subcategoryService, Category, Subcategory } from '../../services/crudService';
-import { Plus, Edit, Trash2, Loader2, X, ChevronDown, Image as ImageIcon, Upload, AlertTriangle } from 'lucide-react';
+import { productService, Product, categoryService, subcategoryService, brandService, Category, Subcategory, Brand } from '../../services/crudService';
+import { Plus, Edit, Trash2, Eye, Loader2, X, ChevronDown, Image as ImageIcon, Upload, AlertTriangle } from 'lucide-react';
 
 const ProductManager = () => {
     const [products, setProducts] = useState<Product[]>([]);
+    const [brands, setBrands] = useState<Brand[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
     const [loading, setLoading] = useState(true);
@@ -12,26 +13,28 @@ const ProductManager = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [productToDelete, setProductToDelete] = useState<number | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [formError, setFormError] = useState('');
+    const [productToView, setProductToView] = useState<Product | null>(null);
     const [selectedFiles, setSelectedFiles] = useState<(File | null)[]>(Array(5).fill(null));
     const [previews, setPreviews] = useState<(string | null)[]>(Array(5).fill(null));
     const [formData, setFormData] = useState<Product>({
         name: '',
         category: '',
         category_id: undefined,
-        brand: '',
+        subcategory_id: undefined,
+        brand_id: undefined,
         price: 0,
         discounted_price: 0,
         stock: 0,
         size: '',
         color: '',
         material: '',
-        gender: '',
         img: '',
         images: [],
         description: '',
         rating: 0,
         reviews: 0,
-        discount: null,
+        discount: '',
     });
 
     useEffect(() => {
@@ -41,19 +44,22 @@ const ProductManager = () => {
     const loadData = async () => {
         try {
             setLoading(true);
-            const [productsRes, categoriesRes, subcategoriesRes] = await Promise.all([
+            const [productsRes, categoriesRes, subcategoriesRes, brandsRes] = await Promise.all([
                 productService.getAll(),
                 categoryService.getAll(),
                 subcategoryService.getAll(),
+                brandService.getAll(),
             ]);
 
             const productsData = Array.isArray(productsRes.data) ? productsRes.data : ((productsRes.data as any).data || []);
             const categoriesData = Array.isArray(categoriesRes.data) ? categoriesRes.data : ((categoriesRes.data as any).data || []);
             const subcategoriesData = Array.isArray(subcategoriesRes.data) ? subcategoriesRes.data : ((subcategoriesRes.data as any).data || []);
+            const brandsData = Array.isArray(brandsRes.data) ? brandsRes.data : ((brandsRes.data as any).data || []);
 
             setProducts(productsData);
             setCategories(categoriesData);
             setSubcategories(subcategoriesData);
+            setBrands(brandsData);
         } catch (err) {
             console.error('Error loading data:', err);
         } finally {
@@ -81,7 +87,25 @@ const ProductManager = () => {
         }
     };
 
+    const getCategoryName = (product: Product) => {
+        if (typeof product.category === 'string') return product.category || 'Sin categoría';
+        if (product.category && typeof product.category === 'object') return product.category.name || 'Sin categoría';
+        const found = categories.find(cat => cat.id === product.category_id);
+        return found?.name || 'Sin categoría';
+    };
+
+    const getBrandName = (product: Product) => {
+        if (typeof product.brand === 'string') return product.brand || 'Sin marca';
+        if (product.brand && typeof product.brand === 'object') return product.brand.name || 'Sin marca';
+        if (product.brand_id) {
+            const found = brands.find(brand => brand.id === product.brand_id);
+            return found?.name || 'Sin marca';
+        }
+        return 'Sin marca';
+    };
+
     const handleOpenModal = (product?: Product) => {
+        setFormError('');
         if (product) {
             setEditingProduct(product);
             setFormData({
@@ -90,8 +114,10 @@ const ProductManager = () => {
                 rating: product.rating ?? 0,
                 reviews: product.reviews ?? 0,
                 description: product.description ?? '',
-                discount: product.discount ?? null,
+                discount: product.discount ?? '',
                 category_id: product.category_id,
+                subcategory_id: product.subcategory_id,
+                brand_id: product.brand_id,
             });
 
             const newPreviews = Array(5).fill(null);
@@ -110,20 +136,20 @@ const ProductManager = () => {
                 name: '',
                 category: '',
                 category_id: undefined,
-                brand: '',
+                subcategory_id: undefined,
+                brand_id: undefined,
                 price: 0,
                 discounted_price: 0,
                 stock: 0,
                 size: '',
                 color: '',
                 material: '',
-                gender: '',
                 img: '',
                 images: [],
                 description: '',
                 rating: 0,
                 reviews: 0,
-                discount: null,
+                discount: '',
             });
             setPreviews(Array(5).fill(null));
             setSelectedFiles(Array(5).fill(null));
@@ -134,6 +160,7 @@ const ProductManager = () => {
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setEditingProduct(null);
+        setFormError('');
         setSelectedFiles(Array(5).fill(null));
         setPreviews(Array(5).fill(null));
     };
@@ -175,27 +202,61 @@ const ProductManager = () => {
             ...prev,
             category_id: categoryId,
             category: selectedCategory?.name || '',
+            subcategory_id: undefined, // Resetear subcategoría al cambiar categoría
         }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        const requiredFields: Array<[string, string]> = [
+            ['name', formData.name.trim()],
+            ['category_id', String(formData.category_id || '')],
+            ['price', String(formData.price || '')],
+            ['stock', String(formData.stock)],
+            ['size', formData.size.trim()],
+            ['color', formData.color.trim()],
+            ['material', formData.material.trim()],
+        ];
+        const missingField = requiredFields.find(([, value]) => !value);
+        if (missingField) {
+            setFormError('Completa todos los campos obligatorios antes de guardar el producto.');
+            return;
+        }
+        if (Number(formData.price) <= 0) {
+            setFormError('El precio debe ser mayor que 0.');
+            return;
+        }
+        if (Number(formData.rating) < 0 || Number(formData.rating) > 5) {
+            setFormError('La calificación debe estar entre 0 y 5.');
+            return;
+        }
+        setFormError('');
         try {
             const data = new FormData();
 
+            // ✅ Campos requeridos por el backend
             data.append('name', String(formData.name));
-            data.append('category', String(formData.category));
             data.append('category_id', String(formData.category_id || ''));
-            data.append('brand', String(formData.brand));
             data.append('price', String(formData.price));
             data.append('stock', String(formData.stock));
             data.append('size', String(formData.size || ''));
             data.append('color', String(formData.color || ''));
             data.append('material', String(formData.material || ''));
-            data.append('gender', String(formData.gender || ''));
+            
+            // ✅ rating y reviews SIEMPRE con valor
             data.append('rating', String(formData.rating ?? 0));
             data.append('reviews', String(formData.reviews ?? 0));
 
+            // ✅ Marca y subcategoría
+            if (formData.brand_id) {
+                data.append('brand_id', String(formData.brand_id));
+            }
+
+            if (formData.subcategory_id) {
+                data.append('subcategory_id', String(formData.subcategory_id));
+            }
+
+            // ✅ Campos opcionales
             if (formData.discounted_price && formData.discounted_price > 0) {
                 data.append('discounted_price', String(formData.discounted_price));
             }
@@ -208,6 +269,7 @@ const ProductManager = () => {
                 data.append('description', String(formData.description));
             }
 
+            // ✅ Manejo de imágenes
             const imageSlots: string[] = [];
             previews.forEach((preview, index) => {
                 if (selectedFiles[index] instanceof File) {
@@ -226,6 +288,7 @@ const ProductManager = () => {
                 }
             });
 
+            // ✅ Para edición
             if (editingProduct && editingProduct.id) {
                 data.append('_method', 'PUT');
                 await productService.update(editingProduct.id, data);
@@ -239,12 +302,15 @@ const ProductManager = () => {
             let message = "Hubo un error al guardar el producto.";
             if (error.response?.data?.errors) {
                 const errors = error.response.data.errors;
-                const errorMessages = Object.keys(errors).map(key => `${key}: ${errors[key].join(', ')}`);
+                const errorMessages = Object.keys(errors).map(key => {
+                    const details = Array.isArray(errors[key]) ? errors[key].join(', ') : String(errors[key]);
+                    return `${key}: ${details}`;
+                });
                 message = `Errores:\n${errorMessages.join('\n')}`;
             } else if (error.response?.data?.message) {
                 message = error.response.data.message;
             }
-            alert(message);
+            setFormError(message);
         }
     };
 
@@ -313,10 +379,10 @@ const ProductManager = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="text-[10px] font-black text-gray-400 uppercase">{p.category}</span>
+                                            <span className="text-[10px] font-black text-gray-400 uppercase">{getCategoryName(p)}</span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="text-[10px] font-black text-gray-400 uppercase">{p.brand}</span>
+                                            <span className="text-[10px] font-black text-gray-400 uppercase">{getBrandName(p)}</span>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest w-fit shadow-sm ${p.stock > 0 ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
@@ -342,13 +408,25 @@ const ProductManager = () => {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
                                                 <button
+                                                    onClick={() => setProductToView(p)}
+                                                    title="Ver detalles completos"
+                                                    aria-label={`Ver detalles de ${p.name}`}
+                                                    className="p-3 bg-white text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-100 hover:text-black transition-all shadow-sm"
+                                                >
+                                                    <Eye size={14} />
+                                                </button>
+                                                <button
                                                     onClick={() => handleOpenModal(p)}
+                                                    title="Editar producto"
+                                                    aria-label={`Editar ${p.name}`}
                                                     className="bg-store-red text-white p-3 rounded-xl hover:bg-store-redDark transition-all active:scale-95 shadow-md"
                                                 >
                                                     <Edit size={14} />
                                                 </button>
                                                 <button
                                                     onClick={() => p.id && confirmDelete(p.id)}
+                                                    title="Eliminar producto"
+                                                    aria-label={`Eliminar ${p.name}`}
                                                     className="p-3 bg-white text-gray-400 border border-red-50 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all shadow-sm"
                                                 >
                                                     <Trash2 size={14} />
@@ -377,17 +455,32 @@ const ProductManager = () => {
                             </button>
                         </div>
 
+                        {formError && (
+                            <div role="alert" className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                                <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />
+                                <p className="whitespace-pre-line">{formError}</p>
+                            </div>
+                        )}
+
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Nombre */}
                                 <div className="space-y-2 md:col-span-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Nombre del Producto</label>
-                                    <input type="text" name="name" value={formData.name} onChange={handleInputChange} required className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" placeholder="Ej: Botín Mujer Catalina" />
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Nombre del Producto *</label>
+                                    <input 
+                                        type="text" 
+                                        name="name" 
+                                        value={formData.name} 
+                                        onChange={handleInputChange} 
+                                        required 
+                                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" 
+                                        placeholder="Ej: Botín Mujer Catalina" 
+                                    />
                                 </div>
 
-                                {/* Categoría (desde BD) */}
+                                {/* Categoría */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Categoría</label>
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Categoría *</label>
                                     <div className="relative">
                                         <select
                                             name="category_id"
@@ -407,7 +500,7 @@ const ProductManager = () => {
                                     </div>
                                 </div>
 
-                                {/* Subcategoría (filtrada por categoría) */}
+                                {/* Subcategoría */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Subcategoría</label>
                                     <div className="relative">
@@ -433,14 +526,18 @@ const ProductManager = () => {
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Marca</label>
                                     <div className="relative">
-                                        <select name="brand" value={formData.brand} onChange={handleInputChange} required className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold appearance-none cursor-pointer">
-                                            <option value="" disabled>Seleccionar</option>
-                                            <option value="Nike">Nike</option>
-                                            <option value="adidas">adidas</option>
-                                            <option value="PUMA">PUMA</option>
-                                            <option value="SKECHERS">SKECHERS</option>
-                                            <option value="CAT">CAT</option>
-                                            <option value="flexi">flexi</option>
+                                        <select
+                                            name="brand_id"
+                                            value={formData.brand_id ?? ''}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, brand_id: Number(e.target.value) || undefined }))}
+                                            className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold appearance-none cursor-pointer"
+                                        >
+                                            <option value="">Seleccionar marca</option>
+                                            {brands.map((brand) => (
+                                                <option key={brand.id} value={brand.id}>
+                                                    {brand.name}
+                                                </option>
+                                            ))}
                                         </select>
                                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                                     </div>
@@ -448,62 +545,154 @@ const ProductManager = () => {
 
                                 {/* Precio */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Precio (S/)</label>
-                                    <input type="number" name="price" value={formData.price} onChange={handleInputChange} required min="0" step="0.01" className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" placeholder="0.00" />
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Precio (S/) *</label>
+                                    <input 
+                                        type="number" 
+                                        name="price" 
+                                        value={formData.price} 
+                                        onChange={handleInputChange} 
+                                        required 
+                                        min="0" 
+                                        step="0.01" 
+                                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" 
+                                        placeholder="0.00" 
+                                    />
                                 </div>
 
                                 {/* Precio con descuento */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Precio con Descuento</label>
-                                    <input type="number" name="discounted_price" value={formData.discounted_price || ''} onChange={handleInputChange} min="0" step="0.01" placeholder="Opcional" className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" />
+                                    <input 
+                                        type="number" 
+                                        name="discounted_price" 
+                                        value={formData.discounted_price || ''} 
+                                        onChange={handleInputChange} 
+                                        min="0" 
+                                        step="0.01" 
+                                        placeholder="Opcional" 
+                                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" 
+                                    />
                                 </div>
 
                                 {/* Stock */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Stock</label>
-                                    <input type="number" name="stock" value={formData.stock} onChange={handleInputChange} required min="0" className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" placeholder="0" />
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Stock *</label>
+                                    <input 
+                                        type="number" 
+                                        name="stock" 
+                                        value={formData.stock} 
+                                        onChange={handleInputChange} 
+                                        required 
+                                        min="0" 
+                                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" 
+                                        placeholder="0" 
+                                    />
                                 </div>
 
                                 {/* Talla */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Talla</label>
-                                    <input type="text" name="size" value={formData.size} onChange={handleInputChange} required className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" placeholder="Ej: 38, M, 7 US" />
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Talla *</label>
+                                    <input 
+                                        type="text" 
+                                        name="size" 
+                                        value={formData.size} 
+                                        onChange={handleInputChange} 
+                                        required 
+                                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" 
+                                        placeholder="Ej: 38, M, 7 US" 
+                                    />
                                 </div>
 
                                 {/* Color */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Color</label>
-                                    <input type="text" name="color" value={formData.color} onChange={handleInputChange} required className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" placeholder="Ej: Negro, Rojo, Azul" />
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Color *</label>
+                                    <input 
+                                        type="text" 
+                                        name="color" 
+                                        value={formData.color} 
+                                        onChange={handleInputChange} 
+                                        required 
+                                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" 
+                                        placeholder="Ej: Negro, Rojo, Azul" 
+                                    />
                                 </div>
 
                                 {/* Material */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Material</label>
-                                    <input type="text" name="material" value={formData.material} onChange={handleInputChange} required className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" placeholder="Ej: Cuero, Tela, Sintético" />
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Material *</label>
+                                    <input 
+                                        type="text" 
+                                        name="material" 
+                                        value={formData.material} 
+                                        onChange={handleInputChange} 
+                                        required 
+                                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" 
+                                        placeholder="Ej: Cuero, Tela, Sintético" 
+                                    />
                                 </div>
+
+                               
 
                                 {/* Etiqueta de descuento */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Etiqueta de Descuento</label>
-                                    <input type="text" name="discount" value={formData.discount || ''} onChange={handleInputChange} placeholder="Ej: -20%, Oferta" className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" />
+                                    <input 
+                                        type="text" 
+                                        name="discount" 
+                                        value={formData.discount || ''} 
+                                        onChange={handleInputChange} 
+                                        placeholder="Ej: -20%, Oferta" 
+                                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" 
+                                    />
                                 </div>
 
                                 {/* Calificación */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Calificación (1-5)</label>
-                                    <input type="number" name="rating" value={formData.rating || ''} onChange={handleInputChange} required min="1" max="5" step="0.1" className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" placeholder="4.5" />
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Calificación (1-5) *</label>
+                                    <div className="flex items-center gap-2">
+                                        <input 
+                                            type="number" 
+                                            name="rating" 
+                                            value={formData.rating || 0} 
+                                            onChange={handleInputChange} 
+                                            required 
+                                            min="0" 
+                                            max="5" 
+                                            step="0.1" 
+                                            className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" 
+                                            placeholder="4.5" 
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-gray-400">Calificación promedio (0-5)</p>
                                 </div>
 
                                 {/* Reseñas */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Número de Reseñas</label>
-                                    <input type="number" name="reviews" value={formData.reviews || ''} onChange={handleInputChange} required min="0" className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" placeholder="0" />
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Número de Reseñas *</label>
+                                    <input 
+                                        type="number" 
+                                        name="reviews" 
+                                        value={formData.reviews || 0} 
+                                        onChange={handleInputChange} 
+                                        required 
+                                        min="0" 
+                                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" 
+                                        placeholder="0" 
+                                    />
+                                    <p className="text-[10px] text-gray-400">Cantidad de reseñas</p>
                                 </div>
 
                                 {/* Descripción */}
                                 <div className="space-y-2 md:col-span-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Descripción</label>
-                                    <textarea name="description" value={formData.description || ''} onChange={handleInputChange} rows={4} className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold resize-y" placeholder="Describe el producto..." />
+                                    <textarea 
+                                        name="description" 
+                                        value={formData.description || ''} 
+                                        onChange={handleInputChange} 
+                                        rows={4} 
+                                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold resize-y" 
+                                        placeholder="Describe el producto..." 
+                                    />
                                 </div>
 
                                 {/* Imágenes */}
@@ -520,10 +709,26 @@ const ProductManager = () => {
                                                     )}
                                                     <label className="absolute inset-0 z-10 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
                                                         <Upload className="text-white" size={18} />
-                                                        <input type="file" className="hidden" onChange={(e) => handleFileChange(e, index)} accept="image/png, image/jpeg" />
+                                                        <input 
+                                                            type="file" 
+                                                            className="hidden" 
+                                                            onChange={(e) => handleFileChange(e, index)} 
+                                                            accept="image/png, image/jpeg, image/webp" 
+                                                        />
                                                     </label>
                                                     {previews[index] && (
-                                                        <button type="button" onClick={() => { const newPrevs = [...previews]; newPrevs[index] = null; setPreviews(newPrevs); const newFiles = [...selectedFiles]; newFiles[index] = null; setSelectedFiles(newFiles); }} className="absolute top-1 right-1 z-20 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-lg">
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => { 
+                                                                const newPrevs = [...previews]; 
+                                                                newPrevs[index] = null; 
+                                                                setPreviews(newPrevs); 
+                                                                const newFiles = [...selectedFiles]; 
+                                                                newFiles[index] = null; 
+                                                                setSelectedFiles(newFiles); 
+                                                            }} 
+                                                            className="absolute top-1 right-1 z-20 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-lg"
+                                                        >
                                                             <X size={12} />
                                                         </button>
                                                     )}
@@ -542,6 +747,45 @@ const ProductManager = () => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {productToView && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[2rem] p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200">
+                        <div className="flex justify-between items-start mb-6 pb-4 border-b border-gray-100">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-store-red">Detalle del producto</p>
+                                <h2 className="text-2xl font-black text-black mt-1">{productToView.name}</h2>
+                            </div>
+                            <button onClick={() => setProductToView(null)} className="p-2 bg-gray-50 text-gray-500 rounded-full hover:bg-red-50 hover:text-red-500 transition-all" aria-label="Cerrar detalles">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+                            {(productToView.images?.length ? productToView.images : [productToView.img]).filter(Boolean).map((image, index) => (
+                                <img key={`${image}-${index}`} src={image} alt={`${productToView.name} ${index + 1}`} className="w-full aspect-square object-cover rounded-xl border border-gray-200 bg-gray-50" />
+                            ))}
+                        </div>
+
+                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5 text-sm">
+                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nombre</dt><dd className="mt-1 font-bold text-black">{productToView.name || 'Sin información'}</dd></div>
+                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Categoría</dt><dd className="mt-1 font-bold text-black">{getCategoryName(productToView)}</dd></div>
+                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Subcategoría</dt><dd className="mt-1 font-bold text-black">{subcategories.find(sub => sub.id === productToView.subcategory_id)?.name || 'Sin subcategoría'}</dd></div>
+                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Marca</dt><dd className="mt-1 font-bold text-black">{getBrandName(productToView)}</dd></div>
+                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Precio</dt><dd className="mt-1 font-bold text-black">S/ {Number(productToView.price || 0).toFixed(2)}</dd></div>
+                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Precio con descuento</dt><dd className="mt-1 font-bold text-black">{productToView.discounted_price ? `S/ ${Number(productToView.discounted_price).toFixed(2)}` : 'Sin descuento'}</dd></div>
+                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Stock</dt><dd className="mt-1 font-bold text-black">{productToView.stock} unidades</dd></div>
+                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Etiqueta de descuento</dt><dd className="mt-1 font-bold text-black">{productToView.discount || 'Sin etiqueta'}</dd></div>
+                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Talla</dt><dd className="mt-1 font-bold text-black">{productToView.size || 'Sin información'}</dd></div>
+                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Color</dt><dd className="mt-1 font-bold text-black">{productToView.color || 'Sin información'}</dd></div>
+                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Material</dt><dd className="mt-1 font-bold text-black">{productToView.material || 'Sin información'}</dd></div>
+                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Calificación</dt><dd className="mt-1 font-bold text-black">{productToView.rating} / 5</dd></div>
+                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Reseñas</dt><dd className="mt-1 font-bold text-black">{productToView.reviews}</dd></div>
+                            <div className="sm:col-span-2"><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Descripción</dt><dd className="mt-1 whitespace-pre-line text-gray-700">{productToView.description || 'Sin descripción'}</dd></div>
+                        </dl>
                     </div>
                 </div>
             )}
