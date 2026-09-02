@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { productService, Product, categoryService, subcategoryService, brandService, Category, Subcategory, Brand } from '../../services/crudService';
+import { getImageUrl } from '../../config/api';
 import { Plus, Edit, Trash2, Eye, Loader2, X, ChevronDown, Image as ImageIcon, Upload, AlertTriangle } from 'lucide-react';
 
 const ProductManager = () => {
@@ -123,10 +124,10 @@ const ProductManager = () => {
             const newPreviews = Array(5).fill(null);
             if (product.images && Array.isArray(product.images)) {
                 product.images.forEach((img, i) => {
-                    if (i < 5) newPreviews[i] = img;
+                    if (i < 5) newPreviews[i] = getImageUrl(img);
                 });
             } else if (product.img) {
-                newPreviews[0] = product.img;
+                newPreviews[0] = getImageUrl(product.img);
             }
             setPreviews(newPreviews);
             setSelectedFiles(Array(5).fill(null));
@@ -370,7 +371,7 @@ const ProductManager = () => {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-xl overflow-hidden bg-white border border-gray-200 flex-shrink-0 shadow-sm">
-                                                    <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
+                                                    <img src={getImageUrl(p.img)} alt={p.name} className="w-full h-full object-cover" />
                                                 </div>
                                                 <div>
                                                     <p className="font-black text-black text-sm leading-tight mb-0.5">{p.name}</p>
@@ -766,7 +767,7 @@ const ProductManager = () => {
 
                         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
                             {(productToView.images?.length ? productToView.images : [productToView.img]).filter(Boolean).map((image, index) => (
-                                <img key={`${image}-${index}`} src={image} alt={`${productToView.name} ${index + 1}`} className="w-full aspect-square object-cover rounded-xl border border-gray-200 bg-gray-50" />
+                                <img key={`${image}-${index}`} src={getImageUrl(image)} alt={`${productToView.name} ${index + 1}`} className="w-full aspect-square object-cover rounded-xl border border-gray-200 bg-gray-50" />
                             ))}
                         </div>
 

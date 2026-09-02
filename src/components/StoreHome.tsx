@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
 import { categoryService, productService, Category, Product } from "../services/crudService";
+import { getImageUrl } from "../config/api";
 import {
   ArrowRight,
   ChevronDown,
@@ -219,7 +220,7 @@ export default function StoreHome() {
 
         setProducts(productsData.map((product: Product) => ({
           ...product,
-          image: product.img || product.images?.[0] || staticCategories[0]?.image,
+          image: getImageUrl(product.img || product.images?.[0]) || staticCategories[0]?.image,
           category: typeof product.category === "object"
             ? product.category.name
             : product.category || categoriesData.find((category: Category) => category.id === product.category_id)?.name || "Sin categoría",
@@ -231,7 +232,7 @@ export default function StoreHome() {
           const visual = staticCategories.find((item) => item.name.toLowerCase() === category.name.toLowerCase()) || staticCategories[index % staticCategories.length];
           return {
             ...category,
-            image: category.image || visual?.image,
+            image: getImageUrl(category.image) || visual?.image,
             color: visual?.color || "#f5eee8",
           };
         }));

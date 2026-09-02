@@ -1,7 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag, Star, Heart, Share2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  ShoppingBag,
+  Star,
+  Heart,
+  Share2,
+  ShieldCheck,
+  RotateCcw,
+  Truck,
+} from "lucide-react";
 import { productService, Product } from "../services/crudService";
+import { getImageUrl } from "../config/api";
 import { useCart } from "../hooks/useCart";
 import fallbackImage from "../assets/foto1.jpg";
 import "../styles/product-detail.css";
@@ -24,7 +36,27 @@ function Logo({ light = false }: { light?: boolean }) {
 
 function normalizeProduct(product: Product): any {
   const images = (product.images || []).filter(Boolean);
-  const imageList = images.length ? images : product.img ? [product.img] : [fallbackImage];
+  const imageList = images.length
+    ? images.map((image) => getImageUrl(image))
+    : product.img
+      ? [getImageUrl(product.img)]
+      : [fallbackImage];
+
+
+  const colorOptions = Array.isArray((product as any).colors) ? (product as any).colors : null;
+
+  const rawSizes = (product as any).sizes ?? product.size;
+  let sizeOptions: string[] | null = null;
+  if (Array.isArray(rawSizes)) {
+    sizeOptions = rawSizes.map((s: any) => String(s).trim()).filter(Boolean);
+  } else if (typeof rawSizes === "string" && /[,/|-]/.test(rawSizes)) {
+    sizeOptions = rawSizes
+      .split(/[,/|]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  if (sizeOptions && sizeOptions.length <= 1) sizeOptions = null;
+
   return {
     ...product,
     imageList,
@@ -35,6 +67,8 @@ function normalizeProduct(product: Product): any {
     brandName: typeof product.brand === "object" ? product.brand.name : product.brand || "Sin marca",
     salePrice: Number(product.discounted_price || product.price),
     ratingValue: Number(product.rating || 0),
+    colorOptions,
+    sizeOptions,
   };
 }
 
@@ -48,13 +82,18 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProduct = async () => {
       try {
         setLoading(true);
         const response = await productService.getById(Number(productId));
-        setProduct(normalizeProduct(response.data));
+        const normalized = normalizeProduct(response.data);
+        setProduct(normalized);
+        setSelectedColor(normalized.color || normalized.colorOptions?.[0]?.name || null);
+        setSelectedSize(normalized.size || normalized.sizeOptions?.[0] || null);
       } catch (loadError) {
         console.error("Error loading product detail:", loadError);
         setError(true);
@@ -93,7 +132,7 @@ export default function ProductDetailPage() {
 
   const showPrevious = () => setSelectedImage((current) => (current - 1 + product.imageList.length) % product.imageList.length);
   const showNext = () => setSelectedImage((current) => (current + 1) % product.imageList.length);
-  
+
   const addProductToCart = () => {
     for (let index = 0; index < quantity; index += 1) {
       addToCart({ ...product, image: product.imageList[0], price: product.salePrice });
@@ -101,7 +140,14 @@ export default function ProductDetailPage() {
     alert("Producto agregado al carrito.");
   };
 
+  const buyNow = () => {
+    addProductToCart();
+    navigate("/carrito"); // ajusta esta ruta si tu checkout vive en otro path
+  };
+
   const toggleFavorite = () => setIsFavorite(!isFavorite);
+
+  const quantityChoices = Array.from({ length: Math.min(Math.max(stock, 0), 10) }, (_, index) => index + 1);
 
   return (
     <main className="product-detail-page">
@@ -110,8 +156,7 @@ export default function ProductDetailPage() {
         <button type="button" onClick={() => navigate(-1)} aria-label="Volver" className="back-button">
           <ArrowLeft size={19} />
         </button>
-        
-        {/* ✅ LOGO OFICIAL - COMO EN LA TIENDA */}
+
         <Logo />
 
         <div className="header-actions">
@@ -127,19 +172,21 @@ export default function ProductDetailPage() {
         </div>
       </header>
 
-      {/* BREADCRUMB */}
       <div className="product-detail-shell">
+        {/* BREADCRUMB */}
         <nav className="product-detail-breadcrumb">
           <Link to="/">Inicio</Link>
           <span>›</span>
           <Link to={`/categoria/${product.categoryName?.toLowerCase()}`}>{product.categoryName}</Link>
           <span>›</span>
+          <Link to={`/categoria/${product.categoryName?.toLowerCase()}/${product.subcategoryName?.toLowerCase()}`}>{product.subcategoryName}</Link>
+          <span>›</span>
           <strong>{product.name}</strong>
         </nav>
 
-        {/* CONTENIDO */}
+        {/* CONTENIDO: 3 columnas — galería / información / caja de compra */}
         <section className="product-detail-content">
-          {/* Galería */}
+          {/* Columna 1: Galería */}
           <div className="product-gallery">
             <div className="product-thumbnails">
               {product.imageList.map((image: string, index: number) => (
@@ -147,6 +194,8 @@ export default function ProductDetailPage() {
                   type="button"
                   key={`${image}-${index}`}
                   className={selectedImage === index ? "is-selected" : ""}
+                  onMouseEnter={() => setSelectedImage(index)}
+                  onFocus={() => setSelectedImage(index)}
                   onClick={() => setSelectedImage(index)}
                 >
                   <img src={image} alt={`${product.name} vista ${index + 1}`} />
@@ -155,10 +204,11 @@ export default function ProductDetailPage() {
             </div>
             <div className="product-main-image">
               {hasDiscount && (
-                <span className="product-detail-discount">
-                  -{discountPercentage}%
-                </span>
+                <span className="product-detail-discount">-{discountPercentage}%</span>
               )}
+              <button type="button" className="icon-share-floating" onClick={() => navigator.share?.({ title: product.name, url: window.location.href })} aria-label="Compartir producto">
+                <Share2 size={16} />
+              </button>
               <img src={product.imageList[selectedImage]} alt={product.name} />
               {product.imageList.length > 1 && (
                 <>
@@ -173,9 +223,13 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* Información */}
+          {/* Columna 2: Información del producto */}
           <div className="product-information">
-            <span className="product-detail-category">{product.categoryName}</span>
+            {product.brandName && (
+              <p className="product-brand-link">
+                Visita la tienda de <a href="#">{product.brandName}</a>
+              </p>
+            )}
             <h1>{product.name}</h1>
 
             <div className="product-rating" aria-label={`${product.ratingValue} de 5 estrellas`}>
@@ -189,108 +243,73 @@ export default function ProductDetailPage() {
               <span>{product.reviews || 0} reseñas</span>
             </div>
 
-            <p className="product-availability">
-              Disponibilidad: <strong className={stock > 0 ? "in-stock" : "out-of-stock"}>
-                {stock > 0 ? `${stock} en stock` : "Agotado"}
-              </strong>
-            </p>
-
-            {product.id && <p className="product-code">Código: {product.id}</p>}
-
             <div className="product-detail-divider" />
-
-            <dl className="product-attributes">
-              {product.size && (
-                <div>
-                  <dt>Talla</dt>
-                  <dd>{product.size}</dd>
-                </div>
-              )}
-              <div>
-                <dt>Subcategoría</dt>
-                <dd>{product.subcategoryName}</dd>
-              </div>
-              {product.brandName && (
-                <div>
-                  <dt>Marca</dt>
-                  <dd>{product.brandName}</dd>
-                </div>
-              )}
-              {product.color && (
-                <div>
-                  <dt>Color</dt>
-                  <dd>
-                    <span className="color-dot" style={{ backgroundColor: product.colorHex || '#000' }} title={product.color} />
-                    {product.color}
-                  </dd>
-                </div>
-              )}
-              {product.material && (
-                <div>
-                  <dt>Material</dt>
-                  <dd>{product.material}</dd>
-                </div>
-              )}
-              {product.gender && (
-                <div>
-                  <dt>Género</dt>
-                  <dd>{product.gender}</dd>
-                </div>
-              )}
-              {product.discount && (
-                <div>
-                  <dt>Descuento</dt>
-                  <dd>{product.discount}</dd>
-                </div>
-              )}
-            </dl>
 
             <div className="product-prices">
               {hasDiscount && <span className="promotion-label">Promoción</span>}
               <div className="product-price-line">
                 {hasDiscount && <span className="discount-percentage">-{discountPercentage}%</span>}
                 <strong>{money.format(product.salePrice)}</strong>
-                {hasDiscount && <del>{money.format(Number(product.price))}</del>}
               </div>
+              {hasDiscount && (
+                <p className="list-price">Precio de lista: <del>{money.format(Number(product.price))}</del></p>
+              )}
             </div>
 
-            <div className="product-purchase">
-              <label>
-                Cantidad
-                <div className="quantity-control">
-                  <button
-                    type="button"
-                    onClick={() => setQuantity((value) => Math.max(1, value - 1))}
-                    aria-label="Disminuir cantidad"
-                  >
-                    <Minus size={15} />
-                  </button>
-                  <span>{quantity}</span>
-                  <button
-                    type="button"
-                    onClick={() => setQuantity((value) => Math.min(Math.max(1, stock), value + 1))}
-                    disabled={quantity >= stock}
-                    aria-label="Aumentar cantidad"
-                  >
-                    <Plus size={15} />
-                  </button>
+            {(product.colorOptions || product.color) && (
+              <div className="variant-block">
+                <p className="variant-label">
+                  Color:{" "}
+                  <strong>
+                    {product.colorOptions
+                      ? product.colorOptions.find((c: any) => c.name === selectedColor)?.name || selectedColor
+                      : product.color}
+                  </strong>
+                </p>
+                <div className="swatch-row">
+                  {(product.colorOptions || [{ name: product.color, hex: product.colorHex || "#888" }]).map(
+                    (colorOption: any) => (
+                      <button
+                        type="button"
+                        key={colorOption.name}
+                        className={`color-swatch ${selectedColor === colorOption.name ? "is-selected" : ""}`}
+                        style={{ backgroundColor: colorOption.hex || "#888" }}
+                        title={colorOption.name}
+                        aria-label={colorOption.name}
+                        disabled={!product.colorOptions}
+                        onClick={() => setSelectedColor(colorOption.name)}
+                      />
+                    )
+                  )}
                 </div>
-              </label>
-              <button
-                type="button"
-                className="buy-button"
-                disabled={stock < 1}
-                onClick={addProductToCart}
-              >
-                {stock > 0 ? "Agregar al carrito" : "Agotado"}
-              </button>
-            </div>
+              </div>
+            )}
 
+            {/* Selector de talla: real si product.sizeOptions viene del backend, si no, valor informativo */}
+            {(product.sizeOptions || product.size) && (
+              <div className="variant-block">
+                <p className="variant-label">Talla:</p>
+                <div className="size-grid">
+                  {(product.sizeOptions || [product.size]).map((sizeOption: string) => (
+                    <button
+                      type="button"
+                      key={sizeOption}
+                      className={`size-chip ${selectedSize === sizeOption ? "is-selected" : ""}`}
+                      disabled={!product.sizeOptions}
+                      aria-disabled={!product.sizeOptions}
+                      onClick={() => product.sizeOptions && setSelectedSize(sizeOption)}
+                    >
+                      {sizeOption}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-            <div className="product-benefits">
-              <div><strong>Compra segura</strong><span>Pago protegido</span></div>
-              <div><strong>Envío confiable</strong><span>Coordinamos tu entrega</span></div>
-              <div><strong>Calidad Angelita</strong><span>Productos seleccionados</span></div>
+            <div className="trust-icons">
+              <div><ShieldCheck size={20} /><span>Pago protegido</span></div>
+              <div><RotateCcw size={20} /><span>30 días de devolución</span></div>
+              <div><Truck size={20} /><span>Enviado por Angelita</span></div>
             </div>
 
             <div className="product-description">
@@ -305,14 +324,55 @@ export default function ProductDetailPage() {
                 <div><span>Categoría</span><strong>{product.categoryName}</strong></div>
                 <div><span>Subcategoría</span><strong>{product.subcategoryName}</strong></div>
                 <div><span>Marca</span><strong>{product.brandName}</strong></div>
-                <div><span>Talla</span><strong>{product.size || "No especificada"}</strong></div>
-                <div><span>Color</span><strong>{product.color || "No especificado"}</strong></div>
+                <div><span>Talla</span><strong>{selectedSize || "No especificada"}</strong></div>
+                <div><span>Color</span><strong>{selectedColor || "No especificado"}</strong></div>
                 <div><span>Material</span><strong>{product.material || "No especificado"}</strong></div>
                 <div><span>Stock disponible</span><strong>{stock} unidades</strong></div>
                 <div><span>Reseñas</span><strong>{product.reviews || 0}</strong></div>
               </div>
             </div>
           </div>
+
+          {/* Columna 3: Caja de compra (sticky) */}
+          <aside className="buy-box">
+            <div className="buy-box-price">
+              <strong>{money.format(product.salePrice)}</strong>
+              {hasDiscount && <del>{money.format(Number(product.price))}</del>}
+            </div>
+
+            <p className="buy-box-availability">
+              {stock > 0 ? (
+                <span className="in-stock">{stock > 5 ? "Disponible" : `Solo quedan ${stock}`}</span>
+              ) : (
+                <span className="out-of-stock">Agotado</span>
+              )}
+            </p>
+
+            {product.id && <p className="buy-box-code">Código: {product.id}</p>}
+
+            {stock > 0 && (
+              <label className="buy-box-quantity">
+                Cantidad
+                <select value={quantity} onChange={(event) => setQuantity(Number(event.target.value))}>
+                  {(quantityChoices.length ? quantityChoices : [1]).map((value) => (
+                    <option key={value} value={value}>{value}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            <button type="button" className="buy-box-cart" disabled={stock < 1} onClick={addProductToCart}>
+              {stock > 0 ? "Agregar al carrito" : "Agotado"}
+            </button>
+            <button type="button" className="buy-box-now" disabled={stock < 1} onClick={buyNow}>
+              Comprar ahora
+            </button>
+
+            <div className="buy-box-meta">
+              <div><span>Vendido por</span><strong>Zapatería Angelita</strong></div>
+              <div><span>Devoluciones</span><strong>30 días sin costo</strong></div>
+            </div>
+          </aside>
         </section>
       </div>
     </main>
