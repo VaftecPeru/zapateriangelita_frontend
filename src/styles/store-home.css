@@ -58,6 +58,11 @@ img {
   margin-inline: auto;
 }
 
+.store-page {
+  min-height: 100vh;
+  background: #fff;
+}
+
 .section-block {
   padding-top: 52px;
 }

@@ -1,21 +1,1123 @@
 {
-  "Ciudad de México": {
-    "Ciudad de México": [
-      "Álvaro Obregón",
-      "Azcapotzalco",
-      "Benito Juárez",
-      "Coyoacán",
+  "Aguascalientes": {
+    "Aguascalientes": [
+      "Aguascalientes",
+      "Jesús María",
+      "San Francisco de los Romo",
+      "Pabellón de Arteaga",
+      "Rincón de Romos",
+      "Tepezalá",
+      "Cosío",
+      "San José de Gracia",
+      "Asientos",
+      "Calvillo",
+      "El Llano"
+    ]
+  },
+  "Baja California": {
+    "Mexicali": [
+      "Mexicali",
+      "San Luis Río Colorado",
+      "Guadalupe Victoria",
+      "Puebla",
+      "Los Algodones"
+    ],
+    "Tijuana": [
+      "Tijuana",
+      "Playas de Rosarito"
+    ],
+    "Ensenada": [
+      "Ensenada",
+      "Maneadero",
+      "Villa de Juárez"
+    ],
+    "Tecate": [
+      "Tecate",
+      "Nueva Colonia Hindú"
+    ],
+    "Rosarito": [
+      "Playas de Rosarito",
+      "Primo Tapia"
+    ]
+  },
+  "Baja California Sur": {
+    "La Paz": [
+      "La Paz",
+      "Todos Santos",
+      "El Centenario"
+    ],
+    "Los Cabos": [
+      "San José del Cabo",
+      "Cabo San Lucas"
+    ],
+    "Comondú": [
+      "Ciudad Constitución",
+      "Puerto San Carlos"
+    ],
+    "Mulegé": [
+      "Santa Rosalía",
+      "Mulegé"
+    ],
+    "Loreto": [
+      "Loreto",
+      "Puerto Escondido"
+    ]
+  },
+  "Campeche": {
+    "Campeche": [
+      "San Francisco de Campeche",
+      "Champotón",
+      "Lerma"
+    ],
+    "Carmen": [
+      "Ciudad del Carmen",
+      "Isla Aguada"
+    ],
+    "Champotón": [
+      "Champotón",
+      "Haltunchen"
+    ],
+    "Hecelchakán": [
+      "Hecelchakán",
+      "Pocboc"
+    ],
+    "Hopelchén": [
+      "Hopelchén",
+      "Xmabén"
+    ],
+    "Palizada": [
+      "Palizada",
+      "San Juan"
+    ],
+    "Tenabo": [
+      "Tenabo",
+      "Tankuché"
+    ],
+    "Escárcega": [
+      "Escárcega",
+      "Dzibalchén"
+    ],
+    "Calakmul": [
+      "Xpujil",
+      "Zoh Laguna"
+    ],
+    "Candelaria": [
+      "Candelaria",
+      "Tres Garantías"
+    ]
+  },
+  "Coahuila": {
+    "Saltillo": [
+      "Saltillo",
+      "Ramos Arizpe",
+      "Arteaga"
+    ],
+    "Torreón": [
+      "Torreón",
+      "Matamoros"
+    ],
+    "Monclova": [
+      "Monclova",
+      "Frontera"
+    ],
+    "Piedras Negras": [
+      "Piedras Negras",
+      "Nava"
+    ],
+    "Acuña": [
+      "Ciudad Acuña"
+    ],
+    "Parás": [
+      "Parás"
+    ],
+    "Morelos": [
+      "Morelos"
+    ],
+    "Allende": [
+      "Allende"
+    ],
+    "Nava": [
+      "Nava"
+    ],
+    "Hidalgo": [
+      "Hidalgo"
+    ],
+    "Abasolo": [
+      "Abasolo"
+    ],
+    "Candela": [
+      "Candela"
+    ],
+    "Castellanos": [
+      "Castellanos"
+    ],
+    "Cuatro Ciénegas": [
+      "Cuatro Ciénegas"
+    ],
+    "Escobedo": [
+      "Escobedo"
+    ],
+    "Francisco I. Madero": [
+      "Francisco I. Madero"
+    ],
+    "Frontera": [
+      "Frontera"
+    ],
+    "General Cepeda": [
+      "General Cepeda"
+    ],
+    "Guerrero": [
+      "Guerrero"
+    ],
+    "Hidalgo": [
+      "Hidalgo"
+    ],
+    "Jiménez": [
+      "Jiménez"
+    ],
+    "Juárez": [
+      "Juárez"
+    ],
+    "Lamadrid": [
+      "Lamadrid"
+    ],
+    "Matamoros": [
+      "Matamoros"
+    ],
+    "Mazapil": [
+      "Mazapil"
+    ],
+    "Mérida": [
+      "Mérida"
+    ],
+    "Monclova": [
+      "Monclova"
+    ],
+    "Morelos": [
+      "Morelos"
+    ],
+    "Múzquiz": [
+      "Múzquiz"
+    ],
+    "Nadadores": [
+      "Nadadores"
+    ],
+    "Nava": [
+      "Nava"
+    ],
+    "Ocampo": [
+      "Ocampo"
+    ],
+    "Parras": [
+      "Parras"
+    ],
+    "Piedras Negras": [
+      "Piedras Negras"
+    ],
+    "Progreso": [
+      "Progreso"
+    ],
+    "Ramos Arizpe": [
+      "Ramos Arizpe"
+    ],
+    "Río Grande": [
+      "Río Grande"
+    ],
+    "Sabinas": [
+      "Sabinas"
+    ],
+    "Sacramento": [
+      "Sacramento"
+    ],
+    "Saltillo": [
+      "Saltillo"
+    ],
+    "San Buenaventura": [
+      "San Buenaventura"
+    ],
+    "San Juan de Sabinas": [
+      "San Juan de Sabinas"
+    ],
+    "San Pedro": [
+      "San Pedro"
+    ],
+    "Sierra Mojada": [
+      "Sierra Mojada"
+    ],
+    "Torreón": [
+      "Torreón"
+    ],
+    "Viesca": [
+      "Viesca"
+    ],
+    "Villa Unión": [
+      "Villa Unión"
+    ],
+    "Zaragoza": [
+      "Zaragoza"
+    ]
+  },
+  "Colima": {
+    "Colima": [
+      "Colima",
+      "Villa de Álvarez"
+    ],
+    "Manzanillo": [
+      "Manzanillo",
+      "El Naranjo"
+    ],
+    "Tecomán": [
+      "Tecomán",
+      "Madrid"
+    ],
+    "Coquimatlán": [
+      "Coquimatlán"
+    ],
+    "Cuauhtémoc": [
+      "Cuauhtémoc"
+    ],
+    "Ixtlahuacán": [
+      "Ixtlahuacán"
+    ],
+    "Minatitlán": [
+      "Minatitlán"
+    ],
+    "Armería": [
+      "Armería"
+    ],
+    "Comala": [
+      "Comala"
+    ]
+  },
+  "Chiapas": {
+    "Tuxtla Gutiérrez": [
+      "Tuxtla Gutiérrez",
+      "Copoya",
+      "Terán"
+    ],
+    "San Cristóbal de las Casas": [
+      "San Cristóbal de las Casas",
+      "La Candelaria"
+    ],
+    "Tapachula": [
+      "Tapachula",
+      "Paso Hondo"
+    ],
+    "Comitán": [
+      "Comitán de Domínguez",
+      "La Trinitaria"
+    ],
+    "Chiapa de Corzo": [
+      "Chiapa de Corzo",
+      "Cárdenas"
+    ],
+    "Pichucalco": [
+      "Pichucalco"
+    ],
+    "Ocozocoautla": [
+      "Ocozocoautla"
+    ],
+    "Cintalapa": [
+      "Cintalapa"
+    ],
+    "Villaflores": [
+      "Villaflores"
+    ],
+    "Acala": [
+      "Acala"
+    ],
+    "Arriaga": [
+      "Arriaga"
+    ],
+    "Berriozábal": [
+      "Berriozábal"
+    ],
+    "Bochil": [
+      "Bochil"
+    ],
+    "Chilón": [
+      "Chilón"
+    ],
+    "Copainalá": [
+      "Copainalá"
+    ],
+    "El Porvenir": [
+      "El Porvenir"
+    ],
+    "Huixtla": [
+      "Huixtla"
+    ],
+    "Juárez": [
+      "Juárez"
+    ],
+    "Larráinzar": [
+      "Larráinzar"
+    ],
+    "Las Margaritas": [
+      "Las Margaritas"
+    ],
+    "Mapastepec": [
+      "Mapastepec"
+    ],
+    "Motozintla": [
+      "Motozintla"
+    ],
+    "Ocosingo": [
+      "Ocosingo"
+    ],
+    "Palenque": [
+      "Palenque"
+    ],
+    "Pijijiapan": [
+      "Pijijiapan"
+    ],
+    "Reforma": [
+      "Reforma"
+    ],
+    "Simojovel": [
+      "Simojovel"
+    ],
+    "Socoltenango": [
+      "Socoltenango"
+    ],
+    "Solistahuacán": [
+      "Solistahuacán"
+    ],
+    "Suchiapa": [
+      "Suchiapa"
+    ],
+    "Tonalá": [
+      "Tonalá"
+    ],
+    "Yajalón": [
+      "Yajalón"
+    ],
+    "Zinacantán": [
+      "Zinacantán"
+    ]
+  },
+  "Chihuahua": {
+    "Chihuahua": [
+      "Chihuahua",
       "Cuauhtémoc",
+      "Delicias",
+      "Parral",
+      "Nuevo Casas Grandes",
+      "Camargo",
+      "Ojinaga",
+      "Jiménez"
+    ],
+    "Juárez": [
+      "Ciudad Juárez",
+      "San José",
+      "Guadalupe"
+    ],
+    "Casas Grandes": [
+      "Casas Grandes",
+      "Nuevo Casas Grandes"
+    ],
+    "Cuauhtémoc": [
+      "Cuauhtémoc"
+    ],
+    "Delicias": [
+      "Delicias"
+    ],
+    "Hidalgo del Parral": [
+      "Parral"
+    ],
+    "Camargo": [
+      "Camargo"
+    ],
+    "Ojinaga": [
+      "Ojinaga"
+    ],
+    "Jiménez": [
+      "Jiménez"
+    ],
+    "Bachíniva": [
+      "Bachíniva"
+    ],
+    "Coyame": [
+      "Coyame"
+    ],
+    "Galeana": [
+      "Galeana"
+    ],
+    "Guadalupe y Calvo": [
+      "Guadalupe y Calvo"
+    ],
+    "Guazapares": [
+      "Guazapares"
+    ],
+    "Guerrero": [
+      "Guerrero"
+    ],
+    "Ignacio Zaragoza": [
+      "Ignacio Zaragoza"
+    ],
+    "Janos": [
+      "Janos"
+    ],
+    "Julimes": [
+      "Julimes"
+    ],
+    "López": [
+      "López"
+    ],
+    "Matachí": [
+      "Matachí"
+    ],
+    "Meoqui": [
+      "Meoqui"
+    ],
+    "Morelos": [
+      "Morelos"
+    ],
+    "Namiquipa": [
+      "Namiquipa"
+    ],
+    "Nonoava": [
+      "Nonoava"
+    ],
+    "Riva Palacio": [
+      "Riva Palacio"
+    ],
+    "Saucillo": [
+      "Saucillo"
+    ],
+    "Témoris": [
+      "Témoris"
+    ],
+    "Urique": [
+      "Urique"
+    ]
+  },
+  "Ciudad de México": {
+    "Álvaro Obregón": [
+      "Álvaro Obregón",
+      "Santa Fe",
+      "La Colonia"
+    ],
+    "Azcapotzalco": [
+      "Azcapotzalco",
+      "San Andrés"
+    ],
+    "Benito Juárez": [
+      "Benito Juárez",
+      "Nápoles",
+      "Portales"
+    ],
+    "Coyoacán": [
+      "Coyoacán",
+      "Villa Coyoacán",
+      "San Lucas"
+    ],
+    "Cuajimalpa de Morelos": [
+      "Cuajimalpa de Morelos",
+      "San Pedro"
+    ],
+    "Cuauhtémoc": [
+      "Cuauhtémoc",
+      "Centro",
+      "Roma",
+      "Condesa"
+    ],
+    "Gustavo A. Madero": [
       "Gustavo A. Madero",
+      "Tepito",
+      "Indios Verdes"
+    ],
+    "Iztacalco": [
       "Iztacalco",
+      "Pantitlán"
+    ],
+    "Iztapalapa": [
       "Iztapalapa",
-      "Magdalena Contreras",
+      "Culhuacán",
+      "Santa María"
+    ],
+    "Magdalena Contreras": [
+      "Magdalena Contreras"
+    ],
+    "Miguel Hidalgo": [
       "Miguel Hidalgo",
-      "Milpa Alta",
+      "Polanco",
+      "Tacubaya"
+    ],
+    "Milpa Alta": [
+      "Milpa Alta"
+    ],
+    "Tláhuac": [
       "Tláhuac",
+      "San Pedro"
+    ],
+    "Tlalpan": [
       "Tlalpan",
+      "San Fernando",
+      "Pedregal"
+    ],
+    "Venustiano Carranza": [
       "Venustiano Carranza",
-      "Xochimilco"
+      "Aeropuerto"
+    ],
+    "Xochimilco": [
+      "Xochimilco",
+      "San Gregorio"
+    ]
+  },
+  "Durango": {
+    "Durango": [
+      "Durango",
+      "Victoria de Durango",
+      "El Salto"
+    ],
+    "Gómez Palacio": [
+      "Gómez Palacio",
+      "Lerdo"
+    ],
+    "Lerdo": [
+      "Lerdo"
+    ],
+    "Mapimí": [
+      "Mapimí"
+    ],
+    "Tlahualilo": [
+      "Tlahualilo"
+    ],
+    "San Juan del Río": [
+      "San Juan del Río"
+    ],
+    "Canatlán": [
+      "Canatlán"
+    ],
+    "Canelas": [
+      "Canelas"
+    ],
+    "Coneto": [
+      "Coneto"
+    ],
+    "Cuencamé": [
+      "Cuencamé"
+    ],
+    "Guanaceví": [
+      "Guanaceví"
+    ],
+    "Hidalgo": [
+      "Hidalgo"
+    ],
+    "Indé": [
+      "Indé"
+    ],
+    "Mezquital": [
+      "Mezquital"
+    ],
+    "Nazas": [
+      "Nazas"
+    ],
+    "Nombre de Dios": [
+      "Nombre de Dios"
+    ],
+    "Ocampo": [
+      "Ocampo"
+    ],
+    "El Oro": [
+      "El Oro"
+    ],
+    "Otaez": [
+      "Otaez"
+    ],
+    "Peñón Blanco": [
+      "Peñón Blanco"
+    ],
+    "Poanas": [
+      "Poanas"
+    ],
+    "Pueblo Nuevo": [
+      "Pueblo Nuevo"
+    ],
+    "Rodeo": [
+      "Rodeo"
+    ],
+    "San Bernardo": [
+      "San Bernardo"
+    ],
+    "San Dimas": [
+      "San Dimas"
+    ],
+    "San Juan de Guadalupe": [
+      "San Juan de Guadalupe"
+    ],
+    "San Pedro del Gallo": [
+      "San Pedro del Gallo"
+    ],
+    "Santa Clara": [
+      "Santa Clara"
+    ],
+    "Santiago Papasquiaro": [
+      "Santiago Papasquiaro"
+    ],
+    "Súchil": [
+      "Súchil"
+    ],
+    "Tamazula": [
+      "Tamazula"
+    ],
+    "Tepehuanes": [
+      "Tepehuanes"
+    ],
+    "Topia": [
+      "Topia"
+    ],
+    "Vicente Guerrero": [
+      "Vicente Guerrero"
+    ]
+  },
+  "Guanajuato": {
+    "Guanajuato": [
+      "Guanajuato",
+      "Marfil",
+      "Santa Teresa"
+    ],
+    "León": [
+      "León de los Aldama",
+      "San Francisco del Rincón",
+      "Purísima del Rincón"
+    ],
+    "Irapuato": [
+      "Irapuato",
+      "Pénjamo"
+    ],
+    "Celaya": [
+      "Celaya",
+      "Apaseo El Grande"
+    ],
+    "Salamanca": [
+      "Salamanca",
+      "Valle de Santiago"
+    ],
+    "Cortazar": [
+      "Cortazar"
+    ],
+    "Dolores Hidalgo": [
+      "Dolores Hidalgo"
+    ],
+    "San Miguel de Allende": [
+      "San Miguel de Allende"
+    ],
+    "Pénjamo": [
+      "Pénjamo"
+    ],
+    "Silao": [
+      "Silao",
+      "Romita"
+    ],
+    "Salvatierra": [
+      "Salvatierra",
+      "Tarimoro"
+    ],
+    "Acámbaro": [
+      "Acámbaro"
+    ],
+    "Apaseo El Alto": [
+      "Apaseo El Alto"
+    ],
+    "Apaseo El Grande": [
+      "Apaseo El Grande"
+    ],
+    "Atarjea": [
+      "Atarjea"
+    ],
+    "Cerro Gordo": [
+      "Cerro Gordo"
+    ],
+    "Comonfort": [
+      "Comonfort"
+    ],
+    "Coroneo": [
+      "Coroneo"
+    ],
+    "Doctor Mora": [
+      "Doctor Mora"
+    ],
+    "Huanímaro": [
+      "Huanímaro"
+    ],
+    "Jaral del Progreso": [
+      "Jaral del Progreso"
+    ],
+    "Jerécuaro": [
+      "Jerécuaro"
+    ],
+    "Manuel Doblado": [
+      "Manuel Doblado"
+    ],
+    "Moroleón": [
+      "Moroleón"
+    ],
+    "Ocampo": [
+      "Ocampo"
+    ],
+    "Pueblo Nuevo": [
+      "Pueblo Nuevo"
+    ],
+    "Purísima del Rincón": [
+      "Purísima del Rincón"
+    ],
+    "Romita": [
+      "Romita"
+    ],
+    "Santiago Maravatío": [
+      "Santiago Maravatío"
+    ],
+    "Tarandacuao": [
+      "Tarandacuao"
+    ],
+    "Tarimoro": [
+      "Tarimoro"
+    ],
+    "Tierra Blanca": [
+      "Tierra Blanca"
+    ],
+    "Uriangato": [
+      "Uriangato"
+    ],
+    "Valle de Santiago": [
+      "Valle de Santiago"
+    ],
+    "Victoria": [
+      "Victoria"
+    ],
+    "Villagrán": [
+      "Villagrán"
+    ],
+    "Xichú": [
+      "Xichú"
+    ],
+    "Yuriria": [
+      "Yuriria"
+    ]
+  },
+  "Guerrero": {
+    "Acapulco": [
+      "Acapulco de Juárez",
+      "Diamante",
+      "Costa Azul"
+    ],
+    "Chilpancingo": [
+      "Chilpancingo de los Bravo",
+      "Chichihualco"
+    ],
+    "Iguala": [
+      "Iguala de la Independencia",
+      "Taxco"
+    ],
+    "Taxco": [
+      "Taxco de Alarcón"
+    ],
+    "Zihuatanejo": [
+      "Zihuatanejo de Azueta",
+      "Ixtapa"
+    ],
+    "Ayutla": [
+      "Ayutla de los Libres"
+    ],
+    "Coyuca": [
+      "Coyuca de Catalán"
+    ],
+    "Tlapa": [
+      "Tlapa de Comonfort"
+    ],
+    "Chilapa": [
+      "Chilapa de Álvarez"
+    ],
+    "Arcelia": [
+      "Arcelia"
+    ],
+    "Atenango": [
+      "Atenango del Río"
+    ],
+    "Atlamajalcingo": [
+      "Atlamajalcingo"
+    ],
+    "Benito Juárez": [
+      "Benito Juárez"
+    ],
+    "Buenavista": [
+      "Buenavista"
+    ],
+    "Coahuayutla": [
+      "Coahuayutla"
+    ],
+    "Cocula": [
+      "Cocula"
+    ],
+    "Copala": [
+      "Copala"
+    ],
+    "Cuautepec": [
+      "Cuautepec"
+    ],
+    "Cuetzala": [
+      "Cuetzala"
+    ],
+    "Ixcateopan": [
+      "Ixcateopan"
+    ],
+    "La Unión": [
+      "La Unión"
+    ],
+    "Leonardo Bravo": [
+      "Leonardo Bravo"
+    ],
+    "Malinaltepec": [
+      "Malinaltepec"
+    ],
+    "Mochitlán": [
+      "Mochitlán"
+    ],
+    "Olinalá": [
+      "Olinalá"
+    ],
+    "Ometepec": [
+      "Ometepec"
+    ],
+    "Pungarabato": [
+      "Pungarabato"
+    ],
+    "Quechultenango": [
+      "Quechultenango"
+    ],
+    "San Luis Acatlán": [
+      "San Luis Acatlán"
+    ],
+    "San Marcos": [
+      "San Marcos"
+    ],
+    "Tecoanapa": [
+      "Tecoanapa"
+    ],
+    "Tepecoacuilco": [
+      "Tepecoacuilco"
+    ],
+    "Tetipac": [
+      "Tetipac"
+    ],
+    "Tixtla": [
+      "Tixtla"
+    ],
+    "Tlacoachistlahuaca": [
+      "Tlacoachistlahuaca"
+    ],
+    "Tlacoapa": [
+      "Tlacoapa"
+    ],
+    "Tlalchapa": [
+      "Tlalchapa"
+    ],
+    "Tlalixtaquilla": [
+      "Tlalixtaquilla"
+    ],
+    "Xalpatláhuac": [
+      "Xalpatláhuac"
+    ],
+    "Zitlala": [
+      "Zitlala"
+    ],
+    "Zumpango": [
+      "Zumpango del Río"
+    ]
+  },
+  "Hidalgo": {
+    "Pachuca": [
+      "Pachuca de Soto",
+      "Real del Monte"
+    ],
+    "Tulancingo": [
+      "Tulancingo de Bravo",
+      "Cuautepec"
+    ],
+    "Tizayuca": [
+      "Tizayuca"
+    ],
+    "Ixmiquilpan": [
+      "Ixmiquilpan"
+    ],
+    "Actopan": [
+      "Actopan"
+    ],
+    "Huejutla": [
+      "Huejutla de Reyes"
+    ],
+    "Tepeapulco": [
+      "Tepeapulco"
+    ],
+    "Zimapán": [
+      "Zimapán"
+    ],
+    "Acaxochitlán": [
+      "Acaxochitlán"
+    ],
+    "Ajacuba": [
+      "Ajacuba"
+    ],
+    "Alfajayucan": [
+      "Alfajayucan"
+    ],
+    "Almoloya": [
+      "Almoloya"
+    ],
+    "Apan": [
+      "Apan"
+    ],
+    "Atitalaquia": [
+      "Atitalaquia"
+    ],
+    "Atotonilco de Tula": [
+      "Atotonilco de Tula"
+    ],
+    "Calnali": [
+      "Calnali"
+    ],
+    "Cardonal": [
+      "Cardonal"
+    ],
+    "Chapulhuacán": [
+      "Chapulhuacán"
+    ],
+    "Chilcuautla": [
+      "Chilcuautla"
+    ],
+    "Cuautepec": [
+      "Cuautepec"
+    ],
+    "El Arenal": [
+      "El Arenal"
+    ],
+    "Epazoyucan": [
+      "Epazoyucan"
+    ],
+    "Francisco I. Madero": [
+      "Francisco I. Madero"
+    ],
+    "Huasca": [
+      "Huasca"
+    ],
+    "Huautla": [
+      "Huautla"
+    ],
+    "Huehuetla": [
+      "Huehuetla"
+    ],
+    "Jaltocán": [
+      "Jaltocán"
+    ],
+    "Juárez": [
+      "Juárez"
+    ],
+    "Lolotla": [
+      "Lolotla"
+    ],
+    "Metepec": [
+      "Metepec"
+    ],
+    "Mineral de la Reforma": [
+      "Mineral de la Reforma"
+    ],
+    "Mineral del Chico": [
+      "Mineral del Chico"
+    ],
+    "Mixquiahuala": [
+      "Mixquiahuala"
+    ],
+    "Molango": [
+      "Molango"
+    ],
+    "Nicolás Flores": [
+      "Nicolás Flores"
+    ],
+    "Nopala": [
+      "Nopala"
+    ],
+    "Omitlán": [
+      "Omitlán"
+    ],
+    "Pisaflores": [
+      "Pisaflores"
+    ],
+    "Progreso": [
+      "Progreso"
+    ],
+    "San Agustín Metzquititlán": [
+      "San Agustín Metzquititlán"
+    ],
+    "San Bartolo Tutotepec": [
+      "San Bartolo Tutotepec"
+    ],
+    "San Salvador": [
+      "San Salvador"
+    ],
+    "Santiago de Anaya": [
+      "Santiago de Anaya"
+    ],
+    "Singuilucan": [
+      "Singuilucan"
+    ],
+    "Tasquillo": [
+      "Tasquillo"
+    ],
+    "Tecozautla": [
+      "Tecozautla"
+    ],
+    "Tenango de Doria": [
+      "Tenango de Doria"
+    ],
+    "Tepehuacán": [
+      "Tepehuacán"
+    ],
+    "Tepeji": [
+      "Tepeji del Río"
+    ],
+    "Tepetitlán": [
+      "Tepetitlán"
+    ],
+    "Tetepango": [
+      "Tetepango"
+    ],
+    "Tezontepec": [
+      "Tezontepec"
+    ],
+    "Tlahuelilpan": [
+      "Tlahuelilpan"
+    ],
+    "Tlanchinol": [
+      "Tlanchinol"
+    ],
+    "Tlaxcoapan": [
+      "Tlaxcoapan"
+    ],
+    "Tolcayuca": [
+      "Tolcayuca"
+    ],
+    "Tula": [
+      "Tula de Allende"
+    ],
+    "Xochiatipan": [
+      "Xochiatipan"
+    ],
+    "Xochicoatlán": [
+      "Xochicoatlán"
+    ],
+    "Yahualica": [
+      "Yahualica"
+    ],
+    "Zacualtipán": [
+      "Zacualtipán"
+    ],
+    "Zapotlán": [
+      "Zapotlán"
+    ],
+    "Zempoala": [
+      "Zempoala"
     ]
   },
   "Jalisco": {
@@ -31,19 +1133,96 @@
       "Puerto Vallarta",
       "Cabo Corrientes",
       "Tomatlán"
-    ]
-  },
-  "Nuevo León": {
-    "Monterrey": [
-      "Monterrey",
-      "Apodaca",
-      "García",
-      "General Escobedo",
-      "Guadalupe",
-      "Juárez",
-      "San Nicolás de los Garza",
-      "San Pedro Garza García",
-      "Santa Catarina"
+    ],
+    "Lagos de Moreno": [
+      "Lagos de Moreno"
+    ],
+    "Tlaquepaque": [
+      "Tlaquepaque"
+    ],
+    "Zapotlanejo": [
+      "Zapotlanejo"
+    ],
+    "Ameca": [
+      "Ameca"
+    ],
+    "Arandas": [
+      "Arandas"
+    ],
+    "Atotonilco": [
+      "Atotonilco el Alto"
+    ],
+    "Autlán": [
+      "Autlán de Navarro"
+    ],
+    "Ciudad Guzmán": [
+      "Ciudad Guzmán"
+    ],
+    "Cocula": [
+      "Cocula"
+    ],
+    "Colotlán": [
+      "Colotlán"
+    ],
+    "Encarnación": [
+      "Encarnación de Díaz"
+    ],
+    "Etzatlán": [
+      "Etzatlán"
+    ],
+    "Jalostotitlán": [
+      "Jalostotitlán"
+    ],
+    "Jamay": [
+      "Jamay"
+    ],
+    "Jocotepec": [
+      "Jocotepec"
+    ],
+    "La Barca": [
+      "La Barca"
+    ],
+    "Magdalena": [
+      "Magdalena"
+    ],
+    "Mascota": [
+      "Mascota"
+    ],
+    "Ocotlán": [
+      "Ocotlán"
+    ],
+    "Poncitlán": [
+      "Poncitlán"
+    ],
+    "San Juan de los Lagos": [
+      "San Juan de los Lagos"
+    ],
+    "San Miguel el Alto": [
+      "San Miguel el Alto"
+    ],
+    "Sayula": [
+      "Sayula"
+    ],
+    "Tala": [
+      "Tala"
+    ],
+    "Tecolotlán": [
+      "Tecolotlán"
+    ],
+    "Teocuitatlán": [
+      "Teocuitatlán"
+    ],
+    "Tequila": [
+      "Tequila"
+    ],
+    "Tuxpan": [
+      "Tuxpan"
+    ],
+    "Zacoalco": [
+      "Zacoalco"
+    ],
+    "Zapotiltic": [
+      "Zapotiltic"
     ]
   },
   "Estado de México": {
@@ -64,6 +1243,2209 @@
     "Ecatepec": [
       "Ecatepec de Morelos",
       "Tecámac"
+    ],
+    "Nezahualcóyotl": [
+      "Ciudad Nezahualcóyotl"
+    ],
+    "Chimalhuacán": [
+      "Chimalhuacán"
+    ],
+    "Cuautitlán": [
+      "Cuautitlán"
+    ],
+    "Cuautitlán Izcalli": [
+      "Cuautitlán Izcalli"
+    ],
+    "Chalco": [
+      "Chalco"
+    ],
+    "Coacalco": [
+      "Coacalco de Berriozábal"
+    ],
+    "Ixtapaluca": [
+      "Ixtapaluca"
+    ],
+    "Texcoco": [
+      "Texcoco"
+    ],
+    "Atizapán": [
+      "Atizapán"
+    ],
+    "Tenancingo": [
+      "Tenancingo"
+    ],
+    "Tejupilco": [
+      "Tejupilco"
+    ],
+    "Amecameca": [
+      "Amecameca"
+    ],
+    "Atlacomulco": [
+      "Atlacomulco"
+    ],
+    "San Felipe del Progreso": [
+      "San Felipe del Progreso"
+    ],
+    "Jilotepec": [
+      "Jilotepec"
+    ],
+    "Temoaya": [
+      "Temoaya"
+    ],
+    "Acambay": [
+      "Acambay"
+    ],
+    "Acolman": [
+      "Acolman"
+    ],
+    "Almoloya de Alquisiras": [
+      "Almoloya de Alquisiras"
+    ],
+    "Almoloya de Juárez": [
+      "Almoloya de Juárez"
+    ],
+    "Amatepec": [
+      "Amatepec"
+    ],
+    "Apaxco": [
+      "Apaxco"
+    ],
+    "Atenco": [
+      "Atenco"
+    ],
+    "Ayapango": [
+      "Ayapango"
+    ],
+    "Cocotitlán": [
+      "Cocotitlán"
+    ],
+    "Ecatzingo": [
+      "Ecatzingo"
+    ],
+    "Ixtapan de la Sal": [
+      "Ixtapan de la Sal"
+    ],
+    "Jaltenco": [
+      "Jaltenco"
+    ],
+    "Jiquipilco": [
+      "Jiquipilco"
+    ],
+    "Melchor Ocampo": [
+      "Melchor Ocampo"
+    ],
+    "Nicolás Romero": [
+      "Nicolás Romero"
+    ],
+    "Nopaltepec": [
+      "Nopaltepec"
+    ],
+    "Otumba": [
+      "Otumba"
+    ],
+    "Ozumba": [
+      "Ozumba"
+    ],
+    "San José del Rincón": [
+      "San José del Rincón"
+    ],
+    "San Mateo Atenco": [
+      "San Mateo Atenco"
+    ],
+    "Soyaniquilpan": [
+      "Soyaniquilpan"
+    ],
+    "Sultepec": [
+      "Sultepec"
+    ],
+    "Temascalapa": [
+      "Temascalapa"
+    ],
+    "Temascalcingo": [
+      "Temascalcingo"
+    ],
+    "Teoloyucan": [
+      "Teoloyucan"
+    ],
+    "Teotihuacán": [
+      "Teotihuacán"
+    ],
+    "Tepetlaoxtoc": [
+      "Tepetlaoxtoc"
+    ],
+    "Tepetlixpa": [
+      "Tepetlixpa"
+    ],
+    "Tequixquiac": [
+      "Tequixquiac"
+    ],
+    "Texcalyacac": [
+      "Texcalyacac"
+    ],
+    "Texcoco": [
+      "Texcoco"
+    ],
+    "Tlalmanalco": [
+      "Tlalmanalco"
+    ],
+    "Tlazala de Fabela": [
+      "Tlazala de Fabela"
+    ],
+    "Tonatico": [
+      "Tonatico"
+    ],
+    "Tultitlán": [
+      "Tultitlán"
+    ],
+    "Valle de Bravo": [
+      "Valle de Bravo"
+    ],
+    "Villa Guerrero": [
+      "Villa Guerrero"
+    ],
+    "Villa Victoria": [
+      "Villa Victoria"
+    ],
+    "Xonacatlán": [
+      "Xonacatlán"
+    ],
+    "Zacazonapan": [
+      "Zacazonapan"
+    ],
+    "Zumpahuacán": [
+      "Zumpahuacán"
+    ],
+    "Zumpango": [
+      "Zumpango"
+    ]
+  },
+  "Michoacán": {
+    "Morelia": [
+      "Morelia",
+      "Tarímbaro"
+    ],
+    "Uruapan": [
+      "Uruapan"
+    ],
+    "Zamora": [
+      "Zamora"
+    ],
+    "Lázaro Cárdenas": [
+      "Lázaro Cárdenas"
+    ],
+    "Apatzingán": [
+      "Apatzingán"
+    ],
+    "Zitácuaro": [
+      "Zitácuaro"
+    ],
+    "Pátzcuaro": [
+      "Pátzcuaro"
+    ],
+    "Nuevo Parangaricutiro": [
+      "Nuevo Parangaricutiro"
+    ],
+    "Sahuayo": [
+      "Sahuayo"
+    ],
+    "La Piedad": [
+      "La Piedad"
+    ],
+    "Jacona": [
+      "Jacona"
+    ],
+    "Tlazazalca": [
+      "Tlazazalca"
+    ],
+    "Coeneo": [
+      "Coeneo"
+    ],
+    "Cotija": [
+      "Cotija"
+    ],
+    "Chilchota": [
+      "Chilchota"
+    ],
+    "Tingüindín": [
+      "Tingüindín"
+    ],
+    "Taretan": [
+      "Taretan"
+    ],
+    "Tacámbaro": [
+      "Tacámbaro"
+    ],
+    "Peribán": [
+      "Peribán"
+    ],
+    "Buenavista": [
+      "Buenavista"
+    ],
+    "Aguililla": [
+      "Aguililla"
+    ],
+    "Coalcomán": [
+      "Coalcomán"
+    ],
+    "Aquila": [
+      "Aquila"
+    ],
+    "Parácuaro": [
+      "Parácuaro"
+    ],
+    "Múgica": [
+      "Múgica"
+    ],
+    "Nueva Italia": [
+      "Nueva Italia"
+    ],
+    "Lombardía": [
+      "Lombardía"
+    ],
+    "Purépero": [
+      "Purépero"
+    ],
+    "Zacapu": [
+      "Zacapu"
+    ],
+    "Panindícuaro": [
+      "Panindícuaro"
+    ],
+    "Churintzio": [
+      "Churintzio"
+    ],
+    "Ixtlán": [
+      "Ixtlán"
+    ],
+    "La Huacana": [
+      "La Huacana"
+    ],
+    "Tuzantla": [
+      "Tuzantla"
+    ],
+    "Jungapeo": [
+      "Jungapeo"
+    ],
+    "Jiquilpan": [
+      "Jiquilpan"
+    ],
+    "Vista Hermosa": [
+      "Vista Hermosa"
+    ],
+    "Yurécuaro": [
+      "Yurécuaro"
+    ]
+  },
+  "Morelos": {
+    "Cuernavaca": [
+      "Cuernavaca",
+      "Jiutepec"
+    ],
+    "Cuautla": [
+      "Cuautla"
+    ],
+    "Temixco": [
+      "Temixco"
+    ],
+    "Yautepec": [
+      "Yautepec"
+    ],
+    "Jojutla": [
+      "Jojutla"
+    ],
+    "Tepoztlán": [
+      "Tepoztlán"
+    ],
+    "Xochitepec": [
+      "Xochitepec"
+    ],
+    "Puente de Ixtla": [
+      "Puente de Ixtla"
+    ],
+    "Emiliano Zapata": [
+      "Emiliano Zapata"
+    ],
+    "Ayala": [
+      "Ayala"
+    ],
+    "Axochiapan": [
+      "Axochiapan"
+    ],
+    "Jonacatepec": [
+      "Jonacatepec"
+    ],
+    "Tlayacapan": [
+      "Tlayacapan"
+    ],
+    "Totolapan": [
+      "Totolapan"
+    ],
+    "Tlaquiltenango": [
+      "Tlaquiltenango"
+    ],
+    "Coatlán": [
+      "Coatlán"
+    ],
+    "Amacuzac": [
+      "Amacuzac"
+    ],
+    "Miacatlán": [
+      "Miacatlán"
+    ],
+    "Tetela del Volcán": [
+      "Tetela del Volcán"
+    ],
+    "Zacualpan": [
+      "Zacualpan"
+    ],
+    "Tlaltizapán": [
+      "Tlaltizapán"
+    ],
+    "Zacatepec": [
+      "Zacatepec"
+    ]
+  },
+  "Nayarit": {
+    "Tepic": [
+      "Tepic",
+      "Xalisco",
+      "El Jicote"
+    ],
+    "Santiago Ixcuintla": [
+      "Santiago Ixcuintla"
+    ],
+    "Acaponeta": [
+      "Acaponeta"
+    ],
+    "Compostela": [
+      "Compostela"
+    ],
+    "Tecuala": [
+      "Tecuala"
+    ],
+    "Ruíz": [
+      "Ruíz"
+    ],
+    "San Blas": [
+      "San Blas"
+    ],
+    "Santa María del Oro": [
+      "Santa María del Oro"
+    ],
+    "Ahuacatlán": [
+      "Ahuacatlán"
+    ],
+    "Ixtlán del Río": [
+      "Ixtlán del Río"
+    ],
+    "Jala": [
+      "Jala"
+    ],
+    "La Yesca": [
+      "La Yesca"
+    ],
+    "Tuxpan": [
+      "Tuxpan"
+    ],
+    "Huajicori": [
+      "Huajicori"
+    ],
+    "Rosamorada": [
+      "Rosamorada"
+    ],
+    "Del Nayar": [
+      "Del Nayar"
+    ]
+  },
+  "Nuevo León": {
+    "Monterrey": [
+      "Monterrey",
+      "Apodaca",
+      "García",
+      "General Escobedo",
+      "Guadalupe",
+      "Juárez",
+      "San Nicolás de los Garza",
+      "San Pedro Garza García",
+      "Santa Catarina"
+    ],
+    "Linares": [
+      "Linares"
+    ],
+    "Cadereyta": [
+      "Cadereyta Jiménez"
+    ],
+    "Sabinas Hidalgo": [
+      "Sabinas Hidalgo"
+    ],
+    "Montemorelos": [
+      "Montemorelos"
+    ],
+    "Anáhuac": [
+      "Anáhuac"
+    ],
+    "Ciénega de Flores": [
+      "Ciénega de Flores"
+    ],
+    "China": [
+      "China"
+    ],
+    "Doctor Arroyo": [
+      "Doctor Arroyo"
+    ],
+    "Doctor Coss": [
+      "Doctor Coss"
+    ],
+    "Doctor González": [
+      "Doctor González"
+    ],
+    "Galeana": [
+      "Galeana"
+    ],
+    "Hidalgo": [
+      "Hidalgo"
+    ],
+    "Los Ramones": [
+      "Los Ramones"
+    ],
+    "Marín": [
+      "Marín"
+    ],
+    "Melchor Ocampo": [
+      "Melchor Ocampo"
+    ],
+    "Mier y Noriega": [
+      "Mier y Noriega"
+    ],
+    "Mina": [
+      "Mina"
+    ],
+    "Parás": [
+      "Parás"
+    ],
+    "Pesquería": [
+      "Pesquería"
+    ],
+    "Rayones": [
+      "Rayones"
+    ],
+    "Sabinas Hidalgo": [
+      "Sabinas Hidalgo"
+    ],
+    "Salinas Victoria": [
+      "Salinas Victoria"
+    ],
+    "San Nicolás": [
+      "San Nicolás"
+    ],
+    "Santa Catarina": [
+      "Santa Catarina"
+    ],
+    "Santiago": [
+      "Santiago"
+    ],
+    "Vallecillo": [
+      "Vallecillo"
+    ],
+    "Villaldama": [
+      "Villaldama"
+    ]
+  },
+  "Oaxaca": {
+    "Oaxaca": [
+      "Oaxaca de Juárez",
+      "Santa Cruz Xoxocotlán",
+      "San Antonio de la Cal"
+    ],
+    "San Juan Bautista Tuxtepec": [
+      "San Juan Bautista Tuxtepec"
+    ],
+    "Juchitán": [
+      "Juchitán de Zaragoza"
+    ],
+    "Salina Cruz": [
+      "Salina Cruz"
+    ],
+    "Huajuapan": [
+      "Huajuapan de León"
+    ],
+    "Tehuantepec": [
+      "Santo Domingo Tehuantepec"
+    ],
+    "Pinotepa Nacional": [
+      "Santiago Pinotepa Nacional"
+    ],
+    "Tlaxiaco": [
+      "Tlaxiaco"
+    ],
+    "Puerto Escondido": [
+      "Puerto Escondido"
+    ],
+    "Miahuatlán": [
+      "Miahuatlán de Porfirio Díaz"
+    ],
+    "San Pedro Mixtepec": [
+      "San Pedro Mixtepec"
+    ],
+    "San Pedro Pochutla": [
+      "San Pedro Pochutla"
+    ],
+    "Santa María Huatulco": [
+      "Santa María Huatulco"
+    ],
+    "Matías Romero": [
+      "Matías Romero"
+    ],
+    "Zaachila": [
+      "Zaachila"
+    ],
+    "Zimatlán": [
+      "Zimatlán"
+    ],
+    "Nochixtlán": [
+      "Nochixtlán"
+    ],
+    "Tlalixtac": [
+      "Tlalixtac"
+    ],
+    "Cuicatlán": [
+      "Cuicatlán"
+    ],
+    "Teposcolula": [
+      "Teposcolula"
+    ],
+    "Tamazulápam": [
+      "Tamazulápam"
+    ],
+    "Ocotlán": [
+      "Ocotlán"
+    ],
+    "Ejutla": [
+      "Ejutla"
+    ],
+    "San Carlos Yautepec": [
+      "San Carlos Yautepec"
+    ],
+    "San Miguel Tlacamama": [
+      "San Miguel Tlacamama"
+    ],
+    "Putla": [
+      "Putla"
+    ],
+    "Villa Sola de Vega": [
+      "Villa Sola de Vega"
+    ],
+    "San Agustín Loxicha": [
+      "San Agustín Loxicha"
+    ],
+    "Santa María Colotepec": [
+      "Santa María Colotepec"
+    ],
+    "Santa María Tonameca": [
+      "Santa María Tonameca"
+    ]
+  },
+  "Puebla": {
+    "Puebla": [
+      "Puebla de Zaragoza",
+      "San Andrés Cholula",
+      "San Pedro Cholula",
+      "Cuautlancingo"
+    ],
+    "Tehuacán": [
+      "Tehuacán"
+    ],
+    "Atlixco": [
+      "Atlixco"
+    ],
+    "San Martín Texmelucan": [
+      "San Martín Texmelucan"
+    ],
+    "Cholula": [
+      "Cholula"
+    ],
+    "Izúcar de Matamoros": [
+      "Izúcar de Matamoros"
+    ],
+    "Huauchinango": [
+      "Huauchinango"
+    ],
+    "Teziutlán": [
+      "Teziutlán"
+    ],
+    "Zacatlán": [
+      "Zacatlán"
+    ],
+    "Acatlán": [
+      "Acatlán de Osorio"
+    ],
+    "Amozoc": [
+      "Amozoc"
+    ],
+    "Ciudad Serdán": [
+      "Ciudad Serdán"
+    ],
+    "Cuetzalan": [
+      "Cuetzalan"
+    ],
+    "Chignahuapan": [
+      "Chignahuapan"
+    ],
+    "Córdoba": [
+      "Córdoba"
+    ],
+    "Tecamachalco": [
+      "Tecamachalco"
+    ],
+    "Tepanco": [
+      "Tepanco"
+    ],
+    "Tepeaca": [
+      "Tepeaca"
+    ],
+    "Tlatlauquitepec": [
+      "Tlatlauquitepec"
+    ],
+    "Tlaxco": [
+      "Tlaxco"
+    ],
+    "Xicotepec": [
+      "Xicotepec"
+    ],
+    "Zacapoaxtla": [
+      "Zacapoaxtla"
+    ],
+    "Zautla": [
+      "Zautla"
+    ],
+    "Acajete": [
+      "Acajete"
+    ],
+    "Acatzingo": [
+      "Acatzingo"
+    ],
+    "Acteopan": [
+      "Acteopan"
+    ],
+    "Ahuacatlán": [
+      "Ahuacatlán"
+    ],
+    "Ahuatlán": [
+      "Ahuatlán"
+    ],
+    "Altepexi": [
+      "Altepexi"
+    ],
+    "Aquixtla": [
+      "Aquixtla"
+    ],
+    "Atempan": [
+      "Atempan"
+    ],
+    "Atoyatempan": [
+      "Atoyatempan"
+    ],
+    "Calpan": [
+      "Calpan"
+    ],
+    "Caxhuacán": [
+      "Caxhuacán"
+    ],
+    "Chiautla": [
+      "Chiautla"
+    ],
+    "Chichiquila": [
+      "Chichiquila"
+    ],
+    "Chietla": [
+      "Chietla"
+    ],
+    "Chigmecatitlán": [
+      "Chigmecatitlán"
+    ],
+    "Chilchotla": [
+      "Chilchotla"
+    ],
+    "Coyomeapan": [
+      "Coyomeapan"
+    ],
+    "Domingo Arenas": [
+      "Domingo Arenas"
+    ],
+    "Eloxochitlán": [
+      "Eloxochitlán"
+    ],
+    "Epatlán": [
+      "Epatlán"
+    ],
+    "Esperanza": [
+      "Esperanza"
+    ],
+    "Francisco Z. Mena": [
+      "Francisco Z. Mena"
+    ],
+    "Guadalupe": [
+      "Guadalupe"
+    ],
+    "Honey": [
+      "Honey"
+    ],
+    "Huaquechula": [
+      "Huaquechula"
+    ],
+    "Huatlatlauca": [
+      "Huatlatlauca"
+    ],
+    "Ixcamilpa": [
+      "Ixcamilpa"
+    ],
+    "Jalpan": [
+      "Jalpan"
+    ],
+    "Jolalpan": [
+      "Jolalpan"
+    ],
+    "Jonotla": [
+      "Jonotla"
+    ],
+    "Jopala": [
+      "Jopala"
+    ],
+    "Juan Galindo": [
+      "Juan Galindo"
+    ],
+    "Juan N. Méndez": [
+      "Juan N. Méndez"
+    ],
+    "Lafragua": [
+      "Lafragua"
+    ],
+    "Libres": [
+      "Libres"
+    ],
+    "Loma Bonita": [
+      "Loma Bonita"
+    ],
+    "Molcaxac": [
+      "Molcaxac"
+    ],
+    "Naupan": [
+      "Naupan"
+    ],
+    "Nauzontla": [
+      "Nauzontla"
+    ],
+    "Nealtican": [
+      "Nealtican"
+    ],
+    "Nicolás Bravo": [
+      "Nicolás Bravo"
+    ],
+    "Nopalucan": [
+      "Nopalucan"
+    ],
+    "Ocotepec": [
+      "Ocotepec"
+    ],
+    "Ocoyucan": [
+      "Ocoyucan"
+    ],
+    "Olintla": [
+      "Olintla"
+    ],
+    "Oriental": [
+      "Oriental"
+    ],
+    "Pahuatlán": [
+      "Pahuatlán"
+    ],
+    "Palmar de Bravo": [
+      "Palmar de Bravo"
+    ],
+    "Pantepec": [
+      "Pantepec"
+    ],
+    "Petlalcingo": [
+      "Petlalcingo"
+    ],
+    "Piaxtla": [
+      "Piaxtla"
+    ],
+    "Quimixtlán": [
+      "Quimixtlán"
+    ],
+    "San Diego la Mesa Tochimiltzingo": [
+      "San Diego la Mesa Tochimiltzingo"
+    ],
+    "San Felipe Tepatlán": [
+      "San Felipe Tepatlán"
+    ],
+    "San Gabriel Chilac": [
+      "San Gabriel Chilac"
+    ],
+    "San José Chiapa": [
+      "San José Chiapa"
+    ],
+    "San Juan Atenco": [
+      "San Juan Atenco"
+    ],
+    "San Lorenzo Chiautzingo": [
+      "San Lorenzo Chiautzingo"
+    ],
+    "San Nicolás Buenos Aires": [
+      "San Nicolás Buenos Aires"
+    ],
+    "San Salvador el Seco": [
+      "San Salvador el Seco"
+    ],
+    "San Salvador Huixcolotla": [
+      "San Salvador Huixcolotla"
+    ],
+    "Santa Catarina Tlaltempan": [
+      "Santa Catarina Tlaltempan"
+    ],
+    "Santa Inés Ahuatempan": [
+      "Santa Inés Ahuatempan"
+    ],
+    "Santa Isabel Cholula": [
+      "Santa Isabel Cholula"
+    ],
+    "Santiago Miahuatlán": [
+      "Santiago Miahuatlán"
+    ],
+    "Santo Tomás Hueyotlipan": [
+      "Santo Tomás Hueyotlipan"
+    ],
+    "Soltepec": [
+      "Soltepec"
+    ],
+    "Tecali": [
+      "Tecali"
+    ],
+    "Tecomatlán": [
+      "Tecomatlán"
+    ],
+    "Tepatlaxco": [
+      "Tepatlaxco"
+    ],
+    "Tepetzintla": [
+      "Tepetzintla"
+    ],
+    "Tepexi": [
+      "Tepexi"
+    ],
+    "Tepeyahualco": [
+      "Tepeyahualco"
+    ],
+    "Tetela": [
+      "Tetela de Ocampo"
+    ],
+    "Teteles": [
+      "Teteles"
+    ],
+    "Tlacotepec": [
+      "Tlacotepec"
+    ],
+    "Tlacuilotepec": [
+      "Tlacuilotepec"
+    ],
+    "Tlahuapan": [
+      "Tlahuapan"
+    ],
+    "Tlaltenango": [
+      "Tlaltenango"
+    ],
+    "Tlanepantla": [
+      "Tlanepantla"
+    ],
+    "Tlaola": [
+      "Tlaola"
+    ],
+    "Tlapacoya": [
+      "Tlapacoya"
+    ],
+    "Tlapanalá": [
+      "Tlapanalá"
+    ],
+    "Tlatlauquitepec": [
+      "Tlatlauquitepec"
+    ],
+    "Tlaxco": [
+      "Tlaxco"
+    ],
+    "Tochimilco": [
+      "Tochimilco"
+    ],
+    "Tochtepec": [
+      "Tochtepec"
+    ],
+    "Totoltepec": [
+      "Totoltepec"
+    ],
+    "Tuzamapán": [
+      "Tuzamapán"
+    ],
+    "Tzicatlacoyan": [
+      "Tzicatlacoyan"
+    ],
+    "Venustiano Carranza": [
+      "Venustiano Carranza"
+    ],
+    "Vicente Guerrero": [
+      "Vicente Guerrero"
+    ],
+    "Xayacatlán": [
+      "Xayacatlán"
+    ],
+    "Xicotlán": [
+      "Xicotlán"
+    ],
+    "Xochiapulco": [
+      "Xochiapulco"
+    ],
+    "Xochiltepec": [
+      "Xochiltepec"
+    ],
+    "Xochitlán": [
+      "Xochitlán"
+    ],
+    "Yaonáhuac": [
+      "Yaonáhuac"
+    ],
+    "Yehualtepec": [
+      "Yehualtepec"
+    ],
+    "Zapotitlán": [
+      "Zapotitlán"
+    ],
+    "Zapotitlán de Méndez": [
+      "Zapotitlán de Méndez"
+    ],
+    "Zaragoza": [
+      "Zaragoza"
+    ],
+    "Zautla": [
+      "Zautla"
+    ],
+    "Zihuateutla": [
+      "Zihuateutla"
+    ],
+    "Zinacatepec": [
+      "Zinacatepec"
+    ],
+    "Zongozotla": [
+      "Zongozotla"
+    ],
+    "Zoquiapan": [
+      "Zoquiapan"
+    ],
+    "Zoquitlán": [
+      "Zoquitlán"
+    ]
+  },
+  "Querétaro": {
+    "Querétaro": [
+      "Santiago de Querétaro",
+      "El Marqués",
+      "Corregidora"
+    ],
+    "San Juan del Río": [
+      "San Juan del Río"
+    ],
+    "Pedro Escobedo": [
+      "Pedro Escobedo"
+    ],
+    "Tequisquiapan": [
+      "Tequisquiapan"
+    ],
+    "Ezequiel Montes": [
+      "Ezequiel Montes"
+    ],
+    "Amealco": [
+      "Amealco de Bonfil"
+    ],
+    "Cadereyta": [
+      "Cadereyta de Montes"
+    ],
+    "Colón": [
+      "Colón"
+    ],
+    "Huimilpan": [
+      "Huimilpan"
+    ],
+    "Jalpan": [
+      "Jalpan de Serra"
+    ],
+    "Landa": [
+      "Landa de Matamoros"
+    ],
+    "Pinal de Amoles": [
+      "Pinal de Amoles"
+    ],
+    "San Joaquín": [
+      "San Joaquín"
+    ],
+    "Tolimán": [
+      "Tolimán"
+    ],
+    "Arroyo Seco": [
+      "Arroyo Seco"
+    ],
+    "Peñamiller": [
+      "Peñamiller"
+    ]
+  },
+  "Quintana Roo": {
+    "Benito Juárez": [
+      "Cancún",
+      "Alfredo V. Bonfil"
+    ],
+    "Othón P. Blanco": [
+      "Chetumal",
+      "Calderitas"
+    ],
+    "Solidaridad": [
+      "Playa del Carmen",
+      "Puerto Aventuras"
+    ],
+    "Cozumel": [
+      "San Miguel de Cozumel"
+    ],
+    "Tulum": [
+      "Tulum",
+      "Akumal"
+    ],
+    "Isla Mujeres": [
+      "Isla Mujeres"
+    ],
+    "Felipe Carrillo Puerto": [
+      "Felipe Carrillo Puerto"
+    ],
+    "Lázaro Cárdenas": [
+      "Kantunilkín"
+    ],
+    "José María Morelos": [
+      "José María Morelos"
+    ],
+    "Bacalar": [
+      "Bacalar"
+    ]
+  },
+  "San Luis Potosí": {
+    "San Luis Potosí": [
+      "San Luis Potosí",
+      "Soledad de Graciano Sánchez",
+      "Cerro de San Pedro"
+    ],
+    "Ciudad Valles": [
+      "Ciudad Valles"
+    ],
+    "Matehuala": [
+      "Matehuala"
+    ],
+    "Rioverde": [
+      "Rioverde"
+    ],
+    "Tamazunchale": [
+      "Tamazunchale"
+    ],
+    "Ébano": [
+      "Ébano"
+    ],
+    "Cárdenas": [
+      "Cárdenas"
+    ],
+    "Tamasopo": [
+      "Tamasopo"
+    ],
+    "Xilitla": [
+      "Xilitla"
+    ],
+    "Aquismón": [
+      "Aquismón"
+    ],
+    "Ahualulco": [
+      "Ahualulco"
+    ],
+    "Alaquines": [
+      "Alaquines"
+    ],
+    "Armadillo": [
+      "Armadillo"
+    ],
+    "Axtla": [
+      "Axtla"
+    ],
+    "Catorce": [
+      "Catorce"
+    ],
+    "Cerritos": [
+      "Cerritos"
+    ],
+    "Ciudad Fernández": [
+      "Ciudad Fernández"
+    ],
+    "Ciudad del Maíz": [
+      "Ciudad del Maíz"
+    ],
+    "Ciudad Mante": [
+      "Ciudad Mante"
+    ],
+    "Coxcatlán": [
+      "Coxcatlán"
+    ],
+    "Charcas": [
+      "Charcas"
+    ],
+    "Guadalcázar": [
+      "Guadalcázar"
+    ],
+    "Huehuetlán": [
+      "Huehuetlán"
+    ],
+    "Lagunillas": [
+      "Lagunillas"
+    ],
+    "Moctezuma": [
+      "Moctezuma"
+    ],
+    "Rayón": [
+      "Rayón"
+    ],
+    "Salinas": [
+      "Salinas"
+    ],
+    "San Antonio": [
+      "San Antonio"
+    ],
+    "San Ciro": [
+      "San Ciro"
+    ],
+    "San Martín Chalchicuautla": [
+      "San Martín Chalchicuautla"
+    ],
+    "San Nicolás Tolentino": [
+      "San Nicolás Tolentino"
+    ],
+    "Santa Catarina": [
+      "Santa Catarina"
+    ],
+    "Santa María del Río": [
+      "Santa María del Río"
+    ],
+    "Santo Domingo": [
+      "Santo Domingo"
+    ],
+    "Soledad": [
+      "Soledad"
+    ],
+    "Tancanhuitz": [
+      "Tancanhuitz"
+    ],
+    "Tanlajás": [
+      "Tanlajás"
+    ],
+    "Tanquián": [
+      "Tanquián"
+    ],
+    "Tierra Nueva": [
+      "Tierra Nueva"
+    ],
+    "Vanegas": [
+      "Vanegas"
+    ],
+    "Venado": [
+      "Venado"
+    ],
+    "Villa de Arista": [
+      "Villa de Arista"
+    ],
+    "Villa de Guadalupe": [
+      "Villa de Guadalupe"
+    ],
+    "Villa de Ramos": [
+      "Villa de Ramos"
+    ],
+    "Villa de Reyes": [
+      "Villa de Reyes"
+    ],
+    "Villa Hidalgo": [
+      "Villa Hidalgo"
+    ],
+    "Zaragoza": [
+      "Zaragoza"
+    ]
+  },
+  "Sinaloa": {
+    "Culiacán": [
+      "Culiacán Rosales",
+      "Navolato"
+    ],
+    "Mazatlán": [
+      "Mazatlán",
+      "Concordia"
+    ],
+    "Los Mochis": [
+      "Los Mochis"
+    ],
+    "Guasave": [
+      "Guasave"
+    ],
+    "Ahome": [
+      "Ahome"
+    ],
+    "Salvador Alvarado": [
+      "Salvador Alvarado"
+    ],
+    "Navolato": [
+      "Navolato"
+    ],
+    "El Fuerte": [
+      "El Fuerte"
+    ],
+    "Angostura": [
+      "Angostura"
+    ],
+    "Badiraguato": [
+      "Badiraguato"
+    ],
+    "Choix": [
+      "Choix"
+    ],
+    "Concordia": [
+      "Concordia"
+    ],
+    "Cosala": [
+      "Cosala"
+    ],
+    "Cosalá": [
+      "Cosalá"
+    ],
+    "Culiacán": [
+      "Culiacán"
+    ],
+    "Elota": [
+      "Elota"
+    ],
+    "Escuinapa": [
+      "Escuinapa"
+    ],
+    "Guasave": [
+      "Guasave"
+    ],
+    "Mazatlán": [
+      "Mazatlán"
+    ],
+    "Mocorito": [
+      "Mocorito"
+    ],
+    "Rosario": [
+      "Rosario"
+    ],
+    "Salvador Alvarado": [
+      "Salvador Alvarado"
+    ],
+    "San Ignacio": [
+      "San Ignacio"
+    ],
+    "Sinaloa": [
+      "Sinaloa"
+    ]
+  },
+  "Sonora": {
+    "Hermosillo": [
+      "Hermosillo",
+      "Bahiía de Kino"
+    ],
+    "Ciudad Obregón": [
+      "Ciudad Obregón"
+    ],
+    "Nogales": [
+      "Nogales"
+    ],
+    "Guaymas": [
+      "Guaymas"
+    ],
+    "San Luis Río Colorado": [
+      "San Luis Río Colorado"
+    ],
+    "Agua Prieta": [
+      "Agua Prieta"
+    ],
+    "Caborca": [
+      "Caborca"
+    ],
+    "Cananea": [
+      "Cananea"
+    ],
+    "Navojoa": [
+      "Navojoa"
+    ],
+    "Empalme": [
+      "Empalme"
+    ],
+    "Magdalena": [
+      "Magdalena"
+    ],
+    "Puerto Peñasco": [
+      "Puerto Peñasco"
+    ],
+    "Álamos": [
+      "Álamos"
+    ],
+    "Arizpe": [
+      "Arizpe"
+    ],
+    "Bacadéhuachi": [
+      "Bacadéhuachi"
+    ],
+    "Bacanora": [
+      "Bacanora"
+    ],
+    "Bacoachi": [
+      "Bacoachi"
+    ],
+    "Baviácora": [
+      "Baviácora"
+    ],
+    "Bavispe": [
+      "Bavispe"
+    ],
+    "Benjamín Hill": [
+      "Benjamín Hill"
+    ],
+    "Cajeme": [
+      "Cajeme"
+    ],
+    "Carbó": [
+      "Carbó"
+    ],
+    "Cucurpe": [
+      "Cucurpe"
+    ],
+    "Cumpas": [
+      "Cumpas"
+    ],
+    "Divisaderos": [
+      "Divisaderos"
+    ],
+    "Fronteras": [
+      "Fronteras"
+    ],
+    "Granados": [
+      "Granados"
+    ],
+    "Guaymas": [
+      "Guaymas"
+    ],
+    "Hermosillo": [
+      "Hermosillo"
+    ],
+    "Huachinera": [
+      "Huachinera"
+    ],
+    "Huásabas": [
+      "Huásabas"
+    ],
+    "Huatabampo": [
+      "Huatabampo"
+    ],
+    "Lázaro Cárdenas": [
+      "Lázaro Cárdenas"
+    ],
+    "Mazatán": [
+      "Mazatán"
+    ],
+    "Moctezuma": [
+      "Moctezuma"
+    ],
+    "Naco": [
+      "Naco"
+    ],
+    "Nácori Chico": [
+      "Nácori Chico"
+    ],
+    "Navojoa": [
+      "Navojoa"
+    ],
+    "Nogales": [
+      "Nogales"
+    ],
+    "Opodepe": [
+      "Opodepe"
+    ],
+    "Oquitoa": [
+      "Oquitoa"
+    ],
+    "Pitiquito": [
+      "Pitiquito"
+    ],
+    "Puerto Peñasco": [
+      "Puerto Peñasco"
+    ],
+    "Quiriego": [
+      "Quiriego"
+    ],
+    "Rayón": [
+      "Rayón"
+    ],
+    "Rosario": [
+      "Rosario"
+    ],
+    "Sahuaripa": [
+      "Sahuaripa"
+    ],
+    "San Felipe de Jesús": [
+      "San Felipe de Jesús"
+    ],
+    "San Javier": [
+      "San Javier"
+    ],
+    "San Luis Río Colorado": [
+      "San Luis Río Colorado"
+    ],
+    "San Miguel de Horcasitas": [
+      "San Miguel de Horcasitas"
+    ],
+    "San Pedro de la Cueva": [
+      "San Pedro de la Cueva"
+    ],
+    "Santa Ana": [
+      "Santa Ana"
+    ],
+    "Santa Cruz": [
+      "Santa Cruz"
+    ],
+    "Sáric": [
+      "Sáric"
+    ],
+    "Soyopa": [
+      "Soyopa"
+    ],
+    "Suaqui Grande": [
+      "Suaqui Grande"
+    ],
+    "Tepache": [
+      "Tepache"
+    ],
+    "Trincheras": [
+      "Trincheras"
+    ],
+    "Tubutama": [
+      "Tubutama"
+    ],
+    "Ures": [
+      "Ures"
+    ],
+    "Villa Hidalgo": [
+      "Villa Hidalgo"
+    ],
+    "Villa Pesqueira": [
+      "Villa Pesqueira"
+    ],
+    "Yécora": [
+      "Yécora"
+    ]
+  },
+  "Tabasco": {
+    "Villahermosa": [
+      "Villahermosa",
+      "Macultepec",
+      "Parrilla"
+    ],
+    "Cárdenas": [
+      "Cárdenas"
+    ],
+    "Comalcalco": [
+      "Comalcalco"
+    ],
+    "Tenosique": [
+      "Tenosique"
+    ],
+    "Jalpa": [
+      "Jalpa de Méndez"
+    ],
+    "Centla": [
+      "Centla"
+    ],
+    "Centro": [
+      "Centro"
+    ],
+    "Emiliano Zapata": [
+      "Emiliano Zapata"
+    ],
+    "Huimanguillo": [
+      "Huimanguillo"
+    ],
+    "Jalapa": [
+      "Jalapa"
+    ],
+    "Jonuta": [
+      "Jonuta"
+    ],
+    "Macuspana": [
+      "Macuspana"
+    ],
+    "Nacajuca": [
+      "Nacajuca"
+    ],
+    "Paraíso": [
+      "Paraíso"
+    ],
+    "Tacotalpa": [
+      "Tacotalpa"
+    ],
+    "Teapa": [
+      "Teapa"
+    ]
+  },
+  "Tamaulipas": {
+    "Ciudad Victoria": [
+      "Ciudad Victoria",
+      "Güémez"
+    ],
+    "Reynosa": [
+      "Reynosa"
+    ],
+    "Matamoros": [
+      "Heroica Matamoros"
+    ],
+    "Nuevo Laredo": [
+      "Nuevo Laredo"
+    ],
+    "Tampico": [
+      "Tampico",
+      "Ciudad Madero"
+    ],
+    "Ciudad Madero": [
+      "Ciudad Madero"
+    ],
+    "Altamira": [
+      "Altamira"
+    ],
+    "Mante": [
+      "Ciudad Mante"
+    ],
+    "Valle Hermoso": [
+      "Valle Hermoso"
+    ],
+    "Río Bravo": [
+      "Río Bravo"
+    ],
+    "Soto la Marina": [
+      "Soto la Marina"
+    ],
+    "Linares": [
+      "Linares"
+    ],
+    "Villagrán": [
+      "Villagrán"
+    ],
+    "San Fernando": [
+      "San Fernando"
+    ],
+    "Burgos": [
+      "Burgos"
+    ],
+    "Cruillas": [
+      "Cruillas"
+    ],
+    "Hidalgo": [
+      "Hidalgo"
+    ],
+    "Jiménez": [
+      "Jiménez"
+    ],
+    "Méndez": [
+      "Méndez"
+    ],
+    "Miguel Alemán": [
+      "Miguel Alemán"
+    ],
+    "Miquihuana": [
+      "Miquihuana"
+    ],
+    "Nuevo Morelos": [
+      "Nuevo Morelos"
+    ],
+    "Ocampo": [
+      "Ocampo"
+    ],
+    "Padilla": [
+      "Padilla"
+    ],
+    "Palmillas": [
+      "Palmillas"
+    ],
+    "San Carlos": [
+      "San Carlos"
+    ],
+    "San Nicolás": [
+      "San Nicolás"
+    ],
+    "Tula": [
+      "Tula"
+    ],
+    "Xicoténcatl": [
+      "Xicoténcatl"
+    ]
+  },
+  "Tlaxcala": {
+    "Tlaxcala": [
+      "Tlaxcala de Xicohténcatl",
+      "San Pablo del Monte"
+    ],
+    "Apizaco": [
+      "Apizaco"
+    ],
+    "Huamantla": [
+      "Huamantla"
+    ],
+    "Chiautempan": [
+      "Chiautempan"
+    ],
+    "Calpulalpan": [
+      "Calpulalpan"
+    ],
+    "Zacatelco": [
+      "Zacatelco"
+    ],
+    "Apetatitlán": [
+      "Apetatitlán"
+    ],
+    "Atltzayanca": [
+      "Atltzayanca"
+    ],
+    "Cuapiaxtla": [
+      "Cuapiaxtla"
+    ],
+    "El Carmen Tequexquitla": [
+      "El Carmen Tequexquitla"
+    ],
+    "Españita": [
+      "Españita"
+    ],
+    "Huamantla": [
+      "Huamantla"
+    ],
+    "Ixtacuixtla": [
+      "Ixtacuixtla"
+    ],
+    "Ixtenco": [
+      "Ixtenco"
+    ],
+    "Mazatecochco": [
+      "Mazatecochco"
+    ],
+    "Contla": [
+      "Contla"
+    ],
+    "Nanacamilpa": [
+      "Nanacamilpa"
+    ],
+    "Natívitas": [
+      "Natívitas"
+    ],
+    "Panotla": [
+      "Panotla"
+    ],
+    "San José Teacalco": [
+      "San José Teacalco"
+    ],
+    "San Juan Huactzinco": [
+      "San Juan Huactzinco"
+    ],
+    "San Lorenzo Axocomanitla": [
+      "San Lorenzo Axocomanitla"
+    ],
+    "San Lucas Tecopilco": [
+      "San Lucas Tecopilco"
+    ],
+    "Santa Ana Nopalucan": [
+      "Santa Ana Nopalucan"
+    ],
+    "Santa Apolonia Teacalco": [
+      "Santa Apolonia Teacalco"
+    ],
+    "Santa Catarina Ayometla": [
+      "Santa Catarina Ayometla"
+    ],
+    "Santa Cruz Quilehtla": [
+      "Santa Cruz Quilehtla"
+    ],
+    "Santa Isabel Xiloxoxtla": [
+      "Santa Isabel Xiloxoxtla"
+    ],
+    "Tenancingo": [
+      "Tenancingo"
+    ],
+    "Teolocholco": [
+      "Teolocholco"
+    ],
+    "Tepetitla": [
+      "Tepetitla"
+    ],
+    "Tepeyanco": [
+      "Tepeyanco"
+    ],
+    "Terrenate": [
+      "Terrenate"
+    ],
+    "Tetla": [
+      "Tetla"
+    ],
+    "Tetlatlahuca": [
+      "Tetlatlahuca"
+    ],
+    "Tlaxcala": [
+      "Tlaxcala"
+    ],
+    "Tocatlán": [
+      "Tocatlán"
+    ],
+    "Totolac": [
+      "Totolac"
+    ],
+    "Xaloztoc": [
+      "Xaloztoc"
+    ],
+    "Xaltocan": [
+      "Xaltocan"
+    ],
+    "Xicohtzinco": [
+      "Xicohtzinco"
+    ],
+    "Yauhquemehcan": [
+      "Yauhquemehcan"
+    ],
+    "Zacatelco": [
+      "Zacatelco"
+    ]
+  },
+  "Veracruz": {
+    "Xalapa": [
+      "Xalapa-Enríquez",
+      "Coatepec"
+    ],
+    "Veracruz": [
+      "Veracruz",
+      "Boca del Río",
+      "Alvarado"
+    ],
+    "Córdoba": [
+      "Córdoba",
+      "Fortín"
+    ],
+    "Orizaba": [
+      "Orizaba",
+      "Río Blanco"
+    ],
+    "Poza Rica": [
+      "Poza Rica de Hidalgo"
+    ],
+    "Coatzacoalcos": [
+      "Coatzacoalcos",
+      "Minatitlán"
+    ],
+    "Minatitlán": [
+      "Minatitlán"
+    ],
+    "Tuxpan": [
+      "Tuxpan de Rodríguez Cano"
+    ],
+    "Martínez de la Torre": [
+      "Martínez de la Torre"
+    ],
+    "San Andrés Tuxtla": [
+      "San Andrés Tuxtla"
+    ],
+    "Acayucan": [
+      "Acayucan"
+    ],
+    "Huatusco": [
+      "Huatusco"
+    ],
+    "Tierra Blanca": [
+      "Tierra Blanca"
+    ],
+    "Álamo": [
+      "Álamo Temapache"
+    ],
+    "Cosamaloapan": [
+      "Cosamaloapan"
+    ],
+    "Cuitláhuac": [
+      "Cuitláhuac"
+    ],
+    "Chacaltianguis": [
+      "Chacaltianguis"
+    ],
+    "Chinameca": [
+      "Chinameca"
+    ],
+    "Cosoleacaque": [
+      "Cosoleacaque"
+    ],
+    "Huayacocotla": [
+      "Huayacocotla"
+    ],
+    "Ixtaczoquitlán": [
+      "Ixtaczoquitlán"
+    ],
+    "Jáltipan": [
+      "Jáltipan"
+    ],
+    "Las Choapas": [
+      "Las Choapas"
+    ],
+    "Misantla": [
+      "Misantla"
+    ],
+    "Naranjos": [
+      "Naranjos Amatlán"
+    ],
+    "Nogales": [
+      "Nogales"
+    ],
+    "Oluta": [
+      "Oluta"
+    ],
+    "Pánuco": [
+      "Pánuco"
+    ],
+    "Papantla": [
+      "Papantla"
+    ],
+    "Platón Sánchez": [
+      "Platón Sánchez"
+    ],
+    "Rafael Delgado": [
+      "Rafael Delgado"
+    ],
+    "Santiago Tuxtla": [
+      "Santiago Tuxtla"
+    ],
+    "Sayula": [
+      "Sayula"
+    ],
+    "Tantoyuca": [
+      "Tantoyuca"
+    ],
+    "Tecolutla": [
+      "Tecolutla"
+    ],
+    "Tempoal": [
+      "Tempoal"
+    ],
+    "Teocelo": [
+      "Teocelo"
+    ],
+    "Tequila": [
+      "Tequila"
+    ],
+    "Texistepec": [
+      "Texistepec"
+    ],
+    "Tlapacoyan": [
+      "Tlapacoyan"
+    ],
+    "Tlilapan": [
+      "Tlilapan"
+    ],
+    "Tlaltetela": [
+      "Tlaltetela"
+    ],
+    "Totutla": [
+      "Totutla"
+    ],
+    "Tuxtilla": [
+      "Tuxtilla"
+    ],
+    "Ursulo Galván": [
+      "Ursulo Galván"
+    ],
+    "Vega de Alatorre": [
+      "Vega de Alatorre"
+    ],
+    "Yanga": [
+      "Yanga"
+    ],
+    "Zongolica": [
+      "Zongolica"
+    ]
+  },
+  "Yucatán": {
+    "Mérida": [
+      "Mérida",
+      "Progreso",
+      "Umán"
+    ],
+    "Progreso": [
+      "Progreso"
+    ],
+    "Valladolid": [
+      "Valladolid"
+    ],
+    "Tizimín": [
+      "Tizimín"
+    ],
+    "Kanasín": [
+      "Kanasín"
+    ],
+    "Tekax": [
+      "Tekax"
+    ],
+    "Peto": [
+      "Peto"
+    ],
+    "Motul": [
+      "Motul"
+    ],
+    "Izamal": [
+      "Izamal"
+    ],
+    "Acanceh": [
+      "Acanceh"
+    ],
+    "Buctzotz": [
+      "Buctzotz"
+    ],
+    "Cansahcab": [
+      "Cansahcab"
+    ],
+    "Cenotillo": [
+      "Cenotillo"
+    ],
+    "Conkal": [
+      "Conkal"
+    ],
+    "Cuncunul": [
+      "Cuncunul"
+    ],
+    "Cuzamá": [
+      "Cuzamá"
+    ],
+    "Chacsinkín": [
+      "Chacsinkín"
+    ],
+    "Chankom": [
+      "Chankom"
+    ],
+    "Chemax": [
+      "Chemax"
+    ],
+    "Chichimilá": [
+      "Chichimilá"
+    ],
+    "Chicxulub": [
+      "Chicxulub"
+    ],
+    "Dzan": [
+      "Dzan"
+    ],
+    "Dzemul": [
+      "Dzemul"
+    ],
+    "Dzidzantún": [
+      "Dzidzantún"
+    ],
+    "Dzilam de Bravo": [
+      "Dzilam de Bravo"
+    ],
+    "Dzilam González": [
+      "Dzilam González"
+    ],
+    "Halachó": [
+      "Halachó"
+    ],
+    "Hocabá": [
+      "Hocabá"
+    ],
+    "Hoctún": [
+      "Hoctún"
+    ],
+    "Homún": [
+      "Homún"
+    ],
+    "Huhí": [
+      "Huhí"
+    ],
+    "Hunucmá": [
+      "Hunucmá"
+    ],
+    "Ixil": [
+      "Ixil"
+    ],
+    "Kinchil": [
+      "Kinchil"
+    ],
+    "Kopomá": [
+      "Kopomá"
+    ],
+    "Mama": [
+      "Mama"
+    ],
+    "Maní": [
+      "Maní"
+    ],
+    "Maxcanú": [
+      "Maxcanú"
+    ],
+    "Mayapán": [
+      "Mayapán"
+    ],
+    "Mocochá": [
+      "Mocochá"
+    ],
+    "Muna": [
+      "Muna"
+    ],
+    "Muxupip": [
+      "Muxupip"
+    ],
+    "Opichén": [
+      "Opichén"
+    ],
+    "Oxkutzcab": [
+      "Oxkutzcab"
+    ],
+    "Panabá": [
+      "Panabá"
+    ],
+    "Peto": [
+      "Peto"
+    ],
+    "Progreso": [
+      "Progreso"
+    ],
+    "Quintana Roo": [
+      "Quintana Roo"
+    ],
+    "Río Lagartos": [
+      "Río Lagartos"
+    ],
+    "Sacalum": [
+      "Sacalum"
+    ],
+    "Samahil": [
+      "Samahil"
+    ],
+    "San Felipe": [
+      "San Felipe"
+    ],
+    "Santa Elena": [
+      "Santa Elena"
+    ],
+    "Seyé": [
+      "Seyé"
+    ],
+    "Sotuta": [
+      "Sotuta"
+    ],
+    "Sudzal": [
+      "Sudzal"
+    ],
+    "Suma": [
+      "Suma"
+    ],
+    "Tahmek": [
+      "Tahmek"
+    ],
+    "Teabo": [
+      "Teabo"
+    ],
+    "Tecoh": [
+      "Tecoh"
+    ],
+    "Tekal de Venegas": [
+      "Tekal de Venegas"
+    ],
+    "Tekantó": [
+      "Tekantó"
+    ],
+    "Tekax": [
+      "Tekax"
+    ],
+    "Tekit": [
+      "Tekit"
+    ],
+    "Tekom": [
+      "Tekom"
+    ],
+    "Telchac Pueblo": [
+      "Telchac Pueblo"
+    ],
+    "Telchac Puerto": [
+      "Telchac Puerto"
+    ],
+    "Temax": [
+      "Temax"
+    ],
+    "Temozón": [
+      "Temozón"
+    ],
+    "Tepakán": [
+      "Tepakán"
+    ],
+    "Tetiz": [
+      "Tetiz"
+    ],
+    "Teya": [
+      "Teya"
+    ],
+    "Ticul": [
+      "Ticul"
+    ],
+    "Timucuy": [
+      "Timucuy"
+    ],
+    "Tinum": [
+      "Tinum"
+    ],
+    "Tixcacalcupul": [
+      "Tixcacalcupul"
+    ],
+    "Tixkokob": [
+      "Tixkokob"
+    ],
+    "Tixmehuac": [
+      "Tixmehuac"
+    ],
+    "Tixpéhual": [
+      "Tixpéhual"
+    ],
+    "Tizimín": [
+      "Tizimín"
+    ],
+    "Tunkás": [
+      "Tunkás"
+    ],
+    "Tzucacab": [
+      "Tzucacab"
+    ],
+    "Uayma": [
+      "Uayma"
+    ],
+    "Ucú": [
+      "Ucú"
+    ],
+    "Umán": [
+      "Umán"
+    ],
+    "Valladolid": [
+      "Valladolid"
+    ],
+    "Xocchel": [
+      "Xocchel"
+    ],
+    "Yaxcabá": [
+      "Yaxcabá"
+    ],
+    "Yaxkukul": [
+      "Yaxkukul"
+    ],
+    "Yobaín": [
+      "Yobaín"
     ]
   }
 }

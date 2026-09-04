@@ -335,7 +335,7 @@ const ProfilePage = () => {
                                                             <div className="flex flex-wrap gap-2 mt-2">
                                                                 {booking.additional_services.map((s: any, idx: number) => (
                                                                     <span key={idx} className="bg-gray-50 border border-gray-100 text-[9px] font-black text-minimal-olive px-2 py-1 rounded-md uppercase tracking-tighter">
-                                                                        + {s.name} (S/ {s.price})
+                                                                        + {s.name} ($ {Number(s.price || 0).toFixed(2)})
                                                                     </span>
                                                                 ))}
                                                             </div>

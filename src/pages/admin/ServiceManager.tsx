@@ -189,7 +189,7 @@ const ServiceManager = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-1 text-sm font-black text-black">
-                                                S/{s.price}
+                                                ${Number(s.price || 0).toFixed(2)}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -274,7 +274,7 @@ const ServiceManager = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Precio (S/)</label>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Precio (USD)</label>
                                     <input 
                                         type="number" 
                                         name="price" 

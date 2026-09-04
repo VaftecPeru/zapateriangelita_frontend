@@ -394,14 +394,14 @@ const ProductManager = () => {
                                             <div className="flex items-center gap-0.5">
                                                 {p.discounted_price && Number(p.discounted_price) > 0 ? (
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-gray-400 text-[10px] line-through">S/{p.price}</span>
-                                                        <span className="text-store-red text-[10px]">S/</span>
+                                                        <span className="text-gray-400 text-[10px] line-through">${Number(p.price || 0).toFixed(2)}</span>
+                                                        <span className="text-store-red text-[10px]">$</span>
                                                         <span>{Number(p.discounted_price).toFixed(2)}</span>
                                                         {p.discount && <span className="text-[9px] font-bold text-white bg-red-500 px-1.5 rounded">{p.discount}</span>}
                                                     </div>
                                                 ) : (
                                                     <>
-                                                        <span className="text-store-red text-[10px]">S/</span>{p.price}
+                                                        <span className="text-store-red text-[10px]">$</span>{Number(p.price || 0).toFixed(2)}
                                                     </>
                                                 )}
                                             </div>
@@ -546,7 +546,7 @@ const ProductManager = () => {
 
                                 {/* Precio */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Precio (S/) *</label>
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Precio (USD) *</label>
                                     <input 
                                         type="number" 
                                         name="price" 
@@ -776,8 +776,8 @@ const ProductManager = () => {
                             <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Categoría</dt><dd className="mt-1 font-bold text-black">{getCategoryName(productToView)}</dd></div>
                             <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Subcategoría</dt><dd className="mt-1 font-bold text-black">{subcategories.find(sub => sub.id === productToView.subcategory_id)?.name || 'Sin subcategoría'}</dd></div>
                             <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Marca</dt><dd className="mt-1 font-bold text-black">{getBrandName(productToView)}</dd></div>
-                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Precio</dt><dd className="mt-1 font-bold text-black">S/ {Number(productToView.price || 0).toFixed(2)}</dd></div>
-                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Precio con descuento</dt><dd className="mt-1 font-bold text-black">{productToView.discounted_price ? `S/ ${Number(productToView.discounted_price).toFixed(2)}` : 'Sin descuento'}</dd></div>
+                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Precio</dt><dd className="mt-1 font-bold text-black">$ {Number(productToView.price || 0).toFixed(2)}</dd></div>
+                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Precio con descuento</dt><dd className="mt-1 font-bold text-black">{productToView.discounted_price ? `$ ${Number(productToView.discounted_price).toFixed(2)}` : 'Sin descuento'}</dd></div>
                             <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Stock</dt><dd className="mt-1 font-bold text-black">{productToView.stock} unidades</dd></div>
                             <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Etiqueta de descuento</dt><dd className="mt-1 font-bold text-black">{productToView.discount || 'Sin etiqueta'}</dd></div>
                             <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Talla</dt><dd className="mt-1 font-bold text-black">{productToView.size || 'Sin información'}</dd></div>

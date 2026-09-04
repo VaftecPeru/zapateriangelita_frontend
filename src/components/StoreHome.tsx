@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
-import { categoryService, productService, Category, Product } from "../services/crudService";
+import { categoryService, productService, subcategoryService, Category, Product } from "../services/crudService";
 import { getImageUrl } from "../config/api";
 import {
   ArrowRight,
@@ -34,9 +34,9 @@ import {
   testimonials,
 } from "../data/catalog";
 
-const money = new Intl.NumberFormat("es-PE", {
+const money = new Intl.NumberFormat("en-US", {
   style: "currency",
-  currency: "PEN",
+  currency: "USD",
   minimumFractionDigits: 2,
 });
 
@@ -191,6 +191,7 @@ function ProductCard({ product, onFavorite, isFavorite, onAddToCart }: any) {
 export default function StoreHome() {
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [subcategories, setSubcategories] = useState<any[]>([]);
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
   const [slide, setSlide] = useState<number>(0);
@@ -199,17 +200,25 @@ export default function StoreHome() {
   const [cartOpen, setCartOpen] = useState<boolean>(false);
   const { categoryName } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated } = useAuth();
   const { cart, addToCart, removeFromCart, cartCount, cartTotal, clearCart } = useCart();
   const [toast, setToast] = useState<{ product: any } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    if ((location.state as any)?.openCart) {
+      setCartOpen(true);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
     const loadCatalog = async () => {
       try {
-        const [productsResponse, categoriesResponse] = await Promise.all([
+        const [productsResponse, categoriesResponse, subcategoriesResponse] = await Promise.all([
           productService.getAll(),
           categoryService.getPublic(),
+          subcategoryService.getPublic(),
         ]);
         const productsData = Array.isArray(productsResponse.data)
           ? productsResponse.data
@@ -217,6 +226,9 @@ export default function StoreHome() {
         const categoriesData = Array.isArray(categoriesResponse.data)
           ? categoriesResponse.data
           : (categoriesResponse.data as any)?.data || [];
+        const subcategoriesData = Array.isArray(subcategoriesResponse.data)
+          ? subcategoriesResponse.data
+          : (subcategoriesResponse.data as any)?.data || [];
 
         setProducts(productsData.map((product: Product) => ({
           ...product,
@@ -236,6 +248,7 @@ export default function StoreHome() {
             color: visual?.color || "#f5eee8",
           };
         }));
+        setSubcategories(subcategoriesData);
       } catch (error) {
         console.error("Error loading public catalog:", error);
       }
@@ -302,12 +315,42 @@ export default function StoreHome() {
   };
 
   const activeHero = heroSlides[slide];
+  const normalizeSlug = (value?: string | null) => (value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  const selectedSubcategorySlug = new URLSearchParams(location.search).get("tipo");
+  const selectedSubcategory = subcategories.find((subcategory: any) =>
+    normalizeSlug(subcategory.name) === selectedSubcategorySlug ||
+    normalizeSlug(subcategory.slug) === selectedSubcategorySlug
+  );
 
   const filteredProducts = isHomePage
     ? products
-    : products.filter((product: Product) => selectedCategory
-      ? product.category_id === selectedCategory.id
-      : String(product.category).toLowerCase() === activeCategory.toLowerCase());
+    : products.filter((product: Product) => {
+      const categoryMatches = selectedCategory
+        ? product.category_id === selectedCategory.id
+        : String(product.category).toLowerCase() === activeCategory.toLowerCase();
+
+      if (!categoryMatches) return false;
+
+      if (!selectedSubcategorySlug) return true;
+
+      const productSubcategoryName = typeof (product as any).subcategory === "object"
+        ? (product as any).subcategory?.name
+        : typeof (product as any).subcategory === "string"
+          ? (product as any).subcategory
+          : "";
+
+      const productSubcategoryMatches = selectedSubcategory
+        ? String((product as any).subcategory_id ?? "") === String(selectedSubcategory.id)
+        : false;
+
+      return productSubcategoryMatches || normalizeSlug(productSubcategoryName) === selectedSubcategorySlug;
+    });
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
@@ -502,7 +545,7 @@ export default function StoreHome() {
                       <img src={item.product.image} alt={item.product.name} style={{ width: '70px', height: '70px', objectFit: 'cover', borderRadius: '8px' }} />
                       <div style={{ flex: 1 }}>
                         <strong style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>{item.product.name}</strong>
-                        <span style={{ color: '#666', fontSize: '13px' }}>{item.quantity} x S/ {item.product.price.toFixed(2)}</span>
+                        <span style={{ color: '#666', fontSize: '13px' }}>{item.quantity} x {money.format(Number(item.product.price || 0))}</span>
                       </div>
                       <button type="button" onClick={() => removeFromCart(item.product.id)} style={{ padding: '5px', color: 'red', border: 'none', background: 'none', cursor: 'pointer' }} aria-label="Eliminar producto">
                         <X size={18} />
@@ -517,7 +560,7 @@ export default function StoreHome() {
               <div style={{ padding: '20px', borderTop: '1px solid #eee', background: '#fff' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontWeight: 'bold', fontSize: '18px' }}>
                   <span>Total:</span>
-                  <span>S/ {cartTotal.toFixed(2)}</span>
+                  <span>{money.format(Number(cartTotal || 0))}</span>
                 </div>
                 <button
                   onClick={handleCheckout}
@@ -740,7 +783,6 @@ export default function StoreHome() {
         </div>
       </footer>
 
-      {/* Toast Notification */}
       <div
         style={{
           position: 'fixed',

@@ -18,9 +18,9 @@ import { useCart } from "../hooks/useCart";
 import fallbackImage from "../assets/foto1.jpg";
 import "../styles/product-detail.css";
 
-const money = new Intl.NumberFormat("es-PE", {
+const money = new Intl.NumberFormat("en-US", {
   style: "currency",
-  currency: "PEN",
+  currency: "USD",
   minimumFractionDigits: 2,
 });
 
@@ -84,6 +84,7 @@ export default function ProductDetailPage() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ product: any } | null>(null);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -137,12 +138,14 @@ export default function ProductDetailPage() {
     for (let index = 0; index < quantity; index += 1) {
       addToCart({ ...product, image: product.imageList[0], price: product.salePrice });
     }
-    alert("Producto agregado al carrito.");
+    setToast({ product });
+    const timer = window.setTimeout(() => setToast(null), 3200);
+    return () => window.clearTimeout(timer);
   };
 
   const buyNow = () => {
     addProductToCart();
-    navigate("/carrito"); // ajusta esta ruta si tu checkout vive en otro path
+    navigate('/', { state: { openCart: true } });
   };
 
   const toggleFavorite = () => setIsFavorite(!isFavorite);
@@ -151,6 +154,83 @@ export default function ProductDetailPage() {
 
   return (
     <main className="product-detail-page">
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '28px',
+          right: '24px',
+          zIndex: 9999,
+          transition: 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          transform: toast ? 'translateY(0) scale(1)' : 'translateY(24px) scale(0.95)',
+          opacity: toast ? 1 : 0,
+          pointerEvents: toast ? 'auto' : 'none',
+        }}
+        role="status"
+        aria-live="polite"
+      >
+        {toast && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px',
+            background: '#fff',
+            border: '1px solid #e9e9e9',
+            borderRadius: '16px',
+            padding: '14px 18px',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.13)',
+            minWidth: '280px',
+            maxWidth: '340px',
+            fontFamily: 'Inter, system-ui, sans-serif',
+          }}>
+            <div style={{
+              width: '40px', height: '40px', minWidth: '40px',
+              background: '#e30613', borderRadius: '10px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: '#e30613', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Agregado al carrito
+              </p>
+              <p style={{ margin: '2px 0 0', fontSize: '13px', fontWeight: 600, color: '#121212', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {toast.product.name}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setToast(null);
+                navigate('/', { state: { openCart: true } });
+              }}
+              style={{
+                padding: '7px 13px', background: '#121212', color: '#fff',
+                border: 'none', borderRadius: '8px', fontSize: '11px',
+                fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+                letterSpacing: '0.04em', transition: 'background 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#e30613')}
+              onMouseLeave={e => (e.currentTarget.style.background = '#121212')}
+            >
+              Ver carrito
+            </button>
+            <button
+              onClick={() => setToast(null)}
+              style={{
+                border: 'none', background: 'transparent', color: '#777',
+                cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: 0,
+              }}
+              aria-label="Cerrar notificación"
+            >
+              ×
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* HEADER */}
       <header className="product-detail-header">
         <button type="button" onClick={() => navigate(-1)} aria-label="Volver" className="back-button">
@@ -223,11 +303,10 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* Columna 2: Información del producto */}
           <div className="product-information">
             {product.brandName && (
               <p className="product-brand-link">
-                Visita la tienda de <a href="#">{product.brandName}</a>
+                Visita la categoría de <Link to={`/categoria/${product.categoryName?.toLowerCase()}`}>{product.categoryName}</Link>
               </p>
             )}
             <h1>{product.name}</h1>
@@ -333,7 +412,6 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* Columna 3: Caja de compra (sticky) */}
           <aside className="buy-box">
             <div className="buy-box-price">
               <strong>{money.format(product.salePrice)}</strong>
