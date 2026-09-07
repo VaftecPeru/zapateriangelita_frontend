@@ -38,7 +38,7 @@ const FunnelLeadsManager = ({ initialData }: FunnelLeadsManagerProps) => {
 
     useEffect(() => {
         if (initialData) {
-            const validLeads = initialData.filter(l => l.type === 'service' || (!l.type && l.property_title?.includes('Funnel')));
+            const validLeads = initialData.filter(l => l.type === 'store' || l.type === 'service' || (!l.type && l.property_title?.includes('Funnel')));
             setLeads(validLeads);
             setLoading(false);
         } else {
@@ -92,10 +92,10 @@ const FunnelLeadsManager = ({ initialData }: FunnelLeadsManagerProps) => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 backdrop-blur-sm p-6 rounded-[2rem] border border-minimal-olive/10 shadow-sm">
                 <div>
                     <h2 className="text-2xl font-black text-black tracking-tight flex items-center gap-3">
-                        <Target size={26} className="text-minimal-gold" /> Interesados Reserva
+                        <Target size={26} className="text-minimal-gold" /> Interesados de la tienda
                     </h2>
                     <p className="text-xs text-gray-400 font-medium mt-1">
-                        Prospectos captados a través del embudo de la portada ({leads.length} encontrados)
+                        Consultas y solicitudes de clientes de la zapatería ({leads.length} encontrados)
                     </p>
                 </div>
                 <button
@@ -135,15 +135,14 @@ const FunnelLeadsManager = ({ initialData }: FunnelLeadsManagerProps) => {
                                 <tr className="border-b border-minimal-olive/5 bg-minimal-olive/5">
                                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Prospecto</th>
                                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Datos de Contacto</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Ubicación Solicitada</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Presupuesto</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Interés</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Talla</th>
                                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Fecha Creación</th>
                                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-minimal-olive/5">
                                 {leads.map((lead) => {
-                                    const details = getAdditionalServiceMapping(lead.additional_services || []);
                                     return (
                                         <tr 
                                             key={lead.id} 
@@ -174,11 +173,11 @@ const FunnelLeadsManager = ({ initialData }: FunnelLeadsManagerProps) => {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="text-[10px] font-black uppercase tracking-widest text-black bg-gray-50/50 px-3 py-1.5 rounded-full w-fit">
-                                                    {details.zona}
+                                                    {lead.product_interest || lead.property_title || 'Consulta general'}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className="text-xs font-bold text-black">{details.presupuesto}</span>
+                                                <span className="text-xs font-bold text-black">{lead.shoe_size || '—'}</span>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">
@@ -249,9 +248,12 @@ const FunnelLeadsManager = ({ initialData }: FunnelLeadsManagerProps) => {
                         <div className="space-y-4">
                             <div className="flex items-center gap-2">
                                 <Info size={16} className="text-minimal-gold" />
-                                <h4 className="font-black text-sm uppercase tracking-widest">Preferencias de Alquiler</h4>
+                                <h4 className="font-black text-sm uppercase tracking-widest">Preferencias de compra</h4>
                             </div>
                             <div className="grid gap-3">
+                                <div className="flex justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 text-sm"><span className="font-black text-gray-400">Interés</span><span className="font-bold text-black">{selectedLead.product_interest || 'Consulta general'}</span></div>
+                                <div className="flex justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 text-sm"><span className="font-black text-gray-400">Preferencia</span><span className="font-bold text-black">{selectedLead.contact_preference || '—'}</span></div>
+                                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-sm"><span className="block font-black text-gray-400 mb-1">Mensaje</span><span className="font-medium text-black">{selectedLead.message || 'Sin mensaje adicional.'}</span></div>
                                 {selectedLead.additional_services && Array.isArray(selectedLead.additional_services) && 
                                     getAdditionalServiceMapping(selectedLead.additional_services) && Object.entries(getAdditionalServiceMapping(selectedLead.additional_services)).map(([key, value], i) => (
                                     <div key={i} className="flex flex-col sm:flex-row sm:justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 text-sm">

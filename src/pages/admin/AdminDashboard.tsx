@@ -311,7 +311,7 @@ const AdminDashboard = () => {
                         { id: 'products', label: 'Productos' },
                         { id: 'services', label: 'Servicios' },
                         { id: 'settings', label: 'Ajustes' },
-                        { id: 'funnelLeads', label: 'Interesados Reserva' },
+                        { id: 'funnelLeads', label: 'Interesados en Calzado' },
                         { id: 'users', label: 'Usuarios' },
                         { id: 'messages', label: 'Chat' }
                     ].map((tab) => (
@@ -462,7 +462,7 @@ const AdminDashboard = () => {
                         {activeTab === 'settings' && <SettingsManager />}
                         {activeTab === 'funnelLeads' && <FunnelLeadsManager initialData={(stats as any)?.all_leads} />}
                         {activeTab === 'users' && <UsersManager initialData={(stats as any)?.all_users} />}
-                        {activeTab === 'messages' && <MessagesManager initialData={(stats as any)?.all_leads} />}
+                        {activeTab === 'messages' && <MessagesManager />}
                         {activeTab === 'profile' && <ProfileManager />}
                     </div>
 

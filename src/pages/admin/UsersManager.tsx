@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Search, RefreshCw, Mail, MapPin, Calendar, User as UserIcon, Trash2 } from 'lucide-react';
+import { Users, Search, RefreshCw, Mail, Calendar, User as UserIcon, Trash2 } from 'lucide-react';
 import { userService, User } from '../../services/crudService';
 
 interface UsersManagerProps {
@@ -50,10 +50,7 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
         const search = searchTerm.toLowerCase();
         return (
             (user.name?.toLowerCase() || '').includes(search) ||
-            (user.email?.toLowerCase() || '').includes(search) ||
-            (user.city?.toLowerCase() || '').includes(search) ||
-            (user.municipality?.toLowerCase() || '').includes(search) ||
-            (user.state?.toLowerCase() || '').includes(search)
+            (user.email?.toLowerCase() || '').includes(search)
         );
     });
 
@@ -100,7 +97,7 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                         type="text"
-                        placeholder="Buscar por nombre, correo, estado, municipio o ciudad..."
+                        placeholder="Buscar por nombre o correo..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full bg-white border border-gray-200 rounded-2xl py-3 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all shadow-sm"
@@ -137,7 +134,6 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
                             <thead>
                                 <tr className="border-b border-gray-100 bg-store-red/5">
                                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Usuario</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Ubicación</th>
                                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Género</th>
                                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">F. Nacimiento</th>
                                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Rol</th>
@@ -158,17 +154,6 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
                                                         <Mail size={10} className="text-minimal-gold" />
                                                         <span className="text-[10px] text-gray-400 font-bold">{user.email}</span>
                                                     </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-start gap-2">
-                                                <MapPin size={12} className="text-minimal-gold mt-0.5" />
-                                                <div className="flex flex-col">
-                                                    <span className="text-xs font-bold text-black">{user.city || 'N/A'}</span>
-                                                    <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
-                                                        {user.municipality || 'N/A'}, {user.state || 'N/A'}
-                                                    </span>
                                                 </div>
                                             </div>
                                         </td>

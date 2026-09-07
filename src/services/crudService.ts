@@ -105,10 +105,6 @@ export interface User {
     email: string;
     gender?: string;
     birthdate?: string;
-    state?: string;
-    municipality?: string;
-    city?: string;
-    country?: string;
     role: string;
     created_at: string;
 }
@@ -125,10 +121,26 @@ export interface Lead {
     check_in?: string;
     check_out?: string;
     guests?: number;
+    product_interest?: string;
+    shoe_size?: string;
+    contact_preference?: string;
+    message?: string;
     property_title?: string;
     additional_services?: any[];
     created_at?: string;
     is_read?: boolean;
+}
+
+export interface Order {
+    id: number;
+    code: string;
+    status: string;
+    total: number | string;
+    customer_name?: string;
+    shipping_phone?: string;
+    created_at?: string;
+    user?: { id: number; name: string; email: string; phone?: string };
+    items?: Array<{ product_name?: string; quantity: number }>;
 }
 
 
@@ -212,7 +224,7 @@ export const userService = {
 
 
 export const leadService = {
-    trackLead: (type: 'property' | 'service', itemId: number, contactData?: {
+    trackLead: (type: 'property' | 'service' | 'store', itemId: number, contactData?: {
         first_name?: string;
         last_name?: string;
         email?: string;
@@ -223,6 +235,10 @@ export const leadService = {
         property_title?: string;
         property_id?: number;
         additional_services?: any[];
+        product_interest?: string;
+        shoe_size?: string;
+        contact_preference?: string;
+        message?: string;
     }) => apiClient.post('/leads', { type, item_id: itemId, ...contactData }),
     getAll: () => apiClient.get<Lead[]>('/leads'),
     getMyBookings: () => apiClient.get<Lead[]>('/my-bookings'),
@@ -242,4 +258,8 @@ export default {
     settingsService,
     userService,
     leadService,
+};
+
+export const orderService = {
+    getAll: () => apiClient.get<{ data: Order[] }>('/orders'),
 };

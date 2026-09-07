@@ -6,10 +6,6 @@ export interface RegisterData {
     password: string;
     password_confirmation: string;
     phone?: string;
-    country?: string;
-    state?: string;
-    municipality?: string;
-    city?: string;
     gender?: string;
     birthdate?: string;
 }

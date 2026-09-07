@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
+import apiClient from "../services/apiClient";
+import { useUbigeo } from "../hooks/useUbigeo";
 import { categoryService, productService, subcategoryService, Category, Product } from "../services/crudService";
 import { getImageUrl } from "../config/api";
 import {
@@ -39,6 +41,16 @@ const money = new Intl.NumberFormat("en-US", {
   currency: "USD",
   minimumFractionDigits: 2,
 });
+
+const checkoutInputStyle = {
+  width: "100%",
+  display: "block",
+  marginTop: "6px",
+  padding: "11px 12px",
+  border: "1px solid #ddd",
+  borderRadius: "8px",
+  boxSizing: "border-box" as const,
+};
 
 
 
@@ -204,6 +216,36 @@ export default function StoreHome() {
   const { isAuthenticated } = useAuth();
   const { cart, addToCart, removeFromCart, cartCount, cartTotal, clearCart } = useCart();
   const [toast, setToast] = useState<{ product: any } | null>(null);
+  const [checkoutNotice, setCheckoutNotice] = useState<{ title: string; message: string; requiresLogin: boolean } | null>(null);
+  const [checkoutForm, setCheckoutForm] = useState({
+    full_name: "",
+    phone: "",
+    country: "México",
+    state: "",
+    municipality: "",
+    city: "",
+    postal_code: "",
+    address: "",
+    reference: "",
+  });
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
+  const [contactLoading, setContactLoading] = useState(false);
+  const [contactSent, setContactSent] = useState(false);
+  const [contactError, setContactError] = useState<string | null>(null);
+  const [contactForm, setContactForm] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    product_interest: "Compra de calzado",
+    shoe_size: "",
+    contact_preference: "WhatsApp",
+    message: "",
+  });
+  const { states, municipalities, cities, loading: ubigeoLoading } = useUbigeo(checkoutForm.state, checkoutForm.municipality);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -352,14 +394,78 @@ export default function StoreHome() {
       return productSubcategoryMatches || normalizeSlug(productSubcategoryName) === selectedSubcategorySlug;
     });
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!isAuthenticated) {
-      alert("Debes iniciar sesión para confirmar tu compra.");
-      navigate("/login");
+      setCheckoutNotice({
+        title: "Inicia sesión para continuar",
+        message: "Debes iniciar sesión para confirmar tu compra.",
+        requiresLogin: true,
+      });
     } else {
-      alert("¡Compra confirmada! Gracias por tu preferencia.");
+      setCheckoutError(null);
+      try {
+        const { data } = await apiClient.get<any[]>('/addresses');
+        const defaultAddress = data.find((address) => address.is_default) || data[0];
+        if (defaultAddress) {
+          setCheckoutForm((current) => ({ ...current, ...defaultAddress }));
+        }
+      } catch {
+        // El formulario sigue disponible aunque todavía no existan direcciones guardadas.
+      }
+      setCheckoutOpen(true);
+    }
+  };
+
+  const handlePlaceOrder = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setCheckoutError(null);
+    setCheckoutLoading(true);
+    try {
+      await apiClient.post('/addresses', { ...checkoutForm, is_default: true });
+      await apiClient.post('/orders', {
+        items: cart.map((item) => ({
+          product_id: item.product.id,
+          quantity: item.quantity,
+          size: item.product.size,
+          color: item.product.color,
+        })),
+        customer_name: checkoutForm.full_name,
+        shipping_address: checkoutForm.address,
+        shipping_city: checkoutForm.city,
+        shipping_phone: checkoutForm.phone,
+        shipping_country: checkoutForm.country,
+        shipping_state: checkoutForm.state,
+        shipping_municipality: checkoutForm.municipality,
+        shipping_postal_code: checkoutForm.postal_code,
+      });
       clearCart();
+      setCheckoutOpen(false);
       setCartOpen(false);
+      setCheckoutNotice({
+        title: "¡Compra confirmada!",
+        message: "Gracias por tu preferencia. Tu pedido ha sido registrado.",
+        requiresLogin: false,
+      });
+    } catch (error: any) {
+      const errors = error.response?.data?.errors;
+      setCheckoutError(errors ? (Object.values(errors)[0] as string[])[0] : error.response?.data?.error || 'No pudimos registrar tu pedido.');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handleContactSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setContactLoading(true);
+    setContactError(null);
+    try {
+      await apiClient.post('/leads', { type: 'store', item_id: 0, ...contactForm });
+      setContactSent(true);
+    } catch (error: any) {
+      const errors = error.response?.data?.errors;
+      setContactError(errors ? (Object.values(errors)[0] as string[])[0] : 'No pudimos enviar tu consulta. Inténtalo nuevamente.');
+    } finally {
+      setContactLoading(false);
     }
   };
 
@@ -454,7 +560,11 @@ export default function StoreHome() {
                       href={item.href}
                       onClick={(e) => {
                         e.preventDefault();
-                        if (item.name === 'Inicio') {
+                        if (item.name === 'Contacto') {
+                          setContactSent(false);
+                          setContactError(null);
+                          setContactOpen(true);
+                        } else if (item.name === 'Inicio') {
                           navigate('/');
                         } else {
                           navigate(item.href);
@@ -782,6 +892,165 @@ export default function StoreHome() {
           <span>Visa · Mastercard · Yape · Plin</span>
         </div>
       </footer>
+
+      {contactOpen && (
+        <div role="dialog" aria-modal="true" aria-labelledby="contact-title" onClick={() => setContactOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 12000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", background: "rgba(18, 18, 18, 0.55)" }}>
+          <form onSubmit={handleContactSubmit} onClick={(event) => event.stopPropagation()} style={{ width: "100%", maxWidth: "560px", maxHeight: "92vh", overflowY: "auto", padding: "30px", background: "#fff", borderRadius: "18px", boxShadow: "0 24px 70px rgba(0, 0, 0, 0.22)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "22px" }}>
+              <div>
+                <p style={{ margin: 0, color: "#e30613", fontSize: "11px", fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase" }}>Atención Angelita</p>
+                <h2 id="contact-title" style={{ margin: "7px 0 0", fontSize: "26px", color: "#121212" }}>¿Qué calzado estás buscando?</h2>
+                <p style={{ margin: "7px 0 0", color: "#666" }}>Déjanos tus datos y te ayudamos a encontrar tu próximo par.</p>
+              </div>
+              <button type="button" onClick={() => setContactOpen(false)} aria-label="Cerrar contacto" style={{ border: "none", background: "none", cursor: "pointer" }}><X /></button>
+            </div>
+            {contactSent ? (
+              <div style={{ padding: "30px 10px 12px", textAlign: "center" }}>
+                <PackageCheck size={44} color="#2e7d32" style={{ margin: "0 auto 12px" }} />
+                <h3 style={{ margin: "0 0 8px", fontSize: "22px" }}>¡Consulta recibida!</h3>
+                <p style={{ color: "#666", lineHeight: 1.6 }}>Nuestro equipo se pondrá en contacto contigo pronto.</p>
+                <button type="button" onClick={() => setContactOpen(false)} style={{ marginTop: "14px", padding: "12px 24px", border: "none", borderRadius: "24px", background: "#121212", color: "#fff", fontWeight: 700, cursor: "pointer" }}>Cerrar</button>
+              </div>
+            ) : (
+              <>
+                {contactError && <p role="alert" style={{ padding: "12px", margin: "0 0 16px", color: "#a40000", background: "#fff0f0", borderRadius: "8px" }}>{contactError}</p>}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "14px" }}>
+                  <label>Nombre<input required value={contactForm.first_name} onChange={(event) => setContactForm({ ...contactForm, first_name: event.target.value })} style={checkoutInputStyle} /></label>
+                  <label>Apellido<input value={contactForm.last_name} onChange={(event) => setContactForm({ ...contactForm, last_name: event.target.value })} style={checkoutInputStyle} /></label>
+                  <label>Correo electrónico<input required type="email" value={contactForm.email} onChange={(event) => setContactForm({ ...contactForm, email: event.target.value })} style={checkoutInputStyle} /></label>
+                  <label>WhatsApp / teléfono<input required value={contactForm.phone} onChange={(event) => setContactForm({ ...contactForm, phone: event.target.value })} style={checkoutInputStyle} /></label>
+                  <label>¿Qué necesitas?<select value={contactForm.product_interest} onChange={(event) => setContactForm({ ...contactForm, product_interest: event.target.value })} style={checkoutInputStyle}><option>Compra de calzado</option><option>Disponibilidad de un producto</option><option>Asesoría de talla</option><option>Cambios y devoluciones</option><option>Compra mayorista</option></select></label>
+                  <label>Talla de interés<input value={contactForm.shoe_size} onChange={(event) => setContactForm({ ...contactForm, shoe_size: event.target.value })} placeholder="Ej. 24, 38 o 6 US" style={checkoutInputStyle} /></label>
+                  <label>Prefiero que me contacten<select value={contactForm.contact_preference} onChange={(event) => setContactForm({ ...contactForm, contact_preference: event.target.value })} style={checkoutInputStyle}><option>WhatsApp</option><option>Llamada</option><option>Correo</option></select></label>
+                  <label style={{ gridColumn: "1 / -1" }}>Cuéntanos un poco más<textarea rows={4} value={contactForm.message} onChange={(event) => setContactForm({ ...contactForm, message: event.target.value })} placeholder="Modelo, color, talla o cualquier detalle que necesites" style={{ ...checkoutInputStyle, resize: "vertical" }} /></label>
+                </div>
+                <button type="submit" disabled={contactLoading} style={{ width: "100%", marginTop: "22px", padding: "15px", background: "#e30613", color: "#fff", borderRadius: "30px", fontWeight: "bold", border: "none", cursor: "pointer" }}>{contactLoading ? "Enviando consulta..." : "Solicitar asesoría"}</button>
+              </>
+            )}
+          </form>
+        </div>
+      )}
+
+      {checkoutOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="checkout-title"
+          style={{ position: "fixed", inset: 0, zIndex: 12000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", background: "rgba(18, 18, 18, 0.52)" }}
+          onClick={() => setCheckoutOpen(false)}
+        >
+          <form
+            onSubmit={handlePlaceOrder}
+            onClick={(event) => event.stopPropagation()}
+            style={{ width: "100%", maxWidth: "620px", maxHeight: "92vh", overflowY: "auto", padding: "28px", background: "#fff", borderRadius: "18px", boxShadow: "0 24px 70px rgba(0, 0, 0, 0.2)" }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "22px" }}>
+              <div>
+                <h2 id="checkout-title" style={{ margin: 0, fontSize: "24px", color: "#121212" }}>Datos de envío</h2>
+                <p style={{ margin: "6px 0 0", color: "#666" }}>Completa la dirección donde recibirás tu pedido.</p>
+              </div>
+              <button type="button" onClick={() => setCheckoutOpen(false)} aria-label="Cerrar checkout" style={{ border: "none", background: "none", cursor: "pointer" }}><X /></button>
+            </div>
+
+            {checkoutError && <p role="alert" style={{ padding: "12px", margin: "0 0 16px", color: "#a40000", background: "#fff0f0", borderRadius: "8px" }}>{checkoutError}</p>}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "14px" }}>
+              <label>Nombre completo<input required value={checkoutForm.full_name} onChange={(event) => setCheckoutForm({ ...checkoutForm, full_name: event.target.value })} style={checkoutInputStyle} /></label>
+              <label>Teléfono<input required value={checkoutForm.phone} onChange={(event) => setCheckoutForm({ ...checkoutForm, phone: event.target.value })} style={checkoutInputStyle} /></label>
+              <label>País<select required value={checkoutForm.country} onChange={(event) => setCheckoutForm({ ...checkoutForm, country: event.target.value })} style={checkoutInputStyle}><option value="México">México</option></select></label>
+              <label>Estado<select required value={checkoutForm.state} disabled={ubigeoLoading} onChange={(event) => setCheckoutForm({ ...checkoutForm, state: event.target.value, municipality: "", city: "" })} style={checkoutInputStyle}><option value="">Seleccionar</option>{states.map((state) => <option key={state} value={state}>{state}</option>)}</select></label>
+              <label>Municipio<select required value={checkoutForm.municipality} disabled={!checkoutForm.state || ubigeoLoading} onChange={(event) => setCheckoutForm({ ...checkoutForm, municipality: event.target.value, city: "" })} style={checkoutInputStyle}><option value="">Seleccionar</option>{municipalities.map((municipality) => <option key={municipality} value={municipality}>{municipality}</option>)}</select></label>
+              <label>Ciudad<select required value={checkoutForm.city} disabled={!checkoutForm.municipality || ubigeoLoading} onChange={(event) => setCheckoutForm({ ...checkoutForm, city: event.target.value })} style={checkoutInputStyle}><option value="">Seleccionar</option>{cities.map((city) => <option key={city} value={city}>{city}</option>)}</select></label>
+              <label>Código postal<input required inputMode="numeric" value={checkoutForm.postal_code} onChange={(event) => setCheckoutForm({ ...checkoutForm, postal_code: event.target.value })} style={checkoutInputStyle} /></label>
+              <label style={{ gridColumn: "1 / -1" }}>Dirección<input required value={checkoutForm.address} onChange={(event) => setCheckoutForm({ ...checkoutForm, address: event.target.value })} placeholder="Calle, número y colonia" style={checkoutInputStyle} /></label>
+              <label style={{ gridColumn: "1 / -1" }}>Referencia (opcional)<input value={checkoutForm.reference} onChange={(event) => setCheckoutForm({ ...checkoutForm, reference: event.target.value })} style={checkoutInputStyle} /></label>
+            </div>
+            <button type="submit" disabled={checkoutLoading} style={{ width: "100%", marginTop: "22px", padding: "15px", background: "#000", color: "#fff", borderRadius: "30px", fontWeight: "bold", border: "none", cursor: "pointer" }}>
+              {checkoutLoading ? "Registrando pedido..." : `Confirmar compra · ${money.format(Number(cartTotal || 0))}`}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {checkoutNotice && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="checkout-notice-title"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 11000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px",
+            background: "rgba(18, 18, 18, 0.52)",
+            backdropFilter: "blur(4px)",
+          }}
+          onClick={() => setCheckoutNotice(null)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "420px",
+              padding: "32px",
+              background: "#fff",
+              borderRadius: "18px",
+              boxShadow: "0 24px 70px rgba(0, 0, 0, 0.2)",
+              textAlign: "center",
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div style={{
+              width: "52px",
+              height: "52px",
+              margin: "0 auto 18px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "50%",
+              background: "#fbe8e9",
+              color: "#e30613",
+            }}>
+              {checkoutNotice.requiresLogin ? <UserRound size={25} /> : <PackageCheck size={25} />}
+            </div>
+            <h2 id="checkout-notice-title" style={{ margin: "0 0 10px", fontSize: "22px", color: "#121212" }}>
+              {checkoutNotice.title}
+            </h2>
+            <p style={{ margin: "0 auto 24px", maxWidth: "320px", color: "#666", lineHeight: 1.6 }}>
+              {checkoutNotice.message}
+            </p>
+            <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+              {checkoutNotice.requiresLogin ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/login")}
+                    style={{ padding: "12px 20px", border: "none", borderRadius: "24px", background: "#e30613", color: "#fff", fontWeight: 700, cursor: "pointer" }}
+                  >
+                    Iniciar sesión
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutNotice(null)}
+                    style={{ padding: "12px 20px", border: "1px solid #ddd", borderRadius: "24px", background: "#fff", color: "#333", fontWeight: 700, cursor: "pointer" }}
+                  >
+                    Ahora no
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setCheckoutNotice(null)}
+                  style={{ padding: "12px 28px", border: "none", borderRadius: "24px", background: "#121212", color: "#fff", fontWeight: 700, cursor: "pointer" }}
+                >
+                  Entendido
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div
         style={{

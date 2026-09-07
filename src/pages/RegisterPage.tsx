@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, ArrowLeft, Globe } from 'lucide-react';
+import { Mail, Lock, User, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
-import { useUbigeo } from '../hooks/useUbigeo';
 import '../styles/register-home.css';
 
 const Logo = () => (
@@ -17,11 +16,9 @@ const Logo = () => (
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
         name: '', email: '', password: '', password_confirmation: '',
-        gender: '', birthdate: '', country: 'México',
-        state: '', municipality: '', city: ''
+        gender: '', birthdate: ''
     });
 
-    const { states, municipalities, cities, loading: ubigeoLoading } = useUbigeo(formData.state, formData.municipality);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
@@ -150,45 +147,6 @@ const RegisterPage = () => {
                             <div className="field-group">
                                 <label htmlFor="birthdate">Fecha de Nacimiento</label>
                                 <input id="birthdate" type="date" name="birthdate" required autoComplete="bday" value={formData.birthdate} onChange={handleChange} />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Ubicación */}
-                    <div className="form-section">
-                        <div className="form-section-title"><span className="dot" /> Ubicación</div>
-                        <div className="fields-grid">
-                            <div className="field-group">
-                                <label htmlFor="country">País</label>
-                                <div className="input-wrapper">
-                                    <Globe className="input-icon" size={18} />
-                                    <select id="country" name="country" required autoComplete="country" value={formData.country} onChange={handleChange}>
-                                        <option value="México">México</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="field-group">
-                                <label htmlFor="state">Estado</label>
-                                <select id="state" name="state" required autoComplete="address-level1" value={formData.state} disabled={ubigeoLoading}
-                                    onChange={(e) => setFormData({ ...formData, state: e.target.value, municipality: '', city: '' })}>
-                                    <option value="" disabled hidden>{ubigeoLoading ? 'Cargando...' : 'Seleccionar'}</option>
-                                    {states.map(s => <option key={s} value={s}>{s}</option>)}
-                                </select>
-                            </div>
-                            <div className="field-group">
-                                <label htmlFor="municipality">Municipio</label>
-                                <select id="municipality" name="municipality" required autoComplete="address-level2" value={formData.municipality} disabled={!formData.state || ubigeoLoading}
-                                    onChange={(e) => setFormData({ ...formData, municipality: e.target.value, city: '' })}>
-                                    <option value="" disabled hidden>Seleccionar</option>
-                                    {municipalities.map(m => <option key={m} value={m}>{m}</option>)}
-                                </select>
-                            </div>
-                            <div className="field-group">
-                                <label htmlFor="city">Ciudad</label>
-                                <select id="city" name="city" required autoComplete="address-level3" value={formData.city} disabled={!formData.municipality || ubigeoLoading} onChange={handleChange}>
-                                    <option value="" disabled hidden>Seleccionar</option>
-                                    {cities.map(c => <option key={c} value={c}>{c}</option>)}
-                                </select>
                             </div>
                         </div>
                     </div>
