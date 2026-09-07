@@ -190,9 +190,26 @@ const ProductManager = () => {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
+        if (name === 'price' || name === 'discount') {
+            setFormData(prev => {
+                const price = name === 'price' ? Number(value) : Number(prev.price);
+                const discount = name === 'discount' ? Number(value) : Number(prev.discount);
+                const discountedPrice = price > 0 && discount > 0
+                    ? Number((price * (1 - Math.min(discount, 100) / 100)).toFixed(2))
+                    : 0;
+
+                return {
+                    ...prev,
+                    [name]: name === 'price' ? price : value,
+                    discounted_price: discountedPrice,
+                };
+            });
+            return;
+        }
+
         setFormData(prev => ({
             ...prev,
-            [name]: ['price', 'discounted_price', 'stock', 'rating', 'reviews'].includes(name) ? Number(value) : value
+            [name]: ['discounted_price', 'stock', 'rating', 'reviews'].includes(name) ? Number(value) : value
         }));
     };
 
@@ -397,7 +414,7 @@ const ProductManager = () => {
                                                         <span className="text-gray-400 text-[10px] line-through">${Number(p.price || 0).toFixed(2)}</span>
                                                         <span className="text-store-red text-[10px]">$</span>
                                                         <span>{Number(p.discounted_price).toFixed(2)}</span>
-                                                        {p.discount && <span className="text-[9px] font-bold text-white bg-red-500 px-1.5 rounded">{p.discount}</span>}
+                                                        {p.discount && <span className="text-[9px] font-bold text-white bg-red-500 px-1.5 rounded">-{p.discount}%</span>}
                                                     </div>
                                                 ) : (
                                                     <>
@@ -560,18 +577,34 @@ const ProductManager = () => {
                                     />
                                 </div>
 
-                                {/* Precio con descuento */}
+                                {/* Descuento */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Precio con Descuento</label>
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Descuento (%)</label>
+                                    <input 
+                                        type="number" 
+                                        name="discount" 
+                                        value={formData.discount || ''} 
+                                        onChange={handleInputChange} 
+                                        min="0"
+                                        max="100"
+                                        step="1"
+                                        placeholder="Ej: 20" 
+                                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" 
+                                    />
+                                </div>
+
+                                {/* Precio final con descuento */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Precio final con descuento</label>
                                     <input 
                                         type="number" 
                                         name="discounted_price" 
                                         value={formData.discounted_price || ''} 
-                                        onChange={handleInputChange} 
+                                        readOnly
                                         min="0" 
                                         step="0.01" 
-                                        placeholder="Opcional" 
-                                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" 
+                                        placeholder="Se calcula automáticamente" 
+                                        className="w-full px-4 py-3 bg-gray-100 rounded-xl border border-gray-100 text-sm font-semibold text-gray-600" 
                                     />
                                 </div>
 
@@ -633,19 +666,6 @@ const ProductManager = () => {
                                 </div>
 
                                
-
-                                {/* Etiqueta de descuento */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Etiqueta de Descuento</label>
-                                    <input 
-                                        type="text" 
-                                        name="discount" 
-                                        value={formData.discount || ''} 
-                                        onChange={handleInputChange} 
-                                        placeholder="Ej: -20%, Oferta" 
-                                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" 
-                                    />
-                                </div>
 
                                 {/* Calificación */}
                                 <div className="space-y-2">
@@ -779,7 +799,7 @@ const ProductManager = () => {
                             <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Precio</dt><dd className="mt-1 font-bold text-black">$ {Number(productToView.price || 0).toFixed(2)}</dd></div>
                             <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Precio con descuento</dt><dd className="mt-1 font-bold text-black">{productToView.discounted_price ? `$ ${Number(productToView.discounted_price).toFixed(2)}` : 'Sin descuento'}</dd></div>
                             <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Stock</dt><dd className="mt-1 font-bold text-black">{productToView.stock} unidades</dd></div>
-                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Etiqueta de descuento</dt><dd className="mt-1 font-bold text-black">{productToView.discount || 'Sin etiqueta'}</dd></div>
+                            <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Descuento</dt><dd className="mt-1 font-bold text-black">{productToView.discount ? `-${productToView.discount}%` : 'Sin descuento'}</dd></div>
                             <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Talla</dt><dd className="mt-1 font-bold text-black">{productToView.size || 'Sin información'}</dd></div>
                             <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Color</dt><dd className="mt-1 font-bold text-black">{productToView.color || 'Sin información'}</dd></div>
                             <div><dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">Material</dt><dd className="mt-1 font-bold text-black">{productToView.material || 'Sin información'}</dd></div>

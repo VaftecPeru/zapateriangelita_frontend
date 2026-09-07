@@ -165,10 +165,15 @@ function SectionTitle({ eyebrow, title, action, onActionClick }: { eyebrow?: str
 }
 
 function ProductCard({ product, onFavorite, isFavorite, onAddToCart }: any) {
+  const discountValue = String(product.discount || '').replace(/[%\s]/g, '');
+  const discountLabel = discountValue && !Number.isNaN(Number(discountValue))
+    ? `-${Math.abs(Number(discountValue))}%`
+    : product.discount;
+
   return (
     <article className="product-card">
       <div className="product-card__media">
-        {product.discount && <span className="discount-badge">{product.discount}</span>}
+        {product.discount && <span className="discount-badge">{discountLabel}</span>}
         <button
           className={`favorite-button ${isFavorite ? "is-active" : ""}`}
           type="button"
@@ -898,7 +903,7 @@ export default function StoreHome() {
           <form onSubmit={handleContactSubmit} onClick={(event) => event.stopPropagation()} style={{ width: "100%", maxWidth: "560px", maxHeight: "92vh", overflowY: "auto", padding: "30px", background: "#fff", borderRadius: "18px", boxShadow: "0 24px 70px rgba(0, 0, 0, 0.22)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "22px" }}>
               <div>
-                <p style={{ margin: 0, color: "#e30613", fontSize: "11px", fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase" }}>Atención Angelita</p>
+                <p style={{ margin: 0, color: "#e30613", fontSize: "11px", fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase" }}>Atención</p>
                 <h2 id="contact-title" style={{ margin: "7px 0 0", fontSize: "26px", color: "#121212" }}>¿Qué calzado estás buscando?</h2>
                 <p style={{ margin: "7px 0 0", color: "#666" }}>Déjanos tus datos y te ayudamos a encontrar tu próximo par.</p>
               </div>
@@ -915,14 +920,14 @@ export default function StoreHome() {
               <>
                 {contactError && <p role="alert" style={{ padding: "12px", margin: "0 0 16px", color: "#a40000", background: "#fff0f0", borderRadius: "8px" }}>{contactError}</p>}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "14px" }}>
-                  <label>Nombre<input required value={contactForm.first_name} onChange={(event) => setContactForm({ ...contactForm, first_name: event.target.value })} style={checkoutInputStyle} /></label>
-                  <label>Apellido<input value={contactForm.last_name} onChange={(event) => setContactForm({ ...contactForm, last_name: event.target.value })} style={checkoutInputStyle} /></label>
+                  <label>Nombre *<input required minLength={2} value={contactForm.first_name} onChange={(event) => setContactForm({ ...contactForm, first_name: event.target.value })} style={checkoutInputStyle} /></label>
+                  <label>Apellido *<input required minLength={2} value={contactForm.last_name} onChange={(event) => setContactForm({ ...contactForm, last_name: event.target.value })} style={checkoutInputStyle} /></label>
                   <label>Correo electrónico<input required type="email" value={contactForm.email} onChange={(event) => setContactForm({ ...contactForm, email: event.target.value })} style={checkoutInputStyle} /></label>
-                  <label>WhatsApp / teléfono<input required value={contactForm.phone} onChange={(event) => setContactForm({ ...contactForm, phone: event.target.value })} style={checkoutInputStyle} /></label>
-                  <label>¿Qué necesitas?<select value={contactForm.product_interest} onChange={(event) => setContactForm({ ...contactForm, product_interest: event.target.value })} style={checkoutInputStyle}><option>Compra de calzado</option><option>Disponibilidad de un producto</option><option>Asesoría de talla</option><option>Cambios y devoluciones</option><option>Compra mayorista</option></select></label>
-                  <label>Talla de interés<input value={contactForm.shoe_size} onChange={(event) => setContactForm({ ...contactForm, shoe_size: event.target.value })} placeholder="Ej. 24, 38 o 6 US" style={checkoutInputStyle} /></label>
-                  <label>Prefiero que me contacten<select value={contactForm.contact_preference} onChange={(event) => setContactForm({ ...contactForm, contact_preference: event.target.value })} style={checkoutInputStyle}><option>WhatsApp</option><option>Llamada</option><option>Correo</option></select></label>
-                  <label style={{ gridColumn: "1 / -1" }}>Cuéntanos un poco más<textarea rows={4} value={contactForm.message} onChange={(event) => setContactForm({ ...contactForm, message: event.target.value })} placeholder="Modelo, color, talla o cualquier detalle que necesites" style={{ ...checkoutInputStyle, resize: "vertical" }} /></label>
+                  <label>WhatsApp / teléfono *<input required minLength={7} value={contactForm.phone} onChange={(event) => setContactForm({ ...contactForm, phone: event.target.value })} style={checkoutInputStyle} /></label>
+                  <label>¿Qué necesitas? *<select required value={contactForm.product_interest} onChange={(event) => setContactForm({ ...contactForm, product_interest: event.target.value })} style={checkoutInputStyle}><option value="">Selecciona una opción</option><option>Compra de calzado</option><option>Disponibilidad de un producto</option><option>Asesoría de talla</option><option>Cambios y devoluciones</option><option>Compra mayorista</option></select></label>
+                  <label>Talla de interés *<input required value={contactForm.shoe_size} onChange={(event) => setContactForm({ ...contactForm, shoe_size: event.target.value })} placeholder="Ej. 24, 38 o 6 US" style={checkoutInputStyle} /></label>
+                  <label>Prefiero que me contacten *<select required value={contactForm.contact_preference} onChange={(event) => setContactForm({ ...contactForm, contact_preference: event.target.value })} style={checkoutInputStyle}><option value="">Selecciona una opción</option><option>WhatsApp</option><option>Llamada</option><option>Correo</option></select></label>
+                  <label style={{ gridColumn: "1 / -1" }}>Cuéntanos un poco más *<textarea required minLength={10} rows={4} value={contactForm.message} onChange={(event) => setContactForm({ ...contactForm, message: event.target.value })} placeholder="Modelo, color, talla o cualquier detalle que necesites" style={{ ...checkoutInputStyle, resize: "vertical" }} /></label>
                 </div>
                 <button type="submit" disabled={contactLoading} style={{ width: "100%", marginTop: "22px", padding: "15px", background: "#e30613", color: "#fff", borderRadius: "30px", fontWeight: "bold", border: "none", cursor: "pointer" }}>{contactLoading ? "Enviando consulta..." : "Solicitar asesoría"}</button>
               </>
