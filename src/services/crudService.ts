@@ -262,4 +262,5 @@ export default {
 
 export const orderService = {
     getAll: () => apiClient.get<{ data: Order[] }>('/orders'),
+    getMyOrders: () => apiClient.get<Order[]>('/my-orders'),
 };

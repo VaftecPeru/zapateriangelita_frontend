@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Mail, Lock, User, ArrowLeft } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Mail, Lock, User, ArrowLeft, Phone } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -15,16 +15,22 @@ const Logo = () => (
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
-        name: '', email: '', password: '', password_confirmation: '',
+        name: '', email: '', phone: '', password: '', password_confirmation: '',
         gender: '', birthdate: ''
     });
 
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
-    const [registeredData, setRegisteredData] = useState<any>(null);
     const { login: authLogin } = useAuth();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (!isSuccess) return;
+
+        const redirectTimer = window.setTimeout(() => navigate('/home', { replace: true }), 1800);
+        return () => window.clearTimeout(redirectTimer);
+    }, [isSuccess, navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,7 +56,7 @@ const RegisterPage = () => {
         setLoading(true);
         try {
             const { data } = await authService.register(formData);
-            setRegisteredData(data);
+            authLogin(data.user, data.token);
             setIsSuccess(true);
         } catch (err: any) {
             const errorMsg = err.response?.data?.errors
@@ -82,8 +88,8 @@ const RegisterPage = () => {
                             <br /><br />
                             Revisa tu <strong>bandeja de entrada</strong> o la carpeta de <strong>SPAM</strong>.
                         </p>
-                        <button onClick={() => { authLogin(registeredData.user, registeredData.token); navigate('/'); }} className="btn-submit" style={{ maxWidth: '400px', margin: '0 auto' }}>
-                            Ingresar a la tienda
+                        <button onClick={() => navigate('/home', { replace: true })} className="btn-submit" style={{ maxWidth: '400px', margin: '0 auto' }}>
+                            Ir a la tienda
                         </button>
                     </div>
                 </div>
@@ -125,7 +131,7 @@ const RegisterPage = () => {
                                 <label htmlFor="name">Nombre Completo</label>
                                 <div className="input-wrapper">
                                     <User className="input-icon" size={18} />
-                                    <input id="name" type="text" name="name" required autoComplete="name" value={formData.name} onChange={handleChange} placeholder="Ej. Juan Pérez" />
+                                    <input id="name" type="text" name="name" required autoComplete="name" value={formData.name} onChange={handleChange} placeholder="Nombre Completo" />
                                 </div>
                             </div>
                             <div className="field-group">
@@ -133,6 +139,13 @@ const RegisterPage = () => {
                                 <div className="input-wrapper">
                                     <Mail className="input-icon" size={18} />
                                     <input id="email" type="email" name="email" required autoComplete="email" value={formData.email} onChange={handleChange} placeholder="tu@email.com" />
+                                </div>
+                            </div>
+                            <div className="field-group">
+                                <label htmlFor="phone">Teléfono</label>
+                                <div className="input-wrapper">
+                                    <Phone className="input-icon" size={18} />
+                                    <input id="phone" type="tel" name="phone" required minLength={7} autoComplete="tel" value={formData.phone} onChange={handleChange} placeholder="Ej. 999 999 999" />
                                 </div>
                             </div>
                             <div className="field-group">

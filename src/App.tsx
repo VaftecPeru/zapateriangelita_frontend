@@ -16,8 +16,7 @@ import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CartProvider } from './hooks/useCart';
 
-// ❌ ELIMINAR este componente (no se usa)
-// const RoleRedirect = () => { ... };
+
 
 const AppContent = () => {
   const { user, isAuthenticated } = useAuth();
@@ -26,16 +25,11 @@ const AppContent = () => {
     <div className="min-h-screen bg-minimal-beige flex flex-col">
       <div className="flex-grow">
         <Routes>
-          {/* Ruta raíz - redirige según rol si está autenticado */}
           <Route
             path="/"
             element={
-              isAuthenticated ? (
-                user?.role === 'admin' ? (
-                  <Navigate to="/admin/dashboard" replace />
-                ) : (
-                  <Navigate to="/profile" replace />
-                )
+              isAuthenticated && user?.role === 'admin' ? (
+                <Navigate to="/admin/dashboard" replace />
               ) : (
                 <HomePage />
               )
@@ -43,6 +37,7 @@ const AppContent = () => {
           />
 
           <Route path="/categoria/:categoryName" element={<HomePage />} />
+          <Route path="/home" element={<HomePage />} />
           <Route path="/producto/:productId" element={<ProductDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />

@@ -29,7 +29,7 @@ const LoginPage = () => {
             if (user.role === 'admin') {
                 navigate('/admin/dashboard', { replace: true });
             } else {
-                navigate('/profile', { replace: true });
+                navigate('/home', { replace: true });
             }
         }
     }, [isAuthenticated, user, navigate]);

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { productService, Product, categoryService, subcategoryService, brandService, Category, Subcategory, Brand } from '../../services/crudService';
 import { getImageUrl } from '../../config/api';
-import { Plus, Edit, Trash2, Eye, Loader2, X, ChevronDown, Image as ImageIcon, Upload, AlertTriangle } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Loader2, X, ChevronDown, Image as ImageIcon, AlertTriangle } from 'lucide-react';
 
 const ProductManager = () => {
     const [products, setProducts] = useState<Product[]>([]);
@@ -66,6 +66,52 @@ const ProductManager = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleMultipleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        const fileArray = Array.from(files).slice(0, 5);
+
+        const newFiles = [...selectedFiles];
+        const newPreviews = [...previews];
+
+        let startIndex = 0;
+        for (let i = 0; i < newFiles.length; i++) {
+            if (newFiles[i] === null) {
+                startIndex = i;
+                break;
+            }
+        }
+
+        if (startIndex >= 5) {
+            alert('Ya tienes 5 imágenes seleccionadas. Elimina alguna para agregar más.');
+            return;
+        }
+
+        fileArray.forEach((file, index) => {
+            const slotIndex = startIndex + index;
+            if (slotIndex >= 5) return;
+
+            if (file.size > 20 * 1024 * 1024) {
+                alert(`La imagen "${file.name}" excede el límite de 20MB.`);
+                return;
+            }
+
+            newFiles[slotIndex] = file;
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                newPreviews[slotIndex] = reader.result as string;
+                setPreviews([...newPreviews]);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        setSelectedFiles(newFiles);
+
+        e.target.value = '';
     };
 
     const confirmDelete = (id: number) => {
@@ -166,26 +212,13 @@ const ProductManager = () => {
         setPreviews(Array(5).fill(null));
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            if (file.size > 20 * 1024 * 1024) {
-                alert("La imagen excede el límite de 20MB.");
-                return;
-            }
-
-            const newFiles = [...selectedFiles];
-            newFiles[index] = file;
-            setSelectedFiles(newFiles);
-
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const newPreviews = [...previews];
-                newPreviews[index] = reader.result as string;
-                setPreviews(newPreviews);
-            };
-            reader.readAsDataURL(file);
-        }
+    const removeImage = (index: number) => {
+        const newPrevs = [...previews];
+        newPrevs[index] = null;
+        setPreviews(newPrevs);
+        const newFiles = [...selectedFiles];
+        newFiles[index] = null;
+        setSelectedFiles(newFiles);
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -220,7 +253,7 @@ const ProductManager = () => {
             ...prev,
             category_id: categoryId,
             category: selectedCategory?.name || '',
-            subcategory_id: undefined, // Resetear subcategoría al cambiar categoría
+            subcategory_id: undefined,
         }));
     };
 
@@ -252,7 +285,6 @@ const ProductManager = () => {
         try {
             const data = new FormData();
 
-            // ✅ Campos requeridos por el backend
             data.append('name', String(formData.name));
             data.append('category_id', String(formData.category_id || ''));
             data.append('price', String(formData.price));
@@ -260,12 +292,9 @@ const ProductManager = () => {
             data.append('size', String(formData.size || ''));
             data.append('color', String(formData.color || ''));
             data.append('material', String(formData.material || ''));
-            
-            // ✅ rating y reviews SIEMPRE con valor
             data.append('rating', String(formData.rating ?? 0));
             data.append('reviews', String(formData.reviews ?? 0));
 
-            // ✅ Marca y subcategoría
             if (formData.brand_id) {
                 data.append('brand_id', String(formData.brand_id));
             }
@@ -274,7 +303,6 @@ const ProductManager = () => {
                 data.append('subcategory_id', String(formData.subcategory_id));
             }
 
-            // ✅ Campos opcionales
             if (formData.discounted_price && formData.discounted_price > 0) {
                 data.append('discounted_price', String(formData.discounted_price));
             }
@@ -287,7 +315,6 @@ const ProductManager = () => {
                 data.append('description', String(formData.description));
             }
 
-            // ✅ Manejo de imágenes
             const imageSlots: string[] = [];
             previews.forEach((preview, index) => {
                 if (selectedFiles[index] instanceof File) {
@@ -306,7 +333,6 @@ const ProductManager = () => {
                 }
             });
 
-            // ✅ Para edición
             if (editingProduct && editingProduct.id) {
                 data.append('_method', 'PUT');
                 await productService.update(editingProduct.id, data);
@@ -332,7 +358,6 @@ const ProductManager = () => {
         }
     };
 
-    // Obtener subcategorías filtradas por categoría seleccionada
     const filteredSubcategories = subcategories.filter(
         sub => sub.category_id === formData.category_id
     );
@@ -428,7 +453,6 @@ const ProductManager = () => {
                                                 <button
                                                     onClick={() => setProductToView(p)}
                                                     title="Ver detalles completos"
-                                                    aria-label={`Ver detalles de ${p.name}`}
                                                     className="p-3 bg-white text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-100 hover:text-black transition-all shadow-sm"
                                                 >
                                                     <Eye size={14} />
@@ -436,7 +460,6 @@ const ProductManager = () => {
                                                 <button
                                                     onClick={() => handleOpenModal(p)}
                                                     title="Editar producto"
-                                                    aria-label={`Editar ${p.name}`}
                                                     className="bg-store-red text-white p-3 rounded-xl hover:bg-store-redDark transition-all active:scale-95 shadow-md"
                                                 >
                                                     <Edit size={14} />
@@ -444,7 +467,6 @@ const ProductManager = () => {
                                                 <button
                                                     onClick={() => p.id && confirmDelete(p.id)}
                                                     title="Eliminar producto"
-                                                    aria-label={`Eliminar ${p.name}`}
                                                     className="p-3 bg-white text-gray-400 border border-red-50 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all shadow-sm"
                                                 >
                                                     <Trash2 size={14} />
@@ -482,7 +504,6 @@ const ProductManager = () => {
 
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Nombre */}
                                 <div className="space-y-2 md:col-span-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Nombre del Producto *</label>
                                     <input 
@@ -510,7 +531,7 @@ const ProductManager = () => {
                                             <option value="">Seleccionar categoría</option>
                                             {categories.map((cat) => (
                                                 <option key={cat.id} value={cat.id}>
-                                                    {cat.icon} {cat.name}
+                                                    {cat.name}
                                                 </option>
                                             ))}
                                         </select>
@@ -665,8 +686,6 @@ const ProductManager = () => {
                                     />
                                 </div>
 
-                               
-
                                 {/* Calificación */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Calificación (1-5) *</label>
@@ -687,7 +706,6 @@ const ProductManager = () => {
                                     <p className="text-[10px] text-gray-400">Calificación promedio (0-5)</p>
                                 </div>
 
-                                {/* Reseñas */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Número de Reseñas *</label>
                                     <input 
@@ -716,9 +734,28 @@ const ProductManager = () => {
                                     />
                                 </div>
 
-                                {/* Imágenes */}
                                 <div className="space-y-2 md:col-span-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Imágenes del Producto (Máx 5)</label>
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                        Imágenes del Producto (Máx 5)
+                                    </label>
+
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <label className="cursor-pointer bg-store-red text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-store-redDark transition-colors shadow-lg">
+                                             Seleccionar imágenes (hasta 5)
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                onChange={handleMultipleFiles}
+                                                accept="image/png, image/jpeg, image/webp"
+                                                multiple
+                                            />
+                                        </label>
+                                        <span className="text-xs text-gray-400">
+                                            {selectedFiles.filter(f => f !== null).length} / 5 imágenes seleccionadas
+                                        </span>
+                                    </div>
+
+                                    {/* Grid de previews */}
                                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                                         {[0, 1, 2, 3, 4].map((index) => (
                                             <div key={index} className="space-y-2">
@@ -728,33 +765,19 @@ const ProductManager = () => {
                                                     ) : (
                                                         <ImageIcon className="text-gray-300" size={24} />
                                                     )}
-                                                    <label className="absolute inset-0 z-10 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                                                        <Upload className="text-white" size={18} />
-                                                        <input 
-                                                            type="file" 
-                                                            className="hidden" 
-                                                            onChange={(e) => handleFileChange(e, index)} 
-                                                            accept="image/png, image/jpeg, image/webp" 
-                                                        />
-                                                    </label>
                                                     {previews[index] && (
-                                                        <button 
-                                                            type="button" 
-                                                            onClick={() => { 
-                                                                const newPrevs = [...previews]; 
-                                                                newPrevs[index] = null; 
-                                                                setPreviews(newPrevs); 
-                                                                const newFiles = [...selectedFiles]; 
-                                                                newFiles[index] = null; 
-                                                                setSelectedFiles(newFiles); 
-                                                            }} 
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeImage(index)}
                                                             className="absolute top-1 right-1 z-20 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-lg"
                                                         >
                                                             <X size={12} />
                                                         </button>
                                                     )}
                                                 </div>
-                                                <p className="text-[10px] text-center font-bold text-gray-400 uppercase tracking-tighter">{index === 0 ? 'Principal' : `Imagen ${index + 1}`}</p>
+                                                <p className="text-[10px] text-center font-bold text-gray-400 uppercase tracking-tighter">
+                                                    {index === 0 ? 'Principal' : `Imagen ${index + 1}`}
+                                                </p>
                                             </div>
                                         ))}
                                     </div>
@@ -772,6 +795,7 @@ const ProductManager = () => {
                 </div>
             )}
 
+            {/* Modal de vista */}
             {productToView && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
                     <div className="bg-white rounded-[2rem] p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200">
@@ -780,7 +804,7 @@ const ProductManager = () => {
                                 <p className="text-[10px] font-black uppercase tracking-widest text-store-red">Detalle del producto</p>
                                 <h2 className="text-2xl font-black text-black mt-1">{productToView.name}</h2>
                             </div>
-                            <button onClick={() => setProductToView(null)} className="p-2 bg-gray-50 text-gray-500 rounded-full hover:bg-red-50 hover:text-red-500 transition-all" aria-label="Cerrar detalles">
+                            <button onClick={() => setProductToView(null)} className="p-2 bg-gray-50 text-gray-500 rounded-full hover:bg-red-50 hover:text-red-500 transition-all">
                                 <X size={20} />
                             </button>
                         </div>
