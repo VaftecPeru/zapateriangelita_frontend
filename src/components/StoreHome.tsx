@@ -903,7 +903,7 @@ export default function StoreHome() {
           <form onSubmit={handleContactSubmit} onClick={(event) => event.stopPropagation()} style={{ width: "100%", maxWidth: "560px", maxHeight: "92vh", overflowY: "auto", padding: "30px", background: "#fff", borderRadius: "18px", boxShadow: "0 24px 70px rgba(0, 0, 0, 0.22)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "22px" }}>
               <div>
-                <p style={{ margin: 0, color: "#e30613", fontSize: "11px", fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase" }}>Atención</p>
+                <p style={{ margin: 0, color: "#e30613", fontSize: "11px", fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase" }}>ATENCIÓN</p>
                 <h2 id="contact-title" style={{ margin: "7px 0 0", fontSize: "26px", color: "#121212" }}>¿Qué calzado estás buscando?</h2>
                 <p style={{ margin: "7px 0 0", color: "#666" }}>Déjanos tus datos y te ayudamos a encontrar tu próximo par.</p>
               </div>
