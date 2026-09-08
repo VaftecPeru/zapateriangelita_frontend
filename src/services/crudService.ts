@@ -57,6 +57,8 @@ export interface Product {
     rating: number;
     reviews: number;
     discount?: string;
+    sizes?: Array<{ id?: number; size: string; stock: number }>;
+    colors?: Array<{ id?: number; color: string; hex?: string | null }>;
 }
 
 
@@ -263,4 +265,5 @@ export default {
 export const orderService = {
     getAll: () => apiClient.get<{ data: Order[] }>('/orders'),
     getMyOrders: () => apiClient.get<Order[]>('/my-orders'),
+    updateStatus: (id: number, status: string) => apiClient.put<Order>(`/orders/${id}/status`, { status }),
 };

@@ -43,12 +43,47 @@ function normalizeProduct(product: Product): any {
       : [fallbackImage];
 
 
-  const colorOptions = Array.isArray((product as any).colors) ? (product as any).colors : null;
+  const colorNameToHex = (name: string) => {
+    const normalizedName = name.trim().toLowerCase();
+    const colors: Record<string, string> = {
+      blanco: "#ffffff",
+      negro: "#111111",
+      rojo: "#d62828",
+      azul: "#2563eb",
+      verde: "#2e8b57",
+      amarillo: "#facc15",
+      rosa: "#f472b6",
+      morado: "#7c3aed",
+      gris: "#9ca3af",
+      cafe: "#8b5e3c",
+      marron: "#8b5e3c",
+      beige: "#d6c2a1",
+    };
+    return colors[normalizedName] || (normalizedName.startsWith("#") ? name.trim() : "#888888");
+  };
+
+  const rawColors = (product as any).colors;
+  const colorOptions = Array.isArray(rawColors) && rawColors.length > 0
+    ? rawColors.map((color: any) => {
+      const name = String(typeof color === "object" ? color.name || color.color : color).trim();
+      return {
+        name,
+        hex: typeof color === "object" && (color.hex || color.color_hex)
+          ? color.hex || color.color_hex
+          : colorNameToHex(name),
+      };
+    }).filter((color: any) => color.name)
+    : typeof product.color === "string"
+      ? product.color.split(/[,/|]/).map((color) => color.trim()).filter(Boolean).map((name) => ({ name, hex: colorNameToHex(name) }))
+      : null;
 
   const rawSizes = (product as any).sizes ?? product.size;
   let sizeOptions: string[] | null = null;
   if (Array.isArray(rawSizes)) {
-    sizeOptions = rawSizes.map((s: any) => String(s).trim()).filter(Boolean);
+    sizeOptions = rawSizes
+      .map((s: any) => typeof s === "object" ? s.size : s)
+      .map((s: any) => String(s ?? "").trim())
+      .filter(Boolean);
   } else if (typeof rawSizes === "string" && /[,/|-]/.test(rawSizes)) {
     sizeOptions = rawSizes
       .split(/[,/|]/)
@@ -85,6 +120,7 @@ export default function ProductDetailPage() {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [toast, setToast] = useState<{ product: any } | null>(null);
+  const [variantError, setVariantError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -93,8 +129,8 @@ export default function ProductDetailPage() {
         const response = await productService.getById(Number(productId));
         const normalized = normalizeProduct(response.data);
         setProduct(normalized);
-        setSelectedColor(normalized.color || normalized.colorOptions?.[0]?.name || null);
-        setSelectedSize(normalized.size || normalized.sizeOptions?.[0] || null);
+        setSelectedColor(normalized.colorOptions?.length === 1 ? normalized.colorOptions[0].name : normalized.colorOptions ? null : normalized.color || null);
+        setSelectedSize(normalized.sizeOptions ? null : normalized.size || null);
       } catch (loadError) {
         console.error("Error loading product detail:", loadError);
         setError(true);
@@ -135,8 +171,21 @@ export default function ProductDetailPage() {
   const showNext = () => setSelectedImage((current) => (current + 1) % product.imageList.length);
 
   const addProductToCart = () => {
+    const missingColor = Boolean(product.colorOptions && !selectedColor);
+    const missingSize = Boolean(product.sizeOptions && !selectedSize);
+    if (missingColor || missingSize) {
+      setVariantError(`Selecciona ${missingSize ? "una talla" : ""}${missingSize && missingColor ? " y " : ""}${missingColor ? "un color" : ""} antes de continuar.`);
+      return;
+    }
+    setVariantError(null);
     for (let index = 0; index < quantity; index += 1) {
-      addToCart({ ...product, image: product.imageList[0], price: product.salePrice });
+      addToCart({
+        ...product,
+        image: product.imageList[0],
+        price: product.salePrice,
+        size: selectedSize,
+        color: selectedColor,
+      });
     }
     setToast({ product });
     const timer = window.setTimeout(() => setToast(null), 3200);
@@ -323,6 +372,12 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="product-detail-divider" />
+
+            {variantError && (
+              <p role="alert" style={{ margin: "0 0 16px", padding: "10px 12px", color: "#a40000", background: "#fff0f0", borderRadius: "8px", fontSize: "13px", fontWeight: 600 }}>
+                {variantError}
+              </p>
+            )}
 
             <div className="product-prices">
               {hasDiscount && <span className="promotion-label">Promoción</span>}

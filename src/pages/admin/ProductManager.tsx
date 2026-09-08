@@ -18,6 +18,8 @@ const ProductManager = () => {
     const [productToView, setProductToView] = useState<Product | null>(null);
     const [selectedFiles, setSelectedFiles] = useState<(File | null)[]>(Array(5).fill(null));
     const [previews, setPreviews] = useState<(string | null)[]>(Array(5).fill(null));
+    const [sizeOptions, setSizeOptions] = useState<string[]>(['']);
+    const [colorOptions, setColorOptions] = useState<string[]>(['']);
     const [formData, setFormData] = useState<Product>({
         name: '',
         category: '',
@@ -166,6 +168,12 @@ const ProductManager = () => {
                 subcategory_id: product.subcategory_id,
                 brand_id: product.brand_id,
             });
+            setSizeOptions(String(product.size || '').split(/[,/|]/).map((value) => value.trim()).filter(Boolean).length
+                ? String(product.size || '').split(/[,/|]/).map((value) => value.trim()).filter(Boolean)
+                : ['']);
+            setColorOptions(String(product.color || '').split(/[,/|]/).map((value) => value.trim()).filter(Boolean).length
+                ? String(product.color || '').split(/[,/|]/).map((value) => value.trim()).filter(Boolean)
+                : ['']);
 
             const newPreviews = Array(5).fill(null);
             if (product.images && Array.isArray(product.images)) {
@@ -198,6 +206,8 @@ const ProductManager = () => {
                 reviews: 0,
                 discount: '',
             });
+            setSizeOptions(['']);
+            setColorOptions(['']);
             setPreviews(Array(5).fill(null));
             setSelectedFiles(Array(5).fill(null));
         }
@@ -210,6 +220,8 @@ const ProductManager = () => {
         setFormError('');
         setSelectedFiles(Array(5).fill(null));
         setPreviews(Array(5).fill(null));
+        setSizeOptions(['']);
+        setColorOptions(['']);
     };
 
     const removeImage = (index: number) => {
@@ -259,13 +271,15 @@ const ProductManager = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        const sizes = sizeOptions.map((value) => value.trim()).filter(Boolean);
+        const colors = colorOptions.map((value) => value.trim()).filter(Boolean);
         const requiredFields: Array<[string, string]> = [
             ['name', formData.name.trim()],
             ['category_id', String(formData.category_id || '')],
             ['price', String(formData.price || '')],
             ['stock', String(formData.stock)],
-            ['size', formData.size.trim()],
-            ['color', formData.color.trim()],
+            ['size', sizes.join(',')],
+            ['color', colors.join(',')],
             ['material', formData.material.trim()],
         ];
         const missingField = requiredFields.find(([, value]) => !value);
@@ -289,8 +303,8 @@ const ProductManager = () => {
             data.append('category_id', String(formData.category_id || ''));
             data.append('price', String(formData.price));
             data.append('stock', String(formData.stock));
-            data.append('size', String(formData.size || ''));
-            data.append('color', String(formData.color || ''));
+            data.append('size', sizes.join(','));
+            data.append('color', colors.join(','));
             data.append('material', String(formData.material || ''));
             data.append('rating', String(formData.rating ?? 0));
             data.append('reviews', String(formData.reviews ?? 0));
@@ -646,30 +660,22 @@ const ProductManager = () => {
 
                                 {/* Talla */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Talla *</label>
-                                    <input 
-                                        type="text" 
-                                        name="size" 
-                                        value={formData.size} 
-                                        onChange={handleInputChange} 
-                                        required 
-                                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" 
-                                        placeholder="Ej: 38, M, 7 US" 
-                                    />
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tallas disponibles *</label>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {sizeOptions.map((size, index) => <div key={`size-${index}`} className="flex w-[74px] items-center gap-1"><input type="text" value={size} onChange={(event) => setSizeOptions((current) => current.map((value, optionIndex) => optionIndex === index ? event.target.value : value))} required={index === 0} className="w-full min-w-0 rounded-lg border border-gray-100 bg-gray-50 px-2 py-2 text-center text-xs font-semibold outline-none transition-all focus:border-store-red focus:ring-2 focus:ring-store-red/20" placeholder="38" />{sizeOptions.length > 1 && <button type="button" onClick={() => setSizeOptions((current) => current.filter((_, optionIndex) => optionIndex !== index))} className="p-0.5 text-gray-400 hover:text-red-600" aria-label="Eliminar talla"><X size={13} /></button>}</div>)}
+                                        <button type="button" onClick={() => setSizeOptions((current) => [...current, ''])} className="text-xs font-bold text-store-red hover:underline">+ Agregar otra talla</button>
+                                    </div>
+                                    <p className="text-[11px] text-gray-400">Cada talla se guarda como un registro individual en product_sizes.</p>
                                 </div>
 
                                 {/* Color */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Color *</label>
-                                    <input 
-                                        type="text" 
-                                        name="color" 
-                                        value={formData.color} 
-                                        onChange={handleInputChange} 
-                                        required 
-                                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all text-sm font-semibold" 
-                                        placeholder="Ej: Negro, Rojo, Azul" 
-                                    />
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Colores disponibles *</label>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {colorOptions.map((color, index) => <div key={`color-${index}`} className="flex w-[96px] items-center gap-1"><input type="text" value={color} onChange={(event) => setColorOptions((current) => current.map((value, optionIndex) => optionIndex === index ? event.target.value : value))} required={index === 0} className="w-full min-w-0 rounded-lg border border-gray-100 bg-gray-50 px-2 py-2 text-center text-xs font-semibold outline-none transition-all focus:border-store-red focus:ring-2 focus:ring-store-red/20" placeholder="Negro" />{colorOptions.length > 1 && <button type="button" onClick={() => setColorOptions((current) => current.filter((_, optionIndex) => optionIndex !== index))} className="p-0.5 text-gray-400 hover:text-red-600" aria-label="Eliminar color"><X size={13} /></button>}</div>)}
+                                        <button type="button" onClick={() => setColorOptions((current) => [...current, ''])} className="text-xs font-bold text-store-red hover:underline">+ Agregar otro color</button>
+                                    </div>
+                                    <p className="text-[11px] text-gray-400">Cada color se guarda como un registro individual en product_colors.</p>
                                 </div>
 
                                 {/* Material */}

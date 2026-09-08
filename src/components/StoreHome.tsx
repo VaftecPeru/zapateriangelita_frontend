@@ -399,26 +399,8 @@ export default function StoreHome() {
       return productSubcategoryMatches || normalizeSlug(productSubcategoryName) === selectedSubcategorySlug;
     });
 
-  const handleCheckout = async () => {
-    if (!isAuthenticated) {
-      setCheckoutNotice({
-        title: "Inicia sesión para continuar",
-        message: "Debes iniciar sesión para confirmar tu compra.",
-        requiresLogin: true,
-      });
-    } else {
-      setCheckoutError(null);
-      try {
-        const { data } = await apiClient.get<any[]>('/addresses');
-        const defaultAddress = data.find((address) => address.is_default) || data[0];
-        if (defaultAddress) {
-          setCheckoutForm((current) => ({ ...current, ...defaultAddress }));
-        }
-      } catch {
-        // El formulario sigue disponible aunque todavía no existan direcciones guardadas.
-      }
-      setCheckoutOpen(true);
-    }
+  const handleCheckout = () => {
+    navigate('/checkout');
   };
 
   const handlePlaceOrder = async (event: React.FormEvent) => {
@@ -975,8 +957,9 @@ export default function StoreHome() {
           </form>
         </div>
       )}
-
+      
       {checkoutNotice && (
+
         <div
           role="dialog"
           aria-modal="true"
@@ -994,6 +977,7 @@ export default function StoreHome() {
           }}
           onClick={() => setCheckoutNotice(null)}
         >
+          
           <div
             style={{
               width: "100%",

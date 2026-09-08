@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
 import '../styles/login-home.css';
 
@@ -22,6 +22,7 @@ const LoginPage = () => {
     const [loading, setLoading] = useState(false);
     const { login: authLogin, user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     // ✅ Redirigir si ya está autenticado (según rol)
     useEffect(() => {
@@ -29,10 +30,10 @@ const LoginPage = () => {
             if (user.role === 'admin') {
                 navigate('/admin/dashboard', { replace: true });
             } else {
-                navigate('/home', { replace: true });
+                navigate((location.state as { from?: string } | null)?.from || '/home', { replace: true });
             }
         }
-    }, [isAuthenticated, user, navigate]);
+    }, [isAuthenticated, user, navigate, location.state]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
