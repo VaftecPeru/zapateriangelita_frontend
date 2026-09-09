@@ -80,6 +80,16 @@
   font-family: "Playfair Display", Georgia, serif;
 }
 
+.checkout-page__panel,
+.checkout-page__summary {
+  min-width: 0;
+}
+
+.checkout-page__fields label,
+.checkout-page__address-fields label {
+  min-width: 0;
+}
+
 .checkout-page__panel label {
   color: #3e3732;
   font-size: 12px;
@@ -153,5 +163,38 @@
 
   .checkout-page__panel {
     padding: 22px !important;
+  }
+
+  .checkout-page__fields,
+  .checkout-page__address-fields {
+    grid-template-columns: 1fr !important;
+  }
+
+  .checkout-page__address-fields {
+    grid-column: auto !important;
+  }
+
+  .checkout-page__panel h1 {
+    font-size: 24px !important;
+  }
+
+  .checkout-page__summary {
+    padding: 22px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .checkout-page__content {
+    padding-right: 12px !important;
+    padding-left: 12px !important;
+  }
+
+  .checkout-page__panel,
+  .checkout-page__summary {
+    padding: 18px !important;
+  }
+
+  .checkout-page__panel h1 {
+    font-size: 22px !important;
   }
 }

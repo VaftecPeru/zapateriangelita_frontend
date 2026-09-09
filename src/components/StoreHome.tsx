@@ -75,7 +75,7 @@ const subcategoriasNiños = [
   { talla: "Niño (18-21)", items: ["Botas", "Casual", "Sandalias", "Tacos de fútbol", "Tenis deportivos", "Tenis urbanos"] },
 ];
 
-const brands = ["Nike", "adidas", "PUMA", "SKECHERS", "CAT", "flexi"];
+const brands = ["NIKE", "ADIDAS", "PUMA", "SKECHERS", "CAT", "FLEXI"];
 
 
 const menuItems = [
@@ -876,7 +876,7 @@ export default function StoreHome() {
         </div>
         <div className="shell footer__bottom">
           <span>© 2026 Zapatería Angelita. Todos los derechos reservados.</span>
-          <span>Visa · Mastercard · Yape · Plin</span>
+          <span>Visa · Paypal</span>
         </div>
       </footer>
 

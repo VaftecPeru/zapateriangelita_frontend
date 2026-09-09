@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Lock, User, ArrowLeft, Phone } from 'lucide-react';
+import { Mail, Lock, User, ArrowLeft, Phone, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -12,6 +12,8 @@ const Logo = () => (
         <span className="logo__tagline">Calzando tus pies desde 1980</span>
     </a>
 );
+
+const REGISTRATION_LOADING_MS = 30_000;
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
@@ -54,8 +56,13 @@ const RegisterPage = () => {
         }
 
         setLoading(true);
+        const loadingStartedAt = Date.now();
         try {
             const { data } = await authService.register(formData);
+            const remainingLoadingTime = REGISTRATION_LOADING_MS - (Date.now() - loadingStartedAt);
+            if (remainingLoadingTime > 0) {
+                await new Promise((resolve) => window.setTimeout(resolve, remainingLoadingTime));
+            }
             authLogin(data.user, data.token);
             setIsSuccess(true);
         } catch (err: any) {
@@ -185,8 +192,13 @@ const RegisterPage = () => {
                         </div>
                     </div>
 
-                    <button type="submit" disabled={loading} className="btn-submit">
-                        {loading ? 'Creando cuenta...' : 'Finalizar Registro'}
+                    <button type="submit" disabled={loading} className="btn-submit" aria-busy={loading}>
+                        {loading ? (
+                            <span className="register-loading-label">
+                                <Loader2 className="register-loading-spinner" size={19} aria-hidden="true" />
+                                Creando cuenta...
+                            </span>
+                        ) : 'Finalizar Registro'}
                     </button>
                 </form>
 

@@ -281,19 +281,19 @@ const CheckoutPage = () => {
 
   return (
     <main style={{ ...baseFont }}>
-      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "32px 20px 60px" }}>
-        <Link to="/" style={{ display: "inline-flex", alignItems: "center", gap: "7px", textDecoration: "none", marginBottom: "24px", color: "#333", fontSize: "14px", fontWeight: 500 }}>
+      <div className="checkout-page__content" style={{ maxWidth: "1100px", margin: "0 auto", padding: "32px 20px 60px" }}>
+        <Link className="checkout-page__back" to="/" style={{ display: "inline-flex", alignItems: "center", gap: "7px", textDecoration: "none", marginBottom: "24px", color: "#333", fontSize: "14px", fontWeight: 500 }}>
           <ArrowLeft size={17} /> Volver a la tienda
         </Link>
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(280px, .8fr)", gap: "28px", alignItems: "start" }}>
+        <div className="checkout-page__grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(280px, .8fr)", gap: "28px", alignItems: "start" }}>
           
-          <form onSubmit={placeOrder} style={cardStyle}>
+          <form className="checkout-page__panel" onSubmit={placeOrder} style={cardStyle}>
             <h1 style={{ margin: 0, fontSize: "28px", fontWeight: 700 }}>Finaliza tu compra</h1>
             <p style={{ color: "#666", margin: "8px 0 24px", fontSize: "14px" }}>Completa tus datos de envío para registrar tu pedido.</p>
             
             {error && <p role="alert" style={{ padding: "12px", color: "#a40000", background: "#fff0f0", fontSize: "14px", borderRadius: "8px" }}>{error}</p>}
             
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+            <div className="checkout-page__fields" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
               <label style={labelStyle}>Nombre completo *
                 <input 
                   required 
@@ -359,7 +359,7 @@ const CheckoutPage = () => {
                 </select>
               </label>
               
-              <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 2fr", gap: "14px" }}>
+              <div className="checkout-page__address-fields" style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 2fr", gap: "14px" }}>
                 <label style={labelStyle}>Código postal *
                   <input 
                     required 
@@ -412,7 +412,7 @@ const CheckoutPage = () => {
             </button>
           </form>
           
-          <aside style={cardStyle}>
+          <aside className="checkout-page__summary" style={cardStyle}>
             <h2 style={{ marginTop: 0, fontSize: "20px", fontWeight: 700 }}>Resumen del pedido</h2>
             {cart.map((item) => (
               <div key={item.product.id} style={{ display: "flex", gap: "12px", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #eee" }}>

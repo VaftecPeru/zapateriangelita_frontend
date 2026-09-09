@@ -628,7 +628,6 @@ const ProductManager = () => {
                                     />
                                 </div>
 
-                                {/* Precio final con descuento */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Precio final con descuento</label>
                                     <input 
@@ -643,9 +642,8 @@ const ProductManager = () => {
                                     />
                                 </div>
 
-                                {/* Stock */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Stock *</label>
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Cantidad *</label>
                                     <input 
                                         type="number" 
                                         name="stock" 

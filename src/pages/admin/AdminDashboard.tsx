@@ -313,7 +313,7 @@ const AdminDashboard = () => {
                         { id: 'settings', label: 'Ajustes' },
                         { id: 'funnelLeads', label: 'Interesados en Calzado' },
                         { id: 'users', label: 'Usuarios' },
-                        { id: 'messages', label: 'Chat' }
+                        { id: 'messages', label: 'Pedido' }
                     ].map((tab) => (
                         <button
                             key={tab.id}

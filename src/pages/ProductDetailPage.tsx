@@ -461,7 +461,7 @@ export default function ProductDetailPage() {
                 <div><span>Talla</span><strong>{selectedSize || "No especificada"}</strong></div>
                 <div><span>Color</span><strong>{selectedColor || "No especificado"}</strong></div>
                 <div><span>Material</span><strong>{product.material || "No especificado"}</strong></div>
-                <div><span>Stock disponible</span><strong>{stock} unidades</strong></div>
+                <div><span>Cantidad disponible</span><strong>{stock} unidades</strong></div>
                 <div><span>Reseñas</span><strong>{product.reviews || 0}</strong></div>
               </div>
             </div>
