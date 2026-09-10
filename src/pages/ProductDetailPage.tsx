@@ -77,7 +77,22 @@ function normalizeProduct(product: Product): any {
       ? product.color.split(/[,/|]/).map((color) => color.trim()).filter(Boolean).map((name) => ({ name, hex: colorNameToHex(name) }))
       : null;
 
+  const rawColorImages = (product as any).color_images;
+  const colorImages = rawColorImages && typeof rawColorImages === "object"
+    ? Object.fromEntries(Object.entries(rawColorImages).map(([color, images]) => [
+      color,
+      Array.isArray(images) ? images.filter(Boolean).map((image) => getImageUrl(String(image))) : [],
+    ]))
+    : {};
+
+  const rawColorSizes = (product as any).color_sizes;
   const rawSizes = (product as any).sizes ?? product.size;
+  const colorSizes = rawColorSizes && typeof rawColorSizes === "object"
+    ? Object.fromEntries(Object.entries(rawColorSizes).map(([color, sizes]) => [
+      color,
+      Array.isArray(sizes) ? sizes.map((size) => String(size).trim()).filter(Boolean) : [],
+    ]))
+    : {};
   let sizeOptions: string[] | null = null;
   if (Array.isArray(rawSizes)) {
     sizeOptions = rawSizes
@@ -86,7 +101,7 @@ function normalizeProduct(product: Product): any {
       .filter(Boolean);
   } else if (typeof rawSizes === "string" && /[,/|-]/.test(rawSizes)) {
     sizeOptions = rawSizes
-      .split(/[,/|]/)
+      .split(/[,|]/)
       .map((s) => s.trim())
       .filter(Boolean);
   }
@@ -103,6 +118,8 @@ function normalizeProduct(product: Product): any {
     salePrice: Number(product.discounted_price || product.price),
     ratingValue: Number(product.rating || 0),
     colorOptions,
+    colorImages,
+    colorSizes,
     sizeOptions,
   };
 }
@@ -167,8 +184,13 @@ export default function ProductDetailPage() {
     ? Math.round(((Number(product.price) - Number(product.discounted_price)) / Number(product.price)) * 100)
     : 0;
 
-  const showPrevious = () => setSelectedImage((current) => (current - 1 + product.imageList.length) % product.imageList.length);
-  const showNext = () => setSelectedImage((current) => (current + 1) % product.imageList.length);
+  const selectedColorImages = selectedColor ? product.colorImages?.[selectedColor] : null;
+  const activeImageList = selectedColorImages?.length ? selectedColorImages : product.imageList;
+  const selectedColorSizes = selectedColor ? product.colorSizes?.[selectedColor] : null;
+  const activeSizeOptions = selectedColorSizes?.length ? selectedColorSizes : product.sizeOptions;
+
+  const showPrevious = () => setSelectedImage((current) => (current - 1 + activeImageList.length) % activeImageList.length);
+  const showNext = () => setSelectedImage((current) => (current + 1) % activeImageList.length);
 
   const addProductToCart = () => {
     const missingColor = Boolean(product.colorOptions && !selectedColor);
@@ -181,7 +203,7 @@ export default function ProductDetailPage() {
     for (let index = 0; index < quantity; index += 1) {
       addToCart({
         ...product,
-        image: product.imageList[0],
+        image: activeImageList[0],
         price: product.salePrice,
         size: selectedSize,
         color: selectedColor,
@@ -318,7 +340,7 @@ export default function ProductDetailPage() {
           {/* Columna 1: Galería */}
           <div className="product-gallery">
             <div className="product-thumbnails">
-              {product.imageList.map((image: string, index: number) => (
+              {activeImageList.map((image: string, index: number) => (
                 <button
                   type="button"
                   key={`${image}-${index}`}
@@ -338,8 +360,8 @@ export default function ProductDetailPage() {
               <button type="button" className="icon-share-floating" onClick={() => navigator.share?.({ title: product.name, url: window.location.href })} aria-label="Compartir producto">
                 <Share2 size={16} />
               </button>
-              <img src={product.imageList[selectedImage]} alt={product.name} />
-              {product.imageList.length > 1 && (
+              <img src={activeImageList[selectedImage] || activeImageList[0]} alt={product.name} />
+              {activeImageList.length > 1 && (
                 <>
                   <button type="button" className="gallery-arrow gallery-arrow-left" onClick={showPrevious} aria-label="Imagen anterior">
                     <ChevronLeft />
@@ -411,7 +433,11 @@ export default function ProductDetailPage() {
                         title={colorOption.name}
                         aria-label={colorOption.name}
                         disabled={!product.colorOptions}
-                        onClick={() => setSelectedColor(colorOption.name)}
+                        onClick={() => {
+                          setSelectedColor((current) => current === colorOption.name ? null : colorOption.name);
+                          setSelectedSize(null);
+                          setSelectedImage(0);
+                        }}
                       />
                     )
                   )}
@@ -420,18 +446,18 @@ export default function ProductDetailPage() {
             )}
 
             {/* Selector de talla: real si product.sizeOptions viene del backend, si no, valor informativo */}
-            {(product.sizeOptions || product.size) && (
+            {(activeSizeOptions || product.size) && (
               <div className="variant-block">
                 <p className="variant-label">Talla:</p>
                 <div className="size-grid">
-                  {(product.sizeOptions || [product.size]).map((sizeOption: string) => (
+                  {(activeSizeOptions || [product.size]).map((sizeOption: string) => (
                     <button
                       type="button"
                       key={sizeOption}
                       className={`size-chip ${selectedSize === sizeOption ? "is-selected" : ""}`}
-                      disabled={!product.sizeOptions}
-                      aria-disabled={!product.sizeOptions}
-                      onClick={() => product.sizeOptions && setSelectedSize(sizeOption)}
+                      disabled={!activeSizeOptions}
+                      aria-disabled={!activeSizeOptions}
+                      onClick={() => activeSizeOptions && setSelectedSize((current) => current === sizeOption ? null : sizeOption)}
                     >
                       {sizeOption}
                     </button>

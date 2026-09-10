@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Calendar, CheckCircle, ChevronDown, Mail, MapPin, Phone, Save, Settings, User } from 'lucide-react';
+import { Calendar, CheckCircle, Mail, Phone, Save, Settings, User } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { useUbigeo } from '../../hooks/useUbigeo';
 import { userService } from '../../services/crudService';
+import { onlyDigits, onlyLettersAndSpaces, validateProfileFields } from '../../utils/profileValidation';
 
 const normalizeBirthdate = (value?: string | null) => {
     if (!value) return '';
@@ -19,8 +19,7 @@ const ProfileManager = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [formData, setFormData] = useState({ name: '', birthdate: '', gender: '', state: '', municipality: '', city: '', phone: '' });
-    const { states, municipalities, cities, loading: ubigeoLoading } = useUbigeo(formData.state, formData.municipality);
+    const [formData, setFormData] = useState({ name: '', birthdate: '', gender: '', phone: '' });
 
     useEffect(() => {
         if (user) {
@@ -28,9 +27,6 @@ const ProfileManager = () => {
                 name: user.name || '',
                 birthdate: normalizeBirthdate((user as any).birthdate),
                 gender: (user as any).gender || '',
-                state: (user as any).state || '',
-                municipality: (user as any).municipality || '',
-                city: (user as any).city || '',
                 phone: (user as any).phone || '',
             });
         }
@@ -43,15 +39,20 @@ const ProfileManager = () => {
 
     const handleSave = async (event: React.FormEvent) => {
         event.preventDefault();
+        const validationError = validateProfileFields({
+            name: formData.name,
+            phone: formData.phone,
+        });
+        if (validationError) {
+            alert(validationError);
+            return;
+        }
         setLoading(true);
         try {
             const response = await userService.updateProfile({
                 ...formData,
                 birthdate: formData.birthdate || null,
                 gender: formData.gender || null,
-                state: formData.state || null,
-                municipality: formData.municipality || null,
-                city: formData.city || null,
                 phone: formData.phone || null,
             });
             updateUser(response.data);
@@ -104,19 +105,10 @@ const ProfileManager = () => {
                                 <div className="rounded-3xl border border-black/5 bg-[#f7f7f7] p-8">
                                     <h3 className="mb-6 font-serif text-xl font-black text-[#121212]">Editar Información Personal</h3>
                                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                        <label className="space-y-2 md:col-span-2"><span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nombre Completo</span><input type="text" value={formData.name} onChange={event => updateField('name', event.target.value)} className="w-full rounded-xl border border-black/10 bg-white p-3.5 font-bold text-[#121212] outline-none transition-colors focus:border-[#e30613]" required /></label>
+                                        <label className="space-y-2 md:col-span-2"><span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nombre Completo</span><input type="text" value={formData.name} maxLength={255} onChange={event => updateField('name', onlyLettersAndSpaces(event.target.value))} className="w-full rounded-xl border border-black/10 bg-white p-3.5 font-bold text-[#121212] outline-none transition-colors focus:border-[#e30613]" required /></label>
                                         <label className="space-y-2"><span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Fecha de Nacimiento</span><input type="date" value={formData.birthdate} onChange={event => updateField('birthdate', event.target.value)} className="w-full rounded-xl border border-black/10 bg-white p-3.5 font-bold text-[#121212] outline-none transition-colors focus:border-[#e30613]" /></label>
                                         <label className="space-y-2"><span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Género</span><select value={formData.gender} onChange={event => updateField('gender', event.target.value)} className="w-full appearance-none rounded-xl border border-black/10 bg-white px-4 py-3.5 font-bold text-[#121212] outline-none focus:border-[#e30613]"><option value="">Seleccionar...</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option><option value="Prefiero no decirlo">Prefiero no decirlo</option></select></label>
-                                        <label className="space-y-2 md:col-span-2"><span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Teléfono / Celular</span><input type="tel" value={formData.phone} onChange={event => updateField('phone', event.target.value)} className="w-full rounded-xl border border-black/10 bg-white p-3.5 font-bold text-[#121212] outline-none transition-colors focus:border-[#e30613]" placeholder="Ej. 999 888 777" /></label>
-                                    </div>
-                                </div>
-
-                                <div className="rounded-3xl border border-black/5 bg-[#f7f7f7] p-8">
-                                    <h3 className="mb-6 font-serif text-xl font-black text-[#121212]">Ubicación Residencial</h3>
-                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                                        <label className="space-y-2"><span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Estado</span><span className="relative block"><select required value={formData.state} disabled={ubigeoLoading} onChange={event => setFormData(current => ({ ...current, state: event.target.value, municipality: '', city: '' }))} className="w-full appearance-none rounded-xl border border-black/10 bg-white px-4 py-3.5 font-bold text-[#121212] outline-none focus:border-[#e30613] disabled:opacity-50"><option value="">Seleccionar...</option>{states.map(option => <option key={option} value={option}>{option}</option>)}</select><ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} /></span></label>
-                                        <label className="space-y-2"><span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Municipio</span><span className="relative block"><select required value={formData.municipality} disabled={!formData.state || ubigeoLoading} onChange={event => setFormData(current => ({ ...current, municipality: event.target.value, city: '' }))} className="w-full appearance-none rounded-xl border border-black/10 bg-white px-4 py-3.5 font-bold text-[#121212] outline-none focus:border-[#e30613] disabled:opacity-50"><option value="">Seleccionar...</option>{municipalities.map(option => <option key={option} value={option}>{option}</option>)}</select><ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} /></span></label>
-                                        <label className="space-y-2"><span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Ciudad</span><span className="relative block"><select required value={formData.city} disabled={!formData.municipality || ubigeoLoading} onChange={event => updateField('city', event.target.value)} className="w-full appearance-none rounded-xl border border-black/10 bg-white px-4 py-3.5 font-bold text-[#121212] outline-none focus:border-[#e30613] disabled:opacity-50"><option value="">Seleccionar...</option>{cities.map(option => <option key={option} value={option}>{option}</option>)}</select><ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} /></span></label>
+                                        <label className="space-y-2 md:col-span-2"><span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Teléfono / Celular</span><input type="tel" inputMode="numeric" pattern="[0-9]{7,20}" maxLength={20} value={formData.phone} onChange={event => updateField('phone', onlyDigits(event.target.value))} className="w-full rounded-xl border border-black/10 bg-white p-3.5 font-bold text-[#121212] outline-none transition-colors focus:border-[#e30613]" placeholder="Ej. 999888777" /></label>
                                     </div>
                                 </div>
 
@@ -126,7 +118,6 @@ const ProfileManager = () => {
                             <div>
                                 <h3 className="mb-8 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.35em] text-[#e30613]"><span className="h-2 w-2 rounded-full bg-[#e30613]" /> Datos Personales</h3>
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">{fields.map(field => <div key={field.label} className="space-y-1.5 rounded-2xl border border-black/5 bg-[#f7f7f7] p-4 transition-colors hover:border-[#e30613]/30"><p className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-gray-400">{field.icon} {field.label}</p><p className="text-lg font-black tracking-tight text-[#121212]">{field.value}</p></div>)}</div>
-                                <div className="mt-8 rounded-3xl border border-black/5 bg-[#f7f7f7] p-6"><div className="flex items-center gap-5"><div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-black/5 bg-white text-[#e30613]"><MapPin size={24} /></div><div><p className="mb-1 text-[9px] font-black uppercase tracking-widest text-[#e30613]">Ubicación Residencial</p><p className="mb-1 text-lg font-black leading-none text-[#121212]">{(user as any).city || 'No definida'}</p><p className="text-[10px] font-bold uppercase tracking-tighter text-gray-400">{(user as any).municipality || 'Sin municipio'}, {(user as any).state || 'Sin estado'}</p></div></div></div>
                             </div>
                         )}
                     </div>

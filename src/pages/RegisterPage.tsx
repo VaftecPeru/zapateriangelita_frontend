@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
 import '../styles/register-home.css';
+import { onlyDigits, onlyLettersAndSpaces } from '../utils/profileValidation';
 
 const Logo = () => (
     <a className="logo" href="/" aria-label="Zapatería Angelita - inicio">
@@ -43,6 +44,14 @@ const RegisterPage = () => {
             setError('Por favor, ingresa un correo electrónico válido.');
             return;
         }
+        if (!/^[\p{L}]+(?:[\s'-][\p{L}]+)*$/u.test(formData.name.trim())) {
+            setError('Ingresa un nombre válido usando solo letras, espacios, apóstrofes o guiones.');
+            return;
+        }
+        if (!/^\d{7,20}$/.test(formData.phone)) {
+            setError('El teléfono debe contener entre 7 y 20 números.');
+            return;
+        }
 
         const birthDateObj = new Date(formData.birthdate);
         const today = new Date();
@@ -76,7 +85,12 @@ const RegisterPage = () => {
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const value = e.target.name === 'name'
+            ? onlyLettersAndSpaces(e.target.value)
+            : e.target.name === 'phone'
+                ? onlyDigits(e.target.value)
+                : e.target.value;
+        setFormData({ ...formData, [e.target.name]: value });
     };
 
     if (isSuccess) {
@@ -138,7 +152,7 @@ const RegisterPage = () => {
                                 <label htmlFor="name">Nombre Completo</label>
                                 <div className="input-wrapper">
                                     <User className="input-icon" size={18} />
-                                    <input id="name" type="text" name="name" required autoComplete="name" value={formData.name} onChange={handleChange} placeholder="Nombre Completo" />
+                                    <input id="name" type="text" name="name" required maxLength={255} autoComplete="name" value={formData.name} onChange={handleChange} placeholder="Nombre Completo" />
                                 </div>
                             </div>
                             <div className="field-group">
@@ -152,7 +166,7 @@ const RegisterPage = () => {
                                 <label htmlFor="phone">Teléfono</label>
                                 <div className="input-wrapper">
                                     <Phone className="input-icon" size={18} />
-                                    <input id="phone" type="tel" name="phone" required minLength={7} autoComplete="tel" value={formData.phone} onChange={handleChange} placeholder="Ej. 999 999 999" />
+                                    <input id="phone" type="tel" name="phone" required minLength={7} maxLength={20} inputMode="numeric" pattern="[0-9]{7,20}" autoComplete="tel" value={formData.phone} onChange={handleChange} placeholder="Ej. 999888777" />
                                 </div>
                             </div>
                             <div className="field-group">

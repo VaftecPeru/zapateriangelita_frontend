@@ -38,6 +38,8 @@ const AppContent = () => {
           />
 
           <Route path="/categoria/:categoryName" element={<HomePage />} />
+          <Route path="/ofertas" element={<HomePage />} />
+          <Route path="/novedades" element={<HomePage />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/producto/:productId" element={<ProductDetailPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />

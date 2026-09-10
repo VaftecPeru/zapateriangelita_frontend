@@ -53,11 +53,14 @@ export interface Product {
     material: string;
     img: string;
     images?: string[];
+    color_images?: Record<string, string[]>;
     description?: string;
     rating: number;
     reviews: number;
     discount?: string;
+    status?: 'normal' | 'oferta' | 'nuevo';
     sizes?: Array<{ id?: number; size: string; stock: number }>;
+    color_sizes?: Record<string, string[]>;
     colors?: Array<{ id?: number; color: string; hex?: string | null }>;
 }
 
@@ -139,6 +142,7 @@ export interface Order {
     status: string;
     total: number | string;
     customer_name?: string;
+    customer_email?: string;
     shipping_phone?: string;
     created_at?: string;
     user?: { id: number; name: string; email: string; phone?: string };

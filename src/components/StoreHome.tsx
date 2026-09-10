@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
@@ -219,7 +219,7 @@ export default function StoreHome() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated } = useAuth();
-  const { cart, addToCart, removeFromCart, cartCount, cartTotal, clearCart } = useCart();
+  const { cart, removeFromCart, cartCount, cartTotal, clearCart } = useCart();
   const [toast, setToast] = useState<{ product: any } | null>(null);
   const [checkoutNotice, setCheckoutNotice] = useState<{ title: string; message: string; requiresLogin: boolean } | null>(null);
   const [checkoutForm, setCheckoutForm] = useState({
@@ -251,7 +251,6 @@ export default function StoreHome() {
     message: "",
   });
   const { states, municipalities, cities, loading: ubigeoLoading } = useUbigeo(checkoutForm.state, checkoutForm.municipality);
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if ((location.state as any)?.openCart) {
@@ -305,10 +304,7 @@ export default function StoreHome() {
   }, []);
 
   const handleAddToCart = (product: any) => {
-    addToCart(product);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    setToast({ product });
-    toastTimer.current = setTimeout(() => setToast(null), 3200);
+    navigate(`/producto/${product.id}`);
   };
 
   const selectedCategory = categories.find((category) =>
@@ -319,7 +315,13 @@ export default function StoreHome() {
     ? selectedCategory?.name || categoryName.charAt(0).toUpperCase() + categoryName.slice(1).toLowerCase()
     : 'All';
 
-  const isHomePage = activeCategory === 'All';
+  const statusFilter = location.pathname === '/ofertas'
+    ? 'oferta'
+    : location.pathname === '/novedades'
+      ? 'nuevo'
+      : null;
+  const isHomePage = activeCategory === 'All' && !statusFilter;
+  const statusTitle = statusFilter === 'oferta' ? 'Ofertas' : statusFilter === 'nuevo' ? 'Novedades' : activeCategory;
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -375,7 +377,9 @@ export default function StoreHome() {
     normalizeSlug(subcategory.slug) === selectedSubcategorySlug
   );
 
-  const filteredProducts = isHomePage
+  const filteredProducts = statusFilter
+    ? products.filter((product: Product) => product.status === statusFilter)
+    : isHomePage
     ? products
     : products.filter((product: Product) => {
       const categoryMatches = selectedCategory
@@ -823,7 +827,7 @@ export default function StoreHome() {
         ) : (
           <section className="products shell section-block" style={{ paddingTop: '40px', minHeight: '60vh' }}>
             <SectionTitle
-              title={`Calzado para ${activeCategory}`}
+              title={statusFilter ? statusTitle : `Calzado para ${activeCategory}`}
               action="Volver al inicio"
               onActionClick={() => navigate('/')}
             />

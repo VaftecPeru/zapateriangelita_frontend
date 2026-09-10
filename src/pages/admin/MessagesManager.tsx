@@ -19,7 +19,18 @@ const MessagesManager = () => {
         setLoading(true);
         try {
             const response = await orderService.getAll();
-            setOrders(response.data?.data || []);
+            const ordersData = response.data?.data || [];
+            setOrders(ordersData.map((order) => order.customer_email
+                ? {
+                    ...order,
+                    user: {
+                        id: order.user?.id || 0,
+                        name: order.user?.name || order.customer_name || 'Cliente',
+                        email: order.customer_email,
+                        phone: order.user?.phone,
+                    },
+                }
+                : order));
             setError(null);
         } catch {
             setError('No se pudieron cargar los clientes compradores. Verifica tu sesión.');
@@ -47,6 +58,7 @@ const MessagesManager = () => {
     const formatDate = (date?: string) => date ? new Date(date).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
     const getPhone = (order: Order) => order.shipping_phone || order.user?.phone || '';
     const getCustomerName = (order: Order) => order.customer_name || order.user?.name || 'Cliente';
+    const getCustomerEmail = (order: Order) => order.customer_email || order.user?.email || '';
     const whatsappUrl = (order: Order) => `https://wa.me/${getPhone(order).replace(/[^0-9]/g, '')}`;
 
     return (
@@ -74,7 +86,7 @@ const MessagesManager = () => {
                                     return <tr key={order.id} onClick={() => setSelectedOrder(order)} className="hover:bg-store-red/[0.02] transition-colors cursor-pointer">
                                                                                 <td className="px-6 py-4 text-xs font-black text-black">{order.code}</td>
 
-                                        <td className="px-6 py-4"><div className="flex items-center gap-3"><div className="w-8 h-8 bg-store-red text-white rounded-xl flex items-center justify-center font-black text-[10px]">{getCustomerName(order).slice(0, 1).toUpperCase()}</div><div><p className="font-bold text-black text-xs">{getCustomerName(order)}</p><span className="text-[10px] text-gray-400">{order.user?.email || 'Cliente invitado'}</span></div></div></td>
+                                        <td className="px-6 py-4"><div className="flex items-center gap-3"><div className="w-8 h-8 bg-store-red text-white rounded-xl flex items-center justify-center font-black text-[10px]">{getCustomerName(order).slice(0, 1).toUpperCase()}</div><div><p className="font-bold text-black text-xs">{getCustomerName(order)}</p><span className="text-[10px] text-gray-400">{getCustomerEmail(order) || 'Sin correo registrado'}</span></div></div></td>
                                         <td className="px-6 py-4"><p className="text-xs font-bold text-black">{order.items?.map((item) => `${item.product_name || 'Producto'} x${item.quantity}`).join(', ') || 'Pedido registrado'}</p><span className="text-[10px] text-gray-400">{formatDate(order.created_at)} · S/ {Number(order.total).toFixed(2)}</span></td>
                                         <td className="px-6 py-4" onClick={(event) => event.stopPropagation()}><select value={order.status || 'pending'} disabled={updatingOrderId === order.id} onChange={(event) => updateOrderStatus(order, event.target.value)} className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-[10px] font-black uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-store-red/30">{statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></td>
                                         <td className="px-6 py-4" onClick={(event) => event.stopPropagation()}><a href={phone ? whatsappUrl(order) : '#'} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white text-[10px] font-black uppercase tracking-widest ${!phone ? 'pointer-events-none opacity-40' : ''}`}><MessageCircle size={13} /> WhatsApp</a></td>

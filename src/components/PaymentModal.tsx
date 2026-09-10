@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { CheckCircle, CreditCard, LockKeyhole, X } from "lucide-react";
+import { CheckCircle, CreditCard, LockKeyhole, Mail, X } from "lucide-react";
 
 interface PaymentModalProps {
   isOpen: boolean;
   total: number;
   cart: any[];
   customerName: string;
+  customerEmail?: string;
   onClose: () => void;
   onBack: () => void;
-  onPay: (paymentData: { paymentMethod: string; customerName: string }) => void;
+  onPay: (paymentData: { paymentMethod: string; customerName: string; customerEmail: string }) => void | Promise<void>;
 }
 
 const fieldStyle = {
@@ -24,9 +25,10 @@ const fieldStyle = {
   background: "#fff",
 };
 
-const PaymentModal = ({ isOpen, total, cart = [], customerName, onClose, onBack, onPay }: PaymentModalProps) => {
+const PaymentModal = ({ isOpen, total, cart = [], customerName, customerEmail = "", onClose, onBack, onPay }: PaymentModalProps) => {
   const [cardNumber, setCardNumber] = useState("");
   const [cardName, setCardName] = useState(customerName);
+  const [email, setEmail] = useState(customerEmail);
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardCvv, setCardCvv] = useState("");
   const [processing, setProcessing] = useState(false);
@@ -46,9 +48,14 @@ const PaymentModal = ({ isOpen, total, cart = [], customerName, onClose, onBack,
     }
     setError(null);
     setProcessing(true);
-    window.setTimeout(() => {
-      setProcessing(false);
-      onPay({ paymentMethod: "openpay_card", customerName: cardName });
+    window.setTimeout(async () => {
+      try {
+        await onPay({ paymentMethod: "openpay_card", customerName: cardName, customerEmail: email });
+      } catch {
+        setError("No se pudo completar el registro del correo. Inténtalo nuevamente.");
+      } finally {
+        setProcessing(false);
+      }
     }, 500);
   };
 
@@ -68,6 +75,11 @@ const PaymentModal = ({ isOpen, total, cart = [], customerName, onClose, onBack,
         </div>
 
         <label style={{ display: "block", marginBottom: "10px", color: "#777", fontSize: "10px", fontWeight: 600 }}>Nombre del titular<input required value={cardName} onChange={(event) => setCardName(event.target.value)} placeholder="Nombre completo" style={fieldStyle} /></label>
+        <div style={{ marginBottom: "12px", padding: "11px 12px", border: "1px solid #d9e8ff", borderRadius: "8px", background: "#f7faff" }}>
+          <label style={{ display: "block", color: "#315b91", fontSize: "11px", fontWeight: 700 }}><Mail size={14} style={{ verticalAlign: "-3px", marginRight: "5px" }} />Correo electrónico *</label>
+          <input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="correo@ejemplo.com" autoComplete="email" style={{ ...fieldStyle, marginTop: "7px", borderColor: "#b9d2f5" }} />
+          <span style={{ display: "block", marginTop: "5px", color: "#7892b5", fontSize: "9px" }}>Recibirás aquí los detalles de tu pedido.</span>
+        </div>
         <label style={{ display: "block", marginBottom: "10px", color: "#777", fontSize: "10px", fontWeight: 600 }}>Número de tarjeta<div style={{ position: "relative" }}><CreditCard size={14} style={{ position: "absolute", left: "10px", top: "14px", color: "#aaa" }} /><input required value={cardNumber} onChange={(event) => setCardNumber(formatCardNumber(event.target.value))} inputMode="numeric" placeholder="0000 0000 0000 0000" style={{ ...fieldStyle, paddingLeft: "31px" }} /></div></label>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}><label style={{ color: "#777", fontSize: "10px", fontWeight: 600 }}>Vencimiento<input required value={cardExpiry} onChange={(event) => setCardExpiry(formatExpiry(event.target.value))} placeholder="MM/AA" inputMode="numeric" style={{ ...fieldStyle, background: "#eef5ff" }} /></label><label style={{ color: "#777", fontSize: "10px", fontWeight: 600 }}>CVV<div style={{ position: "relative" }}><input required value={cardCvv} onChange={(event) => setCardCvv(event.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="•••" inputMode="numeric" style={fieldStyle} /><LockKeyhole size={13} style={{ position: "absolute", right: "9px", top: "14px", color: "#999" }} /></div></label></div>
 

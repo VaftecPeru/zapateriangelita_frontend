@@ -19,7 +19,10 @@ const ProductManager = () => {
     const [selectedFiles, setSelectedFiles] = useState<(File | null)[]>(Array(5).fill(null));
     const [previews, setPreviews] = useState<(string | null)[]>(Array(5).fill(null));
     const [sizeOptions, setSizeOptions] = useState<string[]>(['']);
+    const [colorSizeOptions, setColorSizeOptions] = useState<Record<number, string[]>>({});
     const [colorOptions, setColorOptions] = useState<string[]>(['']);
+    const [colorImageFiles, setColorImageFiles] = useState<Record<number, File[]>>({});
+    const [colorImagePreviews, setColorImagePreviews] = useState<Record<number, string[]>>({});
     const [formData, setFormData] = useState<Product>({
         name: '',
         category: '',
@@ -38,6 +41,7 @@ const ProductManager = () => {
         rating: 0,
         reviews: 0,
         discount: '',
+        status: 'normal',
     });
 
     useEffect(() => {
@@ -164,16 +168,31 @@ const ProductManager = () => {
                 reviews: product.reviews ?? 0,
                 description: product.description ?? '',
                 discount: product.discount ?? '',
+                status: product.status ?? 'normal',
                 category_id: product.category_id,
                 subcategory_id: product.subcategory_id,
                 brand_id: product.brand_id,
             });
-            setSizeOptions(String(product.size || '').split(/[,/|]/).map((value) => value.trim()).filter(Boolean).length
-                ? String(product.size || '').split(/[,/|]/).map((value) => value.trim()).filter(Boolean)
+            setSizeOptions(String(product.size || '').split(/[,|]/).map((value) => value.trim()).filter(Boolean).length
+                ? String(product.size || '').split(/[,|]/).map((value) => value.trim()).filter(Boolean)
                 : ['']);
             setColorOptions(String(product.color || '').split(/[,/|]/).map((value) => value.trim()).filter(Boolean).length
                 ? String(product.color || '').split(/[,/|]/).map((value) => value.trim()).filter(Boolean)
                 : ['']);
+            const productColors = String(product.color || '').split(/[,/|]/).map((value) => value.trim()).filter(Boolean);
+            const sizesByColor: Record<number, string[]> = {};
+            productColors.forEach((color, index) => {
+                sizesByColor[index] = product.color_sizes?.[color]?.length
+                    ? product.color_sizes[color]
+                    : [''];
+            });
+            setColorSizeOptions(sizesByColor);
+            const previewsByColor: Record<number, string[]> = {};
+            productColors.forEach((color, index) => {
+                previewsByColor[index] = (product.color_images?.[color] || []).map((image) => getImageUrl(image));
+            });
+            setColorImageFiles({});
+            setColorImagePreviews(previewsByColor);
 
             const newPreviews = Array(5).fill(null);
             if (product.images && Array.isArray(product.images)) {
@@ -205,9 +224,13 @@ const ProductManager = () => {
                 rating: 0,
                 reviews: 0,
                 discount: '',
+                status: 'normal',
             });
             setSizeOptions(['']);
+            setColorSizeOptions({});
             setColorOptions(['']);
+            setColorImageFiles({});
+            setColorImagePreviews({});
             setPreviews(Array(5).fill(null));
             setSelectedFiles(Array(5).fill(null));
         }
@@ -221,7 +244,10 @@ const ProductManager = () => {
         setSelectedFiles(Array(5).fill(null));
         setPreviews(Array(5).fill(null));
         setSizeOptions(['']);
+        setColorSizeOptions({});
         setColorOptions(['']);
+        setColorImageFiles({});
+        setColorImagePreviews({});
     };
 
     const removeImage = (index: number) => {
@@ -256,6 +282,16 @@ const ProductManager = () => {
             ...prev,
             [name]: ['discounted_price', 'stock', 'rating', 'reviews'].includes(name) ? Number(value) : value
         }));
+    };
+
+    const handleColorImagesChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(event.target.files || []).slice(0, 5);
+        setColorImageFiles((current) => ({ ...current, [index]: files }));
+        setColorImagePreviews((current) => ({
+            ...current,
+            [index]: files.map((file) => URL.createObjectURL(file)),
+        }));
+        event.target.value = '';
     };
 
     const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -325,6 +361,14 @@ const ProductManager = () => {
                 data.append('discount', String(formData.discount));
             }
 
+            data.append('status', formData.status || 'normal');
+            const colorsByIndex = colors.reduce<Record<string, string[]>>((result, color, index) => {
+                const configuredSizes = colorSizeOptions[index]?.map((size) => size.trim()).filter(Boolean) || [];
+                if (configuredSizes.length) result[color] = configuredSizes;
+                return result;
+            }, {});
+            data.append('color_sizes', JSON.stringify(colorsByIndex));
+
             if (formData.description) {
                 data.append('description', String(formData.description));
             }
@@ -345,6 +389,10 @@ const ProductManager = () => {
                 if (file instanceof File) {
                     data.append('new_images[]', file);
                 }
+            });
+
+            Object.entries(colorImageFiles).forEach(([index, files]) => {
+                files.forEach((file) => data.append(`color_images[${index}][]`, file));
             });
 
             if (editingProduct && editingProduct.id) {
@@ -498,7 +546,7 @@ const ProductManager = () => {
             {/* Modal de creación/edición */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200">
+                    <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 lg:p-10 w-full max-w-5xl max-h-[94vh] overflow-y-auto shadow-2xl border border-gray-200">
                         <div className="flex justify-between items-center mb-8 pb-4 border-b border-gray-50">
                             <div>
                                 <h2 className="text-2xl font-black text-black tracking-tight">{editingProduct ? 'Editar Producto' : 'Nuevo Producto'}</h2>
@@ -517,8 +565,11 @@ const ProductManager = () => {
                         )}
 
                         <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2 md:col-span-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                                <div className="md:col-span-2 xl:col-span-4 border-b border-gray-100 pb-2">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-store-red">Información del catálogo</p>
+                                </div>
+                                <div className="space-y-2 md:col-span-2 xl:col-span-4">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Nombre del Producto *</label>
                                     <input 
                                         type="text" 
@@ -531,8 +582,7 @@ const ProductManager = () => {
                                     />
                                 </div>
 
-                                {/* Categoría */}
-                                <div className="space-y-2">
+                                <div className="space-y-2 md:col-span-2 xl:col-span-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Categoría *</label>
                                     <div className="relative">
                                         <select
@@ -553,8 +603,7 @@ const ProductManager = () => {
                                     </div>
                                 </div>
 
-                                {/* Subcategoría */}
-                                <div className="space-y-2">
+                                <div className="space-y-2 md:col-span-2 xl:col-span-1">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Subcategoría</label>
                                     <div className="relative">
                                         <select
@@ -575,8 +624,7 @@ const ProductManager = () => {
                                     </div>
                                 </div>
 
-                                {/* Marca */}
-                                <div className="space-y-2">
+                                <div className="space-y-2 md:col-span-2 xl:col-span-1">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Marca</label>
                                     <div className="relative">
                                         <select
@@ -596,7 +644,10 @@ const ProductManager = () => {
                                     </div>
                                 </div>
 
-                                {/* Precio */}
+                                <div className="md:col-span-2 xl:col-span-4 border-b border-gray-100 pb-2 pt-2">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-store-red">Precio y disponibilidad</p>
+                                </div>
+
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Precio (USD) *</label>
                                     <input 
@@ -629,6 +680,18 @@ const ProductManager = () => {
                                 </div>
 
                                 <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Estado del producto *</label>
+                                    <div className="relative">
+                                        <select name="status" value={formData.status || 'normal'} onChange={handleInputChange} required className="w-full appearance-none rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm font-semibold outline-none transition-all focus:border-store-red focus:ring-2 focus:ring-store-red/20">
+                                            <option value="normal">Normal</option>
+                                            <option value="oferta">Oferta</option>
+                                            <option value="nuevo">Nuevo</option>
+                                        </select>
+                                        <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Precio final con descuento</label>
                                     <input 
                                         type="number" 
@@ -656,28 +719,59 @@ const ProductManager = () => {
                                     />
                                 </div>
 
-                                {/* Talla */}
-                                <div className="space-y-2">
+                                <div className="md:col-span-2 xl:col-span-4 border-b border-gray-100 pb-2 pt-2">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-store-red">Variantes del producto</p>
+                                </div>
+
+                                <div className="space-y-2 md:col-span-2 xl:col-span-4">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tallas disponibles *</label>
                                     <div className="flex flex-wrap items-center gap-2">
                                         {sizeOptions.map((size, index) => <div key={`size-${index}`} className="flex w-[74px] items-center gap-1"><input type="text" value={size} onChange={(event) => setSizeOptions((current) => current.map((value, optionIndex) => optionIndex === index ? event.target.value : value))} required={index === 0} className="w-full min-w-0 rounded-lg border border-gray-100 bg-gray-50 px-2 py-2 text-center text-xs font-semibold outline-none transition-all focus:border-store-red focus:ring-2 focus:ring-store-red/20" placeholder="38" />{sizeOptions.length > 1 && <button type="button" onClick={() => setSizeOptions((current) => current.filter((_, optionIndex) => optionIndex !== index))} className="p-0.5 text-gray-400 hover:text-red-600" aria-label="Eliminar talla"><X size={13} /></button>}</div>)}
                                         <button type="button" onClick={() => setSizeOptions((current) => [...current, ''])} className="text-xs font-bold text-store-red hover:underline">+ Agregar otra talla</button>
                                     </div>
-                                    <p className="text-[11px] text-gray-400">Cada talla se guarda como un registro individual en product_sizes.</p>
+                                    <p className="text-[11px] text-gray-400">Usa coma o | para separar tallas. Ejemplo: 35/2, 36.</p>
+                                    <div className="mt-4 space-y-3">
+                                        {colorOptions.map((color, index) => color.trim() && (
+                                            <div key={`color-sizes-${index}`} className="rounded-xl border border-gray-200 bg-white p-3">
+                                                <div className="mb-2 flex items-center justify-between gap-2">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Tallas para {color}</span>
+                                                    <span className="text-[10px] text-gray-400">Opcional: usa las globales si queda vacío</span>
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    {(colorSizeOptions[index] || ['']).map((size, sizeIndex) => <div key={`color-size-${index}-${sizeIndex}`} className="flex w-[74px] items-center gap-1"><input type="text" value={size} onChange={(event) => setColorSizeOptions((current) => ({ ...current, [index]: (current[index] || ['']).map((value, optionIndex) => optionIndex === sizeIndex ? event.target.value : value) }))} className="w-full rounded-lg border border-gray-100 bg-gray-50 px-2 py-2 text-center text-xs font-semibold" placeholder="38" />{(colorSizeOptions[index] || ['']).length > 1 && <button type="button" onClick={() => setColorSizeOptions((current) => ({ ...current, [index]: current[index].filter((_, optionIndex) => optionIndex !== sizeIndex) }))} className="p-0.5 text-gray-400 hover:text-red-600" aria-label="Eliminar talla"><X size={13} /></button>}</div>)}
+                                                    <button type="button" onClick={() => setColorSizeOptions((current) => ({ ...current, [index]: [...(current[index] || ['']), ''] }))} className="text-xs font-bold text-store-red hover:underline">+ Agregar talla</button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
 
-                                {/* Color */}
-                                <div className="space-y-2">
+                                <div className="space-y-2 md:col-span-2 xl:col-span-4">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Colores disponibles *</label>
                                     <div className="flex flex-wrap items-center gap-2">
                                         {colorOptions.map((color, index) => <div key={`color-${index}`} className="flex w-[96px] items-center gap-1"><input type="text" value={color} onChange={(event) => setColorOptions((current) => current.map((value, optionIndex) => optionIndex === index ? event.target.value : value))} required={index === 0} className="w-full min-w-0 rounded-lg border border-gray-100 bg-gray-50 px-2 py-2 text-center text-xs font-semibold outline-none transition-all focus:border-store-red focus:ring-2 focus:ring-store-red/20" placeholder="Negro" />{colorOptions.length > 1 && <button type="button" onClick={() => setColorOptions((current) => current.filter((_, optionIndex) => optionIndex !== index))} className="p-0.5 text-gray-400 hover:text-red-600" aria-label="Eliminar color"><X size={13} /></button>}</div>)}
                                         <button type="button" onClick={() => setColorOptions((current) => [...current, ''])} className="text-xs font-bold text-store-red hover:underline">+ Agregar otro color</button>
                                     </div>
                                     <p className="text-[11px] text-gray-400">Cada color se guarda como un registro individual en product_colors.</p>
+                                    <div className="mt-4 space-y-3">
+                                        {colorOptions.map((color, index) => color.trim() && (
+                                            <div key={`color-images-${index}`} className="rounded-xl border border-gray-200 bg-white p-3">
+                                                <div className="mb-2 flex items-center justify-between gap-2">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Imágenes para {color}</span>
+                                                    <span className="text-[10px] text-gray-400">Máximo 5</span>
+                                                </div>
+                                                <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => handleColorImagesChange(index, event)} className="w-full text-xs" />
+                                                {colorImagePreviews[index]?.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{colorImagePreviews[index].slice(0, 5).map((preview, previewIndex) => <img key={`${preview}-${previewIndex}`} src={preview} alt={`${color} ${previewIndex + 1}`} className="h-14 w-14 rounded-lg border border-gray-200 object-cover" />)}</div>}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
 
-                                {/* Material */}
-                                <div className="space-y-2">
+                                <div className="md:col-span-2 xl:col-span-4 border-b border-gray-100 pb-2 pt-2">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-store-red">Ficha técnica</p>
+                                </div>
+
+                                <div className="space-y-2 md:col-span-2 xl:col-span-2">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Material *</label>
                                     <input 
                                         type="text" 
@@ -690,8 +784,7 @@ const ProductManager = () => {
                                     />
                                 </div>
 
-                                {/* Calificación */}
-                                <div className="space-y-2">
+                                <div className="space-y-2 xl:col-span-1">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Calificación (1-5) *</label>
                                     <div className="flex items-center gap-2">
                                         <input 
@@ -710,7 +803,7 @@ const ProductManager = () => {
                                     <p className="text-[10px] text-gray-400">Calificación promedio (0-5)</p>
                                 </div>
 
-                                <div className="space-y-2">
+                                <div className="space-y-2 xl:col-span-1">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Número de Reseñas *</label>
                                     <input 
                                         type="number" 
@@ -726,7 +819,7 @@ const ProductManager = () => {
                                 </div>
 
                                 {/* Descripción */}
-                                <div className="space-y-2 md:col-span-2">
+                                <div className="space-y-2 md:col-span-2 xl:col-span-4">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Descripción</label>
                                     <textarea 
                                         name="description" 
@@ -738,7 +831,7 @@ const ProductManager = () => {
                                     />
                                 </div>
 
-                                <div className="space-y-2 md:col-span-2">
+                                <div className="space-y-2 md:col-span-2 xl:col-span-4">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">
                                         Imágenes del Producto (Máx 5)
                                     </label>

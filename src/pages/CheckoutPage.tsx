@@ -43,6 +43,7 @@ const cardStyle = { padding: "28px", background: "#fff", boxShadow: "0 10px 30px
 
 const initialFormState = {
   full_name: "",
+  email: "",
   phone: "",
   country: "México",
   state: "",
@@ -53,8 +54,11 @@ const initialFormState = {
   reference: "",
 };
 
+const onlyLettersAndSpaces = (value: string) => value.replace(/[^\p{L}\s]/gu, "");
+const onlyDigits = (value: string) => value.replace(/\D/g, "");
+
 const CheckoutPage = () => {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
   const { cart, cartTotal, clearCart } = useCart();
   const [form, setForm] = useState(initialFormState);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +76,7 @@ const CheckoutPage = () => {
 
   useEffect(() => {
     if (!isAuthenticated) return;
+    setForm((current) => ({ ...current, email: user?.email || current.email }));
     apiClient.get<any[]>("/addresses")
       .then(({ data }) => {
         const defaultAddress = data.find((a) => a.is_default) || data[0];
@@ -80,6 +85,7 @@ const CheckoutPage = () => {
             ...c,
             ...defaultAddress,
             full_name: defaultAddress.full_name || "",
+            email: user?.email || "",
             phone: defaultAddress.phone || "",
             state: defaultAddress.state || "",
             municipality: defaultAddress.municipality || "",
@@ -91,10 +97,41 @@ const CheckoutPage = () => {
         }
       })
       .catch(() => undefined);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.email]);
 
   const updateField = (field: keyof typeof form, value: string) => {
     setForm((c) => ({ ...c, [field]: value }));
+  };
+
+  const validateCheckoutForm = () => {
+    const name = form.full_name.trim();
+    const email = form.email.trim();
+    const phone = form.phone.trim();
+    const postalCode = form.postal_code.trim();
+    const address = form.address.trim();
+
+    if (!name || !/^[\p{L}]+(?:[\s'-][\p{L}]+)*$/u.test(name)) {
+      return "Ingresa un nombre válido usando solo letras, espacios, apóstrofes o guiones.";
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return "Ingresa un correo electrónico válido.";
+    }
+    if (!/^\d{7,20}$/.test(phone)) {
+      return "El teléfono debe contener entre 7 y 20 números.";
+    }
+    if (!form.country || !form.state || !form.municipality || !form.city) {
+      return "Selecciona país, estado, municipio y ciudad.";
+    }
+    if (!/^\d{4,20}$/.test(postalCode)) {
+      return "El código postal debe contener entre 4 y 20 números.";
+    }
+    if (address.length < 5 || address.length > 255) {
+      return "Ingresa una dirección válida de entre 5 y 255 caracteres.";
+    }
+    if (form.reference.trim().length > 200) {
+      return "La referencia no puede superar los 200 caracteres.";
+    }
+    return null;
   };
 
   const getValidSize = (product: any) => {
@@ -119,12 +156,12 @@ const CheckoutPage = () => {
     setSubmitting(true);
 
     try {
-      // ✅ LOG 1: Verificar el carrito
-      console.log("🛒 Carrito completo:", JSON.stringify(cart, null, 2));
-      console.log("📊 Total del carrito:", cartTotal);
-      console.log("📝 Datos del formulario:", JSON.stringify(form, null, 2));
+      const formError = validateCheckoutForm();
+      if (formError) {
+        setError(formError);
+        return;
+      }
 
-      // ✅ Validar que el carrito no esté vacío
       if (!cart || cart.length === 0) {
         setError("Tu carrito está vacío");
         setSubmitting(false);
@@ -134,7 +171,6 @@ const CheckoutPage = () => {
       // ✅ Validar que los productos tengan ID
       const invalidProducts = cart.filter(item => !item.product?.id);
       if (invalidProducts.length > 0) {
-        console.error("❌ Productos sin ID:", invalidProducts);
         setError(`Los siguientes productos no tienen ID: ${invalidProducts.map(i => i.product?.name || 'Desconocido').join(', ')}`);
         setSubmitting(false);
         return;
@@ -169,6 +205,7 @@ const CheckoutPage = () => {
       const orderPayload = {
         items: orderItems,
         customer_name: form.full_name?.trim() || "",
+        customer_email: form.email?.trim() || null,
         shipping_address: form.address?.trim() || "",
         shipping_city: form.city?.trim() || "",
         shipping_phone: form.phone?.trim() || "",
@@ -179,24 +216,14 @@ const CheckoutPage = () => {
         payment_method: "card",
       };
 
-      // ✅ LOG 2: Datos a enviar al backend
-      console.log("📦 Enviando al backend:", JSON.stringify(orderPayload, null, 2));
-
-      // ✅ Guardar dirección si está autenticado
       if (isAuthenticated) {
         try {
           await apiClient.post("/addresses", { ...form, is_default: true });
-          console.log("✅ Dirección guardada");
-        } catch (addressError) {
-          console.warn("⚠️ No se pudo guardar la dirección:", addressError);
+        } catch {
         }
       }
 
-      // ✅ Enviar la orden
       const orderResponse = await apiClient.post("/orders", orderPayload);
-      
-      // ✅ LOG 3: Respuesta exitosa
-      console.log("✅ Orden creada:", orderResponse.data);
 
       const newOrderId = orderResponse.data?.id || orderResponse.data?.order_id;
       
@@ -213,20 +240,12 @@ const CheckoutPage = () => {
       setShowPayment(true);
 
     } catch (err: any) {
-      // ✅ LOG 4: Error detallado
-      console.error("❌ Error completo:", err);
-      console.error("📋 Response data:", err.response?.data);
-      console.error("📊 Status code:", err.response?.status);
-      
-      // ✅ Mostrar mensaje de error detallado
       let errorMessage = "No pudimos registrar tu pedido. ";
       
       if (err.response?.data?.errors) {
-        // Errores de validación de Laravel
         const errors = err.response.data.errors;
         const errorMessages = Object.values(errors).flat().join(" ");
         errorMessage += errorMessages;
-        console.error("🔍 Errores de validación:", errors);
       } else if (err.response?.data?.message) {
         errorMessage += err.response.data.message;
       } else if (err.response?.data?.error) {
@@ -241,8 +260,10 @@ const CheckoutPage = () => {
     }
   };
 
-  const handlePaymentSuccess = (paymentData: { paymentMethod: string; customerName: string }) => {
-    console.log("Pago exitoso:", paymentData);
+  const handlePaymentSuccess = async (paymentData: { paymentMethod: string; customerName: string; customerEmail: string }) => {
+    if (orderData) {
+      await apiClient.put(`/orders/${orderData.orderId}/email`, { customer_email: paymentData.customerEmail });
+    }
     clearCart();
     setShowPayment(false);
     setOrderData(null);
@@ -297,17 +318,33 @@ const CheckoutPage = () => {
               <label style={labelStyle}>Nombre completo *
                 <input 
                   required 
+                  maxLength={150}
                   value={form.full_name || ""} 
-                  onChange={(e) => updateField("full_name", e.target.value)} 
+                  onChange={(e) => updateField("full_name", onlyLettersAndSpaces(e.target.value))} 
                   style={inputStyle} 
                 />
               </label>
               <label style={labelStyle}>Teléfono *
                 <input 
                   required 
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]{7,20}"
+                  maxLength={20}
                   value={form.phone || ""} 
-                  onChange={(e) => updateField("phone", e.target.value)} 
+                  onChange={(e) => updateField("phone", onlyDigits(e.target.value))} 
                   style={inputStyle} 
+                />
+              </label>
+              <label style={labelStyle}>Correo electrónico *
+                <input
+                  required
+                  type="email"
+                  maxLength={255}
+                  value={form.email || ""}
+                  onChange={(e) => updateField("email", e.target.value)}
+                  autoComplete="email"
+                  style={inputStyle}
                 />
               </label>
               
@@ -364,14 +401,18 @@ const CheckoutPage = () => {
                   <input 
                     required 
                     inputMode="numeric" 
+                    pattern="[0-9]{4,20}"
+                    maxLength={20}
                     value={form.postal_code || ""} 
-                    onChange={(e) => updateField("postal_code", e.target.value)} 
+                    onChange={(e) => updateField("postal_code", onlyDigits(e.target.value))} 
                     style={inputStyle} 
                   />
                 </label>
                 <label style={labelStyle}>Dirección *
                   <input 
                     required 
+                    minLength={5}
+                    maxLength={255}
                     value={form.address || ""} 
                     onChange={(e) => updateField("address", e.target.value)} 
                     placeholder="Calle, número y colonia" 
@@ -382,6 +423,7 @@ const CheckoutPage = () => {
 
               <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>Referencia (opcional)
                 <input 
+                  maxLength={200}
                   value={form.reference || ""} 
                   onChange={(e) => updateField("reference", e.target.value)} 
                   style={inputStyle} 
@@ -455,6 +497,7 @@ const CheckoutPage = () => {
           total={orderData.total}
           cart={cart} 
           customerName={orderData.customerName}
+          customerEmail={form.email}
           onClose={() => {
             setShowPayment(false);
             setOrderData(null);
