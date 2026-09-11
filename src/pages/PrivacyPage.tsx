@@ -1,89 +1,89 @@
 import { useEffect } from 'react';
-import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useSettings } from '../hooks/useSettings';
+import '../styles/legal-pages.css';
+
+function Logo({ light = false }: { light?: boolean }) {
+  return (
+    <a className={`logo ${light ? "logo--light" : ""}`} href="/" aria-label="Zapatería Angelita - inicio">
+      <span className="logo__small">Zapatería</span>
+      <strong>ANGELITA</strong>
+      <span className="logo__tagline">Calzando tus pies desde 1980</span>
+    </a>
+  );
+}
 
 const PrivacyPage = () => {
+    const { settings, loading } = useSettings();
+
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
 
+    let privacyPolicies: string[] = [];
+    try {
+        const parsedPrivacy = settings.privacy_policy
+            ? JSON.parse(settings.privacy_policy)
+            : [];
+        privacyPolicies = Array.isArray(parsedPrivacy)
+            ? parsedPrivacy
+                .map((item) => typeof item === 'string' ? item : item?.text)
+                .filter((item): item is string => Boolean(item?.trim()))
+            : [settings.privacy_policy].filter(Boolean);
+    } catch {
+        privacyPolicies = settings.privacy_policy ? [settings.privacy_policy] : [];
+    }
+
     return (
-        <div className="min-h-screen bg-minimal-beige pt-32 pb-20 px-6 font-inter">
-            <div className="max-w-4xl mx-auto">
-                <Link
-                    to="/"
-                    className="inline-flex items-center gap-2 text-black hover:opacity-70 transition-colors mb-12 group select-none"
-                >
-                    <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-                    <span className="font-bold text-sm tracking-tight uppercase">Regresar al inicio</span>
-                </Link>
-
-                <div className="bg-white rounded-[2.5rem] p-10 md:p-16 border border-black shadow-sm">
-                    <div className="flex items-center gap-4 mb-8">
-                        <div className="w-12 h-12 bg-minimal-olive rounded-2xl flex items-center justify-center text-white">
-                            <ShieldCheck size={24} />
-                        </div>
-                        <h1 className="text-4xl md:text-5xl font-black text-minimal-gold tracking-tighter">
-                            Política de Privacidad
-                        </h1>
-                    </div>
-
-                    <div className="space-y-10">
-                        <section>
-                            <h2 className="text-xl font-black text-minimal-gold mb-4 flex items-center gap-2">
-                                <span className="w-6 h-6 bg-black/5 rounded-lg flex items-center justify-center text-xs">01</span>
-                                Recopilación de Datos
-                            </h2>
-                            <p className="text-black leading-relaxed font-medium">
-                                En Umbral Suites, nos tomamos muy en serio su privacidad. Recopilamos información personal necesaria para procesar sus reservas y mejorar su experiencia, como nombre, correo electrónico, número de teléfono y detalles de pago.
-                            </p>
-                        </section>
-
-                        <section>
-                            <h2 className="text-xl font-black text-minimal-gold mb-4 flex items-center gap-2">
-                                <span className="w-6 h-6 bg-black/5 rounded-lg flex items-center justify-center text-xs">02</span>
-                                Uso de la Información
-                            </h2>
-                            <p className="text-black leading-relaxed font-medium">
-                                Su información se utiliza exclusivamente para:
-                            </p>
-                            <ul className="mt-4 space-y-2 text-black font-medium list-disc pl-10">
-                                <li>Confirmar y gestionar sus reservas.</li>
-                                <li>Enviarle actualizaciones relevantes sobre su estancia.</li>
-                                <li>Mejorar nuestros servicios y atención al cliente.</li>
-                                <li>Cumplir con obligaciones legales y de seguridad.</li>
-                            </ul>
-                        </section>
-
-                        <section>
-                            <h2 className="text-xl font-black text-minimal-gold mb-4 flex items-center gap-2">
-                                <span className="w-6 h-6 bg-black/5 rounded-lg flex items-center justify-center text-xs">03</span>
-                                Seguridad de los Datos
-                            </h2>
-                            <p className="text-black leading-relaxed font-medium">
-                                Implementamos medidas de seguridad técnicas y organizativas para proteger sus datos personales contra acceso no autorizado, pérdida o alteración. Sus datos de pago se procesan de forma cifrada a través de proveedores certificados.
-                            </p>
-                        </section>
-
-                        <section>
-                            <h2 className="text-xl font-black text-minimal-gold mb-4 flex items-center gap-2">
-                                <span className="w-6 h-6 bg-black/5 rounded-lg flex items-center justify-center text-xs">04</span>
-                                Sus Derechos
-                            </h2>
-                            <p className="text-black leading-relaxed font-medium">
-                                Usted tiene derecho a acceder, rectificar o eliminar sus datos personales en cualquier momento. Puede contactarnos para ejercer estos derechos a través de info@umbralsuites.com.
-                            </p>
-                        </section>
-
-                        <section className="pt-10 border-t border-black/5 mt-20">
-                            <p className="text-[11px] text-black font-black uppercase tracking-widest text-center">
-                                Última actualización: 25 de Febrero, 2026
-                            </p>
-                        </section>
-                    </div>
+        <main className="legal-page">
+            <div className="legal-page__topbar">
+                <div className="legal-page__topbar-inner">
+                    <span>Con nosotros desde 1980</span>
+                    <span>Tus datos, bien cuidados
+</span>
                 </div>
             </div>
-        </div>
+
+            <div className="legal-page__brand">
+                <Logo />
+            </div>
+
+            <div className="legal-page__content">
+                <Link
+                    to="/checkout"
+                    className="legal-page__back"
+                >
+                    <ArrowLeft size={20} />
+                    <span>Atrás</span>
+                </Link>
+
+                <section className="legal-page__panel">
+                    <div className="legal-page__heading">
+                        <div>
+                            <p className="legal-page__eyebrow">Protección de tus datos</p>
+                            <h1 className="legal-page__title">Aviso de privacidad</h1>
+                        </div>
+                    </div>
+
+                    <div className="legal-page__body">
+                        {loading ? (
+                            <p className="legal-page__loading">Cargando aviso de privacidad...</p>
+                        ) : privacyPolicies.length > 0 ? (
+                            <ol className="legal-page__list">
+                                {privacyPolicies.map((policy, index) => (
+                                    <li key={`${policy}-${index}`}>
+                                        {policy}
+                                    </li>
+                                ))}
+                            </ol>
+                        ) : (
+                            <p className="legal-page__empty">Actualmente no hay un aviso de privacidad publicado.</p>
+                        )}
+                    </div>
+                </section>
+            </div>
+        </main>
     );
 };
 

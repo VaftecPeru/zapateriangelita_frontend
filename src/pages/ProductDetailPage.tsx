@@ -197,7 +197,7 @@ export default function ProductDetailPage() {
     const missingSize = Boolean(product.sizeOptions && !selectedSize);
     if (missingColor || missingSize) {
       setVariantError(`Selecciona ${missingSize ? "una talla" : ""}${missingSize && missingColor ? " y " : ""}${missingColor ? "un color" : ""} antes de continuar.`);
-      return;
+      return false;
     }
     setVariantError(null);
     for (let index = 0; index < quantity; index += 1) {
@@ -210,13 +210,14 @@ export default function ProductDetailPage() {
       });
     }
     setToast({ product });
-    const timer = window.setTimeout(() => setToast(null), 3200);
-    return () => window.clearTimeout(timer);
+    window.setTimeout(() => setToast(null), 3200);
+    return true;
   };
 
   const buyNow = () => {
-    addProductToCart();
-    navigate('/', { state: { openCart: true } });
+    if (addProductToCart()) {
+      navigate('/', { state: { openCart: true } });
+    }
   };
 
   const toggleFavorite = () => setIsFavorite(!isFavorite);

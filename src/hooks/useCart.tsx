@@ -32,10 +32,14 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const addToCart = (product: any) => {
         setCart(prev => {
-            const existing = prev.find(item => item.product.id === product.id);
+            const existing = prev.find(item =>
+                item.product.id === product.id
+                && item.product.size === product.size
+                && item.product.color === product.color
+            );
             let newCart;
             if (existing) {
-                newCart = prev.map(item => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+                newCart = prev.map(item => item === existing ? { ...item, quantity: item.quantity + 1 } : item);
             } else {
                 newCart = [...prev, { product, quantity: 1 }];
             }

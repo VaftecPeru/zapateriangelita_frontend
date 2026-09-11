@@ -39,6 +39,7 @@ export interface Brand {
 
 export interface Product {
     id?: number;
+    product_code?: string;
     name: string;
     category?: string | { id?: number; name: string; slug?: string };
     category_id?: number;
