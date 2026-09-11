@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate} from "react-router-dom";
 import { ArrowLeft, PackageCheck, ShoppingBag } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
 import { useUbigeo } from "../hooks/useUbigeo";
 import apiClient from "../services/apiClient";
-import PaymentModal from "../components/PaymentModal";
+import PaymentModal, { OpenpayChargeResult} from "../components/PaymentModal";
 import "../styles/checkout.css";
 
 const money = new Intl.NumberFormat("en-US", {
@@ -58,6 +58,11 @@ const onlyLettersAndSpaces = (value: string) => value.replace(/[^\p{L}\s]/gu, ""
 const onlyDigits = (value: string) => value.replace(/\D/g, "");
 
 const CheckoutPage = () => {
+  console.log("CHECKOUT NUEVO OPENPAY USD 2026");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+
   const { isAuthenticated, loading: authLoading, user } = useAuth();
   const { cart, cartTotal, clearCart } = useCart();
   const [form, setForm] = useState(initialFormState);
@@ -98,6 +103,81 @@ const CheckoutPage = () => {
       })
       .catch(() => undefined);
   }, [isAuthenticated, user?.email]);
+  useEffect(() => {
+    if (authLoading) return;
+    const params = new URLSearchParams(location.search);
+    const openpayReturn = params.get("openpay_return");
+    const orderId = params.get("order_id");
+    const transactionId = params.get("id");
+    if (openpayReturn !== "1") { return;}
+    const cleanOpenpayUrl = () => {
+      navigate("/checkout", {replace: true});
+    };
+    if (!isAuthenticated) {
+      setError("Tu sesión no está disponible para verificar el pago.");
+      cleanOpenpayUrl();
+      return;
+    }
+
+    if (!orderId || !transactionId) {
+      setError( "Openpay regresó sin la información necesaria para verificar el pago." );
+      cleanOpenpayUrl();
+      return;
+    }
+
+    let cancelled = false;
+    const verifyPayment = async () => {
+      setVerifyingPayment(true);
+      setError(null);
+      try {
+        const { data } = await apiClient.get(
+          "/payments/openpay/verify",
+          {
+            params: {order_id: Number(orderId), transaction_id: transactionId},
+          }
+        );
+
+        if (cancelled) return;
+        console.log( "Resultado verificación Openpay:", data );
+
+        if (data.payment_status === "paid") {
+          clearCart();
+          setShowPayment(false);
+          setOrderData(null);
+          setNotice( "Recibimos tu pago. ¡Gracias por tu compra!");
+          return;
+        }
+
+        if (data.payment_status === "processing") {
+          setError( "Openpay todavía está procesando tu pago. No vuelvas a realizarlo." );
+          return;
+        }
+
+        setError( data.message || "La transacción no pudo ser completada.");
+
+      } catch (err: any) {
+        console.error( "Error verificando Openpay:", err);
+
+        if (!cancelled) {
+          setError( err.response?.data?.message || "No fue posible verificar el pago con Openpay." );
+        }
+
+      } finally {
+        if (!cancelled) {
+          setVerifyingPayment(false);
+          cleanOpenpayUrl();
+        }
+      }
+    };
+    verifyPayment();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    location.search,
+    authLoading,
+    isAuthenticated
+  ]);
 
   const updateField = (field: keyof typeof form, value: string) => {
     setForm((c) => ({ ...c, [field]: value }));
@@ -213,7 +293,7 @@ const CheckoutPage = () => {
         shipping_state: form.state?.trim() || "",
         shipping_municipality: form.municipality?.trim() || "",
         shipping_postal_code: form.postal_code?.trim() || "",
-        payment_method: "card",
+        payment_method: "openpay",
       };
 
       if (isAuthenticated) {
@@ -260,16 +340,27 @@ const CheckoutPage = () => {
     }
   };
 
-  const handlePaymentSuccess = async (paymentData: { paymentMethod: string; customerName: string; customerEmail: string }) => {
-    if (orderData) {
-      await apiClient.put(`/orders/${orderData.orderId}/email`, { customer_email: paymentData.customerEmail });
-    }
-    clearCart();
-    setShowPayment(false);
-    setOrderData(null);
-    setNotice("¡Tu pago ha sido procesado exitosamente! Recibirás un correo con los detalles de tu pedido.");
-  };
+  const handlePaymentSuccess = (result: OpenpayChargeResult) => {
+  console.log("Pago Openpay exitoso:", result);
 
+  clearCart();
+  setShowPayment(false);
+  setOrderData(null);
+
+  setNotice(
+    "Recibimos tu pago. ¡Gracias por tu compra!"
+  );
+};
+  if (verifyingPayment) {
+    return (
+      <main style={{ minHeight: "70vh", ...flexCenter, ...baseFont }}>
+        <div style={{ textAlign: "center" }}>
+          <h1>Verificando pago</h1>
+          <p style={{ color: "#666" }}> Estamos confirmando tu transacción con Openpay... </p>
+        </div>
+      </main>
+    );
+  }
   if (authLoading) return <main style={{ minHeight: "60vh", ...flexCenter, ...baseFont }}>Cargando checkout...</main>;
 
   if (cart.length === 0 && !notice) {
@@ -495,17 +586,27 @@ const CheckoutPage = () => {
         <PaymentModal
           isOpen={showPayment}
           total={orderData.total}
-          cart={cart} 
+          cart={cart}
           customerName={orderData.customerName}
           customerEmail={form.email}
           onClose={() => {
             setShowPayment(false);
             setOrderData(null);
           }}
-          onBack={() => {
-            setShowPayment(false);
+          onBack={() => {setShowPayment(false);}}
+
+          onPay={async ({tokenId,deviceSessionId}) => {
+            const { data } = await apiClient.post("/payments/openpay/charge",{
+                order_id: orderData.orderId,
+                token_id: tokenId,
+                device_session_id: deviceSessionId,
+              }
+            );
+            console.log("Respuesta Openpay:",data);
+            return data;
           }}
-          onPay={handlePaymentSuccess}
+
+          onSuccess={handlePaymentSuccess}
         />
       )}
     </main>
