@@ -240,6 +240,12 @@ export default function StoreHome() {
   const [contactLoading, setContactLoading] = useState(false);
   const [contactSent, setContactSent] = useState(false);
   const [contactError, setContactError] = useState<string | null>(null);
+  const [offerCategory, setOfferCategory] = useState('Todas');
+  const [offerSort, setOfferSort] = useState('relevance');
+  const [offerPage, setOfferPage] = useState(1);
+  const [catalogCategory, setCatalogCategory] = useState('Todas');
+  const [catalogSubcategory, setCatalogSubcategory] = useState('Todas');
+  const [categorySubcategory, setCategorySubcategory] = useState('Todas');
   const [contactForm, setContactForm] = useState({
     first_name: "",
     last_name: "",
@@ -321,7 +327,7 @@ export default function StoreHome() {
       ? 'nuevo'
       : null;
   const isHomePage = activeCategory === 'All' && !statusFilter;
-  const statusTitle = statusFilter === 'oferta' ? 'Ofertas' : statusFilter === 'nuevo' ? 'Novedades' : activeCategory;
+  const isCatalogPage = location.pathname === '/catalogo';
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -377,6 +383,21 @@ export default function StoreHome() {
     normalizeSlug(subcategory.slug) === selectedSubcategorySlug
   );
 
+  const categorySubcategories = subcategories.filter((subcategory: any) =>
+    selectedCategory ? String(subcategory.category_id) === String(selectedCategory.id) : true
+  );
+  const categoryProducts = products.filter((product: any) => {
+    const categoryMatches = selectedCategory
+      ? String(product.category_id) === String(selectedCategory.id)
+      : String(product.category).toLowerCase() === activeCategory.toLowerCase();
+    if (!categoryMatches || categorySubcategory === 'Todas') return categoryMatches;
+    return String(product.subcategory_id) === String(categorySubcategory);
+  });
+
+  useEffect(() => {
+    setCategorySubcategory(selectedSubcategory?.id ? String(selectedSubcategory.id) : 'Todas');
+  }, [categoryName, location.search, selectedSubcategory?.id]);
+
   const filteredProducts = statusFilter
     ? products.filter((product: Product) => product.status === statusFilter)
     : isHomePage
@@ -402,6 +423,39 @@ export default function StoreHome() {
 
       return productSubcategoryMatches || normalizeSlug(productSubcategoryName) === selectedSubcategorySlug;
     });
+
+  const catalogStatus = statusFilter || 'oferta';
+  const catalogStatusTitle = catalogStatus === 'nuevo' ? 'Novedades' : 'Ofertas de temporada';
+  const catalogStatusEyebrow = catalogStatus === 'nuevo' ? 'Recién llegados' : 'Selección especial';
+  const offerCategoryItems = categories.map((category: any) => ({
+    ...category,
+    offerCount: products.filter((product: any) => product.status === catalogStatus && product.category_id === category.id).length,
+  }));
+  const offerProducts = products
+    .filter((product: any) => product.status === catalogStatus)
+    .filter((product: any) => offerCategory === 'Todas' || String(product.category).toLowerCase() === offerCategory.toLowerCase());
+  const sortedOfferProducts = [...offerProducts].sort((first, second) => {
+    if (offerSort === 'price-asc') return Number(first.price) - Number(second.price);
+    if (offerSort === 'price-desc') return Number(second.price) - Number(first.price);
+    if (offerSort === 'name') return String(first.name).localeCompare(String(second.name));
+    return 0;
+  });
+  const offerPageSize = 8;
+  const offerPageCount = Math.max(1, Math.ceil(sortedOfferProducts.length / offerPageSize));
+  const visibleOfferProducts = sortedOfferProducts.slice((offerPage - 1) * offerPageSize, offerPage * offerPageSize);
+
+  const catalogSubcategoryOptions = subcategories.filter((subcategory: any) =>
+    catalogCategory === 'Todas' || String(subcategory.category_id) === String(catalogCategory)
+  );
+  const catalogProducts = products.filter((product: any) => {
+    const categoryMatches = catalogCategory === 'Todas' || String(product.category_id) === String(catalogCategory);
+    if (!categoryMatches || catalogSubcategory === 'Todas') return categoryMatches;
+    return String(product.subcategory_id) === String(catalogSubcategory);
+  });
+
+  useEffect(() => {
+    setOfferPage(1);
+  }, [offerCategory, offerSort]);
 
   const handleCheckout = () => {
     navigate('/checkout');
@@ -468,7 +522,7 @@ export default function StoreHome() {
         <div className="announcement-bar">
           <div className="shell announcement-bar__inner">
             <p><Truck size={14} /> Envíos a todo México</p>
-            <p>Calidad y comodidad desde 1980</p>
+           
             <div className="announcement-socials" aria-label="Redes sociales">
               <a href="#instagram" aria-label="Instagram"><InstagramIcon size={13} /></a>
               <a href="#facebook" aria-label="Facebook"><FacebookIcon size={13} /></a>
@@ -676,7 +730,48 @@ export default function StoreHome() {
       </header>
 
       <main id="contenido">
-        {isHomePage ? (
+        {isCatalogPage ? (
+          <section className="full-catalog shell section-block">
+            <div className="full-catalog__heading">
+              <div>
+                <span className="offers-catalog__eyebrow">Toda la colección</span>
+                <h1>Catálogo completo</h1>
+                <p>Explora todo nuestro calzado y encuentra tu próximo par.</p>
+              </div>
+              <Link className="offers-catalog__back" to="/">Volver al inicio <ChevronRight size={16} /></Link>
+            </div>
+            <div className="full-catalog__filters" aria-label="Filtros del catálogo">
+              <label>
+                Categoría
+                <select
+                  value={catalogCategory}
+                  onChange={(event) => {
+                    setCatalogCategory(event.target.value);
+                    setCatalogSubcategory('Todas');
+                  }}
+                >
+                  <option value="Todas">Todas las categorías</option>
+                  {categories.map((category: any) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                </select>
+              </label>
+              <label>
+                Subcategoría
+                <select value={catalogSubcategory} onChange={(event) => setCatalogSubcategory(event.target.value)}>
+                  <option value="Todas">Todas las subcategorías</option>
+                  {catalogSubcategoryOptions.map((subcategory: any) => <option key={subcategory.id} value={subcategory.id}>{subcategory.name}</option>)}
+                </select>
+              </label>
+              <span className="full-catalog__count">{catalogProducts.length} productos</span>
+            </div>
+            <div className="product-grid full-catalog__grid">
+              {catalogProducts.length > 0 ? catalogProducts.map((product: any) => (
+                <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />
+              )) : (
+                <p className="offers-results__empty">No hay productos con estos filtros.</p>
+              )}
+            </div>
+          </section>
+        ) : isHomePage ? (
           <>
             <section className="hero shell" aria-label="Colecciones destacadas">
               <div
@@ -690,7 +785,7 @@ export default function StoreHome() {
                 <p>{activeHero.description}</p>
                 <div className="hero__actions">
                   <a className="button button--primary" href="#productos">Ver colección <ArrowRight size={17} /></a>
-                  <a className="button button--light" href="#ofertas">Ver ofertas</a>
+                  <Link className="button button--light" to="/ofertas">Ver ofertas</Link>
                 </div>
               </div>
               <div className="hero__since"><span>Desde</span><strong>1980</strong></div>
@@ -746,9 +841,9 @@ export default function StoreHome() {
 
             {/* PRODUCTOS */}
             <section className="products shell section-block" id="productos">
-              <SectionTitle title="Productos destacados" action="Ver catálogo completo" />
+              <SectionTitle title="Productos destacados" action="Ver catálogo completo" onActionClick={() => navigate('/catalogo')} />
               <div className="product-grid">
-                {products.map((product: any) => (
+                {products.slice(0, 10).map((product: any) => (
                   <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />
                 ))}
               </div>
@@ -757,7 +852,7 @@ export default function StoreHome() {
             {/* PROMOCIONES */}
             <section className="promo-grid shell section-block" id="ofertas" aria-label="Promociones">
               <article className="promo promo--dark">
-                <div><span>Ofertas especiales</span><h2>Hasta <strong>40%</strong> de descuento</h2><a className="button button--primary" href="#productos">Ver ofertas <ArrowRight size={16} /></a></div>
+                <div><span>Ofertas especiales</span><h2>Hasta <strong>40%</strong> de descuento</h2><Link className="button button--primary" to="/ofertas">Ver ofertas <ArrowRight size={16} /></Link></div>
                 <img src="https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=700&q=88" alt="Zapato rojo de oferta" loading="lazy" />
               </article>
               <article className="promo promo--light">
@@ -825,24 +920,168 @@ export default function StoreHome() {
             </section>
           </>
         ) : (
-          <section className="products shell section-block" style={{ paddingTop: '40px', minHeight: '60vh' }}>
-            <SectionTitle
-              title={statusFilter ? statusTitle : `Calzado para ${activeCategory}`}
-              action="Volver al inicio"
-              onActionClick={() => navigate('/')}
-            />
-            <div className="product-grid">
-              {filteredProducts.length > 0 ? (
-                filteredProducts.map((product: any) => (
-                  <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />
-                ))
-              ) : (
-                <p style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#888' }}>
-                  No hay productos en esta categoría aún.
-                </p>
-              )}
-            </div>
-          </section>
+          statusFilter === 'oferta' || statusFilter === 'nuevo' ? (
+            <section className="offers-catalog shell section-block">
+              <div className="offers-catalog__heading">
+                <div>
+                  <span className="offers-catalog__eyebrow">{catalogStatusEyebrow}</span>
+                  <h1>{catalogStatusTitle}</h1>
+                  <p>{offerProducts.length} artículos disponibles</p>
+                </div>
+                <button className="offers-catalog__back" type="button" onClick={() => navigate('/')}>
+                  Volver al inicio <ChevronRight size={16} />
+                </button>
+              </div>
+
+              <div className="offers-catalog__categories" aria-label="Categorías de ofertas">
+                <button
+                  type="button"
+                  className={`offers-category ${offerCategory === 'Todas' ? 'is-active' : ''}`}
+                  onClick={() => setOfferCategory('Todas')}
+                >
+                  <span className="offers-category__image offers-category__image--all">%</span>
+                  <strong>Todas</strong>
+                </button>
+                {offerCategoryItems.map((category: any) => (
+                  <button
+                    type="button"
+                    key={category.id || category.name}
+                    className={`offers-category ${offerCategory === category.name ? 'is-active' : ''}`}
+                    onClick={() => setOfferCategory(category.name)}
+                  >
+                    <span className="offers-category__image">
+                      <img src={category.image} alt="" />
+                    </span>
+                    <strong>{category.name}</strong>
+                    <small>{category.offerCount}</small>
+                  </button>
+                ))}
+              </div>
+
+              <div className="offers-catalog__layout">
+                <aside className="offers-filters" aria-label="Filtros de ofertas">
+                  <div className="offers-filters__title">
+                    <strong>Filtrar por</strong>
+                    <button type="button" onClick={() => setOfferCategory('Todas')}>Limpiar</button>
+                  </div>
+                  <div className="offers-filter-group">
+                    <strong>Categoría</strong>
+                    <label className="offers-check is-selected">
+                      <input type="checkbox" checked={offerCategory === 'Todas'} onChange={() => setOfferCategory('Todas')} />
+                      <span>{catalogStatusTitle}</span>
+                      <small>{products.filter((product: any) => product.status === catalogStatus).length}</small>
+                    </label>
+                    {offerCategoryItems.map((category: any) => (
+                      <label className="offers-check" key={category.id || category.name}>
+                        <input type="checkbox" checked={offerCategory === category.name} onChange={() => setOfferCategory(category.name)} />
+                        <span>{category.name}</span>
+                        <small>{category.offerCount}</small>
+                      </label>
+                    ))}
+                  </div>
+                </aside>
+
+                <div className="offers-results">
+                  <div className="offers-results__toolbar">
+                    <span>{sortedOfferProducts.length} resultados</span>
+                    <label>
+                      Ordenar por
+                      <select value={offerSort} onChange={(event) => setOfferSort(event.target.value)}>
+                        <option value="relevance">Relevancia</option>
+                        <option value="price-asc">Precio: menor a mayor</option>
+                        <option value="price-desc">Precio: mayor a menor</option>
+                        <option value="name">Nombre</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div className="offers-results__grid">
+                    {visibleOfferProducts.length > 0 ? visibleOfferProducts.map((product: any) => (
+                      <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />
+                    )) : (
+                      <p className="offers-results__empty">No hay productos disponibles en esta categoría.</p>
+                    )}
+                  </div>
+                  {offerPageCount > 1 && (
+                    <nav className="offers-pagination" aria-label="Paginación de ofertas">
+                      <button type="button" disabled={offerPage === 1} onClick={() => setOfferPage((page) => page - 1)} aria-label="Página anterior"><ChevronLeft size={18} /></button>
+                      {Array.from({ length: offerPageCount }, (_, index) => index + 1).map((page) => (
+                        <button type="button" key={page} className={offerPage === page ? 'is-active' : ''} onClick={() => setOfferPage(page)}>{page}</button>
+                      ))}
+                      <button type="button" disabled={offerPage === offerPageCount} onClick={() => setOfferPage((page) => page + 1)} aria-label="Página siguiente"><ChevronRight size={18} /></button>
+                    </nav>
+                  )}
+                </div>
+              </div>
+            </section>
+          ) : categoryName ? (
+            <section className="category-catalog shell section-block">
+              <div className="category-catalog__heading">
+                <div>
+                  <span className="offers-catalog__eyebrow">Colección de calzado</span>
+                  <h1>Calzado para {activeCategory}</h1>
+                  <p>{categoryProducts.length} productos disponibles</p>
+                </div>
+                <button className="offers-catalog__back" type="button" onClick={() => navigate('/')}>
+                  Volver al inicio <ChevronRight size={16} />
+                </button>
+              </div>
+
+              <div className="category-catalog__layout">
+                <div className="category-catalog__products">
+                  <div className="offers-results__toolbar">
+                    <span>{categoryProducts.length} resultados</span>
+                    <span>{categorySubcategory === 'Todas' ? 'Toda la categoría' : categorySubcategories.find((item: any) => String(item.id) === String(categorySubcategory))?.name}</span>
+                  </div>
+                  <div className="product-grid">
+                    {categoryProducts.length > 0 ? categoryProducts.map((product: any) => (
+                      <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />
+                    )) : (
+                      <p className="offers-results__empty">No hay productos en esta subcategoría.</p>
+                    )}
+                  </div>
+                </div>
+
+                <aside className="category-catalog__sidebar" aria-label={`Subcategorías de ${activeCategory}`}>
+                  <div className="category-catalog__sidebar-heading">
+                    <strong>Filtrar por</strong>
+                    <button type="button" onClick={() => setCategorySubcategory('Todas')}>Limpiar</button>
+                  </div>
+                  <strong className="category-catalog__sidebar-title">Subcategorías</strong>
+                  <label className="offers-check">
+                    <input type="checkbox" checked={categorySubcategory === 'Todas'} onChange={() => setCategorySubcategory('Todas')} />
+                    <span>Todos</span>
+                    <small>{products.filter((product: any) => selectedCategory ? String(product.category_id) === String(selectedCategory.id) : String(product.category).toLowerCase() === activeCategory.toLowerCase()).length}</small>
+                  </label>
+                  {categorySubcategories.map((subcategory: any) => (
+                    <label className="offers-check" key={subcategory.id}>
+                      <input type="checkbox" checked={String(categorySubcategory) === String(subcategory.id)} onChange={() => setCategorySubcategory(String(subcategory.id))} />
+                      <span>{subcategory.name}</span>
+                      <small>{products.filter((product: any) => String(product.subcategory_id) === String(subcategory.id)).length}</small>
+                    </label>
+                  ))}
+                </aside>
+              </div>
+            </section>
+          ) : (
+            <section className="products shell section-block" style={{ paddingTop: '40px', minHeight: '60vh' }}>
+              <SectionTitle
+                title={`Calzado para ${activeCategory}`}
+                action="Volver al inicio"
+                onActionClick={() => navigate('/')}
+              />
+              <div className="product-grid">
+                {filteredProducts.length > 0 ? (
+                  filteredProducts.map((product: any) => (
+                    <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />
+                  ))
+                ) : (
+                  <p style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#888' }}>
+                    No hay productos en esta categoría aún.
+                  </p>
+                )}
+              </div>
+            </section>
+          )
         )}
       </main>
 
@@ -872,9 +1111,9 @@ export default function StoreHome() {
           </div>
           <div className="footer__contact">
             <h2>Contacto</h2>
-            <p><Headphones /> +52 55 #### ####</p>
-            <p><Mail /> hola@zapateriaangelita.com</p>
-            <p><MapPin /> México</p>
+            <p><Headphones /> +52 5578636092</p>
+            <p><Mail /> soporte@zapateriangelita.com</p>
+            <p><MapPin /> Leando Valle 8 Colonia centro CP 61100,Hidalgo - Michoacán. México</p>
             <p><Clock3 /> Lun–Sáb: 9:00–19:00</p>
           </div>
         </div>

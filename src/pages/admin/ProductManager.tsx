@@ -24,6 +24,7 @@ const ProductManager = () => {
     const [colorImageFiles, setColorImageFiles] = useState<Record<number, File[]>>({});
     const [colorImagePreviews, setColorImagePreviews] = useState<Record<number, string[]>>({});
     const [formData, setFormData] = useState<Product>({
+        product_code: '',
         name: '',
         category: '',
         category_id: undefined,
@@ -208,6 +209,7 @@ const ProductManager = () => {
             setEditingProduct(null);
             setFormData({
                 name: '',
+                product_code: '',
                 category: '',
                 category_id: undefined,
                 subcategory_id: undefined,
@@ -336,6 +338,9 @@ const ProductManager = () => {
             const data = new FormData();
 
             data.append('name', String(formData.name));
+            if (formData.product_code?.trim()) {
+                data.append('product_code', formData.product_code.trim());
+            }
             data.append('category_id', String(formData.category_id || ''));
             data.append('price', String(formData.price));
             data.append('stock', String(formData.stock));
@@ -547,10 +552,25 @@ const ProductManager = () => {
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 lg:p-10 w-full max-w-5xl max-h-[94vh] overflow-y-auto shadow-2xl border border-gray-200">
-                        <div className="flex justify-between items-center mb-8 pb-4 border-b border-gray-50">
+                        <div className="grid grid-cols-[1fr_auto_auto] items-start gap-4 mb-8 pb-4 border-b border-gray-50">
                             <div>
                                 <h2 className="text-2xl font-black text-black tracking-tight">{editingProduct ? 'Editar Producto' : 'Nuevo Producto'}</h2>
                                 <p className="text-[10px] text-store-red font-bold uppercase tracking-widest mt-1">Completa los campos para actualizar el catálogo</p>
+                            </div>
+                            <div className="w-44 space-y-1">
+                                <label htmlFor="product_code" className="block text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                    Código de producto
+                                </label>
+                                <input
+                                    id="product_code"
+                                    type="text"
+                                    name="product_code"
+                                    value={formData.product_code || ''}
+                                    onChange={handleInputChange}
+                                    maxLength={100}
+                                    className="w-full rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5 text-sm font-semibold outline-none transition-all focus:border-store-red focus:ring-2 focus:ring-store-red/20"
+                                    placeholder="Ej: ZAP-001"
+                                />
                             </div>
                             <button onClick={handleCloseModal} className="p-2 bg-gray-50 text-gray-500 rounded-full hover:bg-red-50 hover:text-red-500 transition-all">
                                 <X size={20} />

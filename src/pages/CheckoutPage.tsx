@@ -76,7 +76,6 @@ const CheckoutPage = () => {
     total: number;
     customerName: string;
   } | null>(null);
-
   const { states, municipalities, cities, loading: ubigeoLoading } = useUbigeo(form.state, form.municipality);
 
   useEffect(() => {
@@ -543,6 +542,17 @@ const CheckoutPage = () => {
             >
               {submitting ? "Registrando pedido..." : `Confirmar compra · ${money.format(cartTotal)}`}
             </button>
+
+            <p style={{ margin: "14px 0 0", color: "#666", fontSize: "12px", lineHeight: 1.5, textAlign: "center" }}>
+              Al continuar, aceptas los{" "}
+              <Link to="/terms" style={{ color: "#e30613", fontWeight: 700 }}>
+                Términos y condiciones
+              </Link>{" "}
+              y el{" "}
+              <Link to="/privacy" style={{ color: "#e30613", fontWeight: 700 }}>
+                Aviso de privacidad
+              </Link>.
+            </p>
           </form>
           
           <aside className="checkout-page__summary" style={cardStyle}>
