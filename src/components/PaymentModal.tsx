@@ -147,10 +147,82 @@ const PaymentModal = ({  isOpen, total, cart = [], customerName, customerEmail =
         message: "Tu pago no pudo ser realizado, intenta de nuevo.",
       };
     };
+    const getSandboxTestError = (cardNumber: string) => {
+  if (
+    !import.meta.env.DEV ||
+    import.meta.env.VITE_OPENPAY_SIMULATE_ERRORS !== "true"
+  ) {
+    return null;
+  }
+
+  const card = cardNumber.replace(/\s/g, "");
+
+  const sandboxCards: Record<
+    string,
+    {
+      code: string;
+      title: string;
+      message: string;
+    }
+  > = {
+    "4222222222222220": {
+      code: "3001",
+      title: "Tarjeta rechazada",
+      message:
+        "El pago no pudo ser realizado, intenta de nuevo.",
+    },
+
+    "4000000000000069": {
+      code: "3002",
+      title: "Transacción fallida",
+      message:
+        "Tu pago no pudo ser realizado, intenta de nuevo.",
+    },
+
+    "4444444444444448": {
+      code: "3003",
+      title: "Fondos insuficientes",
+      message:
+        "Tu pago no pudo ser realizado. Intenta con otra tarjeta",
+    },
+
+    "4000000000000119": {
+      code: "3004",
+      title: "Tarjeta rechazada",
+      message:
+        "El pago no pudo ser realizado, intenta de nuevo.",
+    },
+
+    "4000000000000044": {
+      code: "3005",
+      title: "Tarjeta rechazada",
+      message:
+        "El pago no pudo ser realizado, intenta de nuevo.",
+    },
+  };
+
+  return sandboxCards[card] ?? null;
+};
   const submitPayment = (event: React.FormEvent) => {
   event.preventDefault();
 
   const cleanCardNumber = cardNumber.replace(/\s/g, "");
+  const sandboxError =
+  getSandboxTestError(cleanCardNumber);
+
+if (sandboxError) {
+  console.log(
+    "Simulación Sandbox Openpay:",
+    sandboxError.code
+  );
+
+  setPaymentNotice(null);
+  setProcessing(false);
+  setErrorTitle(sandboxError.title);
+  setError(sandboxError.message);
+
+  return;
+}
 
   if (
     cleanCardNumber.length < 16 ||

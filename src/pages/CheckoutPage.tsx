@@ -58,7 +58,6 @@ const onlyLettersAndSpaces = (value: string) => value.replace(/[^\p{L}\s]/gu, ""
 const onlyDigits = (value: string) => value.replace(/\D/g, "");
 
 const CheckoutPage = () => {
-  console.log("CHECKOUT NUEVO OPENPAY USD 2026");
   const location = useLocation();
   const navigate = useNavigate();
   const [verifyingPayment, setVerifyingPayment] = useState(false);
