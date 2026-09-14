@@ -147,7 +147,7 @@ export interface Order {
     shipping_phone?: string;
     created_at?: string;
     user?: { id: number; name: string; email: string; phone?: string };
-    items?: Array<{ product_name?: string; quantity: number }>;
+    items?: Array<{ product_name?: string; size?: string | null; color?: string | null; quantity: number; unit_price?: number | string }>;
 }
 
 
