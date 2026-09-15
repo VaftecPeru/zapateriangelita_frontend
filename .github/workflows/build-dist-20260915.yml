@@ -1,0 +1,33 @@
+name: Build deploy dist 20260915
+
+on:
+  push:
+    branches:
+      - build-dist-20260915
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production
+        run: npm run build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zapateriangelita-dist-main-20260915
+          path: dist
+          if-no-files-found: error
