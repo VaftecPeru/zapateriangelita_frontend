@@ -186,7 +186,20 @@ export const brandService = {
 
 export const productService = {
     getAll: () => apiClient.get<Product[]>('/products'),
-    getById: (id: number) => apiClient.get<Product>(`/products/${id}`),
+    getById: async (id: number) => {
+        const response = await apiClient.get<Product>(`/products/${id}`);
+        const data = response.data as Product & { subcategory?: unknown };
+
+        return {
+            ...response,
+            data: {
+                ...data,
+                category: data.category ?? 'Calzado',
+                brand: data.brand ?? 'Sin marca',
+                subcategory: data.subcategory ?? 'Sin subcategoría',
+            } as Product,
+        };
+    },
     create: (data: Product | FormData) => apiClient.post<Product>('/products', data),
     update: (id: number, data: Partial<Product> | FormData) => {
         if (data instanceof FormData) {
