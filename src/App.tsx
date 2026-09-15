@@ -17,10 +17,20 @@ import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CartProvider } from './hooks/useCart';
 
-
-
 const AppContent = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-minimal-beige flex items-center justify-center">
+        <div className="animate-pulse text-sm font-black uppercase tracking-widest text-gray-400">
+          Cargando sesión...
+        </div>
+      </div>
+    );
+  }
+
+  const fallbackPath = isAuthenticated && user?.role === 'admin' ? '/admin/dashboard' : '/';
 
   return (
     <div className="min-h-screen bg-minimal-beige flex flex-col">
@@ -51,12 +61,16 @@ const AppContent = () => {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/admin/dashboard" element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          } />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
           <Route path="/contact-advisor" element={<ContactAdvisorPage />} />
+          <Route path="*" element={<Navigate to={fallbackPath} replace />} />
         </Routes>
       </div>
     </div>
