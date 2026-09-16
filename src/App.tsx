@@ -53,7 +53,16 @@ const AppContent = () => {
           <Route path="/catalogo" element={<HomePage />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/producto/:productId" element={<ProductDetailPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route
+            path="/checkout"
+            element={
+              isAuthenticated ? (
+                <CheckoutPage />
+              ) : (
+                <Navigate to="/login" replace state={{ from: '/checkout' }} />
+              )
+            }
+          />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/login" element={<LoginPage />} />
