@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { CheckCircle, CreditCard, LockKeyhole, Mail, ShieldCheck, X } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle,
+  CreditCard,
+  LockKeyhole,
+  Mail,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import apiClient from "../services/apiClient";
 
 export interface OpenpayChargeResult {
@@ -24,9 +32,18 @@ interface PaymentModalProps {
   customerEmail?: string;
   onClose: () => void;
   onBack: () => void;
-  onPay: (paymentData: { tokenId: string; deviceSessionId: string }) => Promise<OpenpayChargeResult>;
+  onPay: (paymentData: {
+    tokenId: string;
+    deviceSessionId: string;
+  }) => Promise<OpenpayChargeResult>;
   onSuccess: (result: OpenpayChargeResult) => void;
 }
+
+type PaymentNotice = {
+  title: string;
+  message: string;
+  tone: "success" | "info";
+};
 
 const fieldStyle = {
   width: "100%",
@@ -47,6 +64,121 @@ const money = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
 });
 
+const formatCardNumber = (value: string) =>
+  value
+    .replace(/\D/g, "")
+    .slice(0, 16)
+    .replace(/(.{4})/g, "$1 ")
+    .trim();
+
+const formatExpiry = (value: string) =>
+  value
+    .replace(/\D/g, "")
+    .slice(0, 4)
+    .replace(/^(\d{2})(\d)/, "$1/$2");
+
+const isExpiryInPast = (month: string, year: string) => {
+  const monthNumber = Number(month);
+  const yearNumber = Number(year);
+  if (!monthNumber || monthNumber < 1 || monthNumber > 12 || year.length !== 2) {
+    return true;
+  }
+
+  const now = new Date();
+  const currentYear = now.getFullYear() % 100;
+  const currentMonth = now.getMonth() + 1;
+
+  return yearNumber < currentYear || (yearNumber === currentYear && monthNumber < currentMonth);
+};
+
+const getFriendlyPaymentError = (code?: number | string, message?: string) => {
+  const errorCode = String(code ?? "");
+  const text = String(message ?? "").toLowerCase();
+
+  if (errorCode === "1002" || errorCode === "401") {
+    return {
+      title: "Pasarela no autenticada",
+      message:
+        "Openpay no pudo validar las credenciales del comercio. Verifica que Merchant ID y llaves pertenezcan al mismo ambiente.",
+    };
+  }
+
+  if (errorCode === "3003" || text.includes("fondos insuficientes") || text.includes("insufficient funds")) {
+    return {
+      title: "Fondos insuficientes",
+      message: "Tu pago no pudo ser realizado. Intenta con otra tarjeta.",
+    };
+  }
+
+  if (
+    ["3001", "3004", "3005", "3009", "3010", "3011", "3012"].includes(errorCode) ||
+    text.includes("declin") ||
+    text.includes("rechaz") ||
+    text.includes("robada") ||
+    text.includes("fraudulent") ||
+    text.includes("reportada como perdida") ||
+    text.includes("restringida")
+  ) {
+    return {
+      title: "Tarjeta rechazada",
+      message: "El pago no pudo ser realizado, intenta de nuevo.",
+    };
+  }
+
+  if (errorCode === "2004") {
+    return {
+      title: "Tarjeta rechazada",
+      message: "El número de tarjeta no es válido. Verifica los datos e intenta nuevamente.",
+    };
+  }
+
+  if (["2005", "3002"].includes(errorCode) || text.includes("expir") || text.includes("venc")) {
+    return {
+      title: "Transacción fallida",
+      message: "La tarjeta está vencida. Verifica la fecha de expiración e intenta nuevamente.",
+    };
+  }
+
+  if (["2006", "2009"].includes(errorCode)) {
+    return {
+      title: "Transacción fallida",
+      message: "Verifica el código de seguridad (CVV) de la tarjeta e intenta nuevamente.",
+    };
+  }
+
+  if (errorCode === "2007") {
+    return {
+      title: "Transacción fallida",
+      message: "La tarjeta de prueba solo puede utilizarse en el ambiente Sandbox de Openpay.",
+    };
+  }
+
+  if (errorCode === "3002") {
+    return {
+      title: "Transacción fallida",
+      message: "Tu pago no pudo ser realizado, intenta de nuevo.",
+    };
+  }
+
+  if (
+    ["1000", "1004", "1007", "500", "502", "503", "504"].includes(errorCode) ||
+    text.includes("network") ||
+    text.includes("timeout") ||
+    text.includes("communication") ||
+    text.includes("comunicación")
+  ) {
+    return {
+      title: "Transacción fallida",
+      message: "Ocurrió un error, intenta de nuevo o comunícate con tu banco.",
+    };
+  }
+
+  return {
+    title: "Transacción fallida",
+    message: "Tu pago no pudo ser realizado, intenta de nuevo.",
+  };
+};
+
 const PaymentModal = ({
   isOpen,
   total,
@@ -66,7 +198,7 @@ const PaymentModal = ({
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorTitle, setErrorTitle] = useState<string | null>(null);
-  const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
+  const [paymentNotice, setPaymentNotice] = useState<PaymentNotice | null>(null);
   const [deviceSessionId, setDeviceSessionId] = useState("");
   const [openpayReady, setOpenpayReady] = useState(false);
   const [sandboxMode, setSandboxMode] = useState<boolean | null>(null);
@@ -130,106 +262,45 @@ const PaymentModal = ({
 
   if (!isOpen) return null;
 
-  const formatCardNumber = (value: string) =>
-    value
-      .replace(/\D/g, "")
-      .slice(0, 16)
-      .replace(/(.{4})/g, "$1 ")
-      .trim();
-
-  const formatExpiry = (value: string) =>
-    value
-      .replace(/\D/g, "")
-      .slice(0, 4)
-      .replace(/^(\d{2})(\d)/, "$1/$2");
-
   const displayTotal = money.format(Number(total));
-
-  const getFriendlyPaymentError = (code?: number | string, message?: string) => {
-    const errorCode = String(code ?? "");
-
-    if (errorCode === "1002" || errorCode === "401") {
-      return {
-        title: "Pasarela no autenticada",
-        message:
-          "Openpay no pudo validar las credenciales del comercio. Verifica que Merchant ID y llave pública pertenezcan al mismo ambiente de pruebas o producción.",
-      };
-    }
-
-    if (errorCode === "3003") {
-      return {
-        title: "Fondos insuficientes",
-        message: "Tu pago no pudo ser realizado. Intenta con otra tarjeta.",
-      };
-    }
-
-    if (["3001", "3004", "3005"].includes(errorCode)) {
-      return {
-        title: "Tarjeta rechazada",
-        message: "El pago no pudo ser realizado, intenta de nuevo.",
-      };
-    }
-
-    if (errorCode === "3002") {
-      return {
-        title: "Transacción fallida",
-        message: "Tu pago no pudo ser realizado, intenta de nuevo.",
-      };
-    }
-
-    if (["502", "503", "504"].includes(errorCode)) {
-      return {
-        title: "Transacción fallida",
-        message: "Ocurrió un error, intenta de nuevo o comunícate con tu banco.",
-      };
-    }
-
-    const text = String(message ?? "").toLowerCase();
-    if (
-      text.includes("network") ||
-      text.includes("timeout") ||
-      text.includes("communication") ||
-      text.includes("comunicación")
-    ) {
-      return {
-        title: "Transacción fallida",
-        message: "Ocurrió un error, intenta de nuevo o comunícate con tu banco.",
-      };
-    }
-
-    return {
-      title: "Transacción fallida",
-      message: "Tu pago no pudo ser realizado, intenta de nuevo.",
-    };
-  };
 
   const submitPayment = (event: React.FormEvent) => {
     event.preventDefault();
 
-    // Requisito de certificación: bloquear dobles clics / cobros duplicados.
+    // Certificación Openpay: evita doble clic y cargos duplicados.
     if (processing) return;
 
     const cleanCardNumber = cardNumber.replace(/\s/g, "");
+    const cleanEmail = email.trim();
 
-    if (
-      cleanCardNumber.length !== 16 ||
-      !cardName.trim() ||
-      !email.trim() ||
-      cardExpiry.length !== 5 ||
-      cardCvv.length < 3 ||
-      cardCvv.length > 4
-    ) {
+    if (cleanCardNumber.length < 13 || cleanCardNumber.length > 16) {
       setErrorTitle("Datos incompletos");
-      setError("Completa correctamente los datos de tu tarjeta.");
+      setError("El número de tarjeta debe contener como máximo 16 dígitos.");
+      return;
+    }
+
+    if (!cardName.trim()) {
+      setErrorTitle("Datos incompletos");
+      setError("Ingresa el nombre del titular de la tarjeta.");
+      return;
+    }
+
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setErrorTitle("Datos incompletos");
+      setError("Ingresa un correo electrónico válido.");
+      return;
+    }
+
+    if (cardCvv.length < 3 || cardCvv.length > 4) {
+      setErrorTitle("Datos incompletos");
+      setError("El CVV debe contener 3 o 4 dígitos.");
       return;
     }
 
     const [month, year] = cardExpiry.split("/");
-    const monthNumber = Number(month);
-
-    if (!month || !year || monthNumber < 1 || monthNumber > 12 || year.length !== 2) {
-      setErrorTitle("Datos incompletos");
-      setError("Verifica la fecha de vencimiento en formato MM/AA.");
+    if (cardExpiry.length !== 5 || isExpiryInPast(month, year)) {
+      setErrorTitle("Transacción fallida");
+      setError("Verifica la fecha de vencimiento en formato MM/AA y asegúrate de que la tarjeta no esté vencida.");
       return;
     }
 
@@ -258,9 +329,13 @@ const PaymentModal = ({
           const result = await onPay({ tokenId, deviceSessionId });
 
           if (result.payment_status === "paid") {
-            setPaymentNotice("Recibimos tu pago. ¡Gracias por tu compra!");
+            setPaymentNotice({
+              title: "Transacción exitosa",
+              message: "Recibimos tu pago. ¡Gracias por tu compra!",
+              tone: "success",
+            });
             setProcessing(false);
-            window.setTimeout(() => onSuccess(result), 900);
+            window.setTimeout(() => onSuccess(result), 1800);
             return;
           }
 
@@ -269,9 +344,13 @@ const PaymentModal = ({
             result.requires_redirect &&
             result.redirect_url
           ) {
-            setPaymentNotice(
-              result.message || "Continúa con la verificación 3D Secure para completar tu pago."
-            );
+            setPaymentNotice({
+              title: "Verificación de seguridad",
+              message:
+                result.message ||
+                "Continúa con la verificación 3D Secure para completar tu pago.",
+              tone: "info",
+            });
 
             window.setTimeout(() => {
               window.location.href = result.redirect_url!;
@@ -348,8 +427,18 @@ const PaymentModal = ({
           fontFamily: "Inter, Arial, sans-serif",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "2px 2px 10px" }}>
-          <h2 id="payment-title" style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#222" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "2px 2px 10px",
+          }}
+        >
+          <h2
+            id="payment-title"
+            style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#222" }}
+          >
             <CreditCard size={15} style={{ verticalAlign: "-3px", marginRight: "6px" }} />
             Pago con tarjeta
           </h2>
@@ -358,7 +447,13 @@ const PaymentModal = ({
             disabled={processing}
             onClick={onClose}
             aria-label="Cerrar pago"
-            style={{ border: 0, background: "transparent", color: "#666", cursor: processing ? "not-allowed" : "pointer", padding: "2px" }}
+            style={{
+              border: 0,
+              background: "transparent",
+              color: "#666",
+              cursor: processing ? "not-allowed" : "pointer",
+              padding: "2px",
+            }}
           >
             <X size={16} />
           </button>
@@ -368,52 +463,162 @@ const PaymentModal = ({
           Ingresa los datos de tu tarjeta para completar tu compra.
         </p>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", marginBottom: "8px", background: "#e8f8f4", borderRadius: "8px", color: "#248a7d" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            padding: "10px 12px",
+            marginBottom: "8px",
+            background: "#e8f8f4",
+            borderRadius: "8px",
+            color: "#248a7d",
+          }}
+        >
           <ShieldCheck size={19} />
           <div>
-            <strong style={{ display: "block", fontSize: "11px" }}>Pago seguro · 3D Secure</strong>
+            <strong style={{ display: "block", fontSize: "11px" }}>
+              Pago seguro · 3D Secure
+            </strong>
             <span style={{ display: "block", fontSize: "9px", color: "#6a918a" }}>
               Procesado mediante Openpay México
             </span>
           </div>
-          <strong style={{ marginLeft: "auto", fontSize: "14px", color: "#268d82", letterSpacing: ".2px" }}>
+          <strong
+            style={{
+              marginLeft: "auto",
+              fontSize: "14px",
+              color: "#268d82",
+              letterSpacing: ".2px",
+            }}
+          >
             Openpay <span style={{ fontSize: "9px" }}>by BBVA</span>
           </strong>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", marginBottom: "14px", padding: "7px 9px", border: "1px solid #eee", borderRadius: "7px", background: "#fafafa" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "8px",
+            marginBottom: "14px",
+            padding: "7px 9px",
+            border: "1px solid #eee",
+            borderRadius: "7px",
+            background: "#fafafa",
+          }}
+        >
           <span style={{ color: "#888", fontSize: "9px" }}>Tarjetas aceptadas</span>
-          <div style={{ display: "flex", gap: "6px", alignItems: "center", fontSize: "9px", fontWeight: 800, color: "#555" }}>
-            <span>VISA</span><span>Mastercard</span><span>AMEX</span>
+          <div
+            style={{
+              display: "flex",
+              gap: "6px",
+              alignItems: "center",
+              fontSize: "9px",
+              fontWeight: 800,
+              color: "#555",
+            }}
+          >
+            <span>VISA</span>
+            <span>Mastercard</span>
+            <span>AMEX</span>
           </div>
         </div>
 
         {sandboxMode === true && (
-          <div role="status" style={{ marginBottom: "12px", padding: "8px 10px", background: "#fff8dc", border: "1px solid #f0df9d", borderRadius: "7px", color: "#6b5200", fontSize: "10px" }}>
+          <div
+            role="status"
+            style={{
+              marginBottom: "12px",
+              padding: "8px 10px",
+              background: "#fff8dc",
+              border: "1px solid #f0df9d",
+              borderRadius: "7px",
+              color: "#6b5200",
+              fontSize: "10px",
+            }}
+          >
             Modo de certificación/pruebas Openpay activo. No se realizarán cargos reales.
           </div>
         )}
 
-        <label style={{ display: "block", marginBottom: "10px", color: "#777", fontSize: "10px", fontWeight: 600 }}>
+        <label
+          style={{
+            display: "block",
+            marginBottom: "10px",
+            color: "#777",
+            fontSize: "10px",
+            fontWeight: 600,
+          }}
+        >
           Nombre del titular
-          <input required value={cardName} onChange={(event) => setCardName(event.target.value)} placeholder="Nombre completo" autoComplete="cc-name" style={fieldStyle} />
+          <input
+            required
+            value={cardName}
+            onChange={(event) => setCardName(event.target.value)}
+            placeholder="Nombre completo"
+            autoComplete="cc-name"
+            style={fieldStyle}
+          />
         </label>
 
-        <div style={{ marginBottom: "12px", padding: "11px 12px", border: "1px solid #d9e8ff", borderRadius: "8px", background: "#f7faff" }}>
-          <label style={{ display: "block", color: "#315b91", fontSize: "11px", fontWeight: 700 }}>
+        <div
+          style={{
+            marginBottom: "12px",
+            padding: "11px 12px",
+            border: "1px solid #d9e8ff",
+            borderRadius: "8px",
+            background: "#f7faff",
+          }}
+        >
+          <label
+            style={{
+              display: "block",
+              color: "#315b91",
+              fontSize: "11px",
+              fontWeight: 700,
+            }}
+          >
             <Mail size={14} style={{ verticalAlign: "-3px", marginRight: "5px" }} />
             Correo electrónico *
           </label>
-          <input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="correo@ejemplo.com" autoComplete="email" style={{ ...fieldStyle, marginTop: "7px", borderColor: "#b9d2f5" }} />
-          <span style={{ display: "block", marginTop: "5px", color: "#7892b5", fontSize: "9px" }}>
+          <input
+            required
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="correo@ejemplo.com"
+            autoComplete="email"
+            style={{ ...fieldStyle, marginTop: "7px", borderColor: "#b9d2f5" }}
+          />
+          <span
+            style={{
+              display: "block",
+              marginTop: "5px",
+              color: "#7892b5",
+              fontSize: "9px",
+            }}
+          >
             Recibirás aquí los detalles de tu pedido.
           </span>
         </div>
 
-        <label style={{ display: "block", marginBottom: "10px", color: "#777", fontSize: "10px", fontWeight: 600 }}>
+        <label
+          style={{
+            display: "block",
+            marginBottom: "10px",
+            color: "#777",
+            fontSize: "10px",
+            fontWeight: 600,
+          }}
+        >
           Número de tarjeta
           <div style={{ position: "relative" }}>
-            <CreditCard size={14} style={{ position: "absolute", left: "10px", top: "14px", color: "#aaa" }} />
+            <CreditCard
+              size={14}
+              style={{ position: "absolute", left: "10px", top: "14px", color: "#aaa" }}
+            />
             <input
               required
               value={cardNumber}
@@ -422,65 +627,203 @@ const PaymentModal = ({
               autoComplete="cc-number"
               maxLength={19}
               placeholder="0000 0000 0000 0000"
+              aria-describedby="card-number-help"
               style={{ ...fieldStyle, paddingLeft: "31px" }}
             />
           </div>
+          <span
+            id="card-number-help"
+            style={{ display: "block", marginTop: "4px", color: "#999", fontSize: "8px" }}
+          >
+            Hasta 16 dígitos. Se admiten tarjetas de 15 dígitos como American Express.
+          </span>
         </label>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <label style={{ color: "#777", fontSize: "10px", fontWeight: 600 }}>
             Vencimiento (MM/AA)
-            <input required value={cardExpiry} onChange={(event) => setCardExpiry(formatExpiry(event.target.value))} placeholder="MM/AA" inputMode="numeric" autoComplete="cc-exp" maxLength={5} style={fieldStyle} />
+            <input
+              required
+              value={cardExpiry}
+              onChange={(event) => setCardExpiry(formatExpiry(event.target.value))}
+              placeholder="MM/AA"
+              inputMode="numeric"
+              autoComplete="cc-exp"
+              maxLength={5}
+              style={fieldStyle}
+            />
           </label>
           <label style={{ color: "#777", fontSize: "10px", fontWeight: 600 }}>
             CVV
             <div style={{ position: "relative" }}>
-              <input required value={cardCvv} onChange={(event) => setCardCvv(event.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="•••" inputMode="numeric" autoComplete="cc-csc" maxLength={4} style={fieldStyle} />
-              <LockKeyhole size={13} style={{ position: "absolute", right: "9px", top: "14px", color: "#999" }} />
+              <input
+                required
+                value={cardCvv}
+                onChange={(event) =>
+                  setCardCvv(event.target.value.replace(/\D/g, "").slice(0, 4))
+                }
+                placeholder="•••"
+                inputMode="numeric"
+                autoComplete="cc-csc"
+                maxLength={4}
+                aria-describedby="cvv-help"
+                style={fieldStyle}
+              />
+              <LockKeyhole
+                size={13}
+                style={{ position: "absolute", right: "9px", top: "14px", color: "#999" }}
+              />
             </div>
+            <span
+              id="cvv-help"
+              style={{ display: "block", marginTop: "4px", color: "#999", fontSize: "8px" }}
+            >
+              3 o 4 dígitos.
+            </span>
           </label>
         </div>
 
-        <div style={{ marginTop: "14px", padding: "12px", background: "#f7f7f7", borderRadius: "8px" }}>
-          <h3 style={{ margin: "0 0 9px", fontSize: "11px", color: "#555" }}>Resumen del pago</h3>
+        <div
+          style={{
+            marginTop: "14px",
+            padding: "12px",
+            background: "#f7f7f7",
+            borderRadius: "8px",
+          }}
+        >
+          <h3 style={{ margin: "0 0 9px", fontSize: "11px", color: "#555" }}>
+            Resumen del pago
+          </h3>
           {cart.slice(0, 3).map((item: any, index: number) => (
-            <div key={`${item.product?.id ?? "item"}-${index}`} style={{ display: "flex", justifyContent: "space-between", gap: "10px", padding: "5px 0", borderBottom: "1px solid #e5e5e5", color: "#777", fontSize: "10px" }}>
-              <span>{item.product?.name || "Producto"} x {item.quantity}</span>
+            <div
+              key={`${item.product?.id ?? "item"}-${index}`}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: "10px",
+                padding: "5px 0",
+                borderBottom: "1px solid #e5e5e5",
+                color: "#777",
+                fontSize: "10px",
+              }}
+            >
+              <span>
+                {item.product?.name || "Producto"} x {item.quantity}
+              </span>
               <span>{money.format(Number(item.product?.price || 0))}</span>
             </div>
           ))}
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px", color: "#333", fontSize: "12px", fontWeight: 700 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginTop: "10px",
+              color: "#333",
+              fontSize: "12px",
+              fontWeight: 700,
+            }}
+          >
             <span>Total a pagar</span>
             <strong style={{ fontSize: "20px" }}>{displayTotal}</strong>
           </div>
         </div>
 
         {paymentNotice && (
-          <div role="status" style={{ margin: "11px 0 0", padding: "10px", color: "#12613a", background: "#eefaf3", border: "1px solid #bee8cf", borderRadius: "6px", fontSize: "11px" }}>
+          <div
+            role="status"
+            aria-live="polite"
+            style={{
+              margin: "11px 0 0",
+              padding: "10px",
+              color: paymentNotice.tone === "success" ? "#12613a" : "#315b91",
+              background: paymentNotice.tone === "success" ? "#eefaf3" : "#f2f7ff",
+              border:
+                paymentNotice.tone === "success"
+                  ? "1px solid #bee8cf"
+                  : "1px solid #c9dcf7",
+              borderRadius: "6px",
+              fontSize: "11px",
+            }}
+          >
             <CheckCircle size={14} style={{ verticalAlign: "-3px", marginRight: "5px" }} />
-            {paymentNotice}
+            <strong style={{ display: "block", marginBottom: "3px" }}>
+              {paymentNotice.title}
+            </strong>
+            {paymentNotice.message}
           </div>
         )}
 
         {error && (
-          <div role="alert" style={{ margin: "11px 0 0", padding: "9px", color: "#a40000", background: "#fff0f0", borderRadius: "6px", fontSize: "11px" }}>
-            {errorTitle && <strong style={{ display: "block", marginBottom: "3px" }}>{errorTitle}</strong>}
+          <div
+            role="alert"
+            aria-live="assertive"
+            style={{
+              margin: "11px 0 0",
+              padding: "9px",
+              color: "#a40000",
+              background: "#fff0f0",
+              border: "1px solid #f3c4c4",
+              borderRadius: "6px",
+              fontSize: "11px",
+            }}
+          >
+            <AlertTriangle size={14} style={{ verticalAlign: "-3px", marginRight: "5px" }} />
+            {errorTitle && (
+              <strong style={{ display: "block", marginBottom: "3px" }}>{errorTitle}</strong>
+            )}
             {error}
           </div>
         )}
 
         <div style={{ display: "flex", gap: "8px", marginTop: "13px" }}>
-          <button type="button" disabled={processing} onClick={onBack} style={{ flex: "0 0 74px", padding: "11px", border: "1px solid #ddd", background: "#fff", borderRadius: "20px", fontSize: "11px", cursor: processing ? "not-allowed" : "pointer", opacity: processing ? 0.6 : 1 }}>
+          <button
+            type="button"
+            disabled={processing}
+            onClick={onBack}
+            style={{
+              flex: "0 0 74px",
+              padding: "11px",
+              border: "1px solid #ddd",
+              background: "#fff",
+              borderRadius: "20px",
+              fontSize: "11px",
+              cursor: processing ? "not-allowed" : "pointer",
+              opacity: processing ? 0.6 : 1,
+            }}
+          >
             Volver
           </button>
-          <button type="submit" disabled={processing || !openpayReady || cart.length === 0} style={{ flex: 1, padding: "12px", border: 0, background: "#050505", color: "#fff", borderRadius: "20px", fontSize: "11px", fontWeight: 700, cursor: processing || !openpayReady ? "not-allowed" : "pointer", opacity: processing || !openpayReady ? 0.7 : 1 }}>
+          <button
+            type="submit"
+            disabled={processing || !openpayReady || cart.length === 0}
+            style={{
+              flex: 1,
+              padding: "12px",
+              border: 0,
+              background: "#050505",
+              color: "#fff",
+              borderRadius: "20px",
+              fontSize: "11px",
+              fontWeight: 700,
+              cursor: processing || !openpayReady ? "not-allowed" : "pointer",
+              opacity: processing || !openpayReady ? 0.7 : 1,
+            }}
+          >
             <LockKeyhole size={12} style={{ verticalAlign: "-2px", marginRight: "4px" }} />
             {processing ? "Procesando..." : `Pagar ${displayTotal}`}
           </button>
         </div>
 
-        <p style={{ margin: "10px 0 0", textAlign: "center", color: "#999", fontSize: "8px" }}>
-          Los datos de tu tarjeta se tokenizan directamente con Openpay y no se almacenan en Zapatería Angelita.
+        <p
+          style={{
+            margin: "10px 0 0",
+            textAlign: "center",
+            color: "#999",
+            fontSize: "8px",
+          }}
+        >
+          Los datos de tu tarjeta se tokenizan directamente con Openpay y no se almacenan en
+          Zapatería Angelita.
         </p>
       </form>
     </div>
