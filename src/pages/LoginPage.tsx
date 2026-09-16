@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, ShieldCheck, Zap } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -68,7 +68,7 @@ const LoginPage = () => {
         } catch (err: any) {
             const msg = err.response?.data?.message
                 || err.message
-                || 'No fue posible iniciar sesión con Google.';
+                || 'No fue posible continuar con Google.';
             setError(msg);
         } finally {
             setGoogleLoading(false);
@@ -104,7 +104,7 @@ const LoginPage = () => {
 
                 <div className="login-title">
                     <h1>Bienvenido</h1>
-                    <p>Ingresa tus credenciales para continuar</p>
+                    <p>Ingresa a tu cuenta o regístrate en segundos</p>
                 </div>
 
                 {error && (
@@ -118,17 +118,42 @@ const LoginPage = () => {
                     </div>
                 )}
 
-                <div className="mb-6">
+                <section className="mb-6 rounded-2xl border border-black/5 bg-[#fafafa] p-4" aria-labelledby="google-fast-title">
+                    <div className="mb-4 flex items-start gap-3">
+                        <div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-[#e30613] shadow-sm ring-1 ring-black/5">
+                            <Zap size={17} strokeWidth={2.3} />
+                        </div>
+                        <div>
+                            <div className="mb-1 flex flex-wrap items-center gap-2">
+                                <h2 id="google-fast-title" className="text-sm font-black text-[#121212]">
+                                    Registro rápido con Google
+                                </h2>
+                                <span className="rounded-full bg-[#e30613]/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#e30613]">
+                                    Recomendado
+                                </span>
+                            </div>
+                            <p className="text-xs leading-5 text-gray-500">
+                                Si ya tienes cuenta, inicia sesión. Si eres nuevo, crearemos tu cuenta automáticamente con tu correo verificado de Google.
+                            </p>
+                        </div>
+                    </div>
+
                     <GoogleIdentityButton
                         mode="login"
                         onCredential={handleGoogleCredential}
                         disabled={loading || googleLoading}
                     />
-                    <div className="mt-5 flex items-center gap-3" aria-hidden="true">
-                        <span className="h-px flex-1 bg-black/10" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">o con correo</span>
-                        <span className="h-px flex-1 bg-black/10" />
+
+                    <div className="mt-3 flex items-center justify-center gap-1.5 text-[10px] font-semibold text-gray-400">
+                        <ShieldCheck size={12} />
+                        <span>Sin contraseña nueva · acceso protegido por Google</span>
                     </div>
+                </section>
+
+                <div className="mb-6 flex items-center gap-3" aria-hidden="true">
+                    <span className="h-px flex-1 bg-black/10" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">o continúa con correo</span>
+                    <span className="h-px flex-1 bg-black/10" />
                 </div>
 
                 <form onSubmit={handleSubmit} className="login-form">
@@ -189,9 +214,9 @@ const LoginPage = () => {
 
                 <div className="login-footer">
                     <p>
-                        ¿No tienes una cuenta?{' '}
+                        ¿Prefieres crear tu cuenta manualmente?{' '}
                         <Link to="/register">
-                            Regístrate gratis
+                            Regístrate con correo
                         </Link>
                     </p>
                 </div>
