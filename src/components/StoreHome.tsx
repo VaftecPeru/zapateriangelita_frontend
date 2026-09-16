@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import brandLogo from "../assets/brand/logo-angelita-horizontal.png";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
@@ -135,9 +136,7 @@ function FacebookIcon({ size = 18 }: { size?: number }) {
 function Logo({ light = false }: { light?: boolean }) {
   return (
     <a className={`logo ${light ? "logo--light" : ""}`} href="/" aria-label="Zapatería Angelita - inicio">
-      <span className="logo__small">Zapatería</span>
-      <strong>ANGELITA</strong>
-      <span className="logo__tagline">Calzando tus pies desde 1980</span>
+      <img className="brand-logo__image" src={brandLogo} alt="Zapatería Angelita" />
     </a>
   );
 }
