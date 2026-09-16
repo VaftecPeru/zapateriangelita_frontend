@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { authService } from '../services/authService';
+import '../styles/google-identity-button.css';
 
 declare global {
   interface Window {
@@ -108,7 +109,7 @@ const GoogleIdentityButton = ({ mode, onCredential, disabled = false }: Props) =
           theme: 'outline',
           size: 'large',
           shape: 'rectangular',
-          text: mode === 'link' ? 'continue_with' : 'continue_with',
+          text: 'continue_with',
           logo_alignment: 'left',
           width: Math.max(240, Math.min(parentWidth, 380)),
           locale: 'es',
