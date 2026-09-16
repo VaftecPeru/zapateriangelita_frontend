@@ -65,7 +65,7 @@ const CheckoutPageV2 = () => {
   const { cart, cartTotal, clearCart } = useCart();
   const { isAuthenticated, loading: authLoading, user, login: authLogin } = useAuth();
 
-  const [form, setForm] = useState(() => {
+  const [form, setForm] = useState<typeof initialFormState>(() => {
     try {
       const saved = sessionStorage.getItem(DRAFT_KEY);
       return saved ? { ...initialFormState, ...JSON.parse(saved) } : initialFormState;
