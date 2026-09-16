@@ -1,0 +1,47 @@
+name: Fix checkout v2 types
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: ${{ !contains(github.event.head_commit.message, 'fix: tipar estado de checkout v2') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Tipar estado del formulario
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/pages/CheckoutPageV2.tsx')
+          s = p.read_text(encoding='utf-8')
+          old = 'const [form, setForm] = useState(() => {'
+          new = 'const [form, setForm] = useState<typeof initialFormState>(() => {'
+          if old not in s:
+              raise SystemExit('No se encontró el estado del formulario esperado')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+      - run: npm ci
+      - run: npm run build
+      - name: Guardar corrección
+        run: |
+          git config user.name "VaftecPeru"
+          git config user.email "vaftecperusac@gmail.com"
+          git add src/pages/CheckoutPageV2.tsx
+          if git diff --cached --quiet; then
+            echo "No hay cambios"
+          else
+            git commit -m "fix: tipar estado de checkout v2"
+            git push origin HEAD:main
+          fi
