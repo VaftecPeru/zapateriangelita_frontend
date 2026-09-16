@@ -3,6 +3,7 @@ import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
+import GoogleIdentityButton from '../components/GoogleIdentityButton';
 import '../styles/login-home.css';
 
 const Logo = ({ light = false }: { light?: boolean }) => {
@@ -20,11 +21,11 @@ const LoginPage = () => {
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
     const { login: authLogin, user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
-    // ✅ Redirigir si ya está autenticado (según rol)
     useEffect(() => {
         if (isAuthenticated && user) {
             if (user.role === 'admin') {
@@ -43,7 +44,6 @@ const LoginPage = () => {
         try {
             const { data } = await authService.login(formData);
             authLogin(data.user, data.token);
-            // La redirección la maneja el useEffect
         } catch (err: any) {
             const msg = err.response?.data?.message
                 || err.response?.data?.errors?.email?.[0]
@@ -55,11 +55,30 @@ const LoginPage = () => {
         }
     };
 
+    const handleGoogleCredential = async (credential: string) => {
+        setError(null);
+        setGoogleLoading(true);
+
+        try {
+            const { data } = await authService.googleLogin(credential);
+            if (!data?.user || !data?.token) {
+                throw new Error('Google no devolvió una sesión válida.');
+            }
+            authLogin(data.user, data.token);
+        } catch (err: any) {
+            const msg = err.response?.data?.message
+                || err.message
+                || 'No fue posible iniciar sesión con Google.';
+            setError(msg);
+        } finally {
+            setGoogleLoading(false);
+        }
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
-    // Si ya está autenticado, mostrar loader mientras redirige
     if (isAuthenticated) {
         return (
             <div className="login-page">
@@ -98,6 +117,19 @@ const LoginPage = () => {
                         {error}
                     </div>
                 )}
+
+                <div className="mb-6">
+                    <GoogleIdentityButton
+                        mode="login"
+                        onCredential={handleGoogleCredential}
+                        disabled={loading || googleLoading}
+                    />
+                    <div className="mt-5 flex items-center gap-3" aria-hidden="true">
+                        <span className="h-px flex-1 bg-black/10" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">o con correo</span>
+                        <span className="h-px flex-1 bg-black/10" />
+                    </div>
+                </div>
 
                 <form onSubmit={handleSubmit} className="login-form">
                     <div className="field-group">
@@ -142,7 +174,7 @@ const LoginPage = () => {
 
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || googleLoading}
                         className="btn-submit"
                     >
                         {loading ? 'Entrando...' : 'Iniciar sesión'}
