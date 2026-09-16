@@ -102,14 +102,15 @@ const GoogleIdentityButton = ({ mode, onCredential, disabled = false }: Props) =
         });
 
         buttonRef.current.innerHTML = '';
-        const parentWidth = buttonRef.current.parentElement?.clientWidth || 320;
+        const parentWidth = Math.floor(buttonRef.current.parentElement?.clientWidth || 340);
+
         window.google.accounts.id.renderButton(buttonRef.current, {
           theme: 'outline',
           size: 'large',
-          shape: 'pill',
-          text: 'continue_with',
+          shape: 'rectangular',
+          text: mode === 'link' ? 'continue_with' : 'continue_with',
           logo_alignment: 'left',
-          width: Math.max(220, Math.min(parentWidth, 360)),
+          width: Math.max(240, Math.min(parentWidth, 380)),
           locale: 'es',
         });
 
@@ -129,26 +130,27 @@ const GoogleIdentityButton = ({ mode, onCredential, disabled = false }: Props) =
 
   if (state === 'disabled') {
     return (
-      <p className="text-center text-[11px] font-semibold text-gray-400">
-        Acceso con Google pendiente de configuración.
-      </p>
+      <div className="google-button-fallback google-button-fallback--disabled" aria-live="polite">
+        <span className="google-button-fallback__mark">G</span>
+        <span>Continuar con Google</span>
+        <small>Configura Google para activar</small>
+      </div>
     );
   }
 
   if (state === 'error') {
     return (
-      <p className="text-center text-[11px] font-semibold text-red-500">
-        Google no está disponible en este momento.
-      </p>
+      <div className="google-button-fallback google-button-fallback--error" role="status">
+        <span className="google-button-fallback__mark">G</span>
+        <span>Google no está disponible</span>
+      </div>
     );
   }
 
   return (
-    <div className={disabled ? 'pointer-events-none opacity-60' : ''}>
-      {state === 'loading' && (
-        <div className="h-11 rounded-full border border-gray-200 bg-gray-50 animate-pulse" />
-      )}
-      <div ref={buttonRef} className={state === 'loading' ? 'h-0 overflow-hidden' : 'flex justify-center'} />
+    <div className={`google-identity-button ${disabled ? 'google-identity-button--disabled' : ''}`}>
+      {state === 'loading' && <div className="google-button-skeleton" aria-hidden="true" />}
+      <div ref={buttonRef} className={state === 'loading' ? 'google-button-render google-button-render--hidden' : 'google-button-render'} />
     </div>
   );
 };
