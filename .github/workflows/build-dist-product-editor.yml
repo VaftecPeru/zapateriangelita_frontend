@@ -1,0 +1,39 @@
+name: Build dist product editor
+
+on:
+  push:
+    branches:
+      - build-dist-20260916-product-editor
+    paths:
+      - '.github/workflows/build-dist-product-editor.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: build-dist-20260916-product-editor
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Package dist
+        run: |
+          test -f dist/index.html
+          cd dist
+          zip -r ../zapateriangelita-dist-20260916.zip .
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zapateriangelita-dist-20260916
+          path: zapateriangelita-dist-20260916.zip
+          if-no-files-found: error
+          retention-days: 7
