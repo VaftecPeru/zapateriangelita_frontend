@@ -18,6 +18,7 @@ export interface LoginData {
 export interface GoogleConfigResponse {
     enabled: boolean;
     client_id: string | null;
+    status?: 'ready' | 'missing' | 'invalid';
 }
 
 export const authService = {
@@ -25,7 +26,13 @@ export const authService = {
     register: (data: RegisterData) => apiClient.post('/register', data),
     logout: () => apiClient.post('/logout'),
     getProfile: () => apiClient.get('/user'),
-    googleConfig: () => apiClient.get<GoogleConfigResponse>('/auth/google/config'),
+    googleConfig: () => apiClient.get<GoogleConfigResponse>('/auth/google/config', {
+        params: { _ts: Date.now() },
+        headers: {
+            'Cache-Control': 'no-cache',
+            Pragma: 'no-cache',
+        },
+    }),
     googleLogin: (credential: string) => apiClient.post('/auth/google/login', { credential }),
     googleLink: (credential: string) => apiClient.post('/auth/google/link', { credential }),
 };
