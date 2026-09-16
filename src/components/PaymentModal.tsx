@@ -300,7 +300,7 @@ const PaymentModal = ({
         const errorCode = response.data?.error_code;
         const description =
           response.data?.description || response.data?.message || response.message;
-        const requestId = response.data?.request_id;
+        const requestId = (response.data as any)?.request_id;
 
         console.error("Error tokenizando tarjeta en Openpay", {
           errorCode,
