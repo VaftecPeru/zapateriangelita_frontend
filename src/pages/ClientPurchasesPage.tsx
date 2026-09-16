@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Calendar, Package, ReceiptText, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Calendar, CheckCircle2, Package, ReceiptText, ShieldCheck, ShoppingBag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import GoogleIdentityButton from "../components/GoogleIdentityButton";
 import { useAuth } from "../hooks/useAuth";
+import { authService } from "../services/authService";
 import { Order, orderService } from "../services/crudService";
 
 const money = new Intl.NumberFormat("en-US", {
@@ -28,10 +30,13 @@ const statusLabel = (status?: string) => {
 
 const ClientPurchasesPage = () => {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, updateUser } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [googleLinking, setGoogleLinking] = useState(false);
+  const [googleMessage, setGoogleMessage] = useState<string | null>(null);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -52,6 +57,27 @@ const ClientPurchasesPage = () => {
       .finally(() => setLoadingOrders(false));
   }, [user, loading, navigate]);
 
+  const handleGoogleLink = async (credential: string) => {
+    setGoogleLinking(true);
+    setGoogleMessage(null);
+    setGoogleError(null);
+
+    try {
+      const response = await authService.googleLink(credential);
+      const updatedUser = response.data?.user;
+      if (updatedUser) updateUser(updatedUser);
+      setGoogleMessage("Tu cuenta de Google quedó vinculada. En tu próximo acceso podrás entrar sin contraseña.");
+    } catch (err: any) {
+      setGoogleError(
+        err.response?.data?.message
+        || err.message
+        || "No fue posible vincular tu cuenta de Google."
+      );
+    } finally {
+      setGoogleLinking(false);
+    }
+  };
+
   if (loading || (user && loadingOrders)) {
     return (
       <main className="min-h-screen bg-[#f7f7f7] grid place-items-center p-6">
@@ -64,6 +90,8 @@ const ClientPurchasesPage = () => {
   }
 
   if (!user) return null;
+
+  const googleLinked = Boolean(user.google_linked_at);
 
   return (
     <main className="min-h-screen bg-[#f7f7f7] px-4 md:px-6 pb-20">
@@ -98,6 +126,48 @@ const ClientPurchasesPage = () => {
                 <p className="font-black text-[#121212]">{orders.length}</p>
               </div>
             </div>
+          </div>
+
+          <div className={`mb-8 rounded-3xl border p-5 md:p-6 ${googleLinked ? "border-emerald-200 bg-emerald-50/70" : "border-blue-100 bg-[#f7f9ff]"}`}>
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+              <div className="flex items-start gap-4">
+                <div className={`w-12 h-12 rounded-2xl grid place-items-center shrink-0 ${googleLinked ? "bg-emerald-100 text-emerald-700" : "bg-white text-[#e30613] border border-black/5"}`}>
+                  {googleLinked ? <CheckCircle2 size={23} /> : <ShieldCheck size={23} />}
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Seguridad de tu cuenta</p>
+                  <h3 className="mt-1 text-lg font-black text-[#121212]">
+                    {googleLinked ? "Google está vinculado" : "Entra más rápido con Google"}
+                  </h3>
+                  <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">
+                    {googleLinked
+                      ? `Tu cuenta ${user.google_email || user.email} puede usar Google para iniciar sesión sin escribir la contraseña.`
+                      : `Vincula la misma cuenta de Google asociada a ${user.email}. Mantendrás también tu contraseña como método alternativo de acceso.`}
+                  </p>
+                </div>
+              </div>
+
+              {!googleLinked && (
+                <div className="w-full lg:w-[360px] shrink-0">
+                  <GoogleIdentityButton
+                    mode="link"
+                    onCredential={handleGoogleLink}
+                    disabled={googleLinking}
+                  />
+                </div>
+              )}
+            </div>
+
+            {googleMessage && (
+              <p className="mt-4 rounded-xl border border-emerald-200 bg-white/80 px-4 py-3 text-sm font-semibold text-emerald-700">
+                {googleMessage}
+              </p>
+            )}
+            {googleError && (
+              <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-[#bd0711]">
+                {googleError}
+              </p>
+            )}
           </div>
 
           {error && (
