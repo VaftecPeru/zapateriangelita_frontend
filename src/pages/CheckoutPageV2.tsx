@@ -208,50 +208,95 @@ const CheckoutPageV2 = () => {
 
     let cancelled = false;
 
+    const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
     const verifyPayment = async () => {
       setVerifyingPayment(true);
       setError(null);
 
+      const maxAttempts = 8;
+      let lastMessage = "Estamos confirmando tu pago con Openpay.";
+
       try {
-        const { data } = await apiClient.get("/checkout/payments/openpay/verify", {
-          params: {
-            order_id: orderId,
-            transaction_id: transactionId,
-            checkout_token: checkoutToken,
-          },
-        });
+        for (let attempt = 1; attempt <= maxAttempts && !cancelled; attempt += 1) {
+          try {
+            const { data } = await apiClient.get("/checkout/payments/openpay/verify", {
+              params: {
+                order_id: orderId,
+                transaction_id: transactionId,
+                checkout_token: checkoutToken,
+              },
+              timeout: 10000,
+            });
 
-        if (cancelled) return;
+            if (cancelled) return;
 
-        if (data.payment_status === "paid") {
-          finishPaidPurchase(data);
-          return;
-        }
+            if (data.payment_status === "paid") {
+              finishPaidPurchase(data);
+              return;
+            }
 
-        if (data.payment_status === "processing") {
-          setError("Openpay todavía está procesando tu pago. No realices otro intento.");
-          navigate("/checkout", { replace: true });
-          return;
-        }
+            if (data.payment_status === "failed") {
+              setError(data.message || "El pago no fue aprobado.");
+              navigate("/checkout", { replace: true });
+              return;
+            }
 
-        setError(data.message || "La transacción no pudo ser completada.");
-        navigate("/checkout", { replace: true });
-      } catch (err: any) {
-        if (!cancelled) {
-          const responseData = err.response?.data;
-          const errorCode = responseData?.error_code;
+            if (data.payment_status === "processing") {
+              lastMessage = data.message || "Openpay todavía está confirmando tu pago.";
+              if (attempt < maxAttempts) {
+                await sleep(attempt <= 2 ? 1200 : 2200);
+                continue;
+              }
+            } else {
+              lastMessage = data.message || "Estamos verificando el estado final de tu compra.";
+            }
+          } catch (err: any) {
+            if (cancelled) return;
 
-          if (errorCode === "CHECKOUT_TOKEN_INVALID") {
-            clearCheckoutSession(orderId);
-            setError(
-              "La sesión segura de esta compra ya no coincide con el pedido. No repitas el cobro. Si el pago fue aprobado, revisa Mis Compras o vuelve a iniciar el checkout únicamente si no existe un cargo confirmado."
-            );
-          } else {
-            setError(
+            const responseData = err.response?.data;
+            const errorCode = responseData?.error_code;
+            const status = Number(err.response?.status || 0);
+
+            if (errorCode === "CHECKOUT_TOKEN_INVALID") {
+              clearCheckoutSession(orderId);
+              setError(
+                "La sesión segura de esta compra ya no coincide con el pedido. No repitas el cobro. Si el pago fue aprobado, inicia sesión con el correo utilizado y revisa Mis Compras."
+              );
+              navigate("/checkout", { replace: true });
+              return;
+            }
+
+            const retryable =
+              !err.response ||
+              err.code === "ECONNABORTED" ||
+              status >= 500 ||
+              [408, 409, 429].includes(status);
+
+            if (!retryable) {
+              setError(
+                responseData?.message ||
+                  "No fue posible verificar el pago con Openpay. No repitas el cobro hasta confirmar su estado."
+              );
+              navigate("/checkout", { replace: true });
+              return;
+            }
+
+            lastMessage =
               responseData?.message ||
-                "No fue posible verificar el pago con Openpay. No repitas el cobro hasta confirmar su estado."
-            );
+              "El pago fue enviado y estamos esperando la confirmación final de Openpay.";
+
+            if (attempt < maxAttempts) {
+              await sleep(attempt <= 2 ? 1200 : 2200);
+              continue;
+            }
           }
+        }
+
+        if (!cancelled) {
+          setError(
+            `${lastMessage} No realices otro cobro. Si ya recibiste confirmación, inicia sesión con el correo utilizado y revisa Mis Compras.`
+          );
           navigate("/checkout", { replace: true });
         }
       } finally {
