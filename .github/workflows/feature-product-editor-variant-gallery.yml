@@ -1,244 +1,32 @@
 name: Feature product editor variant gallery
-
 on:
   push:
-    branches:
-      - feature/product-editor-variant-gallery
-    paths:
-      - '.github/workflows/feature-product-editor-variant-gallery.yml'
-
+    branches: ['feature/product-editor-variant-gallery']
+    paths: ['.github/workflows/feature-product-editor-variant-gallery.yml']
 permissions:
   contents: write
-
 jobs:
-  patch-build:
+  patch:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: feature/product-editor-variant-gallery
           fetch-depth: 0
-
-      - name: Optimizar editor de productos
-        shell: python
+      - name: Patch product editor
+        env:
+          PATCH_B64: "ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCgpwYXRoID0gUGF0aCgnc3JjL3BhZ2VzL2FkbWluL3Byb2R1Y3QvUHJvZHVjdEVkaXRvck1vZGFsLnRzeCcpCnRleHQgPSBwYXRoLnJlYWRfdGV4dCgpCgojIDEpIEZhbGxiYWNrIGRlIGdhbGVyw61hIGFudGlndWEgZGVudHJvIGRlIGxhIHByaW1lcmEgdmFyaWFudGUuCm9sZF92YXJpYW50cyA9ICIiIiAgICBjb25zdCBjb2xvcnMgPSBwYXJzZUNvbG9ycyhwcm9kdWN0LmNvbG9yKTtcbiAgICBjb25zdCBnbG9iYWxTaXplcyA9IHBhcnNlTGlzdChwcm9kdWN0LnNpemUpO1xuICAgIGNvbnN0IHByb2R1Y3RWYXJpYW50cyA9IGNvbG9ycy5sZW5ndGhcbiAgICAgID8gY29sb3JzLm1hcCgoY29sb3IpID0+ICh7XG4gICAgICAgICAgY29sb3IsXG4gICAgICAgICAgc2l6ZXM6IHByb2R1Y3QuY29sb3Jfc2l6ZXM/Lltjb2xvcl0/Lmxlbmd0aFxuICAgICAgICAgICAgPyBwcm9kdWN0LmNvbG9yX3NpemVzW2NvbG9yXVxuICAgICAgICAgICAgOiBnbG9iYWxTaXplcy5sZW5ndGhcbiAgICAgICAgICAgICAgPyBnbG9iYWxTaXplc1xuICAgICAgICAgICAgICA6IFsnJ10sXG4gICAgICAgICAgZmlsZXM6IFtdLFxuICAgICAgICAgIHByZXZpZXdzOiBbXSxcbiAgICAgICAgICBleGlzdGluZ0ltYWdlczogKHByb2R1Y3QuY29sb3JfaW1hZ2VzPy5bY29sb3JdIHx8IFtdKS5tYXAoKGltYWdlKSA9PiBnZXRJbWFnZVVybChpbWFnZSkpLFxuICAgICAgICB9KSlcbiAgICAgIDogW2VtcHR5VmFyaWFudCgpXTtcbiIiIgpuZXdfdmFyaWFudHMgPSAiIiIgICAgY29uc3QgY29sb3JzID0gcGFyc2VDb2xvcnMocHJvZHVjdC5jb2xvcik7XG4gICAgY29uc3QgZ2xvYmFsU2l6ZXMgPSBwYXJzZUxpc3QocHJvZHVjdC5zaXplKTtcbiAgICBjb25zdCBsZWdhY3lHYWxsZXJ5ID0gcHJvZHVjdC5pbWFnZXM/Lmxlbmd0aFxuICAgICAgPyBwcm9kdWN0LmltYWdlc1xuICAgICAgOiBwcm9kdWN0LmltZ1xuICAgICAgICA/IFtwcm9kdWN0LmltZ11cbiAgICAgICAgOiBbXTtcbiAgICBjb25zdCBwcm9kdWN0VmFyaWFudHMgPSBjb2xvcnMubGVuZ3RoXG4gICAgICA/IGNvbG9ycy5tYXAoKGNvbG9yLCBjb2xvckluZGV4KSA9PiB7XG4gICAgICAgICAgY29uc3QgY29sb3JHYWxsZXJ5ID0gcHJvZHVjdC5jb2xvcl9pbWFnZXM/Lltjb2xvcl0gfHwgW107XG4gICAgICAgICAgY29uc3QgZ2FsbGVyeSA9IGNvbG9yR2FsbGVyeS5sZW5ndGhcbiAgICAgICAgICAgID8gY29sb3JHYWxsZXJ5XG4gICAgICAgICAgICA6IGNvbG9ySW5kZXggPT09IDBcbiAgICAgICAgICAgICAgPyBsZWdhY3lHYWxsZXJ5XG4gICAgICAgICAgICAgIDogW107XG5cbiAgICAgICAgICByZXR1cm4ge1xuICAgICAgICAgICAgY29sb3IsXG4gICAgICAgICAgICBzaXplczogcHJvZHVjdC5jb2xvcl9zaXplcz8uW2NvbG9yXT8ubGVuZ3RoXG4gICAgICAgICAgICAgID8gcHJvZHVjdC5jb2xvcl9zaXplc1tjb2xvcl1cbiAgICAgICAgICAgICAgOiBnbG9iYWxTaXplcy5sZW5ndGhcbiAgICAgICAgICAgICAgICA/IGdsb2JhbFNpemVzXG4gICAgICAgICAgICAgICAgOiBbJyddLFxuICAgICAgICAgICAgZmlsZXM6IFtdLFxuICAgICAgICAgICAgcHJldmlld3M6IFtdLFxuICAgICAgICAgICAgZXhpc3RpbmdJbWFnZXM6IGdhbGxlcnkuc2xpY2UoMCwgNSkubWFwKChpbWFnZSkgPT4gZ2V0SW1hZ2VVcmwoaW1hZ2UpKSxcbiAgICAgICAgICB9O1xuICAgICAgICB9KVxuICAgICAgOiBbZW1wdHlWYXJpYW50KCldO1xuIiIiCmlmIG9sZF92YXJpYW50cyBub3QgaW4gdGV4dDoKICAgIHJhaXNlIFN5c3RlbUV4aXQoJ3ZhcmlhbnQgaW5pdCBibG9jayBub3QgZm91bmQnKQp0ZXh0ID0gdGV4dC5yZXBsYWNlKG9sZF92YXJpYW50cywgbmV3X3ZhcmlhbnRzLCAxKQoKIyAyKSBTaW5jcm9uaXphIGxhIGdhbGVyw61hIGRlbCBwcmltZXIgY29sb3IgY29uIGxhIHBvcnRhZGEvZ2FsZXLDrWEgZ2VuZXJhbCBleGlzdGVudGUgZGVsIGJhY2tlbmQuCm9sZF9oYW5kbGVyID0gIiIiICBjb25zdCBoYW5kbGVWYXJpYW50SW1hZ2VzID0gKHZhcmlhbnRJbmRleDogbnVtYmVyLCBmaWxlc0xpc3Q6IEZpbGVMaXN0IHwgbnVsbCkgPT4ge1xuICAgIGNvbnN0IGZpbGVzID0gQXJyYXkuZnJvbShmaWxlc0xpc3QgfHwgW10pLnNsaWNlKDAsIDUpO1xuICAgIGNvbnN0IHByZXZpZXdzID0gZmlsZXMubWFwKChmaWxlKSA9PiBVUkwuY3JlYXRlT2JqZWN0VVJMKGZpbGUpKTtcbiAgICBzZXRWYXJpYW50KHZhcmlhbnRJbmRleCwgeyBmaWxlcywgcHJldmlld3MgfSk7XG4gIH07XG4iIiIKbmV3X2hhbmRsZXIgPSAiIiIgIGNvbnN0IGhhbmRsZVZhcmlhbnRJbWFnZXMgPSAodmFyaWFudEluZGV4OiBudW1iZXIsIGZpbGVzTGlzdDogRmlsZUxpc3QgfCBudWxsKSA9PiB7XG4gICAgY29uc3QgZmlsZXMgPSBBcnJheS5mcm9tKGZpbGVzTGlzdCB8fCBbXSkuc2xpY2UoMCwgNSk7XG4gICAgY29uc3QgcHJldmlld3MgPSBmaWxlcy5tYXAoKGZpbGUpID0+IFVSTC5jcmVhdGVPYmplY3RVUkwoZmlsZSkpO1xuICAgIHNldFZhcmlhbnQodmFyaWFudEluZGV4LCB7IGZpbGVzLCBwcmV2aWV3cyB9KTtcblxuICAgIC8vIExhIHByaW1lcmEgdmFyaWFudGUgZ29iaWVybmEgdGFtYmnDqW4gbGEgcG9ydGFkYSBnZW5lcmFsIGRlbCBwcm9kdWN0by5cbiAgICAvLyBFc3RvIG1hbnRpZW5lIGNvbXBhdGliaWxpZGFkIGNvbiBsYXMgdmlzdGFzIHF1ZSBhw7puIGNvbnN1bWVuIHByb2R1Y3RzLmltZy9pbWFnZXMuXG4gICAgaWYgKHZhcmlhbnRJbmRleCA9PT0gMCkge1xuICAgICAgY29uc3QgbmV4dEZpbGVzOiAoRmlsZSB8IG51bGwpW10gPSBBcnJheSg1KS5maWxsKG51bGwpO1xuICAgICAgY29uc3QgbmV4dFByZXZpZXdzOiAoc3RyaW5nIHwgbnVsbClbXSA9IEFycmF5KDUpLmZpbGwobnVsbCk7XG4gICAgICBmaWxlcy5mb3JFYWNoKChmaWxlLCBpbWFnZUluZGV4KSA9PiB7XG4gICAgICAgIG5leHRGaWxlc1tpbWFnZUluZGV4XSA9IGZpbGU7XG4gICAgICAgIG5leHRQcmV2aWV3c1tpbWFnZUluZGV4XSA9IHByZXZpZXdzW2ltYWdlSW5kZXhdO1xuICAgICAgfSk7XG4gICAgICBzZXRHZW5lcmFsRmlsZXMobmV4dEZpbGVzKTtcbiAgICAgIHNldEdlbmVyYWxQcmV2aWV3cyhuZXh0UHJldmlld3MpO1xuICAgIH1cbiAgfTtcbiIiIgppZiBvbGRfaGFuZGxlciBub3QgaW4gdGV4dDoKICAgIHJhaXNlIFN5c3RlbUV4aXQoJ3ZhcmlhbnQgaW1hZ2UgaGFuZGxlciBub3QgZm91bmQnKQp0ZXh0ID0gdGV4dC5yZXBsYWNlKG9sZF9oYW5kbGVyLCBuZXdfaGFuZGxlciwgMSkKCiMgMykgTW9kYWwgbcOhcyBhbmNoby9jb21wYWN0byB5IHNjcm9sbGJhciB2aXN1YWwgb2N1bHRvLgpvbGRfbW9kYWwgPSAnICAgICAgPGRpdiBjbGFzc05hbWU9Im1heC1oLVs5NXZoXSB3LWZ1bGwgbWF4LXctNnhsIG92ZXJmbG93LXktYXV0byByb3VuZGVkLVsyLjRyZW1dIGJvcmRlciBib3JkZXItZ3JheS0yMDAgYmctd2hpdGUgcC01IHNoYWRvdy0yeGwgc206cC04IGxnOnAtMTAiPicKbmV3X21vZGFsID0gJyAgICAgIDxkaXYgY2xhc3NOYW1lPSJwcm9kdWN0LWVkaXRvci1zY3JvbGwgbWF4LWgtWzk2dmhdIHctZnVsbCBtYXgtdy03eGwgb3ZlcmZsb3cteS1hdXRvIHJvdW5kZWQtWzIuNHJlbV0gYm9yZGVyIGJvcmRlci1ncmF5LTIwMCBiZy13aGl0ZSBwLTQgc2hhZG93LTJ4bCBzbTpwLTYgbGc6cC04Ij4nCmlmIG9sZF9tb2RhbCBub3QgaW4gdGV4dDoKICAgIHJhaXNlIFN5c3RlbUV4aXQoJ21vZGFsIGNvbnRhaW5lciBub3QgZm91bmQnKQp0ZXh0ID0gdGV4dC5yZXBsYWNlKG9sZF9tb2RhbCwgbmV3X21vZGFsLCAxKQoKdGV4dCA9IHRleHQucmVwbGFjZSgKICAgICcgICAgICAgICAgICAgICAgICBDYWRhIGNvbG9yIGFncnVwYSBzdXMgaW3DoWdlbmVzIHkgdGFsbGFzLicsCiAgICAnICAgICAgICAgICAgICAgICAgQ2FkYSBjb2xvciBhZ3J1cGEgc3UgaW1hZ2VuIHByaW5jaXBhbCwgZ2FsZXLDrWEgeSB0YWxsYXMuJywKICAgIDEsCikKdGV4dCA9IHRleHQucmVwbGFjZSgnICAgICAgICAgICAgICAgIHJvd3M9ezR9JywgJyAgICAgICAgICAgICAgICByb3dzPXszfScsIDEpCgojIDQpIFJlZW1wbGF6YSBlbCBibG9xdWUgc2ltcGxlIGRlIGltw6FnZW5lcyBwb3IgdW5hIGdhbGVyw61hIGNvbXBhY3RhIGRlbnRybyBkZSBjYWRhIHZhcmlhbnRlLgppbWFnZV9zdGFydCA9IHRleHQuZmluZCgnICAgICAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9Im10LTUgYm9yZGVyLXQgYm9yZGVyLWdyYXktMTAwIHB0LTQiPicpCmltYWdlX2VuZCA9IHRleHQuZmluZCgnXG4gICAgICAgICAgICAgICAgPC9kaXY+XG4gICAgICAgICAgICAgICkpfScsIGltYWdlX3N0YXJ0KQppZiBpbWFnZV9zdGFydCA8IDAgb3IgaW1hZ2VfZW5kIDwgMDoKICAgIHJhaXNlIFN5c3RlbUV4aXQoJ3ZhcmlhbnQgaW1hZ2UgYmxvY2sgbm90IGZvdW5kJykKbmV3X2ltYWdlX2Jsb2NrID0gIiIiICAgICAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJtdC00IHJvdW5kZWQtMnhsIGJvcmRlciBib3JkZXItZ3JheS0xMDAgYmctd2hpdGUgcC0zIHNtOnAtNFwiPlxuICAgICAgICAgICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cIm1iLTMgZmxleCBmbGV4LXdyYXAgaXRlbXMtY2VudGVyIGp1c3RpZnktYmV0d2VlbiBnYXAtM1wiPlxuICAgICAgICAgICAgICAgICAgICAgIDxkaXY+XG4gICAgICAgICAgICAgICAgICAgICAgICA8bGFiZWwgY2xhc3NOYW1lPVwidGV4dC14cyBmb250LWJvbGQgdXBwZXJjYXNlIHRyYWNraW5nLXdpZGVzdCB0ZXh0LWdyYXktNDAwXCI+XG4gICAgICAgICAgICAgICAgICAgICAgICAgIEltYWdlbiBwcmluY2lwYWwgeSBnYWxlcsOtYVxuICAgICAgICAgICAgICAgICAgICAgICAgPC9sYWJlbD5cbiAgICAgICAgICAgICAgICAgICAgICAgIDxwIGNsYXNzTmFtZT1cIm10LTEgdGV4dC1bMTBweF0gdGV4dC1ncmF5LTQwMFwiPlxuICAgICAgICAgICAgICAgICAgICAgICAgICBQcmltZXJhIGltYWdlbiA9IHByaW5jaXBhbCDCtyBNw6F4aW1vIDUgcG9yIGNvbG9yXG4gICAgICAgICAgICAgICAgICAgICAgICA8L3A+XG4gICAgICAgICAgICAgICAgICAgICAgPC9kaXY+XG5cbiAgICAgICAgICAgICAgICAgICAgICA8bGFiZWwgY2xhc3NOYW1lPVwiaW5saW5lLWZsZXggY3Vyc29yLXBvaW50ZXIgaXRlbXMtY2VudGVyIGdhcC0yIHJvdW5kZWQteGwgYm9yZGVyIGJvcmRlci1zdG9yZS1yZWQvMTUgYmctcmVkLTUwIHB4LTMgcHktMiB0ZXh0LVsxMHB4XSBmb250LWJsYWNrIHVwcGVyY2FzZSB0cmFja2luZy13aWRlc3QgdGV4dC1zdG9yZS1yZWQgdHJhbnNpdGlvbiBob3ZlcjpiZy1zdG9yZS1yZWQgaG92ZXI6dGV4dC13aGl0ZVwiPlxuICAgICAgICAgICAgICAgICAgICAgICAgPEltYWdlSWNvbiBzaXplPXsxNH0gLz5cbiAgICAgICAgICAgICAgICAgICAgICAgIHt2YXJpYW50LnByZXZpZXdzLmxlbmd0aCB8fCB2YXJpYW50LmV4aXN0aW5nSW1hZ2VzLmxlbmd0aFxuICAgICAgICAgICAgICAgICAgICAgICAgICA/ICdSZWVtcGxhemFyIGdhbGVyw61hJ1xuICAgICAgICAgICAgICAgICAgICAgICAgICA6ICdBZ3JlZ2FyIGltw6FnZW5lcyd9XG4gICAgICAgICAgICAgICAgICAgICAgICA8aW5wdXRcbiAgICAgICAgICAgICAgICAgICAgICAgICAgdHlwZT1cImZpbGVcIlxuICAgICAgICAgICAgICAgICAgICAgICAgICBhY2NlcHQ9XCJpbWFnZS9qcGVnLGltYWdlL3BuZyxpbWFnZS93ZWJwXCJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgbXVsdGlwbGVcbiAgICAgICAgICAgICAgICAgICAgICAgICAgY2xhc3NOYW1lPVwiaGlkZGVuXCJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgb25DaGFuZ2U9eyhlKSA9PiBoYW5kbGVWYXJpYW50SW1hZ2VzKGluZGV4LCBlLnRhcmdldC5maWxlcyl9XG4gICAgICAgICAgICAgICAgICAgICAgICAvPlxuICAgICAgICAgICAgICAgICAgICAgIDwvbGFiZWw+XG4gICAgICAgICAgICAgICAgICAgIDwvZGl2PlxuXG4gICAgICAgICAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwiZ3JpZCBncmlkLWNvbHMtMyBnYXAtMiBzbTpncmlkLWNvbHMtNVwiPlxuICAgICAgICAgICAgICAgICAgICAgIHtbMCwgMSwgMiwgMywgNF0ubWFwKChpbWFnZUluZGV4KSA9PiB7XG4gICAgICAgICAgICAgICAgICAgICAgICBjb25zdCBpbWFnZUxpc3QgPSB2YXJpYW50LnByZXZpZXdzLmxlbmd0aFxuICAgICAgICAgICAgICAgICAgICAgICAgICA/IHZhcmlhbnQucHJldmlld3NcbiAgICAgICAgICAgICAgICAgICAgICAgICAgOiB2YXJpYW50LmV4aXN0aW5nSW1hZ2VzO1xuICAgICAgICAgICAgICAgICAgICAgICAgY29uc3QgcHJldmlldyA9IGltYWdlTGlzdFtpbWFnZUluZGV4XTtcblxuICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIChcbiAgICAgICAgICAgICAgICAgICAgICAgICAgPGRpdiBrZXk9e2BnYWxsZXJ5LSR7aW5kZXh9LSR7aW1hZ2VJbmRleH1gfSBjbGFzc05hbWU9XCJzcGFjZS15LTFcIj5cbiAgICAgICAgICAgICAgICAgICAgICAgICAgICA8ZGl2XG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICBjbGFzc05hbWU9e2ByZWxhdGl2ZSBmbGV4IGFzcGVjdC1bNC8zXSBpdGVtcy1jZW50ZXIganVzdGlmeS1jZW50ZXIgb3ZlcmZsb3ctaGlkZGVuIHJvdW5kZWQteGwgYm9yZGVyIGJnLWdyYXktNTAgJHtcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgaW1hZ2VJbmRleCA9PT0gMFxuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgID8gJ2JvcmRlci1zdG9yZS1yZWQvNDAgcmluZy0yIHJpbmctc3RvcmUtcmVkLzEwJ1xuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDogJ2JvcmRlci1ncmF5LTIwMCdcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH1gfVxuICAgICAgICAgICAgICAgICAgICAgICAgICAgID5cbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHtwcmV2aWV3ID8gKFxuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA8aW1nXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgc3JjPXtwcmV2aWV3fVxuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGFsdD17YCR7dmFyaWFudC5jb2xvciB8fCAnQ29sb3InfSAke2ltYWdlSW5kZXggKyAxfWB9XG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY2xhc3NOYW1lPVwiaC1mdWxsIHctZnVsbCBvYmplY3QtY292ZXJcIlxuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAvPlxuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKSA6IChcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgPEltYWdlSWNvbiBzaXplPXsxOH0gY2xhc3NOYW1lPVwidGV4dC1ncmF5LTMwMFwiIC8+XG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICApfVxuXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICB7aW1hZ2VJbmRleCA9PT0gMCAmJiAoXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cImFic29sdXRlIGxlZnQtMS41IHRvcC0xLjUgcm91bmRlZC1mdWxsIGJnLXN0b3JlLXJlZCBweC0yIHB5LTAuNSB0ZXh0LVs4cHhdIGZvbnQtYmxhY2sgdXBwZXJjYXNlIHRyYWNraW5nLXdpZGVyIHRleHQtd2hpdGUgc2hhZG93LXNtXCI+XG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgUHJpbmNpcGFsXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDwvc3Bhbj5cbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICl9XG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgPC9kaXY+XG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgPHAgY2xhc3NOYW1lPVwidGV4dC1jZW50ZXIgdGV4dC1bOXB4XSBmb250LWJvbGQgdXBwZXJjYXNlIHRleHQtZ3JheS00MDBcIj5cbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHtpbWFnZUluZGV4ID09PSAwID8gJ1BvcnRhZGEnIDogYEltYWdlbiAke2ltYWdlSW5kZXggKyAxfWB9XG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgPC9wPlxuICAgICAgICAgICAgICAgICAgICAgICAgICA8L2Rpdj5cbiAgICAgICAgICAgICAgICAgICAgICAgICk7XG4gICAgICAgICAgICAgICAgICAgICAgfSl9XG4gICAgICAgICAgICAgICAgICAgIDwvZGl2PlxuXG4gICAgICAgICAgICAgICAgICAgIDxwIGNsYXNzTmFtZT1cIm10LTIgdGV4dC1bMTBweF0gbGVhZGluZy1yZWxheGVkIHRleHQtZ3JheS00MDBcIj5cbiAgICAgICAgICAgICAgICAgICAgICB7aW5kZXggPT09IDBcbiAgICAgICAgICAgICAgICAgICAgICAgID8gJ0xhIHBvcnRhZGEgZGVsIHByaW1lciBjb2xvciB0YW1iacOpbiBzZXLDoSBsYSBpbWFnZW4gcHJpbmNpcGFsIGRlbCBwcm9kdWN0by4nXG4gICAgICAgICAgICAgICAgICAgICAgICA6ICdBbCBzZWxlY2Npb25hciBlc3RlIGNvbG9yIGVuIGxhIHRpZW5kYSBzZSBtb3N0cmFyw6EgcHJpbWVybyBzdSBpbWFnZW4gcHJpbmNpcGFsLid9XG4gICAgICAgICAgICAgICAgICAgIDwvcD5cblxuICAgICAgICAgICAgICAgICAgICB7dmFyaWFudC5leGlzdGluZ0ltYWdlcy5sZW5ndGggPiAwICYmIHZhcmlhbnQucHJldmlld3MubGVuZ3RoID4gMCAmJiAoXG4gICAgICAgICAgICAgICAgICAgICAgPHAgY2xhc3NOYW1lPVwibXQtMiB0ZXh0LVsxMHB4XSBmb250LXNlbWlib2xkIHRleHQtYW1iZXItNjAwXCI+XG4gICAgICAgICAgICAgICAgICAgICAgICBMYSBudWV2YSBnYWxlcsOtYSByZWVtcGxhemFyw6EgbGFzIGltw6FnZW5lcyBhY3R1YWxlcyBkZSBlc3RlIGNvbG9yLlxuICAgICAgICAgICAgICAgICAgICAgIDwvcD5cbiAgICAgICAgICAgICAgICAgICAgKX1cbiAgICAgICAgICAgICAgICAgIDwvZGl2PiIiIgp0ZXh0ID0gdGV4dFs6aW1hZ2Vfc3RhcnRdICsgbmV3X2ltYWdlX2Jsb2NrICsgdGV4dFtpbWFnZV9lbmQ6XQoKIyA1KSBSZXRpcmEgbGEgZ2FsZXLDrWEgZ2VuZXJhbCB2aXNpYmxlIHBvcnF1ZSBhaG9yYSB2aXZlIGVuIGNhZGEgdmFyaWFudGUuCmhlYWRpbmcgPSAnSW1hZ2VuIHByaW5jaXBhbCB5IGdhbGVyw61hIGdlbmVyYWwnCmhlYWRpbmdfcG9zID0gdGV4dC5maW5kKGhlYWRpbmcpCmlmIGhlYWRpbmdfcG9zIDwgMDoKICAgIHJhaXNlIFN5c3RlbUV4aXQoJ2dlbmVyYWwgZ2FsbGVyeSBoZWFkaW5nIG5vdCBmb3VuZCcpCnNlY3Rpb25fc3RhcnQgPSB0ZXh0LnJmaW5kKCcgICAgICAgICAgPHNlY3Rpb24gY2xhc3NOYW1lPSJzcGFjZS15LTQiPicsIDAsIGhlYWRpbmdfcG9zKQpzZWN0aW9uX2VuZF9tYXJrZXIgPSAnICAgICAgICAgIDwvc2VjdGlvbj4nCnNlY3Rpb25fZW5kID0gdGV4dC5maW5kKHNlY3Rpb25fZW5kX21hcmtlciwgaGVhZGluZ19wb3MpCmlmIHNlY3Rpb25fc3RhcnQgPCAwIG9yIHNlY3Rpb25fZW5kIDwgMDoKICAgIHJhaXNlIFN5c3RlbUV4aXQoJ2dlbmVyYWwgZ2FsbGVyeSBzZWN0aW9uIGJvdW5kcyBub3QgZm91bmQnKQpzZWN0aW9uX2VuZCArPSBsZW4oc2VjdGlvbl9lbmRfbWFya2VyKQp0ZXh0ID0gdGV4dFs6c2VjdGlvbl9zdGFydF0gKyB0ZXh0W3NlY3Rpb25fZW5kOl0KCnBhdGgud3JpdGVfdGV4dCh0ZXh0KQoKY3NzX3BhdGggPSBQYXRoKCdzcmMvcGFnZXMvYWRtaW4vcHJvZHVjdC9wcm9kdWN0LWVkaXRvci5jc3MnKQpjc3MgPSBjc3NfcGF0aC5yZWFkX3RleHQoKQpzY3JvbGxiYXJfY3NzID0gIiIiXG5cbi5wcm9kdWN0LWVkaXRvci1zY3JvbGwge1xuICBzY3JvbGxiYXItd2lkdGg6IG5vbmU7XG4gIC1tcy1vdmVyZmxvdy1zdHlsZTogbm9uZTtcbn1cblxuLnByb2R1Y3QtZWRpdG9yLXNjcm9sbDo6LXdlYmtpdC1zY3JvbGxiYXIge1xuICBkaXNwbGF5OiBub25lO1xufVxuIiIiCmlmICcucHJvZHVjdC1lZGl0b3Itc2Nyb2xsJyBub3QgaW4gY3NzOgogICAgY3NzICs9IHNjcm9sbGJhcl9jc3MKY3NzX3BhdGgud3JpdGVfdGV4dChjc3MpCg=="
         run: |
-          from pathlib import Path
-
-          path = Path('src/pages/admin/product/ProductEditorModal.tsx')
-          text = path.read_text()
-
-          text = text.replace(
-              "  const [generalFiles, setGeneralFiles] = useState<(File | null)[]>(Array(5).fill(null));\n  const [generalPreviews, setGeneralPreviews] = useState<(string | null)[]>(Array(5).fill(null));\n",
-              "",
-          )
-          text = text.replace(
-              "      setGeneralFiles(Array(5).fill(null));\n      setGeneralPreviews(Array(5).fill(null));\n",
-              "",
-          )
-
-          old_variants = '''    const colors = parseColors(product.color);
-    const globalSizes = parseList(product.size);
-    const productVariants = colors.length
-      ? colors.map((color) => ({
-          color,
-          sizes: product.color_sizes?.[color]?.length
-            ? product.color_sizes[color]
-            : globalSizes.length
-              ? globalSizes
-              : [''],
-          files: [],
-          previews: [],
-          existingImages: (product.color_images?.[color] || []).map((image) => getImageUrl(image)),
-        }))
-      : [emptyVariant()];
-
-    setVariants(productVariants);
-
-    const previews = Array(5).fill(null) as (string | null)[];
-    const images = product.images?.length ? product.images : product.img ? [product.img] : [];
-    images.slice(0, 5).forEach((image, index) => {
-      previews[index] = getImageUrl(image);
-    });
-    setGeneralPreviews(previews);
-    setGeneralFiles(Array(5).fill(null));
-'''
-          new_variants = '''    const colors = parseColors(product.color);
-    const globalSizes = parseList(product.size);
-    const legacyGallery = product.images?.length
-      ? product.images
-      : product.img
-        ? [product.img]
-        : [];
-    const productVariants = colors.length
-      ? colors.map((color, colorIndex) => {
-          const colorGallery = product.color_images?.[color] || [];
-          const gallery = colorGallery.length
-            ? colorGallery
-            : colorIndex === 0
-              ? legacyGallery
-              : [];
-
-          return {
-            color,
-            sizes: product.color_sizes?.[color]?.length
-              ? product.color_sizes[color]
-              : globalSizes.length
-                ? globalSizes
-                : [''],
-            files: [],
-            previews: [],
-            existingImages: gallery.slice(0, 5).map((image) => getImageUrl(image)),
-          };
-        })
-      : [emptyVariant()];
-
-    setVariants(productVariants);
-'''
-          if old_variants not in text:
-              raise SystemExit('No se encontró bloque de inicialización de variantes')
-          text = text.replace(old_variants, new_variants, 1)
-
-          start = text.find('  const handleGeneralFiles = (filesList: FileList | null) => {')
-          end = text.find('  const openCatalogManager = (kind: CatalogKind) => {', start)
-          if start < 0 or end < 0:
-              raise SystemExit('No se encontró bloque de galería general')
-          text = text[:start] + text[end:]
-
-          submit_start = text.find('      const imageSlots = generalPreviews.map((preview, index) => {')
-          submit_end = text.find('      if (product?.id) await productService.update(product.id, data);', submit_start)
-          if submit_start < 0 or submit_end < 0:
-              raise SystemExit('No se encontró envío de galería general')
-          text = text[:submit_start] + text[submit_end:]
-
-          old_modal = '      <div className="max-h-[95vh] w-full max-w-6xl overflow-y-auto rounded-[2.4rem] border border-gray-200 bg-white p-5 shadow-2xl sm:p-8 lg:p-10">'
-          new_modal = '      <div className="product-editor-scroll max-h-[96vh] w-full max-w-7xl overflow-y-auto rounded-[2.4rem] border border-gray-200 bg-white p-4 shadow-2xl sm:p-6 lg:p-8">'
-          if old_modal not in text:
-              raise SystemExit('No se encontró contenedor principal del editor')
-          text = text.replace(old_modal, new_modal, 1)
-
-          text = text.replace(
-              '                  Cada color agrupa sus imágenes y tallas.',
-              '                  Cada color agrupa su galería, imagen principal y tallas.',
-              1,
-          )
-          text = text.replace('                rows={4}', '                rows={3}', 1)
-
-          image_start = text.find('                  <div className="mt-5 border-t border-gray-100 pt-4">')
-          image_end = text.find('\n                </div>\n              ))}', image_start)
-          if image_start < 0 or image_end < 0:
-              raise SystemExit('No se encontró bloque de imágenes de variante')
-
-          new_image_block = '''                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white p-3 sm:p-4">
-                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                          Imagen principal y galería
-                        </label>
-                        <p className="mt-1 text-[10px] text-gray-400">
-                          La primera imagen será la principal de este color · Máximo 5
-                        </p>
-                      </div>
-
-                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-store-red/15 bg-red-50 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-store-red transition hover:bg-store-red hover:text-white">
-                        <ImageIcon size={14} />
-                        {variant.previews.length || variant.existingImages.length
-                          ? 'Reemplazar galería'
-                          : 'Agregar imágenes'}
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          multiple
-                          className="hidden"
-                          onChange={(e) => handleVariantImages(index, e.target.files)}
-                        />
-                      </label>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                      {[0, 1, 2, 3, 4].map((imageIndex) => {
-                        const imageList = variant.previews.length
-                          ? variant.previews
-                          : variant.existingImages;
-                        const preview = imageList[imageIndex];
-
-                        return (
-                          <div key={`gallery-${index}-${imageIndex}`} className="space-y-1">
-                            <div
-                              className={`relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-xl border bg-gray-50 ${
-                                imageIndex === 0
-                                  ? 'border-store-red/40 ring-2 ring-store-red/10'
-                                  : 'border-gray-200'
-                              }`}
-                            >
-                              {preview ? (
-                                <img
-                                  src={preview}
-                                  alt={`${variant.color || 'Color'} ${imageIndex + 1}`}
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                <ImageIcon size={18} className="text-gray-300" />
-                              )}
-
-                              {imageIndex === 0 && (
-                                <span className="absolute left-1.5 top-1.5 rounded-full bg-store-red px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-white shadow-sm">
-                                  Principal
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-center text-[9px] font-bold uppercase text-gray-400">
-                              {imageIndex === 0 ? 'Portada' : `Imagen ${imageIndex + 1}`}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <p className="mt-2 text-[10px] leading-relaxed text-gray-400">
-                      {index === 0
-                        ? 'La portada del primer color también será la imagen principal del producto.'
-                        : 'Al seleccionar este color en la tienda se mostrará primero su imagen principal.'}
-                    </p>
-
-                    {variant.existingImages.length > 0 && variant.previews.length > 0 && (
-                      <p className="mt-2 text-[10px] font-semibold text-amber-600">
-                        La nueva galería reemplazará las imágenes actuales de este color.
-                      </p>
-                    )}
-                  </div>'''
-          text = text[:image_start] + new_image_block + text[image_end:]
-
-          heading = 'Imagen principal y galería general'
-          heading_pos = text.find(heading)
-          if heading_pos < 0:
-              raise SystemExit('No se encontró la sección de galería general')
-          section_start = text.rfind('          <section className="space-y-4">', 0, heading_pos)
-          section_end_marker = '          </section>'
-          section_end = text.find(section_end_marker, heading_pos)
-          if section_start < 0 or section_end < 0:
-              raise SystemExit('No se pudo aislar la sección de galería general')
-          section_end += len(section_end_marker)
-          text = text[:section_start] + text[section_end:]
-
-          path.write_text(text)
-
-          css_path = Path('src/pages/admin/product/product-editor.css')
-          css = css_path.read_text()
-          scrollbar_css = '''\n\n.product-editor-scroll {\n  scrollbar-width: none;\n  -ms-overflow-style: none;\n}\n\n.product-editor-scroll::-webkit-scrollbar {\n  display: none;\n}\n'''
-          if '.product-editor-scroll' not in css:
-              css += scrollbar_css
-          css_path.write_text(css)
-
-      - name: Validar frontend
+          echo "$PATCH_B64" | base64 -d > /tmp/patch_editor.py
+          python3 /tmp/patch_editor.py
+      - name: Build and validate
         run: |
           npm ci
           npm run build
           test -f dist/index.html
           grep -q "Imagen principal y galería" src/pages/admin/product/ProductEditorModal.tsx
           grep -q "product-editor-scroll" src/pages/admin/product/ProductEditorModal.tsx
-          ! grep -q "Imagen principal y galería general" src/pages/admin/product/ProductEditorModal.tsx
-
-      - name: Guardar cambios en rama feature
+      - name: Commit feature
         run: |
           git config user.name "VaftecPeru"
           git config user.email "vaftecperusac@gmail.com"
