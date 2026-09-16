@@ -521,7 +521,10 @@ export default function StoreHome() {
         <div className="announcement-bar">
           <div className="shell announcement-bar__inner">
             <p><Truck size={14} /> Envíos a todo México</p>
-           
+            <div className="announcement-promises" aria-label="Compromisos de compra">
+              <span>Pagos seguros</span>
+              <span>La confianza de miles de familias</span>
+            </div>
             <div className="announcement-socials" aria-label="Redes sociales">
               <a href="#instagram" aria-label="Instagram"><InstagramIcon size={13} /></a>
               <a href="#facebook" aria-label="Facebook"><FacebookIcon size={13} /></a>
@@ -822,10 +825,6 @@ export default function StoreHome() {
                     <img src={item.image} alt="" loading="lazy" />
                   </a>
                 ))}
-                <a className="finder-card finder-card--sale" href="#ofertas">
-                  <div><strong>Ofertas especiales</strong><span>Aprovecha hoy</span><ArrowRight size={18} /></div>
-                  <span className="finder-card__percent">%</span>
-                </a>
               </div>
             </section>
 
@@ -858,7 +857,7 @@ export default function StoreHome() {
             {/* PROMOCIONES */}
             <section className="promo-grid shell section-block" id="ofertas" aria-label="Promociones">
               <article className="promo promo--dark">
-                <div><span>Ofertas especiales</span><h2>Hasta <strong>40%</strong> de descuento</h2><Link className="button button--primary" to="/ofertas">Ver ofertas <ArrowRight size={16} /></Link></div>
+                <div><span>Familias extraordinarias</span><h2>Hasta <strong>30%</strong> de descuento</h2><Link className="button button--primary" to="/ofertas">Ver ofertas <ArrowRight size={16} /></Link></div>
                 <img src="https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=700&q=88" alt="Zapato rojo de oferta" loading="lazy" />
               </article>
               <article className="promo promo--light">
