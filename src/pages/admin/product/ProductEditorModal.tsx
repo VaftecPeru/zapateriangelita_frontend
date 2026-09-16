@@ -126,18 +126,32 @@ const ProductEditorModal = ({
 
     const colors = parseColors(product.color);
     const globalSizes = parseList(product.size);
+    const legacyGallery = product.images?.length
+      ? product.images
+      : product.img
+        ? [product.img]
+        : [];
     const productVariants = colors.length
-      ? colors.map((color) => ({
-          color,
-          sizes: product.color_sizes?.[color]?.length
-            ? product.color_sizes[color]
-            : globalSizes.length
-              ? globalSizes
-              : [''],
-          files: [],
-          previews: [],
-          existingImages: (product.color_images?.[color] || []).map((image) => getImageUrl(image)),
-        }))
+      ? colors.map((color, colorIndex) => {
+          const colorGallery = product.color_images?.[color] || [];
+          const gallery = colorGallery.length
+            ? colorGallery
+            : colorIndex === 0
+              ? legacyGallery
+              : [];
+
+          return {
+            color,
+            sizes: product.color_sizes?.[color]?.length
+              ? product.color_sizes[color]
+              : globalSizes.length
+                ? globalSizes
+                : [''],
+            files: [],
+            previews: [],
+            existingImages: gallery.slice(0, 5).map((image) => getImageUrl(image)),
+          };
+        })
       : [emptyVariant()];
 
     setVariants(productVariants);
@@ -194,34 +208,19 @@ const ProductEditorModal = ({
     const files = Array.from(filesList || []).slice(0, 5);
     const previews = files.map((file) => URL.createObjectURL(file));
     setVariant(variantIndex, { files, previews });
-  };
 
-  const handleGeneralFiles = (filesList: FileList | null) => {
-    const files = Array.from(filesList || []).slice(0, 5);
-    const nextFiles = [...generalFiles];
-    const nextPreviews = [...generalPreviews];
-    let cursor = nextFiles.findIndex((file, index) => !file && !nextPreviews[index]);
-
-    if (cursor < 0) cursor = 5;
-
-    files.forEach((file) => {
-      if (cursor >= 5) return;
-      nextFiles[cursor] = file;
-      nextPreviews[cursor] = URL.createObjectURL(file);
-      cursor += 1;
-    });
-
-    setGeneralFiles(nextFiles);
-    setGeneralPreviews(nextPreviews);
-  };
-
-  const removeGeneralImage = (index: number) => {
-    const files = [...generalFiles];
-    const previews = [...generalPreviews];
-    files[index] = null;
-    previews[index] = null;
-    setGeneralFiles(files);
-    setGeneralPreviews(previews);
+    // La primera variante gobierna también la portada general del producto.
+    // Esto mantiene compatibilidad con las vistas que aún consumen products.img/images.
+    if (variantIndex === 0) {
+      const nextFiles: (File | null)[] = Array(5).fill(null);
+      const nextPreviews: (string | null)[] = Array(5).fill(null);
+      files.forEach((file, imageIndex) => {
+        nextFiles[imageIndex] = file;
+        nextPreviews[imageIndex] = previews[imageIndex];
+      });
+      setGeneralFiles(nextFiles);
+      setGeneralPreviews(nextPreviews);
+    }
   };
 
   const openCatalogManager = (kind: CatalogKind) => {
@@ -450,7 +449,7 @@ const ProductEditorModal = ({
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-5">
-      <div className="max-h-[95vh] w-full max-w-6xl overflow-y-auto rounded-[2.4rem] border border-gray-200 bg-white p-5 shadow-2xl sm:p-8 lg:p-10">
+      <div className="product-editor-scroll max-h-[96vh] w-full max-w-7xl overflow-y-auto rounded-[2.4rem] border border-gray-200 bg-white p-4 shadow-2xl sm:p-6 lg:p-8">
         <div className="mb-7 grid grid-cols-[1fr_auto] items-start gap-4 border-b border-gray-100 pb-5 sm:grid-cols-[1fr_180px_auto]">
           <div>
             <h2 className="text-2xl font-black tracking-tight text-black">
@@ -700,7 +699,7 @@ const ProductEditorModal = ({
                   Variantes del producto
                 </p>
                 <p className="mt-1 text-xs text-gray-400">
-                  Cada color agrupa sus imágenes y tallas.
+                  Cada color agrupa su imagen principal, galería y tallas.
                 </p>
               </div>
               <button
@@ -792,47 +791,83 @@ const ProductEditorModal = ({
                     </div>
                   </div>
 
-                  <div className="mt-5 border-t border-gray-100 pt-4">
-                    <div className="mb-2 flex items-center justify-between">
-                      <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                        Imágenes de este color
-                      </label>
-                      <span className="text-[10px] text-gray-400">Máximo 5</span>
-                    </div>
-
-                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-black text-store-red ring-1 ring-gray-200 hover:ring-store-red/40">
-                      <ImageIcon size={15} /> Elegir imágenes
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        multiple
-                        className="hidden"
-                        onChange={(e) => handleVariantImages(index, e.target.files)}
-                      />
-                    </label>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {(variant.previews.length
-                        ? variant.previews
-                        : variant.existingImages
-                      )
-                        .slice(0, 5)
-                        .map((preview, imageIndex) => (
-                          <img
-                            key={`${preview}-${imageIndex}`}
-                            src={preview}
-                            alt={`${variant.color || 'Color'} ${imageIndex + 1}`}
-                            className="h-16 w-16 rounded-xl border border-gray-200 bg-white object-cover"
-                          />
-                        ))}
-                    </div>
-
-                    {variant.existingImages.length > 0 &&
-                      variant.previews.length > 0 && (
-                        <p className="mt-2 text-[10px] text-amber-600">
-                          Las nuevas imágenes reemplazarán el conjunto actual de este color.
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white p-3 sm:p-4">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                          Imagen principal y galería
+                        </label>
+                        <p className="mt-1 text-[10px] text-gray-400">
+                          Primera imagen = principal · Máximo 5 por color
                         </p>
-                      )}
+                      </div>
+
+                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-store-red/15 bg-red-50 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-store-red transition hover:bg-store-red hover:text-white">
+                        <ImageIcon size={14} />
+                        {variant.previews.length || variant.existingImages.length
+                          ? 'Reemplazar galería'
+                          : 'Agregar imágenes'}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => handleVariantImages(index, e.target.files)}
+                        />
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                      {[0, 1, 2, 3, 4].map((imageIndex) => {
+                        const imageList = variant.previews.length
+                          ? variant.previews
+                          : variant.existingImages;
+                        const preview = imageList[imageIndex];
+
+                        return (
+                          <div key={`gallery-${index}-${imageIndex}`} className="space-y-1">
+                            <div
+                              className={`relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-xl border bg-gray-50 ${
+                                imageIndex === 0
+                                  ? 'border-store-red/40 ring-2 ring-store-red/10'
+                                  : 'border-gray-200'
+                              }`}
+                            >
+                              {preview ? (
+                                <img
+                                  src={preview}
+                                  alt={`${variant.color || 'Color'} ${imageIndex + 1}`}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <ImageIcon size={18} className="text-gray-300" />
+                              )}
+
+                              {imageIndex === 0 && (
+                                <span className="absolute left-1.5 top-1.5 rounded-full bg-store-red px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-white shadow-sm">
+                                  Principal
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-center text-[9px] font-bold uppercase text-gray-400">
+                              {imageIndex === 0 ? 'Portada' : `Imagen ${imageIndex + 1}`}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <p className="mt-2 text-[10px] leading-relaxed text-gray-400">
+                      {index === 0
+                        ? 'La portada del primer color también será la imagen principal del producto.'
+                        : 'Al seleccionar este color en la tienda se mostrará primero su imagen principal.'}
+                    </p>
+
+                    {variant.existingImages.length > 0 && variant.previews.length > 0 && (
+                      <p className="mt-2 text-[10px] font-semibold text-amber-600">
+                        La nueva galería reemplazará las imágenes actuales de este color.
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -860,7 +895,7 @@ const ProductEditorModal = ({
                 Descripción
               </label>
               <textarea
-                rows={4}
+                rows={3}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 className="field-input resize-y"
@@ -869,58 +904,7 @@ const ProductEditorModal = ({
             </div>
           </section>
 
-          <section className="space-y-4">
-            <div className="border-b border-gray-100 pb-2">
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-store-red">
-                Imagen principal y galería general
-              </p>
-              <p className="mt-1 text-xs text-gray-400">
-                Opcional. Úsala para portada o fotografías que no dependan de un color.
-              </p>
-            </div>
 
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-store-red px-5 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg hover:bg-store-redDark">
-              <ImageIcon size={16} /> Seleccionar imágenes
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                className="hidden"
-                onChange={(e) => handleGeneralFiles(e.target.files)}
-              />
-            </label>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-              {[0, 1, 2, 3, 4].map((index) => (
-                <div key={index} className="space-y-1.5">
-                  <div className="group relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50">
-                    {generalPreviews[index] ? (
-                      <img
-                        src={generalPreviews[index] || ''}
-                        alt={`Imagen ${index + 1}`}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <ImageIcon size={24} className="text-gray-300" />
-                    )}
-
-                    {generalPreviews[index] && (
-                      <button
-                        type="button"
-                        onClick={() => removeGeneralImage(index)}
-                        className="absolute right-1 top-1 rounded-full bg-red-500 p-1.5 text-white opacity-0 shadow group-hover:opacity-100"
-                      >
-                        <X size={12} />
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-center text-[10px] font-bold uppercase text-gray-400">
-                    {index === 0 ? 'Principal' : `Imagen ${index + 1}`}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
 
           <div className="flex justify-end gap-3 border-t border-gray-100 pt-6">
             <button
