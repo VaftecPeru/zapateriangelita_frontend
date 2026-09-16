@@ -1,0 +1,248 @@
+name: Feature product editor variant gallery
+
+on:
+  push:
+    branches:
+      - feature/product-editor-variant-gallery
+    paths:
+      - '.github/workflows/feature-product-editor-variant-gallery.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/product-editor-variant-gallery
+          fetch-depth: 0
+
+      - name: Optimizar editor de productos
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('src/pages/admin/product/ProductEditorModal.tsx')
+          text = path.read_text()
+
+          text = text.replace(
+              "  const [generalFiles, setGeneralFiles] = useState<(File | null)[]>(Array(5).fill(null));\n  const [generalPreviews, setGeneralPreviews] = useState<(string | null)[]>(Array(5).fill(null));\n",
+              "",
+          )
+          text = text.replace(
+              "      setGeneralFiles(Array(5).fill(null));\n      setGeneralPreviews(Array(5).fill(null));\n",
+              "",
+          )
+
+          old_variants = '''    const colors = parseColors(product.color);
+    const globalSizes = parseList(product.size);
+    const productVariants = colors.length
+      ? colors.map((color) => ({
+          color,
+          sizes: product.color_sizes?.[color]?.length
+            ? product.color_sizes[color]
+            : globalSizes.length
+              ? globalSizes
+              : [''],
+          files: [],
+          previews: [],
+          existingImages: (product.color_images?.[color] || []).map((image) => getImageUrl(image)),
+        }))
+      : [emptyVariant()];
+
+    setVariants(productVariants);
+
+    const previews = Array(5).fill(null) as (string | null)[];
+    const images = product.images?.length ? product.images : product.img ? [product.img] : [];
+    images.slice(0, 5).forEach((image, index) => {
+      previews[index] = getImageUrl(image);
+    });
+    setGeneralPreviews(previews);
+    setGeneralFiles(Array(5).fill(null));
+'''
+          new_variants = '''    const colors = parseColors(product.color);
+    const globalSizes = parseList(product.size);
+    const legacyGallery = product.images?.length
+      ? product.images
+      : product.img
+        ? [product.img]
+        : [];
+    const productVariants = colors.length
+      ? colors.map((color, colorIndex) => {
+          const colorGallery = product.color_images?.[color] || [];
+          const gallery = colorGallery.length
+            ? colorGallery
+            : colorIndex === 0
+              ? legacyGallery
+              : [];
+
+          return {
+            color,
+            sizes: product.color_sizes?.[color]?.length
+              ? product.color_sizes[color]
+              : globalSizes.length
+                ? globalSizes
+                : [''],
+            files: [],
+            previews: [],
+            existingImages: gallery.slice(0, 5).map((image) => getImageUrl(image)),
+          };
+        })
+      : [emptyVariant()];
+
+    setVariants(productVariants);
+'''
+          if old_variants not in text:
+              raise SystemExit('No se encontró bloque de inicialización de variantes')
+          text = text.replace(old_variants, new_variants, 1)
+
+          start = text.find('  const handleGeneralFiles = (filesList: FileList | null) => {')
+          end = text.find('  const openCatalogManager = (kind: CatalogKind) => {', start)
+          if start < 0 or end < 0:
+              raise SystemExit('No se encontró bloque de galería general')
+          text = text[:start] + text[end:]
+
+          submit_start = text.find('      const imageSlots = generalPreviews.map((preview, index) => {')
+          submit_end = text.find('      if (product?.id) await productService.update(product.id, data);', submit_start)
+          if submit_start < 0 or submit_end < 0:
+              raise SystemExit('No se encontró envío de galería general')
+          text = text[:submit_start] + text[submit_end:]
+
+          old_modal = '      <div className="max-h-[95vh] w-full max-w-6xl overflow-y-auto rounded-[2.4rem] border border-gray-200 bg-white p-5 shadow-2xl sm:p-8 lg:p-10">'
+          new_modal = '      <div className="product-editor-scroll max-h-[96vh] w-full max-w-7xl overflow-y-auto rounded-[2.4rem] border border-gray-200 bg-white p-4 shadow-2xl sm:p-6 lg:p-8">'
+          if old_modal not in text:
+              raise SystemExit('No se encontró contenedor principal del editor')
+          text = text.replace(old_modal, new_modal, 1)
+
+          text = text.replace(
+              '                  Cada color agrupa sus imágenes y tallas.',
+              '                  Cada color agrupa su galería, imagen principal y tallas.',
+              1,
+          )
+          text = text.replace('                rows={4}', '                rows={3}', 1)
+
+          image_start = text.find('                  <div className="mt-5 border-t border-gray-100 pt-4">')
+          image_end = text.find('\n                </div>\n              ))}', image_start)
+          if image_start < 0 or image_end < 0:
+              raise SystemExit('No se encontró bloque de imágenes de variante')
+
+          new_image_block = '''                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white p-3 sm:p-4">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                          Imagen principal y galería
+                        </label>
+                        <p className="mt-1 text-[10px] text-gray-400">
+                          La primera imagen será la principal de este color · Máximo 5
+                        </p>
+                      </div>
+
+                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-store-red/15 bg-red-50 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-store-red transition hover:bg-store-red hover:text-white">
+                        <ImageIcon size={14} />
+                        {variant.previews.length || variant.existingImages.length
+                          ? 'Reemplazar galería'
+                          : 'Agregar imágenes'}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => handleVariantImages(index, e.target.files)}
+                        />
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                      {[0, 1, 2, 3, 4].map((imageIndex) => {
+                        const imageList = variant.previews.length
+                          ? variant.previews
+                          : variant.existingImages;
+                        const preview = imageList[imageIndex];
+
+                        return (
+                          <div key={`gallery-${index}-${imageIndex}`} className="space-y-1">
+                            <div
+                              className={`relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-xl border bg-gray-50 ${
+                                imageIndex === 0
+                                  ? 'border-store-red/40 ring-2 ring-store-red/10'
+                                  : 'border-gray-200'
+                              }`}
+                            >
+                              {preview ? (
+                                <img
+                                  src={preview}
+                                  alt={`${variant.color || 'Color'} ${imageIndex + 1}`}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <ImageIcon size={18} className="text-gray-300" />
+                              )}
+
+                              {imageIndex === 0 && (
+                                <span className="absolute left-1.5 top-1.5 rounded-full bg-store-red px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-white shadow-sm">
+                                  Principal
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-center text-[9px] font-bold uppercase text-gray-400">
+                              {imageIndex === 0 ? 'Portada' : `Imagen ${imageIndex + 1}`}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <p className="mt-2 text-[10px] leading-relaxed text-gray-400">
+                      {index === 0
+                        ? 'La portada del primer color también será la imagen principal del producto.'
+                        : 'Al seleccionar este color en la tienda se mostrará primero su imagen principal.'}
+                    </p>
+
+                    {variant.existingImages.length > 0 && variant.previews.length > 0 && (
+                      <p className="mt-2 text-[10px] font-semibold text-amber-600">
+                        La nueva galería reemplazará las imágenes actuales de este color.
+                      </p>
+                    )}
+                  </div>'''
+          text = text[:image_start] + new_image_block + text[image_end:]
+
+          heading = 'Imagen principal y galería general'
+          heading_pos = text.find(heading)
+          if heading_pos < 0:
+              raise SystemExit('No se encontró la sección de galería general')
+          section_start = text.rfind('          <section className="space-y-4">', 0, heading_pos)
+          section_end_marker = '          </section>'
+          section_end = text.find(section_end_marker, heading_pos)
+          if section_start < 0 or section_end < 0:
+              raise SystemExit('No se pudo aislar la sección de galería general')
+          section_end += len(section_end_marker)
+          text = text[:section_start] + text[section_end:]
+
+          path.write_text(text)
+
+          css_path = Path('src/pages/admin/product/product-editor.css')
+          css = css_path.read_text()
+          scrollbar_css = '''\n\n.product-editor-scroll {\n  scrollbar-width: none;\n  -ms-overflow-style: none;\n}\n\n.product-editor-scroll::-webkit-scrollbar {\n  display: none;\n}\n'''
+          if '.product-editor-scroll' not in css:
+              css += scrollbar_css
+          css_path.write_text(css)
+
+      - name: Validar frontend
+        run: |
+          npm ci
+          npm run build
+          test -f dist/index.html
+          grep -q "Imagen principal y galería" src/pages/admin/product/ProductEditorModal.tsx
+          grep -q "product-editor-scroll" src/pages/admin/product/ProductEditorModal.tsx
+          ! grep -q "Imagen principal y galería general" src/pages/admin/product/ProductEditorModal.tsx
+
+      - name: Guardar cambios en rama feature
+        run: |
+          git config user.name "VaftecPeru"
+          git config user.email "vaftecperusac@gmail.com"
+          git add src/pages/admin/product/ProductEditorModal.tsx src/pages/admin/product/product-editor.css
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: integrar galería principal dentro de cada variante"
+          git push origin feature/product-editor-variant-gallery
