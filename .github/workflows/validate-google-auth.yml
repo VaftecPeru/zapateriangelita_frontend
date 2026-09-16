@@ -1,0 +1,25 @@
+name: Validate Google Auth frontend
+
+on:
+  push:
+    branches:
+      - build-google-auth-20260916
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Verificar dist
+        run: |
+          test -f dist/index.html
+          test -f dist/.htaccess
+          test -d dist/assets
+          test -d dist/data
+          echo "Google Auth frontend build OK"
