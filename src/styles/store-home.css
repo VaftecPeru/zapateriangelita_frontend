@@ -2456,8 +2456,8 @@ img {
    Capa visual: conserva estructura, rutas, catálogo y funcionalidad.
    ================================================================ */
 :root {
-  --red: #b51232;
-  --red-dark: #761628;
+  --red: #e30613;
+  --red-dark: #a9040d;
   --ink: #211b19;
   --muted: #746a65;
   --line: #e8ded5;
@@ -2473,7 +2473,7 @@ body { background: #fffdf9; }
 .section-block { padding-top: clamp(72px, 8vw, 118px); }
 
 .announcement-bar {
-  background: #741528;
+  background: #b4050f;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: .12em;
@@ -2583,8 +2583,8 @@ body { background: #fffdf9; }
   letter-spacing: .12em;
   text-transform: uppercase;
 }
-.hero .button--primary { background: var(--red); box-shadow: 0 12px 26px rgba(181,18,50,.28); }
-.hero .button--primary:hover { background: #ce163b; transform: translateY(-2px); }
+.hero .button--primary { background: var(--red); box-shadow: 0 12px 26px rgba(227,6,19,.28); }
+.hero .button--primary:hover { background: #c70510; transform: translateY(-2px); }
 .hero .button--light { border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.08); color: #fff; backdrop-filter: blur(10px); }
 .hero__editorial-mark {
   position: absolute;
@@ -2691,7 +2691,7 @@ body { background: #fffdf9; }
 .finder-card img { transition: transform .7s cubic-bezier(.22,.61,.36,1); }
 .finder-card:hover img { transform: scale(1.08) translateX(-4px); }
 .finder-card strong { font-family: "Cormorant Garamond", serif; font-size: 24px; }
-.finder-card--sale { background: linear-gradient(135deg, #751627, #b51232); }
+.finder-card--sale { background: linear-gradient(135deg, #9f0610, #e30613); }
 
 .category-grid { gap: 20px; }
 .category-card__media {
@@ -2742,18 +2742,18 @@ body { background: #fffdf9; }
 .testimonial-card > p { font-family: "Cormorant Garamond", serif; font-size: 20px; line-height: 1.45; }
 .stars { color: var(--red); }
 
-.instagram__intro { background: #761628; color: #fff; }
+.instagram__intro { background: #a9040d; color: #fff; }
 .instagram__intro h2 { font-family: "Cormorant Garamond", serif; font-size: 44px; }
 .instagram__grid a { overflow: hidden; }
 .instagram__grid img { transition: transform .55s ease, filter .55s ease; }
 .instagram__grid a:hover img { filter: saturate(.75); transform: scale(1.08); }
-.newsletter { border-radius: 2px 2px 18px 2px; background: linear-gradient(110deg, #921b33, #b51232); }
+.newsletter { border-radius: 2px 2px 18px 2px; background: linear-gradient(110deg, #b4050f, #e30613); }
 
 /* Footer: se conserva todo el contenido; únicamente cambia su lenguaje visual. */
 .footer {
   margin-top: 0;
   background:
-    radial-gradient(circle at 14% 10%, rgba(181,18,50,.15), transparent 27%),
+    radial-gradient(circle at 14% 10%, rgba(227,6,19,.15), transparent 27%),
     #1d1816;
   color: rgba(255,255,255,.72);
 }
