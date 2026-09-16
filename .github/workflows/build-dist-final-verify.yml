@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - fix/checkout-3ds-auto-login
 
 jobs:
   build:
