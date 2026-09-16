@@ -5,16 +5,13 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
 import GoogleIdentityButton from '../components/GoogleIdentityButton';
 import '../styles/login-home.css';
+import brandLogo from '../assets/brand/logo-angelita-horizontal.png';
 
-const Logo = ({ light = false }: { light?: boolean }) => {
-    return (
-        <a className={`logo ${light ? 'logo--light' : ''}`} href="/" aria-label="Zapatería Angelita - inicio">
-            <span className="logo__small">Zapatería</span>
-            <strong>ANGELITA</strong>
-            <span className="logo__tagline">Calzando tus pies desde 1980</span>
-        </a>
-    );
-};
+const Logo = ({ light = false }: { light?: boolean }) => (
+    <a className={`logo ${light ? 'logo--light' : ''}`} href="/" aria-label="Zapatería Angelita - inicio">
+        <img className="brand-logo__image" src={brandLogo} alt="Zapatería Angelita" />
+    </a>
+);
 
 const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);

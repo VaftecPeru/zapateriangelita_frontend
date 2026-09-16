@@ -4,13 +4,12 @@ import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
 import '../styles/register-home.css';
+import brandLogo from '../assets/brand/logo-angelita-horizontal.png';
 import { onlyDigits, onlyLettersAndSpaces } from '../utils/profileValidation';
 
 const Logo = () => (
     <a className="logo" href="/" aria-label="Zapatería Angelita - inicio">
-        <span className="logo__small">Zapatería</span>
-        <strong>ANGELITA</strong>
-        <span className="logo__tagline">Calzando tus pies desde 1980</span>
+        <img className="brand-logo__image" src={brandLogo} alt="Zapatería Angelita" />
     </a>
 );
 

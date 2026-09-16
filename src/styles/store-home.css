@@ -2427,3 +2427,26 @@ img {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* Identidad visual Angelita 2026 */
+.logo {
+  display: inline-flex;
+  width: auto;
+  line-height: normal;
+}
+.brand-logo__image {
+  display: block;
+  width: clamp(150px, 13vw, 210px);
+  height: auto;
+  object-fit: contain;
+}
+.logo--light .brand-logo__image {
+  filter: brightness(0) invert(1);
+}
+.mobile-drawer__header .brand-logo__image {
+  width: 160px;
+}
+@media (max-width: 720px) {
+  .header-main .brand-logo__image { width: 145px; }
+  .footer__brand .brand-logo__image { width: 180px; }
+}

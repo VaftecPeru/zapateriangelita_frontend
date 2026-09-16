@@ -484,3 +484,20 @@
         font-size: 10px;
     }
 }
+
+
+/* Identidad visual Angelita 2026 */
+.login-page .logo {
+    display: block;
+    width: min(100%, 290px);
+    margin: 0 auto 24px;
+}
+.login-page .brand-logo__image {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+@media (max-width: 520px) {
+    .login-page .logo { width: min(100%, 245px); }
+}
