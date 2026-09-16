@@ -46,10 +46,12 @@
   padding: 9px 12px;
   border-radius: 12px;
   border: 1px solid rgba(18,18,18,.10);
-  background: rgba(255,255,255,.9);
+  background: rgba(255,255,255,.92);
   color: #25211e;
   font: 700 12px/1.2 "Inter", system-ui, sans-serif;
   box-shadow: 0 7px 16px rgba(33,25,18,.04);
+  appearance: none;
+  text-align: left;
 }
 
 .google-button-fallback__mark {
@@ -66,13 +68,33 @@
 }
 
 .google-button-fallback small {
-  color: #9a9188;
+  color: #8e857d;
   font-size: 8px;
   font-weight: 700;
+  line-height: 1.35;
+  text-align: right;
 }
 
-.google-button-fallback--disabled {
-  opacity: .72;
+.google-button-fallback--retry {
+  cursor: pointer;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.google-button-fallback--retry:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(66,133,244,.28);
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(33,25,18,.08);
+}
+
+.google-button-fallback--retry:focus-visible {
+  outline: 3px solid rgba(66,133,244,.18);
+  outline-offset: 2px;
+}
+
+.google-button-fallback--retry:disabled {
+  cursor: not-allowed;
+  opacity: .55;
 }
 
 .google-button-fallback--error {
@@ -92,5 +114,6 @@
 
   .google-button-fallback small {
     grid-column: 2;
+    text-align: left;
   }
 }
