@@ -1,0 +1,23 @@
+name: Validate Google quick register frontend
+
+on:
+  push:
+    branches:
+      - feature/google-quick-register-login
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Verify dist
+        run: |
+          test -f dist/index.html
+          test -d dist/assets
+          echo "Frontend Google quick register OK"
