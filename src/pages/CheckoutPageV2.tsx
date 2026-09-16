@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, LockKeyhole, ShoppingBag } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import PaymentModal, { OpenpayChargeResult } from "../components/PaymentModal";
+import EditableOrderSummary from "../components/EditableOrderSummary";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
 import { useUbigeo } from "../hooks/useUbigeo";
@@ -570,32 +571,15 @@ const CheckoutPageV2 = () => {
             </p>
           </form>
 
-          <aside style={cardStyle}>
-            <h2 style={{ marginTop: 0, fontSize: "20px" }}>Resumen del pedido</h2>
-            {cart.map((item, index) => (
-              <div key={`${item.product?.id}-${item.product?.size || ""}-${item.product?.color || ""}-${index}`} style={{ display: "flex", gap: "12px", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #eee" }}>
-                <img src={item.product?.image || item.product?.img || ""} alt="" style={{ width: "58px", height: "58px", objectFit: "cover", borderRadius: "4px", background: "#f5f5f5" }} />
-                <div style={{ flex: 1 }}>
-                  <strong style={{ fontSize: "14px" }}>{item.product?.name || "Producto"}</strong>
-                  <div style={{ color: "#666", fontSize: "12px", marginTop: "3px" }}>
-                    {item.product?.size ? `Talla: ${item.product.size}` : ""}
-                    {item.product?.color ? ` ${item.product?.size ? "·" : ""} Color: ${typeof item.product.color === "object" ? item.product.color.name || item.product.color.color : item.product.color}` : ""}
-                  </div>
-                  <div style={{ color: "#666", fontSize: "12px", marginTop: "3px" }}>
-                    {item.quantity} x {money.format(Number(item.product?.price || 0))}
-                  </div>
-                </div>
-              </div>
-            ))}
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "20px", paddingTop: "16px", borderTop: "2px solid #eee", fontWeight: 800 }}>
-              <span style={{ fontSize: "18px" }}>Total</span>
-              <span style={{ color: "#e30613", fontSize: "24px" }}>{money.format(cartTotal)}</span>
-            </div>
-            <div style={{ marginTop: "18px", padding: "12px", background: "#f7f7f7", borderRadius: "8px", fontSize: "11px", color: "#666", lineHeight: 1.5 }}>
-              <LockKeyhole size={14} style={{ verticalAlign: "-3px", marginRight: "5px" }} />
-              El pago se procesa con Openpay. La cuenta del cliente se genera únicamente después de confirmar el pago.
-            </div>
-          </aside>
+          <EditableOrderSummary
+  onVariantChanged={() => {
+    // Cualquier cambio de cantidad/talla/color invalida sesiones de pago previas.
+    clearCheckoutSession();
+    setOrderData(null);
+    setShowPayment(false);
+    setError(null);
+  }}
+/>
         </div>
       </div>
 
