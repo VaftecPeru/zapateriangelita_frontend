@@ -6,9 +6,10 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
+import ClientPurchasesPage from './pages/ClientPurchasesPage';
 import ContactAdvisorPage from './pages/ContactAdvisorPage';
 import ProductDetailPage from './pages/ProductDetailPage';
-import CheckoutPage from './pages/CheckoutPage';
+import CheckoutPageV2 from './pages/CheckoutPageV2';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -53,16 +54,10 @@ const AppContent = () => {
           <Route path="/catalogo" element={<HomePage />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/producto/:productId" element={<ProductDetailPage />} />
-          <Route
-            path="/checkout"
-            element={
-              isAuthenticated ? (
-                <CheckoutPage />
-              ) : (
-                <Navigate to="/login" replace state={{ from: '/checkout' }} />
-              )
-            }
-          />
+
+          {/* El checkout queda disponible para invitados. La cuenta se crea después del pago. */}
+          <Route path="/checkout" element={<CheckoutPageV2 />} />
+
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -70,6 +65,16 @@ const AppContent = () => {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route
+            path="/profile/purchases"
+            element={
+              isAuthenticated ? (
+                <ClientPurchasesPage />
+              ) : (
+                <Navigate to="/login" replace state={{ from: '/profile/purchases' }} />
+              )
+            }
+          />
           <Route
             path="/admin/dashboard"
             element={
