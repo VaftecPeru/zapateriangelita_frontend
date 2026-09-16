@@ -17,12 +17,13 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-
-      - name: Aplicar verificación robusta post pago
-        shell: python
+      - name: Patch checkout verification
+        env:
+          REPLACEMENT_B64: "ICAgIGNvbnN0IHNsZWVwID0gKG1zOiBudW1iZXIpID0+IG5ldyBQcm9taXNlKChyZXNvbHZlKSA9PiB3aW5kb3cuc2V0VGltZW91dChyZXNvbHZlLCBtcykpOwoKICAgIGNvbnN0IHZlcmlmeVBheW1lbnQgPSBhc3luYyAoKSA9PiB7CiAgICAgIHNldFZlcmlmeWluZ1BheW1lbnQodHJ1ZSk7CiAgICAgIHNldEVycm9yKG51bGwpOwoKICAgICAgY29uc3QgbWF4QXR0ZW1wdHMgPSA4OwogICAgICBsZXQgbGFzdE1lc3NhZ2UgPSAiRXN0YW1vcyBjb25maXJtYW5kbyB0dSBwYWdvIGNvbiBPcGVucGF5LiI7CgogICAgICB0cnkgewogICAgICAgIGZvciAobGV0IGF0dGVtcHQgPSAxOyBhdHRlbXB0IDw9IG1heEF0dGVtcHRzICYmICFjYW5jZWxsZWQ7IGF0dGVtcHQgKz0gMSkgewogICAgICAgICAgdHJ5IHsKICAgICAgICAgICAgY29uc3QgeyBkYXRhIH0gPSBhd2FpdCBhcGlDbGllbnQuZ2V0KCIvY2hlY2tvdXQvcGF5bWVudHMvb3BlbnBheS92ZXJpZnkiLCB7CiAgICAgICAgICAgICAgcGFyYW1zOiB7CiAgICAgICAgICAgICAgICBvcmRlcl9pZDogb3JkZXJJZCwKICAgICAgICAgICAgICAgIHRyYW5zYWN0aW9uX2lkOiB0cmFuc2FjdGlvbklkLAogICAgICAgICAgICAgICAgY2hlY2tvdXRfdG9rZW46IGNoZWNrb3V0VG9rZW4sCiAgICAgICAgICAgICAgfSwKICAgICAgICAgICAgICB0aW1lb3V0OiAxMDAwMCwKICAgICAgICAgICAgfSk7CgogICAgICAgICAgICBpZiAoY2FuY2VsbGVkKSByZXR1cm47CgogICAgICAgICAgICBpZiAoZGF0YS5wYXltZW50X3N0YXR1cyA9PT0gInBhaWQiKSB7CiAgICAgICAgICAgICAgZmluaXNoUGFpZFB1cmNoYXNlKGRhdGEpOwogICAgICAgICAgICAgIHJldHVybjsKICAgICAgICAgICAgfQoKICAgICAgICAgICAgaWYgKGRhdGEucGF5bWVudF9zdGF0dXMgPT09ICJmYWlsZWQiKSB7CiAgICAgICAgICAgICAgc2V0RXJyb3IoZGF0YS5tZXNzYWdlIHx8ICJFbCBwYWdvIG5vIGZ1ZSBhcHJvYmFkby4iKTsKICAgICAgICAgICAgICBuYXZpZ2F0ZSgiL2NoZWNrb3V0IiwgeyByZXBsYWNlOiB0cnVlIH0pOwogICAgICAgICAgICAgIHJldHVybjsKICAgICAgICAgICAgfQoKICAgICAgICAgICAgaWYgKGRhdGEucGF5bWVudF9zdGF0dXMgPT09ICJwcm9jZXNzaW5nIikgewogICAgICAgICAgICAgIGxhc3RNZXNzYWdlID0gZGF0YS5tZXNzYWdlIHx8ICJPcGVucGF5IHRvZGF2w61hIGVzdMOhIGNvbmZpcm1hbmRvIHR1IHBhZ28uIjsKICAgICAgICAgICAgICBpZiAoYXR0ZW1wdCA8IG1heEF0dGVtcHRzKSB7CiAgICAgICAgICAgICAgICBhd2FpdCBzbGVlcChhdHRlbXB0IDw9IDIgPyAxMjAwIDogMjIwMCk7CiAgICAgICAgICAgICAgICBjb250aW51ZTsKICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgICAgbGFzdE1lc3NhZ2UgPSBkYXRhLm1lc3NhZ2UgfHwgIkVzdGFtb3MgdmVyaWZpY2FuZG8gZWwgZXN0YWRvIGZpbmFsIGRlIHR1IGNvbXByYS4iOwogICAgICAgICAgICB9CiAgICAgICAgICB9IGNhdGNoIChlcnI6IGFueSkgewogICAgICAgICAgICBpZiAoY2FuY2VsbGVkKSByZXR1cm47CgogICAgICAgICAgICBjb25zdCByZXNwb25zZURhdGEgPSBlcnIucmVzcG9uc2U/LmRhdGE7CiAgICAgICAgICAgIGNvbnN0IGVycm9yQ29kZSA9IHJlc3BvbnNlRGF0YT8uZXJyb3JfY29kZTsKICAgICAgICAgICAgY29uc3Qgc3RhdHVzID0gTnVtYmVyKGVyci5yZXNwb25zZT8uc3RhdHVzIHx8IDApOwoKICAgICAgICAgICAgaWYgKGVycm9yQ29kZSA9PT0gIkNIRUNLT1VUX1RPS0VOX0lOVkFMSUQiKSB7CiAgICAgICAgICAgICAgY2xlYXJDaGVja291dFNlc3Npb24ob3JkZXJJZCk7CiAgICAgICAgICAgICAgc2V0RXJyb3IoCiAgICAgICAgICAgICAgICAiTGEgc2VzacOzbiBzZWd1cmEgZGUgZXN0YSBjb21wcmEgeWEgbm8gY29pbmNpZGUgY29uIGVsIHBlZGlkby4gTm8gcmVwaXRhcyBlbCBjb2Jyby4gU2kgZWwgcGFnbyBmdWUgYXByb2JhZG8sIGluaWNpYSBzZXNpw7NuIGNvbiBlbCBjb3JyZW8gdXRpbGl6YWRvIHkgcmV2aXNhIE1pcyBDb21wcmFzLiIKICAgICAgICAgICAgICApOwogICAgICAgICAgICAgIG5hdmlnYXRlKCIvY2hlY2tvdXQiLCB7IHJlcGxhY2U6IHRydWUgfSk7CiAgICAgICAgICAgICAgcmV0dXJuOwogICAgICAgICAgICB9CgogICAgICAgICAgICBjb25zdCByZXRyeWFibGUgPQogICAgICAgICAgICAgICFlcnIucmVzcG9uc2UgfHwKICAgICAgICAgICAgICBlcnIuY29kZSA9PT0gIkVDT05OQUJPUlRFRCIgfHwKICAgICAgICAgICAgICBzdGF0dXMgPj0gNTAwIHx8CiAgICAgICAgICAgICAgWzQwOCwgNDA5LCA0MjldLmluY2x1ZGVzKHN0YXR1cyk7CgogICAgICAgICAgICBpZiAoIXJldHJ5YWJsZSkgewogICAgICAgICAgICAgIHNldEVycm9yKAogICAgICAgICAgICAgICAgcmVzcG9uc2VEYXRhPy5tZXNzYWdlIHx8CiAgICAgICAgICAgICAgICAgICJObyBmdWUgcG9zaWJsZSB2ZXJpZmljYXIgZWwgcGFnbyBjb24gT3BlbnBheS4gTm8gcmVwaXRhcyBlbCBjb2JybyBoYXN0YSBjb25maXJtYXIgc3UgZXN0YWRvLiIKICAgICAgICAgICAgICApOwogICAgICAgICAgICAgIG5hdmlnYXRlKCIvY2hlY2tvdXQiLCB7IHJlcGxhY2U6IHRydWUgfSk7CiAgICAgICAgICAgICAgcmV0dXJuOwogICAgICAgICAgICB9CgogICAgICAgICAgICBsYXN0TWVzc2FnZSA9CiAgICAgICAgICAgICAgcmVzcG9uc2VEYXRhPy5tZXNzYWdlIHx8CiAgICAgICAgICAgICAgIkVsIHBhZ28gZnVlIGVudmlhZG8geSBlc3RhbW9zIGVzcGVyYW5kbyBsYSBjb25maXJtYWNpw7NuIGZpbmFsIGRlIE9wZW5wYXkuIjsKCiAgICAgICAgICAgIGlmIChhdHRlbXB0IDwgbWF4QXR0ZW1wdHMpIHsKICAgICAgICAgICAgICBhd2FpdCBzbGVlcChhdHRlbXB0IDw9IDIgPyAxMjAwIDogMjIwMCk7CiAgICAgICAgICAgICAgY29udGludWU7CiAgICAgICAgICAgIH0KICAgICAgICAgIH0KICAgICAgICB9CgogICAgICAgIGlmICghY2FuY2VsbGVkKSB7CiAgICAgICAgICBzZXRFcnJvcigKICAgICAgICAgICAgYCR7bGFzdE1lc3NhZ2V9IE5vIHJlYWxpY2VzIG90cm8gY29icm8uIFNpIHlhIHJlY2liaXN0ZSBjb25maXJtYWNpw7NuLCBpbmljaWEgc2VzacOzbiBjb24gZWwgY29ycmVvIHV0aWxpemFkbyB5IHJldmlzYSBNaXMgQ29tcHJhcy5gCiAgICAgICAgICApOwogICAgICAgICAgbmF2aWdhdGUoIi9jaGVja291dCIsIHsgcmVwbGFjZTogdHJ1ZSB9KTsKICAgICAgICB9CiAgICAgIH0gZmluYWxseSB7CiAgICAgICAgaWYgKCFjYW5jZWxsZWQpIHNldFZlcmlmeWluZ1BheW1lbnQoZmFsc2UpOwogICAgICB9CiAgICB9OwoK"
         run: |
+          python3 - <<'PY'
+          import base64, os
           from pathlib import Path
-
           path = Path('src/pages/CheckoutPageV2.tsx')
           text = path.read_text()
           start_marker = '    const verifyPayment = async () => {'
@@ -31,111 +32,10 @@ jobs:
           end = text.find(end_marker, start)
           if start < 0 or end < 0:
               raise SystemExit(f'No se encontró bloque verifyPayment: {start}, {end}')
-
-          replacement = '''    const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
-
-    const verifyPayment = async () => {
-      setVerifyingPayment(true);
-      setError(null);
-
-      const maxAttempts = 8;
-      let lastMessage = "Estamos confirmando tu pago con Openpay.";
-
-      try {
-        for (let attempt = 1; attempt <= maxAttempts && !cancelled; attempt += 1) {
-          try {
-            const { data } = await apiClient.get("/checkout/payments/openpay/verify", {
-              params: {
-                order_id: orderId,
-                transaction_id: transactionId,
-                checkout_token: checkoutToken,
-              },
-              // El primer retorno puede tardar si el servidor termina tareas posteriores
-              // al pago. Un timeout corto permite reintentar de forma idempotente sin
-              // volver a cobrar: el backend reemite la sesión si el pedido ya está pagado.
-              timeout: 10000,
-            });
-
-            if (cancelled) return;
-
-            if (data.payment_status === "paid") {
-              finishPaidPurchase(data);
-              return;
-            }
-
-            if (data.payment_status === "failed") {
-              setError(data.message || "El pago no fue aprobado.");
-              navigate("/checkout", { replace: true });
-              return;
-            }
-
-            if (data.payment_status === "processing") {
-              lastMessage = data.message || "Openpay todavía está confirmando tu pago.";
-              if (attempt < maxAttempts) {
-                await sleep(attempt <= 2 ? 1200 : 2200);
-                continue;
-              }
-            } else {
-              lastMessage = data.message || "Estamos verificando el estado final de tu compra.";
-            }
-          } catch (err: any) {
-            if (cancelled) return;
-
-            const responseData = err.response?.data;
-            const errorCode = responseData?.error_code;
-            const status = Number(err.response?.status || 0);
-
-            if (errorCode === "CHECKOUT_TOKEN_INVALID") {
-              clearCheckoutSession(orderId);
-              setError(
-                "La sesión segura de esta compra ya no coincide con el pedido. No repitas el cobro. Si el pago fue aprobado, inicia sesión con el correo utilizado y revisa Mis Compras."
-              );
-              navigate("/checkout", { replace: true });
-              return;
-            }
-
-            const retryable =
-              !err.response ||
-              err.code === "ECONNABORTED" ||
-              status >= 500 ||
-              [408, 409, 429].includes(status);
-
-            if (!retryable) {
-              setError(
-                responseData?.message ||
-                  "No fue posible verificar el pago con Openpay. No repitas el cobro hasta confirmar su estado."
-              );
-              navigate("/checkout", { replace: true });
-              return;
-            }
-
-            lastMessage =
-              responseData?.message ||
-              "El pago fue enviado y estamos esperando la confirmación final de Openpay.";
-
-            if (attempt < maxAttempts) {
-              await sleep(attempt <= 2 ? 1200 : 2200);
-              continue;
-            }
-          }
-        }
-
-        if (!cancelled) {
-          setError(
-            `${lastMessage} No realices otro cobro. Si ya recibiste confirmación, inicia sesión con el correo utilizado y revisa Mis Compras.`
-          );
-          navigate("/checkout", { replace: true });
-        }
-      } finally {
-        if (!cancelled) setVerifyingPayment(false);
-      }
-    };
-
-'''
-
+          replacement = base64.b64decode(os.environ['REPLACEMENT_B64']).decode()
           path.write_text(text[:start] + replacement + text[end:])
-
-      - name: Validar build frontend
+          PY
+      - name: Validate and build
         run: |
           npm ci
           npm run build
@@ -145,8 +45,7 @@ jobs:
           grep -q "maxAttempts = 8" src/pages/CheckoutPageV2.tsx
           grep -q "timeout: 10000" src/pages/CheckoutPageV2.tsx
           grep -q "finishPaidPurchase(data)" src/pages/CheckoutPageV2.tsx
-
-      - name: Guardar corrección en main
+      - name: Commit patch
         run: |
           git config user.name "VaftecPeru"
           git config user.email "vaftecperusac@gmail.com"
