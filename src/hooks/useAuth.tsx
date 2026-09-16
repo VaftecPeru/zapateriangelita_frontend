@@ -6,6 +6,8 @@ interface User {
     name: string;
     email: string;
     role?: string;
+    google_email?: string | null;
+    google_linked_at?: string | null;
 }
 
 interface AuthContextType {
