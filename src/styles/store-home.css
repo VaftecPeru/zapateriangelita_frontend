@@ -2490,8 +2490,8 @@ body { background: #fffdf9; }
   box-shadow: none;
   backdrop-filter: blur(18px);
 }
-.header-main { height: 92px; grid-template-columns: 235px 1fr auto; }
-.header-main .brand-logo__image { width: clamp(185px, 15vw, 232px); }
+.header-main { height: 98px; grid-template-columns: 270px 1fr auto; }
+.header-main .brand-logo__image { width: clamp(210px, 17vw, 258px); }
 .desktop-nav { gap: clamp(17px, 1.7vw, 30px); }
 .desktop-nav .nav-link {
   font-size: 11px;
@@ -2778,7 +2778,7 @@ body { background: #fffdf9; }
   .announcement-socials { display: none; }
   .site-header { position: sticky; }
   .header-main { height: 76px; gap: 8px; }
-  .header-main .brand-logo__image { width: 145px; }
+  .header-main .brand-logo__image { width: 158px; }
   .header-actions > :not(.header-actions__cart) { display: none; }
   .hero {
     width: calc(100% - 20px);
