@@ -15,8 +15,38 @@ const money = new Intl.NumberFormat("en-US", {
 });
 
 const DRAFT_KEY = "angelita_checkout_draft";
-const TOKEN_KEY = "angelita_checkout_token";
+const LEGACY_TOKEN_KEY = "angelita_checkout_token";
 const ORDER_KEY = "angelita_checkout_order_id";
+const ORDER_TOKEN_PREFIX = "angelita_checkout_token_order_";
+
+const tokenKeyForOrder = (orderId: number) => `${ORDER_TOKEN_PREFIX}${orderId}`;
+
+const storeCheckoutSession = (orderId: number, checkoutToken: string) => {
+  sessionStorage.setItem(tokenKeyForOrder(orderId), checkoutToken);
+  sessionStorage.setItem(ORDER_KEY, String(orderId));
+  // Compatibilidad temporal con sesiones creadas por versiones anteriores del checkout.
+  sessionStorage.setItem(LEGACY_TOKEN_KEY, checkoutToken);
+};
+
+const getCheckoutTokenForOrder = (orderId: number) => {
+  const scopedToken = sessionStorage.getItem(tokenKeyForOrder(orderId));
+  if (scopedToken) return scopedToken;
+
+  const legacyOrderId = Number(sessionStorage.getItem(ORDER_KEY) || 0);
+  return legacyOrderId === orderId ? sessionStorage.getItem(LEGACY_TOKEN_KEY) : null;
+};
+
+const clearCheckoutSession = (orderId?: number) => {
+  if (orderId) {
+    sessionStorage.removeItem(tokenKeyForOrder(orderId));
+  }
+
+  const currentOrderId = Number(sessionStorage.getItem(ORDER_KEY) || 0);
+  if (!orderId || !currentOrderId || currentOrderId === orderId) {
+    sessionStorage.removeItem(LEGACY_TOKEN_KEY);
+    sessionStorage.removeItem(ORDER_KEY);
+  }
+};
 
 const initialFormState = {
   full_name: "",
@@ -127,14 +157,18 @@ const CheckoutPageV2 = () => {
   }, [isAuthenticated, user]);
 
   const finishPaidPurchase = (result: any) => {
+    const paidOrderId = Number(result?.order_id || sessionStorage.getItem(ORDER_KEY) || 0);
+
     if (result?.auth_token && result?.user) {
+      // El backend crea la cuenta únicamente después de confirmar el pago.
+      // Guardamos la sesión antes de abandonar el checkout para que el cliente
+      // llegue autenticado a su historial de compras.
       authLogin(result.user, result.auth_token);
     }
 
     clearCart();
     sessionStorage.removeItem(DRAFT_KEY);
-    sessionStorage.removeItem(TOKEN_KEY);
-    sessionStorage.removeItem(ORDER_KEY);
+    clearCheckoutSession(paidOrderId || undefined);
     setShowPayment(false);
     setOrderData(null);
 
@@ -146,8 +180,8 @@ const CheckoutPageV2 = () => {
       return;
     }
 
-    // Recargamos una sola vez para que AuthProvider valide el token recién emitido
-    // antes de mostrar la sección privada de compras.
+    // La recarga hace que AuthProvider valide el token recién emitido contra
+    // el backend y abre directamente la compra confirmada en el rol Cliente.
     window.location.replace("/profile/purchases");
   };
 
@@ -157,12 +191,16 @@ const CheckoutPageV2 = () => {
     const params = new URLSearchParams(location.search);
     if (params.get("openpay_return") !== "1") return;
 
-    const orderId = Number(params.get("order_id") || sessionStorage.getItem(ORDER_KEY));
+    const orderIdFromUrl = Number(params.get("order_id") || 0);
+    const storedOrderId = Number(sessionStorage.getItem(ORDER_KEY) || 0);
+    const orderId = orderIdFromUrl || storedOrderId;
     const transactionId = params.get("id");
-    const checkoutToken = sessionStorage.getItem(TOKEN_KEY);
+    const checkoutToken = orderId ? getCheckoutTokenForOrder(orderId) : null;
 
     if (!orderId || !transactionId || !checkoutToken) {
-      setError("No fue posible recuperar la sesión del pago. Vuelve a iniciar la compra.");
+      setError(
+        "No fue posible recuperar la sesión segura de esta compra. No repitas el cobro; vuelve a iniciar el checkout si la operación no fue confirmada."
+      );
       navigate("/checkout", { replace: true });
       return;
     }
@@ -199,10 +237,20 @@ const CheckoutPageV2 = () => {
         navigate("/checkout", { replace: true });
       } catch (err: any) {
         if (!cancelled) {
-          setError(
-            err.response?.data?.message ||
-              "No fue posible verificar el pago con Openpay. No repitas el cobro hasta confirmar su estado."
-          );
+          const responseData = err.response?.data;
+          const errorCode = responseData?.error_code;
+
+          if (errorCode === "CHECKOUT_TOKEN_INVALID") {
+            clearCheckoutSession(orderId);
+            setError(
+              "La sesión segura de esta compra ya no coincide con el pedido. No repitas el cobro. Si el pago fue aprobado, revisa Mis Compras o vuelve a iniciar el checkout únicamente si no existe un cargo confirmado."
+            );
+          } else {
+            setError(
+              responseData?.message ||
+                "No fue posible verificar el pago con Openpay. No repitas el cobro hasta confirmar su estado."
+            );
+          }
           navigate("/checkout", { replace: true });
         }
       } finally {
@@ -333,8 +381,9 @@ const CheckoutPageV2 = () => {
         throw new Error("No se recibió la sesión segura de pago.");
       }
 
-      sessionStorage.setItem(TOKEN_KEY, checkoutToken);
-      sessionStorage.setItem(ORDER_KEY, String(orderId));
+      // El token queda ligado al pedido exacto. Esto evita que una compra nueva
+      // sobrescriba la sesión que Openpay necesita al regresar de 3D Secure.
+      storeCheckoutSession(orderId, checkoutToken);
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify(form));
 
       setOrderData({
