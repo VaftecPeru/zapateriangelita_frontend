@@ -772,13 +772,15 @@ export default function StoreHome() {
           </section>
         ) : isHomePage ? (
           <>
-            <section className="hero shell" aria-label="Colecciones destacadas">
+            <section className="hero shell" aria-label="Colecciones destacadas" aria-roledescription="carrusel">
               <div
+                key={`hero-image-${slide}`}
                 className="hero__image"
                 style={{ backgroundImage: `url(${activeHero.image})`, backgroundPosition: activeHero.imagePosition }}
               />
               <div className="hero__overlay" />
-              <div className="hero__content">
+              <div className="hero__editorial-mark" aria-hidden="true">A</div>
+              <div key={`hero-copy-${slide}`} className="hero__content" aria-live="polite">
                 <span>{activeHero.eyebrow}</span>
                 <h1>{activeHero.title}</h1>
                 <p>{activeHero.description}</p>
@@ -788,6 +790,11 @@ export default function StoreHome() {
                 </div>
               </div>
               <div className="hero__since"><span>Desde</span><strong>1980</strong></div>
+              <div className="hero__counter" aria-hidden="true">
+                <strong>{String(slide + 1).padStart(2, '0')}</strong>
+                <span />
+                <small>{String(heroSlides.length).padStart(2, '0')}</small>
+              </div>
               <button className="hero-arrow hero-arrow--left" type="button" onClick={() => goToSlide(-1)} aria-label="Anterior"><ChevronLeft /></button>
               <button className="hero-arrow hero-arrow--right" type="button" onClick={() => goToSlide(1)} aria-label="Siguiente"><ChevronRight /></button>
               <div className="hero-dots" aria-label="Seleccionar diapositiva">
