@@ -10,6 +10,7 @@ import { heroSlides } from '../data/catalog';
 import '../styles/store-home.css';
 import '../styles/home-premium-experience.css';
 import '../styles/store-home-mobile.css';
+import '../styles/home-commerce-polish.css';
 
 const money = new Intl.NumberFormat('en-US', {
   style: 'currency',
