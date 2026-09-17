@@ -13,6 +13,7 @@ import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRoute from './components/AdminRoute';
+import LoadingScreen from './components/LoadingScreen';
 import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CartProvider } from './hooks/useCart';
@@ -20,7 +21,17 @@ import { CartProvider } from './hooks/useCart';
 
 
 const AppContent = () => {
+<<<<<<< Updated upstream
   const { user, isAuthenticated } = useAuth();
+=======
+  const { user, isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen label="Cargando sesión" />;
+  }
+
+  const fallbackPath = isAuthenticated && user?.role === 'admin' ? '/admin/dashboard' : '/';
+>>>>>>> Stashed changes
 
   return (
     <div className="min-h-screen bg-minimal-beige flex flex-col">
