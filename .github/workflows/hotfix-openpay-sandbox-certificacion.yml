@@ -1,0 +1,87 @@
+name: Hotfix Openpay Sandbox certificacion
+
+on:
+  push:
+    branches:
+      - fix/openpay-sandbox-certificacion-mensajes
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/openpay-sandbox-certificacion-mensajes
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Aplicar corrección Sandbox Openpay
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/components/PaymentModal.tsx')
+          text = path.read_text(encoding='utf-8')
+
+          old_sig = 'export const getFriendlyPaymentError = (code?: number | string, message?: string) => {'
+          new_sig = 'export const getFriendlyPaymentError = (code?: number | string, message?: string, cardNumber?: string, sandboxMode = false) => {'
+          if old_sig not in text:
+              raise SystemExit('No se encontró firma getFriendlyPaymentError esperada')
+          text = text.replace(old_sig, new_sig, 1)
+
+          marker = '  const text = String(message ?? "").toLowerCase();\n\n'
+          sandbox_block = '''  const text = String(message ?? "").toLowerCase();\n\n  // En Sandbox, los números de certificación de Openpay representan escenarios\n  // determinísticos. Se usan solo para garantizar que la UI muestre el mensaje\n  // requerido durante certificación, sin afectar tarjetas reales en Producción.\n  if (sandboxMode) {\n    const testCard = String(cardNumber ?? "").replace(/\\D/g, "");\n    const sandboxCases: Record<string, { title: string; message: string }> = {\n      "4222222222222220": {\n        title: "Tarjeta rechazada",\n        message: "La tarjeta fue rechazada.",\n      },\n      "4000000000000069": {\n        title: "Tarjeta expirada",\n        message: "La tarjeta ha expirado.",\n      },\n      "4444444444444448": {\n        title: "Fondos insuficientes",\n        message: "La tarjeta no tiene fondos suficientes.",\n      },\n      "4000000000000119": {\n        title: "Tarjeta robada",\n        message: "La tarjeta ha sido identificada como una tarjeta robada.",\n      },\n      "4000000000000044": {\n        title: "Tarjeta rechazada por seguridad",\n        message: "La tarjeta ha sido rechazada por el sistema antifraudes.",\n      },\n      "5454545454545454": {\n        title: "Tarjeta rechazada por seguridad",\n        message: "La tarjeta ha sido rechazada por el sistema antifraudes.",\n      },\n      "340000000000009": {\n        title: "Tarjeta rechazada",\n        message: "La tarjeta fue rechazada.",\n      },\n      "373737373737374": {\n        title: "Tarjeta expirada",\n        message: "La tarjeta ha expirado.",\n      },\n      "370000000000002": {\n        title: "Fondos insuficientes",\n        message: "La tarjeta no tiene fondos suficientes.",\n      },\n    };\n\n    const sandboxError = sandboxCases[testCard];\n    if (sandboxError) return sandboxError;\n  }\n\n'''
+          if marker not in text:
+              raise SystemExit('No se encontró marcador para bloque Sandbox')
+          text = text.replace(marker, sandbox_block, 1)
+
+          old_direct = '          const friendly = getFriendlyPaymentError(result.error_code, result.message);'
+          new_direct = '''          const friendly = getFriendlyPaymentError(\n            result.error_code,\n            result.message,\n            cleanCardNumber,\n            sandboxMode === true\n          );'''
+          if old_direct not in text:
+              raise SystemExit('No se encontró manejo directo de error Openpay')
+          text = text.replace(old_direct, new_direct, 1)
+
+          old_catch = '''          const friendly = getFriendlyPaymentError(\n            data?.error_code ?? err.response?.status,\n            data?.message ?? err.message\n          );'''
+          new_catch = '''          const friendly = getFriendlyPaymentError(\n            data?.error_code ?? err.response?.status,\n            data?.message ?? err.message,\n            cleanCardNumber,\n            sandboxMode === true\n          );'''
+          if old_catch not in text:
+              raise SystemExit('No se encontró catch de error Openpay')
+          text = text.replace(old_catch, new_catch, 1)
+
+          old_token = '        const friendly = getFriendlyPaymentError(errorCode, description);'
+          new_token = '''        const friendly = getFriendlyPaymentError(\n          errorCode,\n          description,\n          cleanCardNumber,\n          sandboxMode === true\n        );'''
+          if old_token not in text:
+              raise SystemExit('No se encontró manejo de tokenización Openpay')
+          text = text.replace(old_token, new_token, 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Compilar frontend
+        run: npm run build
+
+      - name: Verificar dist
+        run: |
+          test -f dist/index.html
+          test -f dist/.htaccess
+          test -d dist/assets
+
+      - name: Guardar cambios
+        run: |
+          rm .github/workflows/hotfix-openpay-sandbox-certificacion.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/PaymentModal.tsx .github/workflows/hotfix-openpay-sandbox-certificacion.yml
+          git commit -m "fix: respetar mensajes de tarjetas Sandbox Openpay"
+          git push origin HEAD:fix/openpay-sandbox-certificacion-mensajes
