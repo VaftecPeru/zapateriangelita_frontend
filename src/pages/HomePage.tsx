@@ -3,8 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import StoreHome from '../components/StoreHome';
 import { useAuth } from '../hooks/useAuth';
-import { productService } from '../services/crudService';
+import { productService, settingsService } from '../services/crudService';
 import { getImageUrl } from '../config/api';
+// @ts-ignore
+import { heroSlides } from '../data/catalog';
 import '../styles/store-home.css';
 import '../styles/home-premium-experience.css';
 import '../styles/store-home-mobile.css';
@@ -15,18 +17,133 @@ const money = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
 });
 
+const defaultHeroSlides = heroSlides.map((slide: any) => ({ ...slide, textColor: slide.textColor || '#ffffff' }));
+
 const HomePage = () => {
   const { user, isAuthenticated } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [offerProduct, setOfferProduct] = useState<any | null>(null);
+  const [homeReady, setHomeReady] = useState(false);
 
   const isLanding = location.pathname === '/' || location.pathname === '/home';
   const firstName = useMemo(() => {
     const name = String(user?.name || '').trim();
     return name ? name.split(/\s+/)[0] : 'Cliente';
   }, [user?.name]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadManagedBanners = async () => {
+      try {
+        const response = await settingsService.getAll();
+        const raw = response.data?.data?.homepage_banners;
+        let managed: any[] = [];
+
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              managed = parsed
+                .filter((banner: any) => banner?.active !== false && banner?.title && banner?.image)
+                .slice(0, 12)
+                .map((banner: any) => ({
+                  eyebrow: String(banner.eyebrow || ''),
+                  title: String(banner.title || '').slice(0, 120),
+                  description: String(banner.description || '').slice(0, 220),
+                  image: getImageUrl(String(banner.image || '')),
+                  imagePosition: String(banner.imagePosition || 'center center'),
+                  textColor: /^#[0-9a-fA-F]{6}$/.test(String(banner.textColor || ''))
+                    ? String(banner.textColor)
+                    : '#ffffff',
+                }));
+            }
+          } catch (parseError) {
+            console.warn('Configuración de banners inválida; se usarán los banners predeterminados.', parseError);
+          }
+        }
+
+        if (!active) return;
+        heroSlides.splice(
+          0,
+          heroSlides.length,
+          ...(managed.length ? managed : defaultHeroSlides.map((slide: any) => ({ ...slide }))),
+        );
+      } catch (error) {
+        console.warn('No se pudo cargar la configuración de banners; se mantendrá la portada predeterminada.', error);
+        if (active) {
+          heroSlides.splice(0, heroSlides.length, ...defaultHeroSlides.map((slide: any) => ({ ...slide })));
+        }
+      } finally {
+        if (active) setHomeReady(true);
+      }
+    };
+
+    void loadManagedBanners();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!homeReady) return;
+
+    const applyHeroContrast = () => {
+      const hero = document.querySelector<HTMLElement>('.hero');
+      const content = hero?.querySelector<HTMLElement>('.hero__content');
+      const title = content?.querySelector('h1')?.textContent?.trim();
+      if (!content || !title) return;
+      const current = heroSlides.find((slide: any) => String(slide.title).trim() === title);
+      content.style.setProperty('--hero-managed-text', current?.textColor || '#ffffff');
+    };
+
+    const hero = document.querySelector<HTMLElement>('.hero');
+    applyHeroContrast();
+
+    if (!hero) return;
+    const observer = new MutationObserver(applyHeroContrast);
+    observer.observe(hero, { childList: true, subtree: true, characterData: true });
+
+    return () => observer.disconnect();
+  }, [homeReady]);
+
+  useEffect(() => {
+    if (!homeReady) return;
+
+    const enhancePaymentFooter = () => {
+      const footerBottom = document.querySelector<HTMLElement>('.footer__bottom');
+      if (!footerBottom || footerBottom.querySelector('.footer-payment-methods')) return;
+
+      const legacy = footerBottom.querySelector<HTMLElement>('span:last-of-type');
+      legacy?.classList.add('footer-payment-legacy');
+
+      const group = document.createElement('div');
+      group.className = 'footer-payment-methods';
+      group.setAttribute('aria-label', 'Métodos de pago aceptados');
+
+      const label = document.createElement('span');
+      label.className = 'footer-payment-label';
+      label.textContent = 'Pagos seguros con';
+      group.appendChild(label);
+
+      ['VISA', 'Mastercard', 'American Express', 'Carnet'].forEach((brand) => {
+        const badge = document.createElement('span');
+        badge.className = `payment-brand payment-brand--${brand.toLowerCase().replace(/[^a-z]+/g, '-')}`;
+        badge.textContent = brand;
+        group.appendChild(badge);
+      });
+
+      const provider = document.createElement('span');
+      provider.className = 'payment-brand payment-brand--openpay';
+      provider.textContent = 'Openpay by BBVA';
+      group.appendChild(provider);
+      footerBottom.appendChild(group);
+    };
+
+    enhancePaymentFooter();
+  }, [homeReady, location.pathname]);
 
   useEffect(() => {
     if (!isLanding) return;
@@ -111,7 +228,14 @@ const HomePage = () => {
         isAuthenticated ? 'home-experience--authenticated' : '',
       ].filter(Boolean).join(' ')}
     >
-      <StoreHome />
+      {homeReady ? (
+        <StoreHome />
+      ) : (
+        <div className="home-store-loading" role="status" aria-live="polite">
+          <span />
+          Cargando tienda...
+        </div>
+      )}
 
       {welcomeOpen && isLanding && isAuthenticated && (
         <div
