@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { settingsService } from '../../services/crudService';
 import { getImageUrl } from '../../config/api';
+// @ts-ignore - catálogo visual existente en JavaScript.
+import { heroSlides as staticHeroSlides } from '../../data/catalog';
 
 type HeroBanner = {
     id: string;
@@ -23,38 +25,16 @@ type HeroBanner = {
     active: boolean;
 };
 
-const fallbackBanners: HeroBanner[] = [
-    {
-        id: 'banner-1',
-        eyebrow: 'Colección Angelita',
-        title: 'Pasos que unen a la familia',
-        description: 'Calzado para cada etapa, para cada historia. Comodidad, estilo y calidad en un solo lugar.',
-        image: '',
-        imagePosition: '70% center',
-        textColor: '#ffffff',
-        active: true,
-    },
-    {
-        id: 'banner-2',
-        eyebrow: 'Temporada 2026',
-        title: 'Comodidad que acompaña tu ritmo',
-        description: 'Diseños ligeros, versátiles y listos para todos tus planes.',
-        image: '',
-        imagePosition: '72% center',
-        textColor: '#ffffff',
-        active: true,
-    },
-    {
-        id: 'banner-3',
-        eyebrow: 'Para toda la familia',
-        title: 'Grandes historias comienzan con buenos pasos',
-        description: 'Encuentra el par ideal para mujer, hombre, niñas y niños.',
-        image: '',
-        imagePosition: '68% center',
-        textColor: '#ffffff',
-        active: true,
-    },
-];
+const fallbackBanners: HeroBanner[] = (staticHeroSlides || []).map((slide: any, index: number) => ({
+    id: `banner-${index + 1}`,
+    eyebrow: String(slide?.eyebrow || ''),
+    title: String(slide?.title || ''),
+    description: String(slide?.description || ''),
+    image: String(slide?.image || ''),
+    imagePosition: String(slide?.imagePosition || 'center center'),
+    textColor: '#ffffff',
+    active: true,
+}));
 
 const normalizeBanner = (banner: any, index: number): HeroBanner => ({
     id: String(banner?.id || `banner-${index + 1}`),
@@ -67,10 +47,29 @@ const normalizeBanner = (banner: any, index: number): HeroBanner => ({
     active: banner?.active !== false,
 });
 
+const previewImage = (value: string) => {
+    if (!value) return '';
+    if (/^(https?:)?\/\//i.test(value) || value.startsWith('/uploads/') || value.startsWith('/storage/')) {
+        return getImageUrl(value);
+    }
+    return value;
+};
+
 export default function BannerSettingsSection() {
+    const initialBanners = fallbackBanners.length ? fallbackBanners : [{
+        id: 'banner-1',
+        eyebrow: 'Colección Angelita',
+        title: 'Pasos que unen a la familia',
+        description: 'Calzado para cada etapa, para cada historia.',
+        image: '',
+        imagePosition: 'center center',
+        textColor: '#ffffff',
+        active: true,
+    }];
+
     const [sectionOpen, setSectionOpen] = useState(true);
-    const [banners, setBanners] = useState<HeroBanner[]>(fallbackBanners);
-    const [openCards, setOpenCards] = useState<Record<string, boolean>>({ 'banner-1': true });
+    const [banners, setBanners] = useState<HeroBanner[]>(initialBanners);
+    const [openCards, setOpenCards] = useState<Record<string, boolean>>({ [initialBanners[0].id]: true });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [uploadingId, setUploadingId] = useState<string | null>(null);
@@ -85,7 +84,9 @@ export default function BannerSettingsSection() {
 
                 const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
                 if (Array.isArray(parsed) && parsed.length) {
-                    setBanners(parsed.map(normalizeBanner));
+                    const normalized = parsed.map(normalizeBanner);
+                    setBanners(normalized);
+                    setOpenCards({ [normalized[0].id]: true });
                 }
             } catch (error) {
                 console.error('Error loading hero banners:', error);
@@ -119,6 +120,11 @@ export default function BannerSettingsSection() {
 
     const removeBanner = (id: string) => {
         setBanners((current) => current.filter((banner) => banner.id !== id));
+        setOpenCards((current) => {
+            const next = { ...current };
+            delete next[id];
+            return next;
+        });
     };
 
     const moveBanner = (index: number, direction: -1 | 1) => {
@@ -146,7 +152,7 @@ export default function BannerSettingsSection() {
             setUploadingId(banner.id);
             setMessage(null);
             const response = await settingsService.uploadBannerImage(file);
-            const path = response.data?.data?.path || response.data?.path;
+            const path = response.data?.data?.path;
             if (!path) throw new Error('El servidor no devolvió la ruta de la imagen.');
             updateBanner(banner.id, { image: path });
             setMessage({ type: 'success', text: 'Imagen cargada. Guarda los banners para publicarla.' });
@@ -161,6 +167,10 @@ export default function BannerSettingsSection() {
     const save = async () => {
         if (!banners.length) {
             setMessage({ type: 'error', text: 'Debe existir al menos un banner.' });
+            return;
+        }
+        if (banners.length > 12) {
+            setMessage({ type: 'error', text: 'Puedes publicar como máximo 12 banners.' });
             return;
         }
         if (banners.some((banner) => !banner.title.trim())) {
@@ -180,12 +190,12 @@ export default function BannerSettingsSection() {
                 eyebrow: banner.eyebrow.trim(),
                 title: banner.title.trim(),
                 description: banner.description.trim(),
-                textColor: banner.textColor || '#ffffff',
+                textColor: /^#[0-9a-f]{6}$/i.test(banner.textColor) ? banner.textColor : '#ffffff',
                 imagePosition: banner.imagePosition || 'center center',
             }));
             await settingsService.update('hero_banners', JSON.stringify(clean));
             setBanners(clean);
-            setMessage({ type: 'success', text: 'Banners guardados correctamente. La portada usará esta configuración.' });
+            setMessage({ type: 'success', text: 'Banners guardados. La portada usará esta configuración.' });
         } catch (error: any) {
             console.error('Error saving banners:', error);
             setMessage({ type: 'error', text: error.response?.data?.message || 'No se pudieron guardar los banners.' });
@@ -195,53 +205,53 @@ export default function BannerSettingsSection() {
     };
 
     return (
-        <section className="rounded-3xl border border-gray-100 bg-white overflow-hidden">
+        <section className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
             <button
                 type="button"
                 onClick={() => setSectionOpen((value) => !value)}
-                className="w-full flex items-center justify-between gap-4 px-5 sm:px-7 py-5 text-left hover:bg-gray-50 transition-colors"
+                className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left transition-colors hover:bg-gray-50 sm:px-7"
                 aria-expanded={sectionOpen}
             >
                 <div className="flex items-center gap-3">
-                    <span className="w-10 h-10 rounded-2xl bg-red-50 text-store-red flex items-center justify-center">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-50 text-store-red">
                         <ImageIcon size={19} />
                     </span>
                     <div>
-                        <h3 className="text-xs sm:text-sm font-black uppercase tracking-widest text-black">Banners de portada</h3>
-                        <p className="mt-1 text-[10px] text-gray-400 font-bold uppercase tracking-wide">Imagen, texto, color y orden del slider</p>
+                        <h3 className="text-xs font-black uppercase tracking-widest text-black sm:text-sm">Banners de portada</h3>
+                        <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-gray-400">Imagen, texto, color, publicación y orden del slider</p>
                     </div>
                 </div>
                 {sectionOpen ? <ChevronUp size={19} /> : <ChevronDown size={19} />}
             </button>
 
             {sectionOpen && (
-                <div className="border-t border-gray-100 p-5 sm:p-7 space-y-5">
+                <div className="space-y-5 border-t border-gray-100 p-5 sm:p-7">
                     {message && (
                         <div className={`rounded-2xl px-4 py-3 text-xs font-bold ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
                             {message.text}
                         </div>
                     )}
 
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <p className="text-xs text-gray-500 leading-relaxed max-w-2xl">
-                            El título se mostrará con un máximo visual de <strong>3 líneas</strong>. Para mayor contraste se recomienda texto blanco.
+                    <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                        <p className="max-w-2xl text-xs leading-relaxed text-gray-500">
+                            El título se limita visualmente a <strong>3 líneas</strong>. El color inicial es blanco para mantener contraste sobre las fotografías.
                         </p>
-                        <button type="button" onClick={addBanner} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest hover:border-store-red hover:text-store-red transition-colors">
+                        <button type="button" onClick={addBanner} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-colors hover:border-store-red hover:text-store-red">
                             <Plus size={14} /> Nuevo banner
                         </button>
                     </div>
 
                     {loading ? (
-                        <div className="py-10 flex items-center justify-center gap-2 text-xs text-gray-400"><Loader2 className="animate-spin" size={17} /> Cargando banners...</div>
+                        <div className="flex items-center justify-center gap-2 py-10 text-xs text-gray-400"><Loader2 className="animate-spin" size={17} /> Cargando banners...</div>
                     ) : (
                         <div className="space-y-3">
                             {banners.map((banner, index) => {
                                 const open = Boolean(openCards[banner.id]);
                                 return (
-                                    <article key={banner.id} className="rounded-2xl border border-gray-200 overflow-hidden bg-gray-50/50">
-                                        <div className="flex items-center gap-3 p-4 bg-white">
-                                            <button type="button" onClick={() => setOpenCards((current) => ({ ...current, [banner.id]: !open }))} className="flex-1 flex items-center gap-3 text-left min-w-0" aria-expanded={open}>
-                                                <span className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-xs font-black">{index + 1}</span>
+                                    <article key={banner.id} className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50/50">
+                                        <div className="flex items-center gap-2 bg-white p-4 sm:gap-3">
+                                            <button type="button" onClick={() => setOpenCards((current) => ({ ...current, [banner.id]: !open }))} className="flex min-w-0 flex-1 items-center gap-3 text-left" aria-expanded={open}>
+                                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-xs font-black">{index + 1}</span>
                                                 <div className="min-w-0">
                                                     <strong className="block truncate text-sm text-black">{banner.title || 'Banner sin título'}</strong>
                                                     <span className="text-[10px] text-gray-400">{banner.active ? 'Publicado' : 'Oculto'}</span>
@@ -254,12 +264,12 @@ export default function BannerSettingsSection() {
                                         </div>
 
                                         {open && (
-                                            <div className="p-4 sm:p-5 grid gap-5 lg:grid-cols-[240px_1fr]">
+                                            <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[240px_1fr]">
                                                 <div className="space-y-3">
-                                                    <div className="aspect-[16/10] rounded-2xl bg-gray-100 overflow-hidden border border-gray-200 flex items-center justify-center">
-                                                        {banner.image ? <img src={getImageUrl(banner.image)} alt="Vista previa del banner" className="w-full h-full object-cover" /> : <ImageIcon className="text-gray-300" size={36} />}
+                                                    <div className="flex aspect-[16/10] items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
+                                                        {banner.image ? <img src={previewImage(banner.image)} alt="Vista previa del banner" className="h-full w-full object-cover" /> : <ImageIcon className="text-gray-300" size={36} />}
                                                     </div>
-                                                    <label className="w-full cursor-pointer inline-flex items-center justify-center gap-2 rounded-xl bg-black text-white px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-store-red transition-colors">
+                                                    <label className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-black px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white transition-colors hover:bg-store-red">
                                                         {uploadingId === banner.id ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
                                                         {uploadingId === banner.id ? 'Subiendo...' : 'Cambiar imagen'}
                                                         <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingId === banner.id} onChange={(event) => void uploadImage(banner, event.target.files?.[0])} />
@@ -274,16 +284,16 @@ export default function BannerSettingsSection() {
                                                     </label>
                                                     <label className="space-y-1.5 sm:col-span-2">
                                                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Título · máximo visual 3 líneas</span>
-                                                        <textarea rows={3} maxLength={95} value={banner.title} onChange={(event) => updateBanner(banner.id, { title: event.target.value })} className="w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-bold outline-none focus:border-store-red resize-none" />
+                                                        <textarea rows={3} maxLength={95} value={banner.title} onChange={(event) => updateBanner(banner.id, { title: event.target.value })} className="w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-bold outline-none focus:border-store-red" />
                                                     </label>
                                                     <label className="space-y-1.5 sm:col-span-2">
                                                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Texto complementario</span>
-                                                        <textarea rows={2} maxLength={150} value={banner.description} onChange={(event) => updateBanner(banner.id, { description: event.target.value })} className="w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm outline-none focus:border-store-red resize-none" />
+                                                        <textarea rows={2} maxLength={150} value={banner.description} onChange={(event) => updateBanner(banner.id, { description: event.target.value })} className="w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm outline-none focus:border-store-red" />
                                                     </label>
                                                     <label className="space-y-1.5">
                                                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Color del texto</span>
                                                         <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
-                                                            <input type="color" value={banner.textColor} onChange={(event) => updateBanner(banner.id, { textColor: event.target.value })} className="w-9 h-9 rounded border-0 bg-transparent" />
+                                                            <input type="color" value={/^#[0-9a-f]{6}$/i.test(banner.textColor) ? banner.textColor : '#ffffff'} onChange={(event) => updateBanner(banner.id, { textColor: event.target.value })} className="h-9 w-9 rounded border-0 bg-transparent" />
                                                             <input value={banner.textColor} maxLength={7} onChange={(event) => updateBanner(banner.id, { textColor: event.target.value })} className="min-w-0 flex-1 text-xs outline-none" />
                                                         </div>
                                                     </label>
@@ -297,9 +307,9 @@ export default function BannerSettingsSection() {
                                                             <option value="center top">Superior</option>
                                                         </select>
                                                     </label>
-                                                    <label className="sm:col-span-2 flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white px-4 py-3">
+                                                    <label className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white px-4 py-3 sm:col-span-2">
                                                         <span className="text-xs font-bold text-gray-700">Mostrar este banner en la portada</span>
-                                                        <input type="checkbox" checked={banner.active} onChange={(event) => updateBanner(banner.id, { active: event.target.checked })} className="w-5 h-5 accent-red-600" />
+                                                        <input type="checkbox" checked={banner.active} onChange={(event) => updateBanner(banner.id, { active: event.target.checked })} className="h-5 w-5 accent-red-600" />
                                                     </label>
                                                 </div>
                                             </div>
@@ -311,7 +321,7 @@ export default function BannerSettingsSection() {
                     )}
 
                     <div className="flex justify-end pt-2">
-                        <button type="button" onClick={save} disabled={saving || loading} className="inline-flex items-center justify-center gap-2 rounded-xl bg-store-red text-white px-5 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-colors disabled:opacity-50">
+                        <button type="button" onClick={save} disabled={saving || loading} className="inline-flex items-center justify-center gap-2 rounded-xl bg-store-red px-5 py-3 text-[10px] font-black uppercase tracking-widest text-white transition-colors hover:bg-red-700 disabled:opacity-50">
                             {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
                             {saving ? 'Guardando...' : 'Guardar banners'}
                         </button>
