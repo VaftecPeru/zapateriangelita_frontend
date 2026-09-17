@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { authService } from '../services/authService';
 
 interface User {
     id: number;
     name: string;
     email: string;
     role?: string;
+    google_email?: string | null;
+    google_linked_at?: string | null;
 }
 
 interface AuthContextType {
@@ -26,28 +29,66 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        const storedFavs = localStorage.getItem('favorites');
+        let cancelled = false;
 
-        if (storedUser) {
-            try {
-                setUser(JSON.parse(storedUser));
-            } catch (e) {
-                console.error("Failed to parse stored user", e);
+        const restoreSession = async () => {
+            const token = localStorage.getItem('token');
+            const storedUser = localStorage.getItem('user');
+            const storedFavs = localStorage.getItem('favorites');
+
+            if (storedFavs) {
+                try {
+                    setFavorites(JSON.parse(storedFavs));
+                } catch (e) {
+                    console.error('Failed to parse stored favorites', e);
+                    localStorage.removeItem('favorites');
+                }
+            }
+
+            if (!token || !storedUser) {
+                localStorage.removeItem('token');
                 localStorage.removeItem('user');
+                if (!cancelled) {
+                    setUser(null);
+                    setLoading(false);
+                }
+                return;
             }
-        }
 
-        if (storedFavs) {
             try {
-                setFavorites(JSON.parse(storedFavs));
-            } catch (e) {
-                console.error("Failed to parse stored favorites", e);
-                localStorage.removeItem('favorites');
-            }
-        }
+                // Validar la sesión contra el backend antes de habilitar rutas protegidas.
+                const response = await authService.getProfile();
+                const profile = (response.data as any)?.user ?? response.data;
 
-        setLoading(false);
+                if (!profile?.id || !profile?.email) {
+                    throw new Error('Perfil de usuario inválido');
+                }
+
+                localStorage.setItem('user', JSON.stringify(profile));
+
+                if (!cancelled) {
+                    setUser(profile as User);
+                }
+            } catch (error) {
+                console.warn('La sesión guardada ya no es válida o no pudo verificarse.', error);
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+
+                if (!cancelled) {
+                    setUser(null);
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        restoreSession();
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const login = (userData: User, token: string) => {

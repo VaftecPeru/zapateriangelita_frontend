@@ -1,0 +1,33 @@
+name: Build dist final verified
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Verificar dist completo para cPanel
+        run: |
+          test -f dist/index.html
+          test -f dist/.htaccess
+          test -d dist/assets
+          test -d dist/data
+          echo "Verificación OK"
+          echo "Archivos principales:"
+          find dist -maxdepth 2 -type f | sort
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zapateriangelita-dist-final-verificado
+          path: dist/
+          include-hidden-files: true
+          if-no-files-found: error

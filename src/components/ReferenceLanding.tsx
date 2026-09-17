@@ -79,7 +79,7 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
           <h1>{active.title}<strong>{active.emphasis}</strong></h1>
           <p className="ref-hero__description">{active.description}</p>
           <div className="ref-hero__actions"><Link className="ref-button" to={active.href}>Ver colección <ArrowRight size={17} /></Link><Link className="ref-button ref-button--ghost" to="/catalogo">Descubrir</Link></div>
-          <div className="ref-hero__promises"><span><Truck />Envíos a<br />todo México</span><span><ShieldCheck />Pagos<br />seguros</span><span><Award />La confianza<br />de miles de familias</span></div>
+          <div className="ref-hero__promises"><span><Truck />Envíos a<br />todo México</span><span><ShieldCheck />Pagos<br />seguros</span><span><Award />Calidad<br />garantizada</span></div>
         </div>
         <p className="ref-handwriting" aria-hidden="true">Más que<br />zapatos,<br />es tu historia ♡</p>
         <button className="ref-arrow ref-arrow--left" aria-label="Banner anterior" onClick={() => move(-1)}><ChevronLeft /></button>

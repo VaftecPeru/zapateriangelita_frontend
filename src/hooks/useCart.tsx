@@ -8,6 +8,7 @@ export interface CartItem {
 export interface CartContextType {
     cart: CartItem[];
     addToCart: (product: any) => void;
+    updateCartItem: (index: number, item: CartItem) => void;
     removeFromCart: (productId: number) => void;
     clearCart: () => void;
     cartTotal: number;
@@ -15,6 +16,13 @@ export interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
+const variantValue = (value: any) => {
+    if (value && typeof value === 'object') {
+        return String(value.name ?? value.color ?? value.size ?? '').trim();
+    }
+    return String(value ?? '').trim();
+};
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [cart, setCart] = useState<CartItem[]>([]);
@@ -30,12 +38,17 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     }, []);
 
+    const persistCart = (nextCart: CartItem[]) => {
+        localStorage.setItem('cart', JSON.stringify(nextCart));
+        return nextCart;
+    };
+
     const addToCart = (product: any) => {
         setCart(prev => {
             const existing = prev.find(item =>
                 item.product.id === product.id
-                && item.product.size === product.size
-                && item.product.color === product.color
+                && variantValue(item.product.size) === variantValue(product.size)
+                && variantValue(item.product.color) === variantValue(product.color)
             );
             let newCart;
             if (existing) {
@@ -43,16 +56,45 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             } else {
                 newCart = [...prev, { product, quantity: 1 }];
             }
-            localStorage.setItem('cart', JSON.stringify(newCart));
-            return newCart;
+            return persistCart(newCart);
+        });
+    };
+
+    const updateCartItem = (index: number, nextItem: CartItem) => {
+        setCart(prev => {
+            if (index < 0 || index >= prev.length) return prev;
+
+            const normalizedItem: CartItem = {
+                product: nextItem.product,
+                quantity: Math.max(1, Number(nextItem.quantity || 1)),
+            };
+
+            const duplicateIndex = prev.findIndex((item, itemIndex) =>
+                itemIndex !== index
+                && item.product.id === normalizedItem.product.id
+                && variantValue(item.product.size) === variantValue(normalizedItem.product.size)
+                && variantValue(item.product.color) === variantValue(normalizedItem.product.color)
+            );
+
+            let newCart: CartItem[];
+            if (duplicateIndex >= 0) {
+                newCart = prev
+                    .map((item, itemIndex) => itemIndex === duplicateIndex
+                        ? { ...item, quantity: item.quantity + normalizedItem.quantity }
+                        : item)
+                    .filter((_, itemIndex) => itemIndex !== index);
+            } else {
+                newCart = prev.map((item, itemIndex) => itemIndex === index ? normalizedItem : item);
+            }
+
+            return persistCart(newCart);
         });
     };
 
     const removeFromCart = (productId: number) => {
         setCart(prev => {
             const newCart = prev.filter(item => item.product.id !== productId);
-            localStorage.setItem('cart', JSON.stringify(newCart));
-            return newCart;
+            return persistCart(newCart);
         });
     };
 
@@ -65,7 +107,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const cartCount = cart.reduce((count, item) => count + item.quantity, 0);
 
     return (
-        <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, cartTotal, cartCount }}>
+        <CartContext.Provider value={{ cart, addToCart, updateCartItem, removeFromCart, clearCart, cartTotal, cartCount }}>
             {children}
         </CartContext.Provider>
     );

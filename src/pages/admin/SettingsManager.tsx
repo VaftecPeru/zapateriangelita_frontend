@@ -1,595 +1,658 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { settingsService } from '../../services/crudService';
+import { getImageUrl } from '../../config/api';
 import {
-    Loader2,
-    Smartphone,
-    Save,
-    CheckCircle2,
     AlertCircle,
-    X,
+    CheckCircle2,
+    ChevronDown,
+    ChevronUp,
+    FileImage,
+    FileText,
+    GripVertical,
+    Loader2,
+    Palette,
+    Plus,
+    Save,
     Settings2,
     ShieldCheck,
-    Globe,
-    FileText,
-    Plus,
+    Smartphone,
     Trash2,
+    Upload,
 } from 'lucide-react';
 
 type ReservationPolicy = {
     text: string;
 };
 
+type HomeBanner = {
+    id: string;
+    eyebrow: string;
+    title: string;
+    description: string;
+    image: string;
+    imagePosition: string;
+    textColor: string;
+    active: boolean;
+};
+
+type CollapsibleKey = 'contact' | 'legal' | 'banners';
+
 const defaultPrivacyPolicies = [
     'Usamos tus datos personales únicamente para gestionar tus pedidos, coordinar la entrega y brindarte atención relacionada con tu compra.',
     'No compartimos tu información con terceros salvo cuando sea necesario para prestar estos servicios o cumplir obligaciones legales.',
 ];
 
+const newBanner = (): HomeBanner => ({
+    id: `banner-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    eyebrow: 'Colección Angelita',
+    title: '',
+    description: '',
+    image: '',
+    imagePosition: 'center center',
+    textColor: '#ffffff',
+    active: true,
+});
+
+const normalizeStringList = (value?: string): string[] => {
+    if (!value) return [];
+    try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) {
+            return parsed
+                .map((item) => (typeof item === 'string' ? item : item?.text))
+                .filter((item): item is string => Boolean(item?.trim()));
+        }
+    } catch {
+        return [value];
+    }
+    return [];
+};
+
+const normalizeBanners = (value?: string): HomeBanner[] => {
+    if (!value) return [];
+    try {
+        const parsed = JSON.parse(value);
+        if (!Array.isArray(parsed)) return [];
+        return parsed.map((banner: any, index: number) => ({
+            id: String(banner?.id || `banner-${index + 1}`),
+            eyebrow: String(banner?.eyebrow || ''),
+            title: String(banner?.title || ''),
+            description: String(banner?.description || ''),
+            image: String(banner?.image || ''),
+            imagePosition: String(banner?.imagePosition || 'center center'),
+            textColor: /^#[0-9a-fA-F]{6}$/.test(String(banner?.textColor || ''))
+                ? String(banner.textColor)
+                : '#ffffff',
+            active: banner?.active !== false,
+        }));
+    } catch {
+        return [];
+    }
+};
+
+const CollapsibleCard = ({
+    title,
+    subtitle,
+    icon,
+    open,
+    onToggle,
+    children,
+}: {
+    title: string;
+    subtitle: string;
+    icon: React.ReactNode;
+    open: boolean;
+    onToggle: () => void;
+    children: React.ReactNode;
+}) => (
+    <section className="overflow-hidden rounded-[1.75rem] border border-gray-100 bg-white shadow-xl shadow-black/[0.025]">
+        <button
+            type="button"
+            onClick={onToggle}
+            className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left sm:px-7"
+            aria-expanded={open}
+        >
+            <div className="flex min-w-0 items-center gap-3">
+                <div className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-2xl bg-gray-50 text-gray-500">
+                    {icon}
+                </div>
+                <div className="min-w-0">
+                    <h3 className="truncate text-[11px] font-black uppercase tracking-[0.14em] text-black">{title}</h3>
+                    <p className="mt-1 text-[10px] font-semibold text-gray-400">{subtitle}</p>
+                </div>
+            </div>
+            <div className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-gray-50 text-gray-500 transition hover:bg-gray-100 hover:text-black">
+                {open ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
+            </div>
+        </button>
+        {open && <div className="border-t border-gray-100 px-5 py-5 sm:px-7 sm:py-6">{children}</div>}
+    </section>
+);
+
 const SettingsManager = () => {
     const [settings, setSettings] = useState<{ [key: string]: string }>({});
-    const [inputValue, setInputValue] = useState('');
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    const [whatsapp, setWhatsapp] = useState('');
+    const [savingWhatsapp, setSavingWhatsapp] = useState(false);
+
     const [reservationPolicies, setReservationPolicies] = useState<ReservationPolicy[]>([]);
-    const [isEditingPolicies, setIsEditingPolicies] = useState(false);
-    const [savingPolicies, setSavingPolicies] = useState(false);
     const [privacyPolicies, setPrivacyPolicies] = useState<string[]>(defaultPrivacyPolicies);
-    const [isEditingPrivacy, setIsEditingPrivacy] = useState(false);
-    const [savingPrivacy, setSavingPrivacy] = useState(false);
+    const [savingLegal, setSavingLegal] = useState(false);
+
+    const [banners, setBanners] = useState<HomeBanner[]>([]);
+    const [savingBanners, setSavingBanners] = useState(false);
+    const [uploadingBannerId, setUploadingBannerId] = useState<string | null>(null);
+    const [expandedBanners, setExpandedBanners] = useState<Record<string, boolean>>({});
+
+    const [openSections, setOpenSections] = useState<Record<CollapsibleKey, boolean>>({
+        contact: true,
+        legal: false,
+        banners: true,
+    });
+
+    const activeBannerCount = useMemo(() => banners.filter((banner) => banner.active).length, [banners]);
 
     useEffect(() => {
-        loadSettings();
+        void loadSettings();
     }, []);
+
+    const notify = (type: 'success' | 'error', text: string) => {
+        setMessage({ type, text });
+        window.setTimeout(() => setMessage(null), 4000);
+    };
 
     const loadSettings = async () => {
         try {
             setLoading(true);
-
             const response = await settingsService.getAll();
             const data = response.data.data || {};
-
             setSettings(data);
-            setInputValue(data.whatsapp_number || '');
+            setWhatsapp(data.whatsapp_number || '');
 
-            const savedPrivacy = data.privacy_policy || '';
-            let parsedPrivacy: unknown = savedPrivacy;
-            try {
-                parsedPrivacy = savedPrivacy ? JSON.parse(savedPrivacy) : [];
-            } catch {
-                parsedPrivacy = savedPrivacy ? [savedPrivacy] : [];
-            }
-            setPrivacyPolicies(
-                Array.isArray(parsedPrivacy)
-                    ? parsedPrivacy
-                        .map((item) => (typeof item === 'string' ? item : (item as any)?.text))
-                        .filter((item): item is string => Boolean(item?.trim()))
-                    : defaultPrivacyPolicies,
+            const terms = normalizeStringList(data.reservation_policies);
+            setReservationPolicies(terms.map((text) => ({ text })));
+
+            const privacy = normalizeStringList(data.privacy_policy);
+            setPrivacyPolicies(privacy.length ? privacy : defaultPrivacyPolicies);
+
+            const parsedBanners = normalizeBanners(data.homepage_banners);
+            setBanners(parsedBanners);
+            setExpandedBanners(
+                Object.fromEntries(parsedBanners.map((banner, index) => [banner.id, index === 0])),
             );
-
-            if (data.reservation_policies) {
-                const parsedPolicies =
-                    typeof data.reservation_policies === 'string'
-                        ? JSON.parse(data.reservation_policies)
-                        : data.reservation_policies;
-
-                if (Array.isArray(parsedPolicies)) {
-                    const normalizedPolicies: ReservationPolicy[] = parsedPolicies.map((item: any) => {
-                        if (typeof item === 'string') {
-                            return { text: item };
-                        }
-                        return { text: item?.text || '' };
-                    });
-
-                    setReservationPolicies(normalizedPolicies);
-                } else {
-                    setReservationPolicies([]);
-                }
-            } else {
-                setReservationPolicies([]);
-            }
-        } catch (err) {
-            console.error('Error loading settings:', err);
-            setMessage({
-                type: 'error',
-                text: 'Error al conectar con el servidor.',
-            });
-
-            setReservationPolicies([]);
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            notify('error', 'No se pudo cargar la configuración del sitio.');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleSave = async () => {
-        if (!inputValue.trim()) {
-            setMessage({ type: 'error', text: 'El número no puede estar vacío.' });
+    const toggleSection = (key: CollapsibleKey) => {
+        setOpenSections((current) => ({ ...current, [key]: !current[key] }));
+    };
+
+    const saveWhatsapp = async () => {
+        const cleanValue = whatsapp.replace(/[^0-9]/g, '');
+        if (!cleanValue) {
+            notify('error', 'El número de WhatsApp no puede estar vacío.');
+            return;
+        }
+        try {
+            setSavingWhatsapp(true);
+            await settingsService.update('whatsapp_number', cleanValue);
+            setWhatsapp(cleanValue);
+            setSettings((current) => ({ ...current, whatsapp_number: cleanValue }));
+            notify('success', 'Número de WhatsApp actualizado.');
+        } catch (error) {
+            console.error(error);
+            notify('error', 'No se pudo guardar el número de WhatsApp.');
+        } finally {
+            setSavingWhatsapp(false);
+        }
+    };
+
+    const saveLegal = async () => {
+        const terms = reservationPolicies.map((item) => item.text.trim()).filter(Boolean);
+        const privacy = privacyPolicies.map((item) => item.trim()).filter(Boolean);
+
+        if (terms.length !== reservationPolicies.length || privacy.length !== privacyPolicies.length) {
+            notify('error', 'No dejes puntos legales vacíos.');
             return;
         }
 
         try {
-            setSaving(true);
-            setMessage(null);
-            const cleanValue = inputValue.replace(/[^0-9]/g, '');
-
-            await settingsService.update('whatsapp_number', cleanValue);
-
-            setSettings((prev) => ({ ...prev, whatsapp_number: cleanValue }));
-            setInputValue(cleanValue);
-            setIsEditing(false);
-            setMessage({ type: 'success', text: 'Configuración guardada exitosamente.' });
-            setTimeout(() => setMessage(null), 3000);
-        } catch (err: any) {
-            console.error('Error saving setting:', err);
-            if (err.response) {
-                console.error('Data:', err.response.data);
-                console.error('Status:', err.response.status);
-            }
-            setMessage({ type: 'error', text: `Error al guardar: ${err.response?.status || 'desconocido'}` });
+            setSavingLegal(true);
+            await Promise.all([
+                settingsService.update('reservation_policies', JSON.stringify(terms.map((text) => ({ text })))),
+                settingsService.update('privacy_policy', JSON.stringify(privacy)),
+            ]);
+            notify('success', 'Términos y privacidad actualizados.');
+        } catch (error) {
+            console.error(error);
+            notify('error', 'No se pudieron guardar las políticas.');
         } finally {
-            setSaving(false);
+            setSavingLegal(false);
         }
     };
 
-    const handleSavePolicies = async () => {
-        const cleanPolicies = reservationPolicies.map((policy) => ({
-            text: policy.text.trim(),
+    const updateBanner = <K extends keyof HomeBanner>(id: string, key: K, value: HomeBanner[K]) => {
+        setBanners((current) => current.map((banner) => (banner.id === id ? { ...banner, [key]: value } : banner)));
+    };
+
+    const addBanner = () => {
+        const banner = newBanner();
+        setBanners((current) => [...current, banner]);
+        setExpandedBanners((current) => ({ ...current, [banner.id]: true }));
+    };
+
+    const removeBanner = (id: string) => {
+        setBanners((current) => current.filter((banner) => banner.id !== id));
+    };
+
+    const moveBanner = (index: number, direction: -1 | 1) => {
+        setBanners((current) => {
+            const target = index + direction;
+            if (target < 0 || target >= current.length) return current;
+            const copy = [...current];
+            [copy[index], copy[target]] = [copy[target], copy[index]];
+            return copy;
+        });
+    };
+
+    const uploadBannerImage = async (bannerId: string, file?: File) => {
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            notify('error', 'Selecciona una imagen JPG, PNG o WEBP.');
+            return;
+        }
+
+        try {
+            setUploadingBannerId(bannerId);
+            const response = await settingsService.uploadBannerImage(file);
+            const path = response.data?.data?.path;
+            if (!path) throw new Error('El servidor no devolvió la ruta de la imagen.');
+            updateBanner(bannerId, 'image', path);
+            notify('success', 'Imagen cargada. Guarda los banners para publicarla.');
+        } catch (error) {
+            console.error(error);
+            notify('error', 'No se pudo cargar la imagen del banner.');
+        } finally {
+            setUploadingBannerId(null);
+        }
+    };
+
+    const saveBanners = async () => {
+        if (banners.length > 12) {
+            notify('error', 'La portada admite como máximo 12 banners.');
+            return;
+        }
+
+        const invalid = banners.find((banner) => !banner.title.trim() || !banner.image.trim());
+        if (invalid) {
+            notify('error', 'Cada banner necesita título e imagen antes de guardar.');
+            setExpandedBanners((current) => ({ ...current, [invalid.id]: true }));
+            return;
+        }
+
+        const payload = banners.map((banner) => ({
+            ...banner,
+            eyebrow: banner.eyebrow.trim(),
+            title: banner.title.trim().slice(0, 120),
+            description: banner.description.trim().slice(0, 220),
+            image: banner.image.trim(),
+            imagePosition: banner.imagePosition.trim() || 'center center',
+            textColor: banner.textColor,
+            active: Boolean(banner.active),
         }));
 
-        const hasEmptyPolicy = cleanPolicies.some((policy) => !policy.text);
-
-        if (hasEmptyPolicy) {
-            setMessage({
-                type: 'error',
-                text: 'Todas las políticas deben tener texto.',
-            });
-            return;
-        }
-
         try {
-            setSavingPolicies(true);
-            setMessage(null);
-
-            await settingsService.update('reservation_policies', JSON.stringify(cleanPolicies));
-
-            setSettings((prev) => ({
-                ...prev,
-                reservation_policies: JSON.stringify(cleanPolicies),
-            }));
-
-            setReservationPolicies(cleanPolicies);
-            setIsEditingPolicies(false);
-
-            setMessage({
-                type: 'success',
-                text: 'Políticas guardadas correctamente.',
-            });
-
-            setTimeout(() => setMessage(null), 3000);
-        } catch (err: any) {
-            console.error('Error saving reservation policies:', err);
-            setMessage({
-                type: 'error',
-                text: `Error al guardar políticas: ${err.response?.status || 'desconocido'}`,
-            });
+            setSavingBanners(true);
+            const serialized = JSON.stringify(payload);
+            await settingsService.update('homepage_banners', serialized);
+            setSettings((current) => ({ ...current, homepage_banners: serialized }));
+            setBanners(payload);
+            notify('success', 'Banners de portada guardados correctamente.');
+        } catch (error) {
+            console.error(error);
+            notify('error', 'No se pudieron guardar los banners.');
         } finally {
-            setSavingPolicies(false);
+            setSavingBanners(false);
         }
-    };
-
-    const addPolicy = () => {
-        setReservationPolicies((current) => [...current, { text: '' }]);
-        setIsEditingPolicies(true);
-    };
-
-    const removePolicy = (indexToRemove: number) => {
-        setReservationPolicies((current) => current.filter((_, index) => index !== indexToRemove));
-    };
-
-    const handleCancel = () => {
-        setInputValue(settings.whatsapp_number || '');
-        setIsEditing(false);
-        setMessage(null);
-    };
-
-    const handleSavePrivacy = async () => {
-        const cleanPrivacy = privacyPolicies.map((policy) => policy.trim());
-
-        if (cleanPrivacy.some((policy) => !policy)) {
-            setMessage({ type: 'error', text: 'Todos los puntos de privacidad deben tener texto.' });
-            return;
-        }
-
-        try {
-            setSavingPrivacy(true);
-            setMessage(null);
-            const serializedPrivacy = JSON.stringify(cleanPrivacy);
-            await settingsService.update('privacy_policy', serializedPrivacy);
-            setPrivacyPolicies(cleanPrivacy);
-            setSettings((prev) => ({ ...prev, privacy_policy: serializedPrivacy }));
-            setIsEditingPrivacy(false);
-            setMessage({ type: 'success', text: 'Aviso de privacidad guardado correctamente.' });
-            setTimeout(() => setMessage(null), 3000);
-        } catch (err: any) {
-            setMessage({
-                type: 'error',
-                text: `Error al guardar privacidad: ${err.response?.status || 'desconocido'}`,
-            });
-        } finally {
-            setSavingPrivacy(false);
-        }
-    };
-
-    const addPrivacyPolicy = () => {
-        setPrivacyPolicies((current) => [...current, '']);
-        setIsEditingPrivacy(true);
-    };
-
-    const removePrivacyPolicy = (indexToRemove: number) => {
-        setPrivacyPolicies((current) => current.filter((_, index) => index !== indexToRemove));
     };
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center p-12 space-y-4">
-                <div className="relative">
-                    <div className="w-12 h-12 border-4 border-minimal-olive/20 border-t-minimal-olive rounded-full animate-spin"></div>
-                    <Settings2 className="absolute inset-0 m-auto text-minimal-olive animate-pulse" size={20} />
-                </div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Cargando configuración...</p>
+            <div className="flex flex-col items-center justify-center gap-4 p-12">
+                <Loader2 size={30} className="animate-spin text-store-red" />
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Cargando ajustes...</p>
             </div>
         );
     }
 
     return (
-        <div className="w-full max-w-md mx-auto lg:max-w-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-minimal-olive/10 rounded-2xl flex items-center justify-center text-minimal-olive border border-minimal-olive/20 flex-shrink-0">
-                    <Settings2 size={20} />
+        <div className="mx-auto w-full max-w-[1450px] space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="grid h-10 w-10 place-items-center rounded-2xl border border-red-100 bg-red-50 text-store-red">
+                        <Settings2 size={19} />
+                    </div>
+                    <div>
+                        <h2 className="text-sm font-black uppercase tracking-widest text-black">Ajustes del sitio</h2>
+                        <p className="mt-1 text-[10px] font-bold uppercase tracking-tight text-gray-400">
+                            Contacto, políticas y contenido de la portada
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <h2 className="text-sm font-black text-black uppercase tracking-widest leading-none mb-1">Ajustes del Sitio</h2>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Gestiona la información global de contacto</p>
-                </div>
+
+                {message && (
+                    <div className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold ${
+                        message.type === 'success'
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                            : 'border-red-200 bg-red-50 text-red-700'
+                    }`}>
+                        {message.type === 'success' ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}
+                        {message.text}
+                    </div>
+                )}
             </div>
 
-            {/* Main Card */}
-            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-black/[0.02] overflow-hidden relative group transition-all hover:shadow-2xl hover:shadow-black/[0.04]">
-                <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity pointer-events-none hidden sm:block">
-                    <Globe size={120} className="rotate-12" />
+            <CollapsibleCard
+                title="Número de WhatsApp"
+                subtitle="Canal principal de atención al cliente"
+                icon={<Smartphone size={17} />}
+                open={openSections.contact}
+                onToggle={() => toggleSection('contact')}
+            >
+                <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+                    <label className="block">
+                        <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-500">Número internacional</span>
+                        <input
+                            value={whatsapp}
+                            onChange={(event) => setWhatsapp(event.target.value)}
+                            className="h-12 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 text-sm font-bold outline-none transition focus:border-store-red focus:bg-white"
+                            placeholder="51900112844"
+                        />
+                    </label>
+                    <button
+                        type="button"
+                        onClick={saveWhatsapp}
+                        disabled={savingWhatsapp}
+                        className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-black px-6 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-store-red disabled:opacity-50"
+                    >
+                        {savingWhatsapp ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+                        Guardar
+                    </button>
+                </div>
+            </CollapsibleCard>
+
+            <CollapsibleCard
+                title="Términos y privacidad"
+                subtitle="Textos legales visibles para clientes"
+                icon={<ShieldCheck size={17} />}
+                open={openSections.legal}
+                onToggle={() => toggleSection('legal')}
+            >
+                <div className="grid gap-6 xl:grid-cols-2">
+                    <div>
+                        <div className="mb-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-black">
+                                <FileText size={15} /> Términos y condiciones
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setReservationPolicies((current) => [...current, { text: '' }])}
+                                className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-store-red"
+                            >
+                                <Plus size={14} /> Agregar
+                            </button>
+                        </div>
+                        <div className="space-y-2">
+                            {reservationPolicies.map((policy, index) => (
+                                <div key={`term-${index}`} className="flex gap-2 rounded-xl border border-gray-100 bg-gray-50 p-2">
+                                    <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full bg-white text-[10px] font-black">{index + 1}</span>
+                                    <textarea
+                                        value={policy.text}
+                                        onChange={(event) => setReservationPolicies((current) => current.map((item, itemIndex) => itemIndex === index ? { text: event.target.value } : item))}
+                                        className="min-h-[72px] flex-1 resize-y bg-transparent p-2 text-xs font-medium leading-relaxed outline-none"
+                                    />
+                                    <button
+                                        type="button"
+                                        aria-label="Eliminar política"
+                                        onClick={() => setReservationPolicies((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                                        className="h-8 w-8 text-gray-400 transition hover:text-store-red"
+                                    >
+                                        <Trash2 size={15} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div className="mb-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-black">
+                                <ShieldCheck size={15} /> Aviso de privacidad
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setPrivacyPolicies((current) => [...current, ''])}
+                                className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-store-red"
+                            >
+                                <Plus size={14} /> Agregar
+                            </button>
+                        </div>
+                        <div className="space-y-2">
+                            {privacyPolicies.map((policy, index) => (
+                                <div key={`privacy-${index}`} className="flex gap-2 rounded-xl border border-gray-100 bg-gray-50 p-2">
+                                    <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full bg-white text-[10px] font-black">{index + 1}</span>
+                                    <textarea
+                                        value={policy}
+                                        onChange={(event) => setPrivacyPolicies((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))}
+                                        className="min-h-[72px] flex-1 resize-y bg-transparent p-2 text-xs font-medium leading-relaxed outline-none"
+                                    />
+                                    <button
+                                        type="button"
+                                        aria-label="Eliminar punto de privacidad"
+                                        onClick={() => setPrivacyPolicies((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                                        className="h-8 w-8 text-gray-400 transition hover:text-store-red"
+                                    >
+                                        <Trash2 size={15} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
 
-                <div className="p-5 sm:p-8 space-y-6 sm:space-y-8 relative z-10">
-                    {/* Setting Item */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-2">
-                                <div className="p-2 bg-gray-50 rounded-xl group-hover:bg-minimal-olive/10 transition-colors flex-shrink-0">
-                                    <Smartphone size={16} className="text-gray-400 group-hover:text-minimal-olive transition-colors" />
-                                </div>
-                                <span className="text-[10px] sm:text-[11px] font-black text-black uppercase tracking-widest truncate">Número de WhatsApp</span>
-                            </div>
+                <div className="mt-5 flex justify-end">
+                    <button
+                        type="button"
+                        onClick={saveLegal}
+                        disabled={savingLegal}
+                        className="flex h-11 items-center gap-2 rounded-xl bg-black px-5 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-store-red disabled:opacity-50"
+                    >
+                        {savingLegal ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+                        Guardar políticas
+                    </button>
+                </div>
+            </CollapsibleCard>
 
-                            {!isEditing && (
-                                <button
-                                    onClick={() => setIsEditing(true)}
-                                    className="px-3 sm:px-4 py-1.5 bg-minimal-olive/5 hover:bg-minimal-olive/10 text-minimal-olive rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap"
-                                >
-                                    Editar
-                                </button>
-                            )}
-                        </div>
+            <CollapsibleCard
+                title="Banners de portada"
+                subtitle={`${banners.length} banner(s) · ${activeBannerCount} activo(s) · máximo 12`}
+                icon={<FileImage size={17} />}
+                open={openSections.banners}
+                onToggle={() => toggleSection('banners')}
+            >
+                <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-red-100 bg-red-50/50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p className="text-xs font-black text-black">Gestión dinámica del slider principal</p>
+                        <p className="mt-1 max-w-3xl text-[11px] leading-relaxed text-gray-500">
+                            Puedes cargar imágenes, editar textos, definir color del texto, posición de la imagen, activar/desactivar banners y cambiar el orden. El título en la portada se limita visualmente a tres líneas.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={addBanner}
+                        disabled={banners.length >= 12}
+                        className="flex h-11 flex-shrink-0 items-center justify-center gap-2 rounded-xl bg-store-red px-5 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                        <Plus size={15} /> Nuevo banner
+                    </button>
+                </div>
 
-                        {isEditing ? (
-                            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                <div className="flex flex-col sm:flex-row gap-2">
-                                    <div className="relative flex-1 group/input">
-                                        <input
-                                            type="text"
-                                            value={inputValue}
-                                            onChange={(e) => setInputValue(e.target.value)}
-                                            className="w-full pl-4 pr-4 py-3 sm:py-4 bg-gray-50 border-2 border-transparent rounded-2xl sm:rounded-[1.25rem] text-sm font-black text-black placeholder:text-gray-300 focus:bg-white focus:border-minimal-olive outline-none transition-all"
-                                            placeholder="Ej: 51968231620"
-                                            autoFocus
-                                        />
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={handleSave}
-                                            disabled={saving}
-                                            className="flex-1 sm:flex-none h-12 uppercase sm:h-auto sm:w-12 sm:aspect-square bg-black text-white rounded-2xl flex items-center justify-center hover:bg-minimal-olive transition-all disabled:opacity-50 text-[10px] font-black tracking-widest sm:text-base"
-                                        >
-                                            {saving ? (
-                                                <Loader2 size={16} className="animate-spin" />
+                {!banners.length ? (
+                    <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-5 py-10 text-center">
+                        <FileImage size={28} className="mx-auto mb-3 text-gray-300" />
+                        <p className="text-xs font-black text-black">Aún no hay banners administrables</p>
+                        <p className="mx-auto mt-2 max-w-xl text-[11px] leading-relaxed text-gray-500">
+                            Mientras no publiques banners personalizados, la tienda conserva los banners predeterminados actuales. Crea el primero para comenzar a gestionarlos desde el intranet.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {banners.map((banner, index) => {
+                            const expanded = expandedBanners[banner.id] ?? false;
+                            return (
+                                <article key={banner.id} className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+                                    <div className="flex items-center gap-3 p-3 sm:p-4">
+                                        <GripVertical size={17} className="flex-shrink-0 text-gray-300" />
+                                        <div className="h-14 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                                            {banner.image ? (
+                                                <img src={getImageUrl(banner.image)} alt="" className="h-full w-full object-cover" />
                                             ) : (
-                                                <>
-                                                    <Save size={16} className="sm:block hidden" />
-                                                    <span className="sm:hidden">Guardar</span>
-                                                </>
+                                                <div className="grid h-full place-items-center text-gray-300"><FileImage size={18} /></div>
                                             )}
-                                        </button>
-                                        <button
-                                            onClick={handleCancel}
-                                            className="h-12 w-12 sm:w-12 sm:aspect-square text-gray-400 hover:text-black hover:bg-gray-100 rounded-2xl flex items-center justify-center transition-all bg-gray-50 sm:bg-transparent"
-                                        >
-                                            <X size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-2 text-[9px] sm:text-[10px] text-gray-400 italic font-medium px-2">
-                                    <AlertCircle size={12} className="shrink-0 mt-0.5" />
-                                    <span>Formato internacional sin símbolos (+, - , espacios). Ejemplo: 51900000000</span>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col sm:flex-row sm:items-end justify-between p-5 sm:p-6 bg-gray-50 rounded-2xl sm:rounded-[1.5rem] border border-black/[0.02] gap-4">
-                                <div className="space-y-1">
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Configurado como</p>
-                                    <span className="text-2xl sm:text-3xl font-black text-black tracking-tighter leading-none break-all">
-                                        {settings.whatsapp_number ? (
-                                            `+${settings.whatsapp_number}`
-                                        ) : (
-                                            <span className="text-red-400">No configurado</span>
-                                        )}
-                                    </span>
-                                </div>
-                                <div className="flex flex-col items-start sm:items-end gap-2">
-                                    <div
-                                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full border ${
-                                            settings.whatsapp_number
-                                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600'
-                                                : 'bg-red-500/10 border-red-500/20 text-red-600'
-                                        }`}
-                                    >
-                                        <div
-                                            className={`w-1.5 h-1.5 rounded-full animate-pulse ${
-                                                settings.whatsapp_number ? 'bg-emerald-500' : 'bg-red-500'
-                                            }`}
-                                        />
-                                        <span className="text-[9px] font-black uppercase tracking-widest">
-                                            {settings.whatsapp_number ? 'Sincronizado' : 'No Sincronizado'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-6 border-t border-gray-100 pt-6 xl:grid-cols-2">
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-2">
-                                    <div className="p-2 bg-gray-50 rounded-xl group-hover:bg-minimal-olive/10 transition-colors flex-shrink-0">
-                                        <FileText size={16} className="text-gray-400 group-hover:text-minimal-olive transition-colors" />
-                                    </div>
-                                    <span className="text-[10px] sm:text-[11px] font-black text-black uppercase tracking-widest truncate">
-                                        Términos y Condiciones
-                                    </span>
-                                </div>
-
-                                {!isEditingPolicies && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsEditingPolicies(true)}
-                                        className="px-3 sm:px-4 py-1.5 bg-minimal-olive/5 hover:bg-minimal-olive/10 text-minimal-olive rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap"
-                                    >
-                                        Editar
-                                    </button>
-                                )}
-                            </div>
-
-                            {isEditingPolicies ? (
-                                <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                                    {reservationPolicies.map((policy, index) => (
-                                        <div key={index} className="bg-gray-50 rounded-2xl p-4 border border-gray-100 space-y-3">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 bg-white rounded-full border border-gray-200 flex items-center justify-center shrink-0">
-                                                    <span className="text-xs font-black text-black">{index + 1}</span>
-                                                </div>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removePolicy(index)}
-                                                    aria-label={`Eliminar política ${index + 1}`}
-                                                    className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-100 bg-white text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-
-                                            <textarea
-                                                value={policy.text}
-                                                onChange={(e) => {
-                                                    const updatedPolicies = [...reservationPolicies];
-                                                    updatedPolicies[index].text = e.target.value;
-                                                    setReservationPolicies(updatedPolicies);
-                                                }}
-                                                rows={2}
-                                                className="w-full px-4 py-3 bg-white rounded-xl border border-gray-100 text-xs font-bold text-black outline-none focus:border-minimal-olive resize-none"
-                                                placeholder={`Política ${index + 1}`}
-                                            />
                                         </div>
-                                    ))}
-
-                                    <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                                        <button
-                                            type="button"
-                                            onClick={addPolicy}
-                                            className="flex-1 rounded-2xl border border-dashed border-gray-300 bg-white py-3 text-xs font-black uppercase tracking-widest text-gray-600 transition-all hover:border-minimal-olive hover:text-minimal-olive"
-                                        >
-                                            <Plus size={14} className="mr-2 inline" />
-                                            Agregar política
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={handleSavePolicies}
-                                            disabled={savingPolicies}
-                                            className="flex-1 bg-black text-white py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-minimal-olive transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                                        >
-                                            {savingPolicies ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                                            Guardar Términos
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setIsEditingPolicies(false);
-                                                loadSettings();
-                                            }}
-                                            className="flex-1 bg-gray-50 text-gray-500 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-100 transition-all"
-                                        >
-                                            Cancelar
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="bg-gray-50 rounded-2xl p-5 border border-black/[0.02] space-y-3">
-                                    {reservationPolicies.map((policy, index) => (
-                                        <div key={index} className="flex items-center gap-3 bg-white rounded-xl p-3 border border-gray-100">
-                                            <div className="w-7 h-7 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center shrink-0">
-                                                <span className="text-[10px] font-black text-black">{index + 1}</span>
-                                            </div>
-
-                                            <p className="text-xs font-bold text-gray-600 leading-snug line-clamp-2">{policy.text}</p>
-                                        </div>
-                                    ))}
-                                    <button
-                                        type="button"
-                                        onClick={addPolicy}
-                                        className="w-full rounded-xl border border-dashed border-gray-300 bg-white p-3 text-xs font-black uppercase tracking-widest text-gray-600 transition-all hover:border-minimal-olive hover:text-minimal-olive"
-                                    >
-                                        <Plus size={14} className="mr-2 inline" />
-                                        Agregar política
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Aviso de privacidad */}
-                        <div className="space-y-4 border-t border-gray-100 pt-6 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0">
-                            <div className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-2">
-                                    <div className="flex-shrink-0 rounded-xl bg-gray-50 p-2">
-                                        <ShieldCheck size={16} className="text-gray-400" />
-                                    </div>
-                                    <span className="truncate text-[10px] font-black uppercase tracking-widest text-black sm:text-[11px]">
-                                        Aviso de privacidad
-                                    </span>
-                                </div>
-
-                                {!isEditingPrivacy && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setIsEditingPrivacy(true);
-                                        }}
-                                        className="whitespace-nowrap rounded-full bg-minimal-olive/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-minimal-olive transition-all hover:bg-minimal-olive/10 sm:px-4"
-                                    >
-                                        Editar
-                                    </button>
-                                )}
-                            </div>
-
-                            {isEditingPrivacy ? (
-                                <div className="space-y-3">
-                                    {privacyPolicies.map((policy, index) => (
-                                        <div key={index} className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-xs font-black text-black">
-                                                    {index + 1}
-                                                </div>
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                                                    Punto de privacidad {index + 1}
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Banner {index + 1}</span>
+                                                <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${banner.active ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
+                                                    {banner.active ? 'Activo' : 'Oculto'}
                                                 </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removePrivacyPolicy(index)}
-                                                    aria-label={`Eliminar punto de privacidad ${index + 1}`}
-                                                    className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-red-100 bg-white text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                                                >
-                                                    <Trash2 size={15} />
-                                                </button>
                                             </div>
-                                            <textarea
-                                                value={policy}
-                                                onChange={(e) => {
-                                                    const updatedPolicies = [...privacyPolicies];
-                                                    updatedPolicies[index] = e.target.value;
-                                                    setPrivacyPolicies(updatedPolicies);
-                                                }}
-                                                rows={3}
-                                                className="w-full resize-none rounded-xl border border-gray-100 bg-white px-4 py-3 text-xs font-bold text-black outline-none focus:border-minimal-olive"
-                                                placeholder={`Punto de privacidad ${index + 1}`}
-                                            />
+                                            <p className="mt-1 truncate text-sm font-black text-black">{banner.title || 'Sin título'}</p>
                                         </div>
-                                    ))}
-                                    <button
-                                        type="button"
-                                        onClick={addPrivacyPolicy}
-                                        className="w-full rounded-xl border border-dashed border-gray-300 bg-white p-3 text-xs font-black uppercase tracking-widest text-gray-600 transition-all hover:border-minimal-olive hover:text-minimal-olive"
-                                    >
-                                        <Plus size={14} className="mr-2 inline" />
-                                        Agregar punto de privacidad
-                                    </button>
-                                    <div className="flex gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={handleSavePrivacy}
-                                            disabled={savingPrivacy}
-                                            className="flex-1 rounded-2xl bg-black py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-minimal-olive disabled:opacity-50"
-                                        >
-                                            {savingPrivacy ? <Loader2 size={14} className="mx-auto animate-spin" /> : 'Guardar privacidad'}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setIsEditingPrivacy(false);
-                                                loadSettings();
-                                            }}
-                                            className="rounded-2xl bg-gray-50 px-4 py-3 text-xs font-black uppercase tracking-widest text-gray-500 transition-all hover:bg-gray-100"
-                                        >
-                                            Cancelar
-                                        </button>
+                                        <div className="flex items-center gap-1">
+                                            <button type="button" onClick={() => moveBanner(index, -1)} disabled={index === 0} className="grid h-8 w-8 place-items-center rounded-lg text-gray-400 hover:bg-gray-50 hover:text-black disabled:opacity-20" aria-label="Subir banner"><ChevronUp size={15} /></button>
+                                            <button type="button" onClick={() => moveBanner(index, 1)} disabled={index === banners.length - 1} className="grid h-8 w-8 place-items-center rounded-lg text-gray-400 hover:bg-gray-50 hover:text-black disabled:opacity-20" aria-label="Bajar banner"><ChevronDown size={15} /></button>
+                                            <button type="button" onClick={() => setExpandedBanners((current) => ({ ...current, [banner.id]: !expanded }))} className="grid h-9 w-9 place-items-center rounded-full bg-gray-50 text-gray-500 hover:text-black" aria-label={expanded ? 'Minimizar banner' : 'Expandir banner'}>
+                                                {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="min-h-[250px] space-y-3 rounded-2xl border border-black/[0.02] bg-gray-50 p-5">
-                                    {privacyPolicies.map((policy, index) => (
-                                        <div key={index} className="flex items-start gap-3 rounded-xl border border-gray-100 bg-white p-3">
-                                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-50 text-[10px] font-black text-black">
-                                                {index + 1}
+
+                                    {expanded && (
+                                        <div className="border-t border-gray-100 bg-gray-50/60 p-4 sm:p-5">
+                                            <div className="grid gap-5 xl:grid-cols-[260px_1fr]">
+                                                <div className="space-y-3">
+                                                    <div className="aspect-[16/9] overflow-hidden rounded-xl border border-gray-200 bg-white">
+                                                        {banner.image ? (
+                                                            <img src={getImageUrl(banner.image)} alt={`Vista previa ${banner.title || 'banner'}`} className="h-full w-full object-cover" />
+                                                        ) : (
+                                                            <div className="grid h-full place-items-center text-center text-gray-300">
+                                                                <div><FileImage size={26} className="mx-auto mb-2" /><span className="text-[10px] font-bold">Sin imagen</span></div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <label className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white text-[10px] font-black uppercase tracking-wider text-gray-600 transition hover:border-store-red hover:text-store-red">
+                                                        {uploadingBannerId === banner.id ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
+                                                        {uploadingBannerId === banner.id ? 'Cargando...' : 'Cargar imagen'}
+                                                        <input
+                                                            type="file"
+                                                            accept="image/jpeg,image/png,image/webp"
+                                                            className="hidden"
+                                                            disabled={uploadingBannerId === banner.id}
+                                                            onChange={(event) => void uploadBannerImage(banner.id, event.target.files?.[0])}
+                                                        />
+                                                    </label>
+                                                    <p className="text-[9px] leading-relaxed text-gray-400">Recomendado: 1920 × 760 px, JPG/PNG/WEBP. Máximo 8 MB.</p>
+                                                </div>
+
+                                                <div className="grid gap-4 sm:grid-cols-2">
+                                                    <label className="sm:col-span-2">
+                                                        <span className="mb-1.5 block text-[9px] font-black uppercase tracking-widest text-gray-500">Título principal</span>
+                                                        <input
+                                                            value={banner.title}
+                                                            maxLength={120}
+                                                            onChange={(event) => updateBanner(banner.id, 'title', event.target.value)}
+                                                            className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm font-bold outline-none focus:border-store-red"
+                                                            placeholder="Ej. Comodidad que acompaña tu ritmo"
+                                                        />
+                                                        <span className="mt-1 block text-right text-[9px] text-gray-400">{banner.title.length}/120 · máximo 3 líneas en portada</span>
+                                                    </label>
+
+                                                    <label>
+                                                        <span className="mb-1.5 block text-[9px] font-black uppercase tracking-widest text-gray-500">Etiqueta superior</span>
+                                                        <input value={banner.eyebrow} onChange={(event) => updateBanner(banner.id, 'eyebrow', event.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold outline-none focus:border-store-red" placeholder="Temporada 2026" />
+                                                    </label>
+
+                                                    <label>
+                                                        <span className="mb-1.5 block text-[9px] font-black uppercase tracking-widest text-gray-500">Posición imagen</span>
+                                                        <select value={banner.imagePosition} onChange={(event) => updateBanner(banner.id, 'imagePosition', event.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold outline-none focus:border-store-red">
+                                                            <option value="center center">Centro</option>
+                                                            <option value="left center">Izquierda</option>
+                                                            <option value="right center">Derecha</option>
+                                                            <option value="center top">Centro arriba</option>
+                                                            <option value="center bottom">Centro abajo</option>
+                                                            <option value="70% center">70% horizontal</option>
+                                                        </select>
+                                                    </label>
+
+                                                    <label className="sm:col-span-2">
+                                                        <span className="mb-1.5 block text-[9px] font-black uppercase tracking-widest text-gray-500">Texto descriptivo</span>
+                                                        <textarea value={banner.description} maxLength={220} onChange={(event) => updateBanner(banner.id, 'description', event.target.value)} className="min-h-[82px] w-full resize-y rounded-xl border border-gray-200 bg-white p-3 text-xs font-medium leading-relaxed outline-none focus:border-store-red" placeholder="Descripción breve del banner" />
+                                                    </label>
+
+                                                    <div>
+                                                        <span className="mb-1.5 block text-[9px] font-black uppercase tracking-widest text-gray-500">Color del texto</span>
+                                                        <div className="flex h-11 items-center gap-3 rounded-xl border border-gray-200 bg-white px-3">
+                                                            <Palette size={15} className="text-gray-400" />
+                                                            <input type="color" value={banner.textColor} onChange={(event) => updateBanner(banner.id, 'textColor', event.target.value)} className="h-7 w-10 cursor-pointer border-0 bg-transparent p-0" />
+                                                            <input value={banner.textColor} onChange={(event) => /^#[0-9a-fA-F]{0,6}$/.test(event.target.value) && updateBanner(banner.id, 'textColor', event.target.value)} className="min-w-0 flex-1 bg-transparent text-xs font-bold uppercase outline-none" />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-end gap-3">
+                                                        <label className="flex h-11 flex-1 cursor-pointer items-center justify-between rounded-xl border border-gray-200 bg-white px-3">
+                                                            <span className="text-[10px] font-black uppercase tracking-wider text-gray-600">Visible</span>
+                                                            <input type="checkbox" checked={banner.active} onChange={(event) => updateBanner(banner.id, 'active', event.target.checked)} className="h-4 w-4 accent-red-600" />
+                                                        </label>
+                                                        <button type="button" onClick={() => removeBanner(banner.id)} className="grid h-11 w-11 place-items-center rounded-xl border border-red-100 bg-red-50 text-red-500 transition hover:bg-red-100" aria-label="Eliminar banner">
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <p className="whitespace-pre-line text-xs font-bold leading-relaxed text-gray-600">
-                                                {policy}
-                                            </p>
                                         </div>
-                                    ))}
-                                    <button
-                                        type="button"
-                                        onClick={addPrivacyPolicy}
-                                        className="w-full rounded-xl border border-dashed border-gray-300 bg-white p-3 text-xs font-black uppercase tracking-widest text-gray-600 transition-all hover:border-minimal-olive hover:text-minimal-olive"
-                                    >
-                                        <Plus size={14} className="mr-2 inline" />
-                                        Agregar punto de privacidad
-                                    </button>
-                                </div>
-                            )}
-                        </div>
+                                    )}
+                                </article>
+                            );
+                        })}
                     </div>
-                    <div className="pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center gap-2 text-gray-400">
-                            <ShieldCheck size={14} />
-                            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest">Seguridad activada</span>
-                        </div>
-                        {message && (
-                            <div className="animate-in fade-in zoom-in duration-300 flex items-center gap-2 px-3 py-1.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100">
-                                {message.type === 'success' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
-                                {message.text}
-                            </div>
-                        )}
+                )}
+
+                <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-2 text-[10px] leading-relaxed text-gray-400">
+                        <AlertCircle size={13} className="mt-0.5 flex-shrink-0" />
+                        <span>Los cambios se aplican en la portada al guardar y recargar la tienda. Si no existen banners personalizados activos, se conservan los banners predeterminados.</span>
                     </div>
+                    <button
+                        type="button"
+                        onClick={saveBanners}
+                        disabled={savingBanners || uploadingBannerId !== null}
+                        className="flex h-11 flex-shrink-0 items-center justify-center gap-2 rounded-xl bg-black px-6 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-store-red disabled:opacity-50"
+                    >
+                        {savingBanners ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+                        Guardar banners
+                    </button>
                 </div>
-            </div>
+            </CollapsibleCard>
+
+            <div className="hidden">{settings.homepage_banners}</div>
         </div>
     );
 };

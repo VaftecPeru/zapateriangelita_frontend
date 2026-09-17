@@ -1,0 +1,119 @@
+.google-identity-button {
+  width: 100%;
+  min-height: 44px;
+}
+
+.google-identity-button--disabled {
+  opacity: .55;
+  pointer-events: none;
+}
+
+.google-button-render {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+}
+
+.google-button-render--hidden {
+  height: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.google-button-render > div,
+.google-button-render iframe {
+  max-width: 100% !important;
+}
+
+.google-button-skeleton {
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(18, 18, 18, .08);
+  background: linear-gradient(90deg, rgba(246,244,241,.9), rgba(255,255,255,.98), rgba(246,244,241,.9));
+  background-size: 200% 100%;
+  animation: angelita-google-loading 1.2s linear infinite;
+}
+
+.google-button-fallback {
+  width: 100%;
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(18,18,18,.10);
+  background: rgba(255,255,255,.92);
+  color: #25211e;
+  font: 700 12px/1.2 "Inter", system-ui, sans-serif;
+  box-shadow: 0 7px 16px rgba(33,25,18,.04);
+  appearance: none;
+  text-align: left;
+}
+
+.google-button-fallback__mark {
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid rgba(18,18,18,.08);
+  font-size: 14px;
+  font-weight: 900;
+  color: #4285f4;
+}
+
+.google-button-fallback small {
+  color: #8e857d;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.google-button-fallback--retry {
+  cursor: pointer;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.google-button-fallback--retry:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(66,133,244,.28);
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(33,25,18,.08);
+}
+
+.google-button-fallback--retry:focus-visible {
+  outline: 3px solid rgba(66,133,244,.18);
+  outline-offset: 2px;
+}
+
+.google-button-fallback--retry:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.google-button-fallback--error {
+  border-color: rgba(227,6,19,.18);
+  color: #b20a13;
+}
+
+@keyframes angelita-google-loading {
+  from { background-position: 0% 0; }
+  to { background-position: 200% 0; }
+}
+
+@media (max-width: 520px) {
+  .google-button-fallback {
+    grid-template-columns: 27px 1fr;
+  }
+
+  .google-button-fallback small {
+    grid-column: 2;
+    text-align: left;
+  }
+}

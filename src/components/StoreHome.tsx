@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import ReferenceLanding from "./ReferenceLanding";
+import brandLogo from "../assets/brand/logo-angelita-horizontal.png";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
@@ -7,9 +9,8 @@ import { useUbigeo } from "../hooks/useUbigeo";
 import { categoryService, productService, subcategoryService, Category, Product } from "../services/crudService";
 import { getImageUrl } from "../config/api";
 import {
-  ArrowRight,
-  ChevronDown,
   ChevronLeft,
+  ChevronDown,
   ChevronRight,
   Clock3,
   Headphones,
@@ -19,7 +20,6 @@ import {
   Menu,
   PackageCheck,
   Search,
-  ShieldCheck,
   ShoppingBag,
   Star,
   Truck,
@@ -30,15 +30,11 @@ import {
 // @ts-ignore
 import {
   categories as staticCategories,
-  finderItems,
-  heroSlides,
-  instagramImages,
-  testimonials,
 } from "../data/catalog";
 
-const money = new Intl.NumberFormat("en-US", {
+const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
-  currency: "USD",
+  currency: "MXN",
   minimumFractionDigits: 2,
 });
 
@@ -75,7 +71,6 @@ const subcategoriasNiños = [
   { talla: "Niño (18-21)", items: ["Botas", "Casual", "Sandalias", "Tacos de fútbol", "Tenis deportivos", "Tenis urbanos"] },
 ];
 
-const brands = ["NIKE", "ADIDAS", "PUMA", "SKECHERS", "CAT", "FLEXI"];
 
 
 const menuItems = [
@@ -135,9 +130,7 @@ function FacebookIcon({ size = 18 }: { size?: number }) {
 function Logo({ light = false }: { light?: boolean }) {
   return (
     <a className={`logo ${light ? "logo--light" : ""}`} href="/" aria-label="Zapatería Angelita - inicio">
-      <span className="logo__small">Zapatería</span>
-      <strong>ANGELITA</strong>
-      <span className="logo__tagline">Calzando tus pies desde 1980</span>
+      <img className="brand-logo__image" src={brandLogo} alt="Zapatería Angelita" />
     </a>
   );
 }
@@ -175,6 +168,7 @@ function ProductCard({ product, onFavorite, isFavorite, onAddToCart }: any) {
       <div className="product-card__media">
         {product.discount && <span className="discount-badge">{discountLabel}</span>}
         <button
+          aria-pressed={isFavorite}
           className={`favorite-button ${isFavorite ? "is-active" : ""}`}
           type="button"
           onClick={(event) => { event.preventDefault(); onFavorite(product.id); }}
@@ -185,7 +179,7 @@ function ProductCard({ product, onFavorite, isFavorite, onAddToCart }: any) {
         <Link to={`/producto/${product.id}`} className="product-card__image-link" aria-label={`Ver detalles de ${product.name}`}>
           <img src={product.image} alt={product.name} loading="lazy" />
         </Link>
-        <button className="quick-add" type="button" onClick={(event) => { event.preventDefault(); onAddToCart(product); }}>Agregar al carrito</button>
+        <button className="quick-add quick-add--media" type="button" onClick={() => onAddToCart(product)}>Agregar al carrito</button>
       </div>
       <div className="product-card__body">
         <span className="product-card__category">{product.category}</span>
@@ -199,6 +193,7 @@ function ProductCard({ product, onFavorite, isFavorite, onAddToCart }: any) {
           <strong>{money.format(product.price)}</strong>
           {product.oldPrice && <del>{money.format(product.oldPrice)}</del>}
         </div>
+        <button className="quick-add quick-add--body" type="button" onClick={(event) => { event.preventDefault(); onAddToCart(product); }}>Agregar al carrito</button>
       </div>
     </article>
   );
@@ -211,7 +206,9 @@ export default function StoreHome() {
   const [subcategories, setSubcategories] = useState<any[]>([]);
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
-  const [slide, setSlide] = useState<number>(0);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState(false);
+  const [searchText, setSearchText] = useState("");
   const [favorites, setFavorites] = useState<number[]>([]);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [cartOpen, setCartOpen] = useState<boolean>(false);
@@ -303,6 +300,9 @@ export default function StoreHome() {
         setSubcategories(subcategoriesData);
       } catch (error) {
         console.error("Error loading public catalog:", error);
+        setCatalogError(true);
+      } finally {
+        setCatalogLoading(false);
       }
     };
 
@@ -330,23 +330,12 @@ export default function StoreHome() {
   const isCatalogPage = location.pathname === '/catalogo';
 
   useEffect(() => {
-    const interval = window.setInterval(() => {
-      setSlide((current) => (current + 1) % heroSlides.length);
-    }, 6500);
-    return () => window.clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
     const shouldLock = menuOpen || cartOpen;
     document.body.style.overflow = shouldLock ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
   }, [menuOpen, cartOpen]);
-
-  const goToSlide = (direction: number) => {
-    setSlide((current) => (current + direction + heroSlides.length) % heroSlides.length);
-  };
 
   const toggleFavorite = (id: number) => {
     setFavorites((current) =>
@@ -369,7 +358,6 @@ export default function StoreHome() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const activeHero = heroSlides[slide];
   const normalizeSlug = (value?: string | null) => (value || "")
     .toLowerCase()
     .normalize("NFD")
@@ -448,6 +436,8 @@ export default function StoreHome() {
     catalogCategory === 'Todas' || String(subcategory.category_id) === String(catalogCategory)
   );
   const catalogProducts = products.filter((product: any) => {
+    const query = new URLSearchParams(location.search).get("q")?.toLocaleLowerCase() || "";
+    if (query && !String(product.name).toLocaleLowerCase().includes(query)) return false;
     const categoryMatches = catalogCategory === 'Todas' || String(product.category_id) === String(catalogCategory);
     if (!categoryMatches || catalogSubcategory === 'Todas') return categoryMatches;
     return String(product.subcategory_id) === String(catalogSubcategory);
@@ -522,7 +512,10 @@ export default function StoreHome() {
         <div className="announcement-bar">
           <div className="shell announcement-bar__inner">
             <p><Truck size={14} /> Envíos a todo México</p>
-           
+            <div className="announcement-promises" aria-label="Compromisos de compra">
+              <span>Pagos seguros</span>
+              <span>La confianza de miles de familias</span>
+            </div>
             <div className="announcement-socials" aria-label="Redes sociales">
               <a href="#instagram" aria-label="Instagram"><InstagramIcon size={13} /></a>
               <a href="#facebook" aria-label="Facebook"><FacebookIcon size={13} /></a>
@@ -624,7 +617,11 @@ export default function StoreHome() {
             })}
           </nav>
           <div className="header-actions">
-            <button type="button" aria-label="Buscar" onClick={() => setSearchOpen((value) => !value)}><Search /></button>
+            <form className="header-search" role="search" onSubmit={event => { event.preventDefault(); navigate('/catalogo?q=' + encodeURIComponent(searchText.trim())); }}>
+              <button type="submit" aria-label="Buscar en catálogo"><Search size={16} /></button>
+              <input value={searchText} onChange={event => setSearchText(event.target.value)} aria-label="Buscar productos" placeholder="Buscar productos..." type="search" />
+            </form>
+            <button className="header-search-toggle" type="button" aria-label="Buscar" onClick={() => setSearchOpen((value) => !value)}><Search /></button>
             <Link to={isAuthenticated ? "/profile" : "/login"} className="header-user-icon" aria-label={isAuthenticated ? "Mi cuenta" : "Iniciar sesión"}><UserRound /></Link>
             <button className="header-actions__cart" type="button" aria-label={`Carrito, ${cartCount} productos`} onClick={() => setCartOpen(true)}>
               <ShoppingBag />{cartCount > 0 && <span>{cartCount}</span>}
@@ -633,9 +630,9 @@ export default function StoreHome() {
         </div>
 
         {searchOpen && (
-          <form className="search-panel shell" role="search" onSubmit={(event) => event.preventDefault()}>
+          <form className="search-panel shell" role="search" onSubmit={event => { event.preventDefault(); setSearchOpen(false); navigate("/catalogo?q=" + encodeURIComponent(searchText.trim())); }}>
             <Search size={20} />
-            <input autoFocus type="search" placeholder="¿Qué calzado estás buscando?" aria-label="Buscar productos" />
+            <input autoFocus type="search" value={searchText} onChange={event => setSearchText(event.target.value)} placeholder="¿Qué calzado estás buscando?" aria-label="Buscar productos en móvil" />
             <button type="button" onClick={() => setSearchOpen(false)} aria-label="Cerrar buscador"><X /></button>
           </form>
         )}
@@ -656,6 +653,8 @@ export default function StoreHome() {
                     e.preventDefault();
                     if (item.name === 'Inicio') {
                       navigate('/');
+                    } else if (item.name === 'Contacto') {
+                      setContactSent(false); setContactError(null); setContactOpen(true);
                     } else if (item.submenu) {
                       handleCategoryClick(item.name);
                     } else {
@@ -772,153 +771,12 @@ export default function StoreHome() {
             </div>
           </section>
         ) : isHomePage ? (
-          <>
-            <section className="hero shell" aria-label="Colecciones destacadas">
-              <div
-                className="hero__image"
-                style={{ backgroundImage: `url(${activeHero.image})`, backgroundPosition: activeHero.imagePosition }}
-              />
-              <div className="hero__overlay" />
-              <div className="hero__content">
-                <span>{activeHero.eyebrow}</span>
-                <h1>{activeHero.title}</h1>
-                <p>{activeHero.description}</p>
-                <div className="hero__actions">
-                  <a className="button button--primary" href="#productos">Ver colección <ArrowRight size={17} /></a>
-                  <Link className="button button--light" to="/ofertas">Ver ofertas</Link>
-                </div>
-              </div>
-              <div className="hero__since"><span>Desde</span><strong>1980</strong></div>
-              <button className="hero-arrow hero-arrow--left" type="button" onClick={() => goToSlide(-1)} aria-label="Anterior"><ChevronLeft /></button>
-              <button className="hero-arrow hero-arrow--right" type="button" onClick={() => goToSlide(1)} aria-label="Siguiente"><ChevronRight /></button>
-              <div className="hero-dots" aria-label="Seleccionar diapositiva">
-                {heroSlides.map((_: any, index: number) => (
-                  <button key={index} className={index === slide ? "is-active" : ""} onClick={() => setSlide(index)} type="button" aria-label={`Diapositiva ${index + 1}`} />
-                ))}
-              </div>
-            </section>
-
-            {/* BENEFITS */}
-            <section className="benefits shell" aria-label="Beneficios de compra">
-              <div><Truck /><p><strong>Variedad para todos</strong><span>Mujer, hombre y niños</span></p></div>
-              <div><ShieldCheck /><p><strong>Compra segura</strong><span>Pagos 100% protegidos</span></p></div>
-              <div><PackageCheck /><p><strong>Envíos a todo el país</strong><span>Rápido y confiable</span></p></div>
-              <div><Headphones /><p><strong>Calidad y atención</strong><span>Desde 1980 contigo</span></p></div>
-            </section>
-
-            {/* FINDER */}
-            <section className="finder shell section-block">
-              <SectionTitle eyebrow="Elige para quién estás buscando" title="Encuentra tu próximo par favorito" />
-              <div className="finder-grid">
-                {finderItems.map((item: any) => (
-                  <a className="finder-card" href="#catalogo" key={item.name} onClick={(e) => { e.preventDefault(); handleCategoryClick(item.name); }}>
-                    <div><strong>{item.name}</strong><span>{item.subtitle}</span><ArrowRight size={18} /></div>
-                    <img src={item.image} alt="" loading="lazy" />
-                  </a>
-                ))}
-                <a className="finder-card finder-card--sale" href="#ofertas">
-                  <div><strong>Ofertas especiales</strong><span>Aprovecha hoy</span><ArrowRight size={18} /></div>
-                  <span className="finder-card__percent">%</span>
-                </a>
-              </div>
-            </section>
-
-            {/* CATEGORÍAS */}
-            <section className="categories shell section-block" id="catalogo">
-              <SectionTitle title="Compra por categoría" action="Ver todas las categorías" />
-              <div className="category-grid">
-                {categories.map((category: any) => (
-                  <a className="category-card" href="#productos" key={category.name} onClick={(e) => { e.preventDefault(); handleCategoryClick(category.name); }}>
-                    <div className="category-card__media" style={{ background: category.color }}>
-                      <img src={category.image} alt={`Calzado para ${category.name}`} loading="lazy" />
-                    </div>
-                    <strong>{category.name}</strong>
-                    <span>Ver colección <ChevronRight size={14} /></span>
-                  </a>
-                ))}
-              </div>
-            </section>
-
-            {/* PRODUCTOS */}
-            <section className="products shell section-block" id="productos">
-              <SectionTitle title="Productos destacados" action="Ver catálogo completo" onActionClick={() => navigate('/catalogo')} />
-              <div className="product-grid">
-                {products.slice(0, 10).map((product: any) => (
-                  <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />
-                ))}
-              </div>
-            </section>
-
-            {/* PROMOCIONES */}
-            <section className="promo-grid shell section-block" id="ofertas" aria-label="Promociones">
-              <article className="promo promo--dark">
-                <div><span>Ofertas especiales</span><h2>Hasta <strong>40%</strong> de descuento</h2><Link className="button button--primary" to="/ofertas">Ver ofertas <ArrowRight size={16} /></Link></div>
-                <img src="https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=700&q=88" alt="Zapato rojo de oferta" loading="lazy" />
-              </article>
-              <article className="promo promo--light">
-                <div><span>Nueva colección</span><h2>Deportiva</h2><p>Máximo rendimiento en cada paso.</p><a className="outline-link" href="#productos">Ver colección <ArrowRight size={16} /></a></div>
-                <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=700&q=88" alt="Zapatilla deportiva" loading="lazy" />
-              </article>
-            </section>
-
-            {/* MARCAS */}
-            <section className="brands shell section-block" aria-label="Marcas disponibles">
-              <p>Las mejores marcas</p>
-              <div>
-                {brands.map((brand) => (
-                  <strong key={brand}>{brand}</strong>
-                ))}
-              </div>
-            </section>
-
-            {/* TESTIMONIALS */}
-            <section className="testimonials shell section-block">
-              <SectionTitle title={<>Lo que dicen <span className="red-text">nuestros clientes</span></>} />
-              <div className="testimonial-grid">
-                {testimonials.map((testimonial: any) => (
-                  <article className="testimonial-card" key={testimonial.name}>
-                    <div className="stars">{Array.from({ length: 5 }).map((_, index) => <Star key={index} size={13} fill="currentColor" />)}</div>
-                    <p>“{testimonial.quote}”</p>
-                    <footer><img src={testimonial.avatar} alt="" loading="lazy" /><div><strong>{testimonial.name}</strong><span>{testimonial.city}</span></div></footer>
-                  </article>
-                ))}
-              </div>
-            </section>
-
-            {/* INSTAGRAM */}
-            <section className="instagram shell section-block" id="instagram">
-              <div className="instagram__intro">
-                <span>Síguenos en</span>
-                <h2>Instagram</h2>
-                <p>@zapateriaangelita</p>
-                <a className="outline-link" href="#instagram">Ver Instagram <ArrowRight size={15} /></a>
-              </div>
-              <div className="instagram__grid">
-                {instagramImages.map((image: string, index: number) => (
-                  <a href="#instagram" key={image} aria-label={`Publicación de Instagram ${index + 1}`}>
-                    <img src={image} alt="" loading="lazy" />
-                    <InstagramIcon />
-                  </a>
-                ))}
-              </div>
-            </section>
-
-            {/* NEWSLETTER */}
-            <section className="newsletter shell">
-              <div className="newsletter__copy">
-                <Mail />
-                <div>
-                  <strong>Suscríbete a nuestro newsletter</strong>
-                  <span>Recibe ofertas exclusivas, novedades y mucho más.</span>
-                </div>
-              </div>
-              <form onSubmit={(event) => event.preventDefault()}>
-                <label className="sr-only" htmlFor="newsletter-email">Correo electrónico</label>
-                <input id="newsletter-email" type="email" placeholder="Ingresa tu correo electrónico" required />
-                <button type="submit">Suscribirme</button>
-              </form>
-            </section>
-          </>
+          <ReferenceLanding
+            products={products}
+            loading={catalogLoading}
+            error={catalogError}
+            renderProduct={product => <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />}
+          />
         ) : (
           statusFilter === 'oferta' || statusFilter === 'nuevo' ? (
             <section className="offers-catalog shell section-block">

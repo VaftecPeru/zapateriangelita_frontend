@@ -19,11 +19,12 @@ import comentario3Img from '../assets/comentario3.jpg';
 
 export const heroSlides = [
   {
-    eyebrow: "Nueva colección",
-    title: "Camina con estilo y confianza",
-    description: "Descubre nuestra selección de calzado para cada momento.",
+    eyebrow: "Colección Angelita",
+    title: "Pasos que unen a la familia",
+    description: "Calzado para cada etapa, para cada historia. Comodidad, estilo y calidad en un solo lugar.",
     image: foto1Img,
     imagePosition: "70% center",
+    textColor: "#ffffff",
   },
   {
     eyebrow: "Temporada 2026",
@@ -31,6 +32,15 @@ export const heroSlides = [
     description: "Diseños ligeros, versátiles y listos para todos tus planes.",
     image: foto2Img,
     imagePosition: "72% center",
+    textColor: "#ffffff",
+  },
+  {
+    eyebrow: "Para toda la familia",
+    title: "Grandes historias comienzan con buenos pasos",
+    description: "Encuentra el par ideal para mujer, hombre, niñas y niños.",
+    image: foto6Img,
+    imagePosition: "68% center",
+    textColor: "#ffffff",
   },
 ];
 
@@ -49,6 +59,11 @@ export const finderItems = [
     name: "Niños",
     subtitle: "Pasos llenos de energía",
     image: foto7Img,
+  },
+  {
+    name: "Calzado escolar",
+    subtitle: "Comodidad para aprender",
+    image: foto13Img,
   },
 ];
 

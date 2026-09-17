@@ -1,30 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
+import GoogleIdentityButton from '../components/GoogleIdentityButton';
 import '../styles/login-home.css';
+import brandLogo from '../assets/brand/logo-angelita-horizontal.png';
 
-const Logo = ({ light = false }: { light?: boolean }) => {
-    return (
-        <a className={`logo ${light ? "logo--light" : ""}`} href="/" aria-label="Zapatería Angelita - inicio">
-            <span className="logo__small">Zapatería</span>
-            <strong>ANGELITA</strong>
-            <span className="logo__tagline">Calzando tus pies desde 1980</span>
-        </a>
-    );
-};
+const Logo = ({ light = false }: { light?: boolean }) => (
+    <a className={`logo ${light ? 'logo--light' : ''}`} href="/" aria-label="Zapatería Angelita - inicio">
+        <img className="brand-logo__image" src={brandLogo} alt="Zapatería Angelita" />
+    </a>
+);
 
 const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
     const { login: authLogin, user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
-    // ✅ Redirigir si ya está autenticado (según rol)
     useEffect(() => {
         if (isAuthenticated && user) {
             if (user.role === 'admin') {
@@ -43,7 +41,6 @@ const LoginPage = () => {
         try {
             const { data } = await authService.login(formData);
             authLogin(data.user, data.token);
-            // La redirección la maneja el useEffect
         } catch (err: any) {
             const msg = err.response?.data?.message
                 || err.response?.data?.errors?.email?.[0]
@@ -55,20 +52,35 @@ const LoginPage = () => {
         }
     };
 
+    const handleGoogleCredential = async (credential: string) => {
+        setError(null);
+        setGoogleLoading(true);
+
+        try {
+            const { data } = await authService.googleLogin(credential);
+            if (!data?.user || !data?.token) {
+                throw new Error('Google no devolvió una sesión válida.');
+            }
+            authLogin(data.user, data.token);
+        } catch (err: any) {
+            const msg = err.response?.data?.message
+                || err.message
+                || 'No fue posible continuar con Google.';
+            setError(msg);
+        } finally {
+            setGoogleLoading(false);
+        }
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
-    // Si ya está autenticado, mostrar loader mientras redirige
     if (isAuthenticated) {
         return (
             <div className="login-page">
-                <div className="login-card" style={{ textAlign: 'center', padding: '40px' }}>
-                    <div className="animate-pulse">
-                        <p className="text-lg font-bold text-gray-400 uppercase tracking-widest">
-                            Redirigiendo...
-                        </p>
-                    </div>
+                <div className="login-card login-card--loading">
+                    <p>Redirigiendo...</p>
                 </div>
             </div>
         );
@@ -76,20 +88,24 @@ const LoginPage = () => {
 
     return (
         <div className="login-page">
-            <div className="login-card">
+            <div className="login-orb login-orb--one" aria-hidden="true" />
+            <div className="login-orb login-orb--two" aria-hidden="true" />
+
+            <main className="login-card" aria-labelledby="login-title">
                 <Link to="/" className="back-button" aria-label="Volver al inicio">
-                    <ArrowLeft size={20} />
+                    <ArrowLeft size={19} />
                 </Link>
 
                 <Logo />
 
-                <div className="login-title">
-                    <h1>Bienvenido</h1>
-                    <p>Ingresa tus credenciales para continuar</p>
-                </div>
+                <header className="login-title">
+                    <span className="login-eyebrow">Área de clientes</span>
+                    <h1 id="login-title">Bienvenido</h1>
+                    <p>Accede a tus compras, pedidos y beneficios.</p>
+                </header>
 
                 {error && (
-                    <div className="error-message">
+                    <div className="error-message" role="alert">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <circle cx="12" cy="12" r="10" />
                             <line x1="12" y1="8" x2="12" y2="12" />
@@ -101,14 +117,15 @@ const LoginPage = () => {
 
                 <form onSubmit={handleSubmit} className="login-form">
                     <div className="field-group">
-                        <label htmlFor="email">Email</label>
+                        <label htmlFor="email">Correo electrónico</label>
                         <div className="input-wrapper">
-                            <Mail className="input-icon" size={20} />
+                            <Mail className="input-icon" size={19} />
                             <input
                                 id="email"
                                 type="email"
                                 name="email"
                                 required
+                                autoComplete="email"
                                 value={formData.email}
                                 onChange={handleChange}
                                 placeholder="tu@email.com"
@@ -117,14 +134,18 @@ const LoginPage = () => {
                     </div>
 
                     <div className="field-group">
-                        <label htmlFor="password">Contraseña</label>
+                        <div className="field-label-row">
+                            <label htmlFor="password">Contraseña</label>
+                            <Link to="/forgot-password">¿La olvidaste?</Link>
+                        </div>
                         <div className="input-wrapper">
-                            <Lock className="input-icon" size={20} />
+                            <Lock className="input-icon" size={19} />
                             <input
                                 id="password"
                                 type={showPassword ? 'text' : 'password'}
                                 name="password"
                                 required
+                                autoComplete="current-password"
                                 value={formData.password}
                                 onChange={handleChange}
                                 placeholder="••••••••"
@@ -135,35 +156,54 @@ const LoginPage = () => {
                                 className="toggle-password"
                                 aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                             >
-                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
                             </button>
                         </div>
                     </div>
 
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || googleLoading}
                         className="btn-submit"
                     >
-                        {loading ? 'Entrando...' : 'Iniciar sesión'}
+                        {loading ? 'Ingresando...' : 'Iniciar sesión'}
                     </button>
-
-                    <div className="login-links">
-                        <Link to="/forgot-password">
-                            ¿Olvidaste tu contraseña?
-                        </Link>
-                    </div>
                 </form>
+
+                <div className="login-divider" aria-hidden="true">
+                    <span />
+                    <strong>o continúa con</strong>
+                    <span />
+                </div>
+
+                <section className="google-access" aria-label="Registro rápido con Google">
+                    <div className="google-access__heading">
+                        <div>
+                            <strong>Registro rápido con Google</strong>
+                            <p>Ingresa o crea tu cuenta sin salir de esta pantalla.</p>
+                        </div>
+                        <span>Rápido</span>
+                    </div>
+
+                    <GoogleIdentityButton
+                        mode="login"
+                        onCredential={handleGoogleCredential}
+                        disabled={loading || googleLoading}
+                    />
+
+                    <div className="google-access__trust">
+                        <ShieldCheck size={13} />
+                        <span>Tu identidad es validada directamente por Google.</span>
+                    </div>
+                </section>
 
                 <div className="login-footer">
                     <p>
-                        ¿No tienes una cuenta?{' '}
-                        <Link to="/register">
-                            Regístrate gratis
-                        </Link>
+                        ¿Nuevo en Angelita?{' '}
+                        <Link to="/register">Crea tu cuenta en segundos.</Link>
                     </p>
                 </div>
-            </div>
+            </main>
         </div>
     );
 };

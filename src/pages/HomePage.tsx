@@ -1,18 +1,7 @@
-// src/pages/HomePage.tsx
-
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { X } from 'lucide-react';
 import StoreHome from '../components/StoreHome';
-<<<<<<< Updated upstream
-import '../styles/store-home.css'; 
-
-const HomePage = () => {
-    return (
-        <>
-            
-            <StoreHome />
-            
-        </>
-    );
-=======
 import LoadingScreen from '../components/LoadingScreen';
 import { useAuth } from '../hooks/useAuth';
 import { productService, settingsService } from '../services/crudService';
@@ -304,7 +293,6 @@ const HomePage = () => {
       )}
     </div>
   );
->>>>>>> Stashed changes
 };
 
 export default HomePage;

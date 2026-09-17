@@ -1,0 +1,160 @@
+/* Movimiento premium para la portada: sutil, accesible y acelerado por GPU. */
+.home-experience--landing .hero--premium {
+  isolation: isolate;
+  outline: none;
+  box-shadow: 0 18px 50px rgba(21, 13, 9, .12);
+  transition: box-shadow .45s ease, transform .45s cubic-bezier(.2, .8, .2, 1);
+}
+
+.home-experience--landing .hero--premium:focus-visible {
+  box-shadow: 0 0 0 3px rgba(227, 6, 19, .24), 0 22px 56px rgba(21, 13, 9, .15);
+}
+
+.home-experience--landing .hero__image {
+  animation: angelita-hero-image-in .9s cubic-bezier(.2, .75, .2, 1) both;
+  will-change: transform, opacity;
+}
+
+.home-experience--landing .hero--premium:hover .hero__image {
+  transform: scale(1.025);
+  transition: transform 5s cubic-bezier(.2, .7, .2, 1);
+}
+
+.home-experience--landing .hero__content > * {
+  animation: angelita-copy-in .65s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.home-experience--landing .hero__content > :nth-child(2) { animation-delay: .07s; }
+.home-experience--landing .hero__content > :nth-child(3) { animation-delay: .14s; }
+.home-experience--landing .hero__content > :nth-child(4) { animation-delay: .21s; }
+
+.home-experience--landing .button,
+.home-experience--landing .outline-link,
+.home-experience--landing .text-link,
+.home-experience--landing .newsletter button {
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0);
+  transition: color .3s ease, background-color .3s ease, border-color .3s ease,
+    box-shadow .3s ease, transform .3s cubic-bezier(.2, .8, .2, 1);
+}
+
+.home-experience--landing .button::after,
+.home-experience--landing .newsletter button::after {
+  position: absolute;
+  top: -80%;
+  left: -55%;
+  width: 36%;
+  height: 260%;
+  content: "";
+  transform: rotate(22deg);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
+  transition: left .65s ease;
+  pointer-events: none;
+}
+
+.home-experience--landing .button:hover::after,
+.home-experience--landing .newsletter button:hover::after { left: 125%; }
+
+.home-experience--landing .button:hover,
+.home-experience--landing .newsletter button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px rgba(177, 0, 11, .22);
+}
+
+.home-experience--landing .button:active,
+.home-experience--landing .newsletter button:active { transform: translateY(0) scale(.98); }
+
+.home-experience--landing .button svg,
+.home-experience--landing .outline-link svg,
+.home-experience--landing .text-link svg { transition: transform .3s ease; }
+.home-experience--landing .button:hover svg,
+.home-experience--landing .outline-link:hover svg,
+.home-experience--landing .text-link:hover svg { transform: translateX(4px); }
+
+.home-experience--landing .hero-arrow {
+  transition: color .3s ease, background-color .3s ease, box-shadow .3s ease,
+    transform .3s cubic-bezier(.2, .8, .2, 1);
+}
+.home-experience--landing .hero-arrow:hover {
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 10px 28px rgba(0,0,0,.22);
+}
+.home-experience--landing .hero-arrow:active { transform: translateY(-50%) scale(.94); }
+
+.home-experience--landing .hero-dots button {
+  transform-origin: center;
+  transition: width .35s ease, background-color .35s ease, transform .25s ease;
+}
+.home-experience--landing .hero-dots button:hover { transform: scaleY(2.2); background: #fff; }
+
+.home-experience--landing .finder-card,
+.home-experience--landing .product-card,
+.home-experience--landing .testimonial-card,
+.home-experience--landing .promo,
+.home-experience--landing .instagram__grid a {
+  transition: transform .42s cubic-bezier(.2, .8, .2, 1), box-shadow .42s ease, border-color .35s ease;
+  will-change: transform;
+}
+
+.home-experience--landing .finder-card:hover,
+.home-experience--landing .product-card:hover,
+.home-experience--landing .testimonial-card:hover {
+  transform: translateY(-7px);
+  box-shadow: 0 22px 42px rgba(24, 16, 12, .13);
+}
+
+.home-experience--landing .finder-card img,
+.home-experience--landing .product-card__media img,
+.home-experience--landing .promo > img,
+.home-experience--landing .instagram__grid img {
+  transition: transform .7s cubic-bezier(.2, .75, .2, 1), filter .45s ease;
+}
+
+.home-experience--landing .finder-card:hover img { transform: scale(1.07) translateX(3px); }
+.home-experience--landing .product-card:hover .product-card__media img { transform: scale(1.065); }
+.home-experience--landing .promo:hover > img { transform: scale(1.045) translateX(-5px); }
+.home-experience--landing .instagram__grid a:hover { transform: translateY(-5px); }
+.home-experience--landing .instagram__grid a:hover img { transform: scale(1.09); filter: saturate(1.08) contrast(1.03); }
+
+.home-experience--landing .favorite-button:hover { transform: scale(1.1); }
+.home-experience--landing .favorite-button:active { transform: scale(.92); }
+.home-experience--landing .benefits > div { transition: background-color .3s ease, transform .3s ease; }
+.home-experience--landing .benefits > div:hover { background: #fff8f8; transform: translateY(-2px); }
+.home-experience--landing .benefits > div:hover svg { animation: angelita-icon-float .55s ease; }
+
+@keyframes angelita-hero-image-in {
+  from { opacity: .55; transform: scale(1.055); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes angelita-copy-in {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes angelita-icon-float {
+  0%, 100% { transform: translateY(0); }
+  45% { transform: translateY(-5px); }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .home-experience--landing .hero--premium:hover .hero__image,
+  .home-experience--landing .finder-card:hover img,
+  .home-experience--landing .product-card:hover .product-card__media img,
+  .home-experience--landing .promo:hover > img { transform: none; }
+  .home-experience--landing .finder-card:hover,
+  .home-experience--landing .product-card:hover,
+  .home-experience--landing .testimonial-card:hover { transform: none; box-shadow: inherit; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-experience--landing *,
+  .home-experience--landing *::before,
+  .home-experience--landing *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
