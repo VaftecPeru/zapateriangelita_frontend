@@ -13,8 +13,6 @@ export interface Category {
     updated_at?: string;
 }
 
-
-
 export interface Subcategory {
     id?: number;
     category_id: number;
@@ -25,8 +23,6 @@ export interface Subcategory {
     created_at?: string;
     updated_at?: string;
 }
-
-
 
 export interface Brand {
     id?: number;
@@ -65,7 +61,6 @@ export interface Product {
     colors?: Array<{ id?: number; color: string; hex?: string | null }>;
 }
 
-
 export interface AdditionalService {
     id?: number;
     name: string;
@@ -73,7 +68,6 @@ export interface AdditionalService {
     price: number;
     tag?: string;
 }
-
 
 export interface DashboardStats {
     revenue: {
@@ -103,8 +97,6 @@ export interface DashboardStats {
     }[];
 }
 
-
-
 export interface User {
     id: number;
     name: string;
@@ -114,7 +106,6 @@ export interface User {
     role: string;
     created_at: string;
 }
-
 
 export interface Lead {
     id?: number;
@@ -150,8 +141,6 @@ export interface Order {
     items?: Array<{ product_name?: string; size?: string | null; color?: string | null; quantity: number; unit_price?: number | string }>;
 }
 
-
-
 export const categoryService = {
     getAll: () => apiClient.get<Category[]>('/categories'),
     getById: (id: number) => apiClient.get<Category>(`/categories/${id}`),
@@ -160,7 +149,6 @@ export const categoryService = {
     update: (id: number, data: Partial<Category>) => apiClient.put<Category>(`/categories/${id}`, data),
     delete: (id: number) => apiClient.delete(`/categories/${id}`),
 };
-
 
 export const subcategoryService = {
     getAll: () => apiClient.get<Subcategory[]>('/subcategories'),
@@ -174,7 +162,6 @@ export const subcategoryService = {
     update: (id: number, data: Partial<Subcategory>) => apiClient.put<Subcategory>(`/subcategories/${id}`, data),
     delete: (id: number) => apiClient.delete(`/subcategories/${id}`),
 };
-
 
 export const brandService = {
     getAll: () => apiClient.get<Brand[]>('/brands'),
@@ -211,8 +198,6 @@ export const productService = {
     delete: (id: number) => apiClient.delete(`/products/${id}`),
 };
 
-
-
 export const additionalServiceService = {
     getAll: () => apiClient.get<AdditionalService[]>('/services'),
     getById: (id: number) => apiClient.get<AdditionalService>(`/services/${id}`),
@@ -221,27 +206,25 @@ export const additionalServiceService = {
     delete: (id: number) => apiClient.delete(`/services/${id}`),
 };
 
-
-
 export const statsService = {
     getStats: () => apiClient.get<DashboardStats>('/stats'),
 };
 
-
-
 export const settingsService = {
     getAll: () => apiClient.get<{ success: boolean; data: { [key: string]: string } }>('/settings'),
     update: (key: string, value: string) => apiClient.post(`/settings/${key}?_method=PUT`, { value }),
+    uploadBannerImage: (file: File) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        return apiClient.post<{ success: boolean; data: { path: string } }>('/settings/hero-banners/image', formData);
+    },
 };
-
-
 
 export const userService = {
     updateProfile: (data: any) => apiClient.post('/user/update', data),
     getAll: () => apiClient.get<User[]>('/users'),
     delete: (id: number) => apiClient.delete(`/users/${id}`),
 };
-
 
 export const leadService = {
     trackLead: (type: 'property' | 'service' | 'store', itemId: number, contactData?: {
@@ -265,8 +248,6 @@ export const leadService = {
     update: (id: number, data: Partial<Lead>) => apiClient.put<Lead>(`/leads/${id}`, data),
     delete: (id: number) => apiClient.delete(`/leads/${id}`),
 };
-
-
 
 export default {
     productService,
