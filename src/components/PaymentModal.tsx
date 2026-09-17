@@ -95,23 +95,136 @@ const getFriendlyPaymentError = (code?: number | string, message?: string) => {
   const errorCode = String(code ?? "");
   const text = String(message ?? "").toLowerCase();
 
-  if (errorCode === "1002" || errorCode === "401") {
+  // Errores de tarjeta documentados por Openpay. Se clasifican por error_code,
+  // no por número de tarjeta, para que funcione igual en Sandbox y Producción.
+  if (["3001", "3007"].includes(errorCode)) {
     return {
-      title: "Pasarela no autenticada",
-      message:
-        "Openpay no pudo validar las credenciales del comercio. Verifica que Merchant ID y llaves pertenezcan al mismo ambiente.",
+      title: "Tarjeta rechazada",
+      message: "La tarjeta fue rechazada. Intenta con otra tarjeta o comunícate con tu banco.",
     };
   }
 
-  if (errorCode === "3003" || text.includes("fondos insuficientes") || text.includes("insufficient funds")) {
+  if (["3002", "2005"].includes(errorCode)) {
+    return {
+      title: "Tarjeta expirada",
+      message: "La tarjeta ha expirado. Usa una tarjeta vigente para completar la compra.",
+    };
+  }
+
+  if (errorCode === "3003") {
     return {
       title: "Fondos insuficientes",
-      message: "Tu pago no pudo ser realizado. Intenta con otra tarjeta.",
+      message: "La tarjeta no tiene fondos suficientes. Intenta con otra tarjeta o método de pago.",
+    };
+  }
+
+  if (errorCode === "3004") {
+    return {
+      title: "Tarjeta no autorizada",
+      message: "El banco no autorizó esta tarjeta. Utiliza otra tarjeta o comunícate con tu banco.",
+    };
+  }
+
+  if (errorCode === "3005") {
+    return {
+      title: "Tarjeta rechazada",
+      message: "El pago fue rechazado por una validación de seguridad. Intenta con otra tarjeta.",
+    };
+  }
+
+  if (errorCode === "3006") {
+    return {
+      title: "Operación no permitida",
+      message: "Esta operación no está permitida para la tarjeta. Intenta con otra tarjeta.",
+    };
+  }
+
+  if (errorCode === "3008") {
+    return {
+      title: "Tarjeta no compatible",
+      message: "Esta tarjeta no permite compras en línea. Intenta con otra tarjeta.",
+    };
+  }
+
+  if (errorCode === "3009") {
+    return {
+      title: "Tarjeta no autorizada",
+      message: "El banco no autorizó esta tarjeta. Utiliza otra tarjeta o comunícate con tu banco.",
+    };
+  }
+
+  if (errorCode === "3010") {
+    return {
+      title: "Tarjeta restringida",
+      message: "El banco ha restringido la tarjeta. Comunícate con tu banco o utiliza otra tarjeta.",
+    };
+  }
+
+  if (errorCode === "3011") {
+    return {
+      title: "Tarjeta no autorizada",
+      message: "El banco no autorizó el pago. Comunícate con tu banco o utiliza otra tarjeta.",
+    };
+  }
+
+  if (errorCode === "3012") {
+    return {
+      title: "Autorización bancaria requerida",
+      message: "Tu banco requiere una autorización adicional para realizar este pago.",
+    };
+  }
+
+  if (errorCode === "2004") {
+    return {
+      title: "Número de tarjeta inválido",
+      message: "El número de tarjeta no es válido. Verifica los datos e intenta nuevamente.",
+    };
+  }
+
+  if (["2006", "2009"].includes(errorCode)) {
+    return {
+      title: "CVV inválido",
+      message: "Verifica el código de seguridad (CVV) de la tarjeta e intenta nuevamente.",
+    };
+  }
+
+  if (errorCode === "2007") {
+    return {
+      title: "Tarjeta de prueba no permitida",
+      message: "La tarjeta de prueba solo puede utilizarse en el ambiente Sandbox de Openpay.",
+    };
+  }
+
+  if (errorCode === "2010") {
+    return {
+      title: "Verificación 3D Secure fallida",
+      message: "No se pudo completar la verificación de seguridad. Intenta nuevamente o usa otra tarjeta.",
+    };
+  }
+
+  if (errorCode === "1002" || errorCode === "401") {
+    return {
+      title: "Pasarela no disponible",
+      message: "No pudimos iniciar el pago en este momento. Intenta nuevamente en unos minutos.",
+    };
+  }
+
+  // Respaldo por descripción cuando un intermediario no devuelve error_code.
+  if (text.includes("fondos insuficientes") || text.includes("insufficient funds")) {
+    return {
+      title: "Fondos insuficientes",
+      message: "La tarjeta no tiene fondos suficientes. Intenta con otra tarjeta o método de pago.",
+    };
+  }
+
+  if (text.includes("expir") || text.includes("venc")) {
+    return {
+      title: "Tarjeta expirada",
+      message: "La tarjeta ha expirado. Usa una tarjeta vigente para completar la compra.",
     };
   }
 
   if (
-    ["3001", "3004", "3005", "3009", "3010", "3011", "3012"].includes(errorCode) ||
     text.includes("declin") ||
     text.includes("rechaz") ||
     text.includes("robada") ||
@@ -121,61 +234,26 @@ const getFriendlyPaymentError = (code?: number | string, message?: string) => {
   ) {
     return {
       title: "Tarjeta rechazada",
-      message: "El pago no pudo ser realizado, intenta de nuevo.",
-    };
-  }
-
-  if (errorCode === "2004") {
-    return {
-      title: "Tarjeta rechazada",
-      message: "El número de tarjeta no es válido. Verifica los datos e intenta nuevamente.",
-    };
-  }
-
-  if (["2005", "3002"].includes(errorCode) || text.includes("expir") || text.includes("venc")) {
-    return {
-      title: "Transacción fallida",
-      message: "La tarjeta está vencida. Verifica la fecha de expiración e intenta nuevamente.",
-    };
-  }
-
-  if (["2006", "2009"].includes(errorCode)) {
-    return {
-      title: "Transacción fallida",
-      message: "Verifica el código de seguridad (CVV) de la tarjeta e intenta nuevamente.",
-    };
-  }
-
-  if (errorCode === "2007") {
-    return {
-      title: "Transacción fallida",
-      message: "La tarjeta de prueba solo puede utilizarse en el ambiente Sandbox de Openpay.",
-    };
-  }
-
-  if (errorCode === "3002") {
-    return {
-      title: "Transacción fallida",
-      message: "Tu pago no pudo ser realizado, intenta de nuevo.",
+      message: "La tarjeta fue rechazada. Intenta con otra tarjeta o comunícate con tu banco.",
     };
   }
 
   if (
-    ["1000", "1004", "1007", "500", "502", "503", "504"].includes(errorCode) ||
+    ["1000", "1004", "1005", "1007", "500", "502", "503", "504"].includes(errorCode) ||
     text.includes("network") ||
     text.includes("timeout") ||
     text.includes("communication") ||
     text.includes("comunicación")
   ) {
     return {
-      title: "Transacción fallida",
-      message: "Ocurrió un error, intenta de nuevo o comunícate con tu banco.",
+      title: "No se pudo completar el pago",
+      message: "Ocurrió un problema de comunicación. Intenta nuevamente en unos minutos.",
     };
   }
 
   return {
     title: "Transacción fallida",
-    message: "Tu pago no pudo ser realizado, intenta de nuevo.",
+    message: "Tu pago no pudo ser realizado. Intenta nuevamente o utiliza otra tarjeta.",
   };
 };
 
@@ -299,7 +377,7 @@ const PaymentModal = ({
 
     const [month, year] = cardExpiry.split("/");
     if (cardExpiry.length !== 5 || isExpiryInPast(month, year)) {
-      setErrorTitle("Transacción fallida");
+      setErrorTitle("Datos de tarjeta inválidos");
       setError("Verifica la fecha de vencimiento en formato MM/AA y asegúrate de que la tarjeta no esté vencida.");
       return;
     }
@@ -312,7 +390,11 @@ const PaymentModal = ({
 
     setError(null);
     setErrorTitle(null);
-    setPaymentNotice(null);
+    setPaymentNotice({
+      title: "Verificando tarjeta",
+      message: "Estamos validando los datos de tu tarjeta con Openpay. Espera un momento.",
+      tone: "info",
+    });
     setProcessing(true);
 
     window.OpenPay.token.create(
@@ -360,6 +442,7 @@ const PaymentModal = ({
 
           const friendly = getFriendlyPaymentError(result.error_code, result.message);
           setProcessing(false);
+          setPaymentNotice(null);
           setErrorTitle(friendly.title);
           setError(friendly.message);
         } catch (err: any) {
@@ -371,6 +454,7 @@ const PaymentModal = ({
           );
 
           setProcessing(false);
+          setPaymentNotice(null);
           setErrorTitle(friendly.title);
           setError(friendly.message);
         }
@@ -390,6 +474,7 @@ const PaymentModal = ({
 
         const friendly = getFriendlyPaymentError(errorCode, description);
         setProcessing(false);
+        setPaymentNotice(null);
         setErrorTitle(friendly.title);
         setError(friendly.message);
       }
@@ -810,7 +895,7 @@ const PaymentModal = ({
             }}
           >
             <LockKeyhole size={12} style={{ verticalAlign: "-2px", marginRight: "4px" }} />
-            {processing ? "Procesando..." : `Pagar ${displayTotal}`}
+            {processing ? "Verificando tarjeta..." : `Pagar ${displayTotal}`}
           </button>
         </div>
 
