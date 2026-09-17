@@ -17,6 +17,7 @@ import AdminRoute from './components/AdminRoute';
 import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CartProvider } from './hooks/useCart';
+import './styles/product-detail-mobile.css';
 
 const AppContent = () => {
   const { user, isAuthenticated, loading } = useAuth();
