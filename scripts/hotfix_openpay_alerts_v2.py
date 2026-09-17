@@ -1,0 +1,152 @@
+from pathlib import Path
+
+payment = Path('src/components/PaymentModal.tsx')
+text = payment.read_text(encoding='utf-8')
+
+text = text.replace(
+    'const getFriendlyPaymentError = (code?: number | string, message?: string) => {',
+    'export const getFriendlyPaymentError = (code?: number | string, message?: string) => {'
+)
+
+replacements = [
+    (
+        '''  if (errorCode === "3004") {
+    return {
+      title: "Tarjeta no autorizada",
+      message: "El banco no autorizó esta tarjeta. Utiliza otra tarjeta o comunícate con tu banco.",
+    };
+  }''',
+        '''  if (errorCode === "3004") {
+    return {
+      title: "Tarjeta robada",
+      message: "La tarjeta ha sido identificada como una tarjeta robada.",
+    };
+  }'''
+    ),
+    (
+        '''  if (errorCode === "3005") {
+    return {
+      title: "Tarjeta rechazada",
+      message: "El pago fue rechazado por una validación de seguridad. Intenta con otra tarjeta.",
+    };
+  }''',
+        '''  if (errorCode === "3005") {
+    return {
+      title: "Tarjeta rechazada por seguridad",
+      message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
+    };
+  }'''
+    ),
+    (
+        '''  if (text.includes("fondos insuficientes") || text.includes("insufficient funds")) {
+    return {
+      title: "Fondos insuficientes",
+      message: "La tarjeta no tiene fondos suficientes. Intenta con otra tarjeta o método de pago.",
+    };
+  }''',
+        '''  if (
+    text.includes("fondos insuficientes") ||
+    text.includes("insufficient funds") ||
+    text.includes("enough funds") ||
+    text.includes("fondos suficientes")
+  ) {
+    return {
+      title: "Fondos insuficientes",
+      message: "La tarjeta no tiene fondos suficientes.",
+    };
+  }'''
+    ),
+    (
+        '''  if (text.includes("expir") || text.includes("venc")) {
+    return {
+      title: "Tarjeta expirada",
+      message: "La tarjeta ha expirado. Usa una tarjeta vigente para completar la compra.",
+    };
+  }
+
+  if (
+    text.includes("declin") ||''',
+        '''  if (text.includes("expir") || text.includes("venc")) {
+    return {
+      title: "Tarjeta expirada",
+      message: "La tarjeta ha expirado.",
+    };
+  }
+
+  if (text.includes("stolen") || text.includes("robada")) {
+    return {
+      title: "Tarjeta robada",
+      message: "La tarjeta ha sido identificada como una tarjeta robada.",
+    };
+  }
+
+  if (text.includes("antifraud") || text.includes("antifraude") || text.includes("fraudulent")) {
+    return {
+      title: "Tarjeta rechazada por seguridad",
+      message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
+    };
+  }
+
+  if (
+    text.includes("declin") ||'''
+    ),
+    (
+        '''    text.includes("rechaz") ||
+    text.includes("robada") ||
+    text.includes("fraudulent") ||
+    text.includes("reportada como perdida") ||''',
+        '''    text.includes("rechaz") ||
+    text.includes("reportada como perdida") ||'''
+    ),
+]
+
+for old, new in replacements:
+    if old not in text:
+        raise SystemExit(f'No se encontró bloque esperado en PaymentModal: {old[:80]!r}')
+    text = text.replace(old, new, 1)
+
+text = text.replace(
+    'message: "La tarjeta ha expirado. Usa una tarjeta vigente para completar la compra.",',
+    'message: "La tarjeta ha expirado.",',
+    1
+)
+text = text.replace(
+    'message: "La tarjeta no tiene fondos suficientes. Intenta con otra tarjeta o método de pago.",',
+    'message: "La tarjeta no tiene fondos suficientes.",',
+    1
+)
+payment.write_text(text, encoding='utf-8')
+
+checkout = Path('src/pages/CheckoutPage.tsx')
+page = checkout.read_text(encoding='utf-8')
+
+old_import = 'import PaymentModal, { OpenpayChargeResult} from "../components/PaymentModal";'
+new_import = 'import PaymentModal, { OpenpayChargeResult, getFriendlyPaymentError } from "../components/PaymentModal";'
+if old_import not in page:
+    raise SystemExit('No se encontró import esperado en CheckoutPage')
+page = page.replace(old_import, new_import, 1)
+
+old_result = '        setError( data.message || "La transacción no pudo ser completada.");'
+new_result = '''        const friendly = getFriendlyPaymentError(data.error_code, data.message);
+        setError(`${friendly.title}: ${friendly.message}`);'''
+if old_result not in page:
+    raise SystemExit('No se encontró manejo de resultado verify esperado')
+page = page.replace(old_result, new_result, 1)
+
+old_catch = '''        if (!cancelled) {
+          setError( err.response?.data?.message || "No fue posible verificar el pago con Openpay." );
+        }'''
+new_catch = '''        if (!cancelled) {
+          const data = err.response?.data;
+          const friendly = getFriendlyPaymentError(
+            data?.error_code ?? err.response?.status,
+            data?.message ?? err.message
+          );
+          setError(`${friendly.title}: ${friendly.message}`);
+        }'''
+if old_catch not in page:
+    raise SystemExit('No se encontró catch verify esperado')
+page = page.replace(old_catch, new_catch, 1)
+checkout.write_text(page, encoding='utf-8')
+
+print('Hotfix Openpay aplicado correctamente')
