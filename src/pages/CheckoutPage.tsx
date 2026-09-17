@@ -5,7 +5,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
 import { useUbigeo } from "../hooks/useUbigeo";
 import apiClient from "../services/apiClient";
-import PaymentModal, { OpenpayChargeResult} from "../components/PaymentModal";
+import PaymentModal, { OpenpayChargeResult, getFriendlyPaymentError } from "../components/PaymentModal";
 import "../styles/checkout.css";
 
 const money = new Intl.NumberFormat("en-US", {
@@ -151,13 +151,19 @@ const CheckoutPage = () => {
           return;
         }
 
-        setError( data.message || "La transacción no pudo ser completada.");
+        const friendly = getFriendlyPaymentError(data.error_code, data.message);
+        setError(`${friendly.title}: ${friendly.message}`);
 
       } catch (err: any) {
         console.error( "Error verificando Openpay:", err);
 
         if (!cancelled) {
-          setError( err.response?.data?.message || "No fue posible verificar el pago con Openpay." );
+          const data = err.response?.data;
+          const friendly = getFriendlyPaymentError(
+            data?.error_code ?? err.response?.status,
+            data?.message ?? err.message
+          );
+          setError(`${friendly.title}: ${friendly.message}`);
         }
 
       } finally {
