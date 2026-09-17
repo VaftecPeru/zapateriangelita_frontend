@@ -24,8 +24,9 @@ jobs:
           cache: npm
 
       - name: Aplicar correcciones de mensajes Openpay
-        shell: python
+        shell: bash
         run: |
+          python - <<'PY'
           from pathlib import Path
 
           payment = Path('src/components/PaymentModal.tsx')
@@ -125,7 +126,6 @@ jobs:
               raise SystemExit('No se encontró marcador de fallback esperado')
           text = text.replace(marker, replacement)
 
-          # Evita que "robada"/"fraudulent" vuelvan a caer en el rechazo genérico.
           text = text.replace(
               '''    text.includes("rechaz") ||
               text.includes("robada") ||
@@ -135,7 +135,6 @@ jobs:
               text.includes("reportada como perdida") ||'''
           )
 
-          # Mensajes exactos solicitados para certificación en los códigos principales.
           text = text.replace(
               'message: "La tarjeta ha expirado. Usa una tarjeta vigente para completar la compra.",',
               'message: "La tarjeta ha expirado.",',
@@ -178,6 +177,7 @@ jobs:
               raise SystemExit('No se encontró catch de verify esperado')
           page = page.replace(old_catch, new_catch)
           checkout.write_text(page, encoding='utf-8')
+          PY
 
       - run: npm ci
       - run: npm run build
