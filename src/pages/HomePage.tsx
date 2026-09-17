@@ -7,6 +7,7 @@ import { productService } from '../services/crudService';
 import { getImageUrl } from '../config/api';
 import '../styles/store-home.css';
 import '../styles/home-premium-experience.css';
+import '../styles/store-home-mobile.css';
 
 const money = new Intl.NumberFormat('en-US', {
   style: 'currency',
