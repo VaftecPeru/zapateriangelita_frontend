@@ -18,7 +18,6 @@ import {
     Smartphone,
     Trash2,
     Upload,
-    X,
 } from 'lucide-react';
 
 type ReservationPolicy = {
