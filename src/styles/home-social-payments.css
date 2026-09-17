@@ -1,0 +1,145 @@
+/* Refinamiento visual del bloque social y métodos de pago.
+   Se carga al final para conservar la estructura actual de la portada. */
+
+.instagram__intro {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 85% 18%, rgba(255, 255, 255, .13), transparent 28%),
+    linear-gradient(145deg, #7e040a 0%, #b4050f 54%, #e30613 100%);
+  color: #fff;
+  border-radius: 2px 2px 18px 2px;
+  box-shadow: 0 14px 34px rgba(113, 4, 10, .16);
+}
+
+.instagram__intro::after {
+  position: absolute;
+  right: -28px;
+  bottom: -55px;
+  width: 145px;
+  height: 145px;
+  content: "";
+  border: 1px solid rgba(255, 255, 255, .11);
+  border-radius: 50%;
+}
+
+.instagram__intro > span {
+  position: relative;
+  z-index: 1;
+  color: rgba(255, 255, 255, .82);
+  letter-spacing: .12em;
+}
+
+.instagram__intro h2 {
+  position: relative;
+  z-index: 1;
+  margin: 5px 0 7px;
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, .14);
+}
+
+.instagram__intro p {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 16px;
+  color: rgba(255, 255, 255, .78);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.instagram__intro .outline-link {
+  position: relative;
+  z-index: 1;
+  min-height: 38px;
+  padding: 0 14px;
+  color: #8f050c;
+  background: #fff;
+  border: 1px solid rgba(255, 255, 255, .95);
+  border-radius: 999px;
+  box-shadow: 0 8px 22px rgba(52, 0, 4, .13);
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.instagram__intro .outline-link:hover {
+  color: #8f050c;
+  background: #fff8f5;
+  border-color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(52, 0, 4, .18);
+}
+
+.instagram__grid a {
+  border-radius: 2px;
+}
+
+/* Footer: reemplaza la leyenda simple por una presentación profesional
+   de los métodos soportados por la integración Openpay. */
+.footer__bottom > span:last-child {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  max-width: 680px;
+  color: transparent;
+  font-size: 0;
+  letter-spacing: 0;
+}
+
+.footer__bottom > span:last-child::before {
+  content: "Pagos seguros con Openpay";
+  color: rgba(255, 255, 255, .55);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.footer__bottom > span:last-child::after {
+  content: "VISA   MASTERCARD   AMEX   CARNET   PAYNET   SPEI";
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 11px;
+  color: rgba(255, 255, 255, .88);
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(255, 255, 255, .15);
+  border-radius: 7px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  word-spacing: .6em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+
+@media (max-width: 760px) {
+  .instagram__intro {
+    padding: 24px 20px;
+  }
+
+  .instagram__intro h2 {
+    font-size: 36px;
+  }
+
+  .instagram__intro .outline-link {
+    min-height: 40px;
+  }
+
+  .footer__bottom > span:last-child {
+    justify-content: center;
+    max-width: 100%;
+  }
+
+  .footer__bottom > span:last-child::before,
+  .footer__bottom > span:last-child::after {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .footer__bottom > span:last-child::after {
+    min-height: 34px;
+    line-height: 1.5;
+    white-space: normal;
+  }
+}
