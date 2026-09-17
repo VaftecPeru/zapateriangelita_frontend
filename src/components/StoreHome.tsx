@@ -329,6 +329,14 @@ export default function StoreHome() {
   const isHomePage = activeCategory === 'All' && !statusFilter;
   const isCatalogPage = location.pathname === '/catalogo';
 
+  const isMenuItemActive = (item: typeof menuItems[number]) => {
+    if (item.name === 'Inicio') return isHomePage && location.pathname !== '/catalogo';
+    if (item.name === 'Ofertas') return location.pathname === '/ofertas';
+    if (item.name === 'Novedades') return location.pathname === '/novedades';
+    if (item.name === 'Contacto') return false;
+    return location.pathname === item.href || location.pathname.startsWith(`${item.href}?`);
+  };
+
   useEffect(() => {
     const shouldLock = menuOpen || cartOpen;
     document.body.style.overflow = shouldLock ? "hidden" : "";
@@ -649,6 +657,8 @@ export default function StoreHome() {
                 <a
                   key={item.name}
                   href={item.href}
+                  className={isMenuItemActive(item) ? 'is-active' : undefined}
+                  aria-current={isMenuItemActive(item) ? 'page' : undefined}
                   onClick={(e) => {
                     e.preventDefault();
                     if (item.name === 'Inicio') {
@@ -656,7 +666,7 @@ export default function StoreHome() {
                     } else if (item.name === 'Contacto') {
                       setContactSent(false); setContactError(null); setContactOpen(true);
                     } else if (item.submenu) {
-                      handleCategoryClick(item.name);
+                      navigate(item.href);
                     } else {
                       navigate(item.href);
                     }

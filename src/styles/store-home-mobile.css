@@ -8,7 +8,7 @@
 
   .site-header {
     width: 100%;
-    overflow-x: clip;
+    overflow: visible;
   }
 
   .announcement-bar__inner {
@@ -248,12 +248,19 @@
   }
 
   .mobile-drawer__panel {
+    box-sizing: border-box;
     width: min(88vw, 360px);
+    min-height: 100dvh;
     padding: 16px 18px 28px;
+    overflow-y: auto;
   }
 
   .mobile-drawer__header .brand-logo__image {
     width: min(160px, 60vw);
+  }
+
+  .mobile-drawer nav a.is-active {
+    color: #e30613;
   }
 }
 
