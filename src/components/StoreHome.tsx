@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import brandLogo from "../assets/brand/logo-angelita-horizontal.png";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -211,6 +211,8 @@ export default function StoreHome() {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
   const [slide, setSlide] = useState<number>(0);
+  const [heroPaused, setHeroPaused] = useState(false);
+  const heroTouchStart = useRef<number | null>(null);
   const [favorites, setFavorites] = useState<number[]>([]);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [cartOpen, setCartOpen] = useState<boolean>(false);
@@ -329,11 +331,12 @@ export default function StoreHome() {
   const isCatalogPage = location.pathname === '/catalogo';
 
   useEffect(() => {
+    if (heroPaused || heroSlides.length < 2) return;
     const interval = window.setInterval(() => {
       setSlide((current) => (current + 1) % heroSlides.length);
     }, 6500);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [heroPaused]);
 
   useEffect(() => {
     const shouldLock = menuOpen || cartOpen;
@@ -345,6 +348,18 @@ export default function StoreHome() {
 
   const goToSlide = (direction: number) => {
     setSlide((current) => (current + direction + heroSlides.length) % heroSlides.length);
+  };
+
+  const handleHeroKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    if (event.key === "ArrowLeft") goToSlide(-1);
+    if (event.key === "ArrowRight") goToSlide(1);
+  };
+
+  const handleHeroTouchEnd = (event: React.TouchEvent<HTMLElement>) => {
+    if (heroTouchStart.current === null) return;
+    const distance = event.changedTouches[0].clientX - heroTouchStart.current;
+    if (Math.abs(distance) > 45) goToSlide(distance > 0 ? -1 : 1);
+    heroTouchStart.current = null;
   };
 
   const toggleFavorite = (id: number) => {
@@ -775,7 +790,19 @@ export default function StoreHome() {
           </section>
         ) : isHomePage ? (
           <>
-            <section className="hero shell" aria-label="Colecciones destacadas" aria-roledescription="carrusel">
+            <section
+              className="hero shell hero--premium"
+              aria-label="Colecciones destacadas"
+              aria-roledescription="carrusel"
+              tabIndex={0}
+              onKeyDown={handleHeroKeyDown}
+              onMouseEnter={() => setHeroPaused(true)}
+              onMouseLeave={() => setHeroPaused(false)}
+              onFocus={() => setHeroPaused(true)}
+              onBlur={() => setHeroPaused(false)}
+              onTouchStart={(event) => { heroTouchStart.current = event.touches[0].clientX; }}
+              onTouchEnd={handleHeroTouchEnd}
+            >
               <div
                 key={`hero-image-${slide}`}
                 className="hero__image"
@@ -802,7 +829,7 @@ export default function StoreHome() {
               <button className="hero-arrow hero-arrow--right" type="button" onClick={() => goToSlide(1)} aria-label="Siguiente"><ChevronRight /></button>
               <div className="hero-dots" aria-label="Seleccionar diapositiva">
                 {heroSlides.map((_: any, index: number) => (
-                  <button key={index} className={index === slide ? "is-active" : ""} onClick={() => setSlide(index)} type="button" aria-label={`Diapositiva ${index + 1}`} />
+                  <button key={index} className={index === slide ? "is-active" : ""} onClick={() => setSlide(index)} type="button" aria-label={`Diapositiva ${index + 1}`} aria-current={index === slide ? "true" : undefined} />
                 ))}
               </div>
             </section>
