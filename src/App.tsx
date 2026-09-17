@@ -18,6 +18,7 @@ import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CartProvider } from './hooks/useCart';
 import './styles/product-detail-mobile.css';
+import './styles/product-detail-premium.css';
 
 const AppContent = () => {
   const { user, isAuthenticated, loading } = useAuth();

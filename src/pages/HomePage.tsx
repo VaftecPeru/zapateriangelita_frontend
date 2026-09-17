@@ -12,6 +12,7 @@ import '../styles/home-premium-experience.css';
 import '../styles/store-home-mobile.css';
 import '../styles/home-commerce-polish.css';
 import '../styles/home-premium-motion.css';
+import '../styles/home-reference.css';
 
 const money = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -52,6 +53,7 @@ const HomePage = () => {
                 .filter((banner: any) => banner?.active !== false && banner?.title && banner?.image)
                 .slice(0, 12)
                 .map((banner: any) => ({
+                  managed: true,
                   eyebrow: String(banner.eyebrow || ''),
                   title: String(banner.title || '').slice(0, 120),
                   description: String(banner.description || '').slice(0, 220),

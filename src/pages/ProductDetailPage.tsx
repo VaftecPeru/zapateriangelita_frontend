@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -11,25 +11,26 @@ import {
   ShieldCheck,
   RotateCcw,
   Truck,
+  X,
+  ZoomIn,
 } from "lucide-react";
 import { productService, Product } from "../services/crudService";
 import { getImageUrl } from "../config/api";
 import { useCart } from "../hooks/useCart";
+import brandLogo from "../assets/brand/logo-angelita-horizontal.png";
 import fallbackImage from "../assets/foto1.jpg";
 import "../styles/product-detail.css";
 
-const money = new Intl.NumberFormat("en-US", {
+const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
-  currency: "USD",
+  currency: "MXN",
   minimumFractionDigits: 2,
 });
 
 function Logo({ light = false }: { light?: boolean }) {
   return (
     <a className={`logo ${light ? "logo--light" : ""}`} href="/" aria-label="Zapatería Angelita - inicio">
-      <span className="logo__small">Zapatería</span>
-      <strong>ANGELITA</strong>
-      <span className="logo__tagline">Calzando tus pies desde 1980</span>
+      <img src={brandLogo} alt="Zapatería Angelita" className="pd-logo" />
     </a>
   );
 }
@@ -105,7 +106,7 @@ function normalizeProduct(product: Product): any {
       .map((s) => s.trim())
       .filter(Boolean);
   }
-  if (sizeOptions && sizeOptions.length <= 1) sizeOptions = null;
+  if (!sizeOptions?.length && typeof product.size === "string" && product.size.trim()) sizeOptions = [product.size.trim()];
 
   return {
     ...product,
@@ -127,7 +128,12 @@ function normalizeProduct(product: Product): any {
 export default function ProductDetailPage() {
   const { productId } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart, cart, cartCount } = useCart();
+  const zoomDialog = useRef<HTMLDialogElement>(null);
+  const toastTimer = useRef<number>();
+  const galleryTouch = useRef<{ x: number; y: number } | null>(null);
+  const [shareMessage, setShareMessage] = useState("");
+  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
   const [product, setProduct] = useState<any | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -140,24 +146,28 @@ export default function ProductDetailPage() {
   const [variantError, setVariantError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
+    setError(false); setSelectedImage(0); setQuantity(1); setVariantError(null); setToast(null);
     const loadProduct = async () => {
       try {
         setLoading(true);
         const response = await productService.getById(Number(productId));
-        const normalized = normalizeProduct(response.data);
+        if (!active) return;
+        const normalized = normalizeProduct((response.data as any)?.data || response.data);
         setProduct(normalized);
         setSelectedColor(normalized.colorOptions?.length === 1 ? normalized.colorOptions[0].name : normalized.colorOptions ? null : normalized.color || null);
-        setSelectedSize(normalized.sizeOptions ? null : normalized.size || null);
+        setSelectedSize(normalized.sizeOptions?.length === 1 ? normalized.sizeOptions[0] : null);
       } catch (loadError) {
         console.error("Error loading product detail:", loadError);
-        setError(true);
+        if (active) setError(true);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     if (productId) loadProduct();
     window.scrollTo(0, 0);
+    return () => { active = false; };
   }, [productId]);
 
   if (loading) {
@@ -178,7 +188,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  const hasDiscount = Boolean(product.discounted_price && Number(product.discounted_price) > 0);
+  const hasDiscount = Number(product.discounted_price) > 0 && Number(product.discounted_price) < Number(product.price);
   const stock = Number(product.stock || 0);
   const discountPercentage = hasDiscount
     ? Math.round(((Number(product.price) - Number(product.discounted_price)) / Number(product.price)) * 100)
@@ -194,9 +204,14 @@ export default function ProductDetailPage() {
 
   const addProductToCart = () => {
     const missingColor = Boolean(product.colorOptions && !selectedColor);
-    const missingSize = Boolean(product.sizeOptions && !selectedSize);
+    const missingSize = Boolean(activeSizeOptions?.length && (!selectedSize || !activeSizeOptions.includes(selectedSize)));
     if (missingColor || missingSize) {
       setVariantError(`Selecciona ${missingSize ? "una talla" : ""}${missingSize && missingColor ? " y " : ""}${missingColor ? "un color" : ""} antes de continuar.`);
+      return false;
+    }
+    const alreadyInCart = cart.filter(item => item.product.id === product.id).reduce((sum, item) => sum + item.quantity, 0);
+    if (stock < 1 || quantity + alreadyInCart > stock) {
+      setVariantError("La cantidad supera el stock disponible. Revisa tu carrito.");
       return false;
     }
     setVariantError(null);
@@ -210,13 +225,24 @@ export default function ProductDetailPage() {
       });
     }
     setToast({ product });
-    window.setTimeout(() => setToast(null), 3200);
+    window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 3200);
     return true;
   };
 
   const buyNow = () => {
     if (addProductToCart()) {
-      navigate('/', { state: { openCart: true } });
+      navigate('/checkout');
+    }
+  };
+
+  const shareProduct = async () => {
+    try {
+      if (navigator.share) await navigator.share({ title: product.name, url: window.location.href });
+      else if (navigator.clipboard) { await navigator.clipboard.writeText(window.location.href); setShareMessage("Enlace copiado."); }
+      else setShareMessage("Copia la dirección de esta página para compartir el producto.");
+    } catch (error) {
+      if ((error as DOMException).name !== "AbortError") setShareMessage("No se pudo compartir. Copia la dirección de esta página.");
     }
   };
 
@@ -226,6 +252,7 @@ export default function ProductDetailPage() {
 
   return (
     <main className="product-detail-page">
+      <div className="pd-announcement"><Truck size={15} /> Envíos a todo México <span>•</span><ShieldCheck size={15} /> Pagos seguros</div>
       <div
         style={{
           position: 'fixed',
@@ -312,18 +339,19 @@ export default function ProductDetailPage() {
         <Logo />
 
         <div className="header-actions">
-          <button type="button" className="favorite-button" onClick={toggleFavorite} aria-label="Agregar a favoritos">
+          <button type="button" className="favorite-button" onClick={toggleFavorite} aria-label={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"} aria-pressed={isFavorite}>
             <Heart size={19} fill={isFavorite ? "currentColor" : "none"} />
           </button>
-          <button type="button" className="share-button" onClick={() => navigator.share?.({ title: product.name, url: window.location.href })} aria-label="Compartir">
+          <button type="button" className="share-button" onClick={shareProduct} aria-label="Compartir">
             <Share2 size={19} />
           </button>
           <Link to="/" className="shop-link">
-            <ShoppingBag size={19} /> Tienda
+            <ShoppingBag size={19} /> Tienda <span className="pd-cart-count">{cartCount}</span>
           </Link>
         </div>
       </header>
 
+      {shareMessage && <p role="status" className="pd-share-message">{shareMessage}</p>}
       <div className="product-detail-shell">
         {/* BREADCRUMB */}
         <nav className="product-detail-breadcrumb">
@@ -331,7 +359,7 @@ export default function ProductDetailPage() {
           <span>›</span>
           <Link to={`/categoria/${product.categoryName?.toLowerCase()}`}>{product.categoryName}</Link>
           <span>›</span>
-          <Link to={`/categoria/${product.categoryName?.toLowerCase()}/${product.subcategoryName?.toLowerCase()}`}>{product.subcategoryName}</Link>
+          <Link to={`/categoria/${product.categoryName?.toLowerCase()}?tipo=${encodeURIComponent(product.subcategoryName?.toLowerCase().replace(/\\s+/g, "-"))}`}>{product.subcategoryName}</Link>
           <span>›</span>
           <strong>{product.name}</strong>
         </nav>
@@ -346,6 +374,8 @@ export default function ProductDetailPage() {
                   type="button"
                   key={`${image}-${index}`}
                   className={selectedImage === index ? "is-selected" : ""}
+                  aria-label={`Ver imagen ${index + 1}`}
+                  aria-pressed={selectedImage === index}
                   onMouseEnter={() => setSelectedImage(index)}
                   onFocus={() => setSelectedImage(index)}
                   onClick={() => setSelectedImage(index)}
@@ -354,14 +384,21 @@ export default function ProductDetailPage() {
                 </button>
               ))}
             </div>
-            <div className="product-main-image">
+            <div className="product-main-image"
+              onTouchStart={event => { galleryTouch.current = { x: event.touches[0].clientX, y: event.touches[0].clientY }; }}
+              onTouchCancel={() => { galleryTouch.current = null; }}
+              onTouchEnd={event => { if (galleryTouch.current) { const dx = event.changedTouches[0].clientX - galleryTouch.current.x; const dy = event.changedTouches[0].clientY - galleryTouch.current.y; if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) { if (dx > 0) showPrevious(); else showNext(); } } galleryTouch.current = null; }}>
               {hasDiscount && (
                 <span className="product-detail-discount">-{discountPercentage}%</span>
               )}
-              <button type="button" className="icon-share-floating" onClick={() => navigator.share?.({ title: product.name, url: window.location.href })} aria-label="Compartir producto">
+              <button type="button" className="icon-share-floating" onClick={shareProduct} aria-label="Compartir producto">
                 <Share2 size={16} />
               </button>
-              <img src={activeImageList[selectedImage] || activeImageList[0]} alt={product.name} />
+              <button className="pd-zoom-trigger" aria-label="Ampliar imagen del producto" onClick={() => zoomDialog.current?.showModal()}>
+                <img src={activeImageList[selectedImage] || activeImageList[0]} alt={product.name} />
+                <span><ZoomIn size={16} /> Ampliar imagen</span>
+              </button>
+              <span className="pd-image-counter">{selectedImage + 1} / {activeImageList.length}</span>
               {activeImageList.length > 1 && (
                 <>
                   <button type="button" className="gallery-arrow gallery-arrow-left" onClick={showPrevious} aria-label="Imagen anterior">
@@ -433,10 +470,13 @@ export default function ProductDetailPage() {
                         style={{ backgroundColor: colorOption.hex || "#888" }}
                         title={colorOption.name}
                         aria-label={colorOption.name}
+                        aria-pressed={selectedColor === colorOption.name}
                         disabled={!product.colorOptions}
                         onClick={() => {
-                          setSelectedColor((current) => current === colorOption.name ? null : colorOption.name);
-                          setSelectedSize(null);
+                          setSelectedColor(colorOption.name);
+                          const sizes = product.colorSizes?.[colorOption.name]?.length ? product.colorSizes[colorOption.name] : product.sizeOptions;
+                          setSelectedSize(sizes?.length === 1 ? sizes[0] : null);
+                          setVariantError(null);
                           setSelectedImage(0);
                         }}
                       />
@@ -449,7 +489,7 @@ export default function ProductDetailPage() {
             {/* Selector de talla: real si product.sizeOptions viene del backend, si no, valor informativo */}
             {(activeSizeOptions || product.size) && (
               <div className="variant-block">
-                <p className="variant-label">Talla:</p>
+                <p className="variant-label">Talla: <strong>{selectedSize || "Selecciona tu talla"}</strong></p>
                 <div className="size-grid">
                   {(activeSizeOptions || [product.size]).map((sizeOption: string) => (
                     <button
@@ -458,7 +498,8 @@ export default function ProductDetailPage() {
                       className={`size-chip ${selectedSize === sizeOption ? "is-selected" : ""}`}
                       disabled={!activeSizeOptions}
                       aria-disabled={!activeSizeOptions}
-                      onClick={() => activeSizeOptions && setSelectedSize((current) => current === sizeOption ? null : sizeOption)}
+                      aria-pressed={selectedSize === sizeOption}
+                      onClick={() => { if (activeSizeOptions) { setSelectedSize(sizeOption); setVariantError(null); } }}
                     >
                       {sizeOption}
                     </button>
@@ -466,33 +507,6 @@ export default function ProductDetailPage() {
                 </div>
               </div>
             )}
-
-            <div className="trust-icons">
-              <div><ShieldCheck size={20} /><span>Pago protegido</span></div>
-              <div><RotateCcw size={20} /><span>30 días de devolución</span></div>
-              <div><Truck size={20} /><span>Enviado por Angelita</span></div>
-            </div>
-
-            <div className="product-description">
-              <h2>Descripción</h2>
-              <p>{product.description || "Este producto combina estilo, comodidad y calidad para acompañarte en cada paso."}</p>
-            </div>
-
-            <div className="product-specifications">
-              <h2>Detalles del producto</h2>
-              <div className="product-specification-table">
-                <div><span>Nombre</span><strong>{product.name}</strong></div>
-                <div><span>Categoría</span><strong>{product.categoryName}</strong></div>
-                <div><span>Subcategoría</span><strong>{product.subcategoryName}</strong></div>
-                <div><span>Marca</span><strong>{product.brandName}</strong></div>
-                <div><span>Talla</span><strong>{selectedSize || "No especificada"}</strong></div>
-                <div><span>Color</span><strong>{selectedColor || "No especificado"}</strong></div>
-                <div><span>Material</span><strong>{product.material || "No especificado"}</strong></div>
-                <div><span>Cantidad disponible</span><strong>{stock} unidades</strong></div>
-                <div><span>Reseñas</span><strong>{product.reviews || 0}</strong></div>
-              </div>
-            </div>
-          </div>
 
           <aside className="buy-box">
             <div className="buy-box-price">
@@ -530,11 +544,49 @@ export default function ProductDetailPage() {
 
             <div className="buy-box-meta">
               <div><span>Vendido por</span><strong>Zapatería Angelita</strong></div>
-              <div><span>Devoluciones</span><strong>30 días sin costo</strong></div>
+              <div><span>Devoluciones</span><strong>Consulta condiciones</strong></div>
             </div>
           </aside>
+
+            <div className="trust-icons">
+              <div><ShieldCheck size={20} /><span>Pago protegido</span></div>
+              <div><RotateCcw size={20} /><span>Cambios y devoluciones</span></div>
+              <div><Truck size={20} /><span>Enviado por Angelita</span></div>
+            </div>
+
+            <div className="product-description">
+              <h2>Descripción</h2>
+              <p>{product.description || "Este producto combina estilo, comodidad y calidad para acompañarte en cada paso."}</p>
+            </div>
+
+            <div className="product-specifications">
+              <h2>Detalles del producto</h2>
+              <div className="product-specification-table">
+                <div><span>Nombre</span><strong>{product.name}</strong></div>
+                <div><span>Categoría</span><strong>{product.categoryName}</strong></div>
+                <div><span>Subcategoría</span><strong>{product.subcategoryName}</strong></div>
+                <div><span>Marca</span><strong>{product.brandName}</strong></div>
+                <div><span>Talla</span><strong>{selectedSize || "No especificada"}</strong></div>
+                <div><span>Color</span><strong>{selectedColor || "No especificado"}</strong></div>
+                <div><span>Material</span><strong>{product.material || "No especificado"}</strong></div>
+                <div><span>Cantidad disponible</span><strong>{stock} unidades</strong></div>
+                <div><span>Reseñas</span><strong>{product.reviews || 0}</strong></div>
+              </div>
+            </div>
+          </div>
+
+
         </section>
       </div>
+      <div className="pd-mobile-bar">
+        <div><small>Precio en MXN</small><strong>{money.format(product.salePrice)}</strong></div>
+        <button type="button" disabled={stock < 1} onClick={addProductToCart}><ShoppingBag size={18} />{stock > 0 ? 'Agregar al carrito' : 'Agotado'}</button>
+      </div>
+      <dialog ref={zoomDialog} className="pd-zoom-dialog" aria-label="Imagen ampliada del producto">
+        <button className="pd-zoom-close" onClick={() => zoomDialog.current?.close()} aria-label="Cerrar imagen ampliada"><X /></button>
+        <img src={activeImageList[selectedImage] || activeImageList[0]} alt={product.name} />
+        <div><button onClick={showPrevious} aria-label="Vista anterior"><ChevronLeft /></button><span>{selectedImage + 1} / {activeImageList.length}</span><button onClick={showNext} aria-label="Vista siguiente"><ChevronRight /></button></div>
+      </dialog>
     </main>
   );
 }
