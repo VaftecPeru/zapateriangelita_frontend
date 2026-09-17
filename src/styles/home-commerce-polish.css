@@ -1,0 +1,277 @@
+/* Ajustes de conversión y confianza para la portada Angelita. */
+
+.home-store-loading {
+  min-height: 58vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #7a7470;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.home-store-loading > span {
+  width: 17px;
+  height: 17px;
+  border: 2px solid #ece7e3;
+  border-top-color: #e30613;
+  border-radius: 50%;
+  animation: angelita-store-spin .8s linear infinite;
+}
+
+@keyframes angelita-store-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== Slider principal ===== */
+.home-experience--landing .hero__overlay {
+  background: linear-gradient(
+    90deg,
+    rgba(16, 8, 8, .82) 0%,
+    rgba(20, 10, 10, .68) 31%,
+    rgba(20, 10, 10, .34) 56%,
+    rgba(20, 10, 10, .12) 78%,
+    rgba(20, 10, 10, .08) 100%
+  ) !important;
+}
+
+.home-experience--landing .hero__content {
+  --hero-managed-text: #ffffff;
+  color: var(--hero-managed-text) !important;
+}
+
+.home-experience--landing .hero__content > span,
+.home-experience--landing .hero__content h1,
+.home-experience--landing .hero__content p {
+  color: var(--hero-managed-text) !important;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, .24);
+}
+
+.home-experience--landing .hero__content > span {
+  opacity: .92;
+}
+
+.home-experience--landing .hero__content h1 {
+  display: -webkit-box;
+  max-width: 620px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  font-size: clamp(42px, 4vw, 64px);
+  line-height: 1.02;
+  text-wrap: balance;
+}
+
+.home-experience--landing .hero__content p {
+  max-width: 450px;
+  opacity: .94;
+}
+
+.home-experience--landing .hero__actions .button--light {
+  color: #fff;
+  background: rgba(255, 255, 255, .08);
+  border-color: rgba(255, 255, 255, .72);
+  backdrop-filter: blur(6px);
+}
+
+.home-experience--landing .hero__actions .button--light:hover {
+  color: #15100e;
+  background: #fff;
+}
+
+/* ===== Instagram ===== */
+.home-experience--landing .instagram__intro {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, .18), transparent 30%),
+    linear-gradient(145deg, #7d0008 0%, #bd0711 46%, #e30613 100%);
+  border: 1px solid rgba(255, 255, 255, .12);
+  box-shadow: 0 12px 30px rgba(157, 0, 10, .12);
+}
+
+.home-experience--landing .instagram__intro::after {
+  position: absolute;
+  right: -35px;
+  bottom: -70px;
+  width: 170px;
+  height: 170px;
+  content: "@";
+  color: rgba(255, 255, 255, .055);
+  font-family: Georgia, serif;
+  font-size: 150px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.home-experience--landing .instagram__intro > span {
+  color: rgba(255, 255, 255, .82) !important;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.home-experience--landing .instagram__intro h2 {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  margin-top: 10px;
+  overflow: hidden;
+  color: #fff !important;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(27px, 2.3vw, 37px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -.025em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-experience--landing .instagram__intro p {
+  position: relative;
+  z-index: 1;
+  margin-top: 12px;
+  color: rgba(255, 255, 255, .78) !important;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.home-experience--landing .instagram__intro .outline-link {
+  position: relative;
+  z-index: 1;
+  margin-top: 16px;
+  padding: 10px 13px;
+  color: #fff !important;
+  background: rgba(255, 255, 255, .08);
+  border: 1px solid rgba(255, 255, 255, .48);
+  border-radius: 7px;
+  transition: background .2s ease, color .2s ease, border-color .2s ease;
+}
+
+.home-experience--landing .instagram__intro .outline-link:hover {
+  color: #bd0711 !important;
+  background: #fff;
+  border-color: #fff;
+}
+
+/* ===== Footer / medios de pago ===== */
+.footer-payment-legacy {
+  display: none !important;
+}
+
+.footer-payment-methods {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.footer-payment-label {
+  margin-right: 3px;
+  color: rgba(255, 255, 255, .54);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.payment-brand {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  color: #f8f8f8;
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .17);
+  border-radius: 5px;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .03em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.payment-brand--visa {
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  font-style: italic;
+  letter-spacing: -.02em;
+}
+
+.payment-brand--mastercard {
+  padding-left: 20px;
+  background:
+    radial-gradient(circle at 10px center, rgba(255, 255, 255, .82) 0 4px, transparent 4.5px),
+    radial-gradient(circle at 15px center, rgba(255, 255, 255, .45) 0 4px, transparent 4.5px),
+    rgba(255, 255, 255, .06);
+}
+
+.payment-brand--american-express {
+  letter-spacing: -.01em;
+}
+
+.payment-brand--carnet {
+  font-style: italic;
+}
+
+.payment-brand--openpay {
+  color: #fff;
+  background: rgba(255, 255, 255, .1);
+  border-color: rgba(255, 255, 255, .25);
+}
+
+@media (max-width: 760px) {
+  .home-experience--landing .hero__overlay {
+    background: linear-gradient(
+      180deg,
+      rgba(15, 8, 8, .76) 0%,
+      rgba(15, 8, 8, .66) 36%,
+      rgba(15, 8, 8, .32) 60%,
+      rgba(15, 8, 8, .1) 100%
+    ) !important;
+  }
+
+  .home-experience--landing .hero__content h1 {
+    max-width: 355px;
+    margin-inline: auto;
+    font-size: clamp(30px, 9vw, 38px);
+  }
+
+  .home-experience--landing .hero__content p {
+    max-width: 330px;
+  }
+
+  .footer-payment-methods {
+    width: 100%;
+    justify-content: flex-start;
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .payment-brand {
+    min-height: 22px;
+    padding-inline: 6px;
+    font-size: 7px;
+  }
+
+  .footer-payment-label {
+    width: 100%;
+    margin-bottom: 1px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-store-loading > span {
+    animation: none;
+  }
+}
