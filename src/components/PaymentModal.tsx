@@ -91,7 +91,7 @@ const isExpiryInPast = (month: string, year: string) => {
   return yearNumber < currentYear || (yearNumber === currentYear && monthNumber < currentMonth);
 };
 
-const getFriendlyPaymentError = (code?: number | string, message?: string) => {
+export const getFriendlyPaymentError = (code?: number | string, message?: string) => {
   const errorCode = String(code ?? "");
   const text = String(message ?? "").toLowerCase();
 
@@ -107,28 +107,28 @@ const getFriendlyPaymentError = (code?: number | string, message?: string) => {
   if (["3002", "2005"].includes(errorCode)) {
     return {
       title: "Tarjeta expirada",
-      message: "La tarjeta ha expirado. Usa una tarjeta vigente para completar la compra.",
+      message: "La tarjeta ha expirado.",
     };
   }
 
   if (errorCode === "3003") {
     return {
       title: "Fondos insuficientes",
-      message: "La tarjeta no tiene fondos suficientes. Intenta con otra tarjeta o método de pago.",
+      message: "La tarjeta no tiene fondos suficientes.",
     };
   }
 
   if (errorCode === "3004") {
     return {
-      title: "Tarjeta no autorizada",
-      message: "El banco no autorizó esta tarjeta. Utiliza otra tarjeta o comunícate con tu banco.",
+      title: "Tarjeta robada",
+      message: "La tarjeta ha sido identificada como una tarjeta robada.",
     };
   }
 
   if (errorCode === "3005") {
     return {
-      title: "Tarjeta rechazada",
-      message: "El pago fue rechazado por una validación de seguridad. Intenta con otra tarjeta.",
+      title: "Tarjeta rechazada por seguridad",
+      message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
     };
   }
 
@@ -210,25 +210,42 @@ const getFriendlyPaymentError = (code?: number | string, message?: string) => {
   }
 
   // Respaldo por descripción cuando un intermediario no devuelve error_code.
-  if (text.includes("fondos insuficientes") || text.includes("insufficient funds")) {
+  if (
+    text.includes("fondos insuficientes") ||
+    text.includes("insufficient funds") ||
+    text.includes("enough funds") ||
+    text.includes("fondos suficientes")
+  ) {
     return {
       title: "Fondos insuficientes",
-      message: "La tarjeta no tiene fondos suficientes. Intenta con otra tarjeta o método de pago.",
+      message: "La tarjeta no tiene fondos suficientes.",
     };
   }
 
   if (text.includes("expir") || text.includes("venc")) {
     return {
       title: "Tarjeta expirada",
-      message: "La tarjeta ha expirado. Usa una tarjeta vigente para completar la compra.",
+      message: "La tarjeta ha expirado.",
+    };
+  }
+
+  if (text.includes("stolen") || text.includes("robada")) {
+    return {
+      title: "Tarjeta robada",
+      message: "La tarjeta ha sido identificada como una tarjeta robada.",
+    };
+  }
+
+  if (text.includes("antifraud") || text.includes("antifraude") || text.includes("fraudulent")) {
+    return {
+      title: "Tarjeta rechazada por seguridad",
+      message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
     };
   }
 
   if (
     text.includes("declin") ||
     text.includes("rechaz") ||
-    text.includes("robada") ||
-    text.includes("fraudulent") ||
     text.includes("reportada como perdida") ||
     text.includes("restringida")
   ) {
