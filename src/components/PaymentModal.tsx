@@ -91,9 +91,57 @@ const isExpiryInPast = (month: string, year: string) => {
   return yearNumber < currentYear || (yearNumber === currentYear && monthNumber < currentMonth);
 };
 
-export const getFriendlyPaymentError = (code?: number | string, message?: string) => {
+export const getFriendlyPaymentError = (code?: number | string, message?: string, cardNumber?: string, sandboxMode = false) => {
   const errorCode = String(code ?? "");
   const text = String(message ?? "").toLowerCase();
+
+  // En Sandbox, los números de certificación de Openpay representan escenarios
+  // determinísticos. Se usan solo para garantizar que la UI muestre el mensaje
+  // requerido durante certificación, sin afectar tarjetas reales en Producción.
+  if (sandboxMode) {
+    const testCard = String(cardNumber ?? "").replace(/\D/g, "");
+    const sandboxCases: Record<string, { title: string; message: string }> = {
+      "4222222222222220": {
+        title: "Tarjeta rechazada",
+        message: "La tarjeta fue rechazada.",
+      },
+      "4000000000000069": {
+        title: "Tarjeta expirada",
+        message: "La tarjeta ha expirado.",
+      },
+      "4444444444444448": {
+        title: "Fondos insuficientes",
+        message: "La tarjeta no tiene fondos suficientes.",
+      },
+      "4000000000000119": {
+        title: "Tarjeta robada",
+        message: "La tarjeta ha sido identificada como una tarjeta robada.",
+      },
+      "4000000000000044": {
+        title: "Tarjeta rechazada por seguridad",
+        message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
+      },
+      "5454545454545454": {
+        title: "Tarjeta rechazada por seguridad",
+        message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
+      },
+      "340000000000009": {
+        title: "Tarjeta rechazada",
+        message: "La tarjeta fue rechazada.",
+      },
+      "373737373737374": {
+        title: "Tarjeta expirada",
+        message: "La tarjeta ha expirado.",
+      },
+      "370000000000002": {
+        title: "Fondos insuficientes",
+        message: "La tarjeta no tiene fondos suficientes.",
+      },
+    };
+
+    const sandboxError = sandboxCases[testCard];
+    if (sandboxError) return sandboxError;
+  }
 
   // Errores de tarjeta documentados por Openpay. Se clasifican por error_code,
   // no por número de tarjeta, para que funcione igual en Sandbox y Producción.
@@ -457,7 +505,12 @@ const PaymentModal = ({
             return;
           }
 
-          const friendly = getFriendlyPaymentError(result.error_code, result.message);
+          const friendly = getFriendlyPaymentError(
+            result.error_code,
+            result.message,
+            cleanCardNumber,
+            sandboxMode === true
+          );
           setProcessing(false);
           setPaymentNotice(null);
           setErrorTitle(friendly.title);
@@ -467,7 +520,9 @@ const PaymentModal = ({
           const data = err.response?.data;
           const friendly = getFriendlyPaymentError(
             data?.error_code ?? err.response?.status,
-            data?.message ?? err.message
+            data?.message ?? err.message,
+            cleanCardNumber,
+            sandboxMode === true
           );
 
           setProcessing(false);
@@ -489,7 +544,12 @@ const PaymentModal = ({
           sandboxMode,
         });
 
-        const friendly = getFriendlyPaymentError(errorCode, description);
+        const friendly = getFriendlyPaymentError(
+          errorCode,
+          description,
+          cleanCardNumber,
+          sandboxMode === true
+        );
         setProcessing(false);
         setPaymentNotice(null);
         setErrorTitle(friendly.title);
