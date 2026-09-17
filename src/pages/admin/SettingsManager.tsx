@@ -1,594 +1,321 @@
-import { useEffect, useState } from 'react';
-import { settingsService } from '../../services/crudService';
+import { useEffect, useMemo, useState } from 'react';
 import {
-    Loader2,
-    Smartphone,
-    Save,
-    CheckCircle2,
     AlertCircle,
-    X,
+    CheckCircle2,
+    ChevronDown,
+    ChevronUp,
+    FileText,
+    Globe,
+    Loader2,
+    Plus,
+    Save,
     Settings2,
     ShieldCheck,
-    Globe,
-    FileText,
-    Plus,
+    Smartphone,
     Trash2,
+    X,
 } from 'lucide-react';
+import { settingsService } from '../../services/crudService';
+import BannerSettingsSection from './BannerSettingsSection';
 
-type ReservationPolicy = {
-    text: string;
-};
+type ReservationPolicy = { text: string };
+type Message = { type: 'success' | 'error'; text: string } | null;
 
 const defaultPrivacyPolicies = [
-    'Usamos tus datos personales únicamente para gestionar tus pedidos, coordinar la entrega y brindarte atención relacionada con tu compra.',
-    'No compartimos tu información con terceros salvo cuando sea necesario para prestar estos servicios o cumplir obligaciones legales.',
+    'En Zapatería Angelita respetamos y protegemos la privacidad de nuestros clientes.',
+    'Los datos personales proporcionados durante el registro, compra o contacto serán utilizados únicamente para procesar pedidos, gestionar pagos, realizar envíos, brindar atención al cliente y mantener comunicación relacionada con nuestros servicios.',
+    'La información personal será tratada de forma confidencial y no será compartida con terceros, salvo cuando sea necesario para procesar pagos, realizar entregas o cumplir con obligaciones legales.',
+    'El usuario podrá solicitar en cualquier momento la actualización o corrección de sus datos personales mediante nuestros canales oficiales de atención.',
+    'Al utilizar nuestro sitio web y proporcionar sus datos, el usuario acepta el tratamiento de su información conforme al presente Aviso de Privacidad.',
 ];
 
+const defaultTerms = [
+    'Al utilizar el sitio web de Zapatería Angelita, el usuario acepta los presentes términos y condiciones.',
+    'Los precios, promociones, disponibilidad de productos, tallas y colores pueden cambiar sin previo aviso.',
+    'Las compras estarán sujetas a confirmación de pago y disponibilidad de stock. Zapatería Angelita brindará información clara sobre sus productos, proceso de compra, envío y atención al cliente.',
+    'El usuario es responsable de proporcionar información correcta durante el proceso de compra. Cualquier solicitud de cambio, devolución o aclaración deberá realizarse de acuerdo con las políticas vigentes.',
+    'Al realizar una compra, el cliente declara haber leído y aceptado estos términos y condiciones.',
+];
+
+function CollapsibleCard({
+    title,
+    subtitle,
+    icon,
+    open,
+    onToggle,
+    children,
+}: {
+    title: string;
+    subtitle?: string;
+    icon: React.ReactNode;
+    open: boolean;
+    onToggle: () => void;
+    children: React.ReactNode;
+}) {
+    return (
+        <section className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
+            <button
+                type="button"
+                onClick={onToggle}
+                className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left transition-colors hover:bg-gray-50 sm:px-7"
+                aria-expanded={open}
+            >
+                <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gray-50 text-gray-500">{icon}</span>
+                    <div className="min-w-0">
+                        <h3 className="truncate text-xs font-black uppercase tracking-widest text-black sm:text-sm">{title}</h3>
+                        {subtitle && <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-gray-400">{subtitle}</p>}
+                    </div>
+                </div>
+                {open ? <ChevronUp size={19} /> : <ChevronDown size={19} />}
+            </button>
+            {open && <div className="border-t border-gray-100 p-5 sm:p-7">{children}</div>}
+        </section>
+    );
+}
+
 const SettingsManager = () => {
-    const [settings, setSettings] = useState<{ [key: string]: string }>({});
-    const [inputValue, setInputValue] = useState('');
+    const [settings, setSettings] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
-    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-    const [reservationPolicies, setReservationPolicies] = useState<ReservationPolicy[]>([]);
-    const [isEditingPolicies, setIsEditingPolicies] = useState(false);
-    const [savingPolicies, setSavingPolicies] = useState(false);
-    const [privacyPolicies, setPrivacyPolicies] = useState<string[]>(defaultPrivacyPolicies);
-    const [isEditingPrivacy, setIsEditingPrivacy] = useState(false);
+    const [message, setMessage] = useState<Message>(null);
+
+    const [whatsapp, setWhatsapp] = useState('');
+    const [editingWhatsapp, setEditingWhatsapp] = useState(false);
+    const [savingWhatsapp, setSavingWhatsapp] = useState(false);
+
+    const [terms, setTerms] = useState<ReservationPolicy[]>(defaultTerms.map((text) => ({ text })));
+    const [savingTerms, setSavingTerms] = useState(false);
+    const [privacy, setPrivacy] = useState<string[]>(defaultPrivacyPolicies);
     const [savingPrivacy, setSavingPrivacy] = useState(false);
 
-    useEffect(() => {
-        loadSettings();
-    }, []);
+    const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+        whatsapp: true,
+        terms: true,
+        privacy: true,
+    });
+
+    const toggleSection = (key: string) => setOpenSections((current) => ({ ...current, [key]: !current[key] }));
+
+    const parseList = (value: unknown, fallback: string[]) => {
+        if (!value) return fallback;
+        try {
+            const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+            if (!Array.isArray(parsed)) return fallback;
+            const normalized = parsed
+                .map((item: any) => typeof item === 'string' ? item : item?.text)
+                .map((item: unknown) => String(item || '').trim())
+                .filter(Boolean);
+            return normalized.length ? normalized : fallback;
+        } catch {
+            const text = String(value || '').trim();
+            return text ? [text] : fallback;
+        }
+    };
 
     const loadSettings = async () => {
         try {
             setLoading(true);
-
             const response = await settingsService.getAll();
             const data = response.data.data || {};
-
             setSettings(data);
-            setInputValue(data.whatsapp_number || '');
-
-            const savedPrivacy = data.privacy_policy || '';
-            let parsedPrivacy: unknown = savedPrivacy;
-            try {
-                parsedPrivacy = savedPrivacy ? JSON.parse(savedPrivacy) : [];
-            } catch {
-                parsedPrivacy = savedPrivacy ? [savedPrivacy] : [];
-            }
-            setPrivacyPolicies(
-                Array.isArray(parsedPrivacy)
-                    ? parsedPrivacy
-                        .map((item) => (typeof item === 'string' ? item : (item as any)?.text))
-                        .filter((item): item is string => Boolean(item?.trim()))
-                    : defaultPrivacyPolicies,
-            );
-
-            if (data.reservation_policies) {
-                const parsedPolicies =
-                    typeof data.reservation_policies === 'string'
-                        ? JSON.parse(data.reservation_policies)
-                        : data.reservation_policies;
-
-                if (Array.isArray(parsedPolicies)) {
-                    const normalizedPolicies: ReservationPolicy[] = parsedPolicies.map((item: any) => {
-                        if (typeof item === 'string') {
-                            return { text: item };
-                        }
-                        return { text: item?.text || '' };
-                    });
-
-                    setReservationPolicies(normalizedPolicies);
-                } else {
-                    setReservationPolicies([]);
-                }
-            } else {
-                setReservationPolicies([]);
-            }
-        } catch (err) {
-            console.error('Error loading settings:', err);
-            setMessage({
-                type: 'error',
-                text: 'Error al conectar con el servidor.',
-            });
-
-            setReservationPolicies([]);
+            setWhatsapp(data.whatsapp_number || '');
+            setTerms(parseList(data.reservation_policies, defaultTerms).map((text) => ({ text })));
+            setPrivacy(parseList(data.privacy_policy, defaultPrivacyPolicies));
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            setMessage({ type: 'error', text: 'No se pudo cargar la configuración del sitio.' });
         } finally {
             setLoading(false);
         }
     };
 
-    const handleSave = async () => {
-        if (!inputValue.trim()) {
-            setMessage({ type: 'error', text: 'El número no puede estar vacío.' });
+    useEffect(() => {
+        void loadSettings();
+    }, []);
+
+    const flash = (next: Message) => {
+        setMessage(next);
+        if (next) window.setTimeout(() => setMessage(null), 3500);
+    };
+
+    const saveWhatsapp = async () => {
+        const clean = whatsapp.replace(/[^0-9]/g, '');
+        if (!clean) {
+            flash({ type: 'error', text: 'Ingresa un número de WhatsApp válido.' });
             return;
         }
-
         try {
-            setSaving(true);
-            setMessage(null);
-            const cleanValue = inputValue.replace(/[^0-9]/g, '');
-
-            await settingsService.update('whatsapp_number', cleanValue);
-
-            setSettings((prev) => ({ ...prev, whatsapp_number: cleanValue }));
-            setInputValue(cleanValue);
-            setIsEditing(false);
-            setMessage({ type: 'success', text: 'Configuración guardada exitosamente.' });
-            setTimeout(() => setMessage(null), 3000);
-        } catch (err: any) {
-            console.error('Error saving setting:', err);
-            if (err.response) {
-                console.error('Data:', err.response.data);
-                console.error('Status:', err.response.status);
-            }
-            setMessage({ type: 'error', text: `Error al guardar: ${err.response?.status || 'desconocido'}` });
+            setSavingWhatsapp(true);
+            await settingsService.update('whatsapp_number', clean);
+            setWhatsapp(clean);
+            setSettings((current) => ({ ...current, whatsapp_number: clean }));
+            setEditingWhatsapp(false);
+            flash({ type: 'success', text: 'Número de WhatsApp actualizado.' });
+        } catch (error: any) {
+            flash({ type: 'error', text: error.response?.data?.message || 'No se pudo guardar el número.' });
         } finally {
-            setSaving(false);
+            setSavingWhatsapp(false);
         }
     };
 
-    const handleSavePolicies = async () => {
-        const cleanPolicies = reservationPolicies.map((policy) => ({
-            text: policy.text.trim(),
-        }));
-
-        const hasEmptyPolicy = cleanPolicies.some((policy) => !policy.text);
-
-        if (hasEmptyPolicy) {
-            setMessage({
-                type: 'error',
-                text: 'Todas las políticas deben tener texto.',
-            });
+    const saveTerms = async () => {
+        const clean = terms.map((item) => item.text.trim()).filter(Boolean);
+        if (!clean.length || clean.length !== terms.length) {
+            flash({ type: 'error', text: 'Todos los términos deben contener texto.' });
             return;
         }
-
         try {
-            setSavingPolicies(true);
-            setMessage(null);
-
-            await settingsService.update('reservation_policies', JSON.stringify(cleanPolicies));
-
-            setSettings((prev) => ({
-                ...prev,
-                reservation_policies: JSON.stringify(cleanPolicies),
-            }));
-
-            setReservationPolicies(cleanPolicies);
-            setIsEditingPolicies(false);
-
-            setMessage({
-                type: 'success',
-                text: 'Políticas guardadas correctamente.',
-            });
-
-            setTimeout(() => setMessage(null), 3000);
-        } catch (err: any) {
-            console.error('Error saving reservation policies:', err);
-            setMessage({
-                type: 'error',
-                text: `Error al guardar políticas: ${err.response?.status || 'desconocido'}`,
-            });
+            setSavingTerms(true);
+            await settingsService.update('reservation_policies', JSON.stringify(clean.map((text) => ({ text }))));
+            setTerms(clean.map((text) => ({ text })));
+            flash({ type: 'success', text: 'Términos y condiciones actualizados.' });
+        } catch (error: any) {
+            flash({ type: 'error', text: error.response?.data?.message || 'No se pudieron guardar los términos.' });
         } finally {
-            setSavingPolicies(false);
+            setSavingTerms(false);
         }
     };
 
-    const addPolicy = () => {
-        setReservationPolicies((current) => [...current, { text: '' }]);
-        setIsEditingPolicies(true);
-    };
-
-    const removePolicy = (indexToRemove: number) => {
-        setReservationPolicies((current) => current.filter((_, index) => index !== indexToRemove));
-    };
-
-    const handleCancel = () => {
-        setInputValue(settings.whatsapp_number || '');
-        setIsEditing(false);
-        setMessage(null);
-    };
-
-    const handleSavePrivacy = async () => {
-        const cleanPrivacy = privacyPolicies.map((policy) => policy.trim());
-
-        if (cleanPrivacy.some((policy) => !policy)) {
-            setMessage({ type: 'error', text: 'Todos los puntos de privacidad deben tener texto.' });
+    const savePrivacy = async () => {
+        const clean = privacy.map((item) => item.trim()).filter(Boolean);
+        if (!clean.length || clean.length !== privacy.length) {
+            flash({ type: 'error', text: 'Todos los puntos de privacidad deben contener texto.' });
             return;
         }
-
         try {
             setSavingPrivacy(true);
-            setMessage(null);
-            const serializedPrivacy = JSON.stringify(cleanPrivacy);
-            await settingsService.update('privacy_policy', serializedPrivacy);
-            setPrivacyPolicies(cleanPrivacy);
-            setSettings((prev) => ({ ...prev, privacy_policy: serializedPrivacy }));
-            setIsEditingPrivacy(false);
-            setMessage({ type: 'success', text: 'Aviso de privacidad guardado correctamente.' });
-            setTimeout(() => setMessage(null), 3000);
-        } catch (err: any) {
-            setMessage({
-                type: 'error',
-                text: `Error al guardar privacidad: ${err.response?.status || 'desconocido'}`,
-            });
+            await settingsService.update('privacy_policy', JSON.stringify(clean));
+            setPrivacy(clean);
+            flash({ type: 'success', text: 'Aviso de privacidad actualizado.' });
+        } catch (error: any) {
+            flash({ type: 'error', text: error.response?.data?.message || 'No se pudo guardar el aviso de privacidad.' });
         } finally {
             setSavingPrivacy(false);
         }
     };
 
-    const addPrivacyPolicy = () => {
-        setPrivacyPolicies((current) => [...current, '']);
-        setIsEditingPrivacy(true);
-    };
-
-    const removePrivacyPolicy = (indexToRemove: number) => {
-        setPrivacyPolicies((current) => current.filter((_, index) => index !== indexToRemove));
-    };
+    const configuredWhatsapp = useMemo(() => settings.whatsapp_number ? `+${settings.whatsapp_number}` : 'No configurado', [settings.whatsapp_number]);
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center p-12 space-y-4">
-                <div className="relative">
-                    <div className="w-12 h-12 border-4 border-minimal-olive/20 border-t-minimal-olive rounded-full animate-spin"></div>
-                    <Settings2 className="absolute inset-0 m-auto text-minimal-olive animate-pulse" size={20} />
-                </div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Cargando configuración...</p>
+            <div className="flex flex-col items-center justify-center gap-4 p-12">
+                <Loader2 className="animate-spin text-store-red" size={28} />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Cargando configuración...</p>
             </div>
         );
     }
 
     return (
-        <div className="w-full max-w-md mx-auto lg:max-w-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-minimal-olive/10 rounded-2xl flex items-center justify-center text-minimal-olive border border-minimal-olive/20 flex-shrink-0">
+        <div className="w-full space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-red-100 bg-red-50 text-store-red">
                     <Settings2 size={20} />
                 </div>
                 <div>
-                    <h2 className="text-sm font-black text-black uppercase tracking-widest leading-none mb-1">Ajustes del Sitio</h2>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Gestiona la información global de contacto</p>
+                    <h2 className="text-sm font-black uppercase tracking-widest text-black">Ajustes del sitio</h2>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Gestiona contenido público, contacto y políticas</p>
                 </div>
             </div>
 
-            {/* Main Card */}
-            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-black/[0.02] overflow-hidden relative group transition-all hover:shadow-2xl hover:shadow-black/[0.04]">
-                <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity pointer-events-none hidden sm:block">
-                    <Globe size={120} className="rotate-12" />
+            {message && (
+                <div className={`flex items-center gap-2 rounded-2xl px-4 py-3 text-xs font-bold ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                    {message.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                    {message.text}
                 </div>
+            )}
 
-                <div className="p-5 sm:p-8 space-y-6 sm:space-y-8 relative z-10">
-                    {/* Setting Item */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-2">
-                                <div className="p-2 bg-gray-50 rounded-xl group-hover:bg-minimal-olive/10 transition-colors flex-shrink-0">
-                                    <Smartphone size={16} className="text-gray-400 group-hover:text-minimal-olive transition-colors" />
-                                </div>
-                                <span className="text-[10px] sm:text-[11px] font-black text-black uppercase tracking-widest truncate">Número de WhatsApp</span>
-                            </div>
+            <BannerSettingsSection />
 
-                            {!isEditing && (
-                                <button
-                                    onClick={() => setIsEditing(true)}
-                                    className="px-3 sm:px-4 py-1.5 bg-minimal-olive/5 hover:bg-minimal-olive/10 text-minimal-olive rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap"
-                                >
-                                    Editar
-                                </button>
-                            )}
-                        </div>
-
-                        {isEditing ? (
-                            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                <div className="flex flex-col sm:flex-row gap-2">
-                                    <div className="relative flex-1 group/input">
-                                        <input
-                                            type="text"
-                                            value={inputValue}
-                                            onChange={(e) => setInputValue(e.target.value)}
-                                            className="w-full pl-4 pr-4 py-3 sm:py-4 bg-gray-50 border-2 border-transparent rounded-2xl sm:rounded-[1.25rem] text-sm font-black text-black placeholder:text-gray-300 focus:bg-white focus:border-minimal-olive outline-none transition-all"
-                                            placeholder="Ej: 51968231620"
-                                            autoFocus
-                                        />
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={handleSave}
-                                            disabled={saving}
-                                            className="flex-1 sm:flex-none h-12 uppercase sm:h-auto sm:w-12 sm:aspect-square bg-black text-white rounded-2xl flex items-center justify-center hover:bg-minimal-olive transition-all disabled:opacity-50 text-[10px] font-black tracking-widest sm:text-base"
-                                        >
-                                            {saving ? (
-                                                <Loader2 size={16} className="animate-spin" />
-                                            ) : (
-                                                <>
-                                                    <Save size={16} className="sm:block hidden" />
-                                                    <span className="sm:hidden">Guardar</span>
-                                                </>
-                                            )}
-                                        </button>
-                                        <button
-                                            onClick={handleCancel}
-                                            className="h-12 w-12 sm:w-12 sm:aspect-square text-gray-400 hover:text-black hover:bg-gray-100 rounded-2xl flex items-center justify-center transition-all bg-gray-50 sm:bg-transparent"
-                                        >
-                                            <X size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-2 text-[9px] sm:text-[10px] text-gray-400 italic font-medium px-2">
-                                    <AlertCircle size={12} className="shrink-0 mt-0.5" />
-                                    <span>Formato internacional sin símbolos (+, - , espacios). Ejemplo: 51900000000</span>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col sm:flex-row sm:items-end justify-between p-5 sm:p-6 bg-gray-50 rounded-2xl sm:rounded-[1.5rem] border border-black/[0.02] gap-4">
-                                <div className="space-y-1">
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Configurado como</p>
-                                    <span className="text-2xl sm:text-3xl font-black text-black tracking-tighter leading-none break-all">
-                                        {settings.whatsapp_number ? (
-                                            `+${settings.whatsapp_number}`
-                                        ) : (
-                                            <span className="text-red-400">No configurado</span>
-                                        )}
-                                    </span>
-                                </div>
-                                <div className="flex flex-col items-start sm:items-end gap-2">
-                                    <div
-                                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full border ${
-                                            settings.whatsapp_number
-                                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600'
-                                                : 'bg-red-500/10 border-red-500/20 text-red-600'
-                                        }`}
-                                    >
-                                        <div
-                                            className={`w-1.5 h-1.5 rounded-full animate-pulse ${
-                                                settings.whatsapp_number ? 'bg-emerald-500' : 'bg-red-500'
-                                            }`}
-                                        />
-                                        <span className="text-[9px] font-black uppercase tracking-widest">
-                                            {settings.whatsapp_number ? 'Sincronizado' : 'No Sincronizado'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+            <CollapsibleCard
+                title="Número de WhatsApp"
+                subtitle="Canal principal de atención"
+                icon={<Smartphone size={18} />}
+                open={openSections.whatsapp}
+                onToggle={() => toggleSection('whatsapp')}
+            >
+                {editingWhatsapp ? (
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                        <input
+                            value={whatsapp}
+                            onChange={(event) => setWhatsapp(event.target.value)}
+                            placeholder="Ej. 51900112844"
+                            className="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold outline-none focus:border-store-red focus:bg-white"
+                        />
+                        <button type="button" onClick={saveWhatsapp} disabled={savingWhatsapp} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-black px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50">
+                            {savingWhatsapp ? <Loader2 className="animate-spin" size={15} /> : <Save size={15} />} Guardar
+                        </button>
+                        <button type="button" onClick={() => { setWhatsapp(settings.whatsapp_number || ''); setEditingWhatsapp(false); }} className="inline-flex items-center justify-center rounded-2xl bg-gray-100 px-4 py-3 text-gray-500"><X size={16} /></button>
                     </div>
-
-                    <div className="grid grid-cols-1 gap-6 border-t border-gray-100 pt-6 xl:grid-cols-2">
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-2">
-                                    <div className="p-2 bg-gray-50 rounded-xl group-hover:bg-minimal-olive/10 transition-colors flex-shrink-0">
-                                        <FileText size={16} className="text-gray-400 group-hover:text-minimal-olive transition-colors" />
-                                    </div>
-                                    <span className="text-[10px] sm:text-[11px] font-black text-black uppercase tracking-widest truncate">
-                                        Términos y Condiciones
-                                    </span>
-                                </div>
-
-                                {!isEditingPolicies && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsEditingPolicies(true)}
-                                        className="px-3 sm:px-4 py-1.5 bg-minimal-olive/5 hover:bg-minimal-olive/10 text-minimal-olive rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap"
-                                    >
-                                        Editar
-                                    </button>
-                                )}
-                            </div>
-
-                            {isEditingPolicies ? (
-                                <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                                    {reservationPolicies.map((policy, index) => (
-                                        <div key={index} className="bg-gray-50 rounded-2xl p-4 border border-gray-100 space-y-3">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 bg-white rounded-full border border-gray-200 flex items-center justify-center shrink-0">
-                                                    <span className="text-xs font-black text-black">{index + 1}</span>
-                                                </div>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removePolicy(index)}
-                                                    aria-label={`Eliminar política ${index + 1}`}
-                                                    className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-100 bg-white text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-
-                                            <textarea
-                                                value={policy.text}
-                                                onChange={(e) => {
-                                                    const updatedPolicies = [...reservationPolicies];
-                                                    updatedPolicies[index].text = e.target.value;
-                                                    setReservationPolicies(updatedPolicies);
-                                                }}
-                                                rows={2}
-                                                className="w-full px-4 py-3 bg-white rounded-xl border border-gray-100 text-xs font-bold text-black outline-none focus:border-minimal-olive resize-none"
-                                                placeholder={`Política ${index + 1}`}
-                                            />
-                                        </div>
-                                    ))}
-
-                                    <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                                        <button
-                                            type="button"
-                                            onClick={addPolicy}
-                                            className="flex-1 rounded-2xl border border-dashed border-gray-300 bg-white py-3 text-xs font-black uppercase tracking-widest text-gray-600 transition-all hover:border-minimal-olive hover:text-minimal-olive"
-                                        >
-                                            <Plus size={14} className="mr-2 inline" />
-                                            Agregar política
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={handleSavePolicies}
-                                            disabled={savingPolicies}
-                                            className="flex-1 bg-black text-white py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-minimal-olive transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                                        >
-                                            {savingPolicies ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                                            Guardar Términos
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setIsEditingPolicies(false);
-                                                loadSettings();
-                                            }}
-                                            className="flex-1 bg-gray-50 text-gray-500 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-100 transition-all"
-                                        >
-                                            Cancelar
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="bg-gray-50 rounded-2xl p-5 border border-black/[0.02] space-y-3">
-                                    {reservationPolicies.map((policy, index) => (
-                                        <div key={index} className="flex items-center gap-3 bg-white rounded-xl p-3 border border-gray-100">
-                                            <div className="w-7 h-7 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center shrink-0">
-                                                <span className="text-[10px] font-black text-black">{index + 1}</span>
-                                            </div>
-
-                                            <p className="text-xs font-bold text-gray-600 leading-snug line-clamp-2">{policy.text}</p>
-                                        </div>
-                                    ))}
-                                    <button
-                                        type="button"
-                                        onClick={addPolicy}
-                                        className="w-full rounded-xl border border-dashed border-gray-300 bg-white p-3 text-xs font-black uppercase tracking-widest text-gray-600 transition-all hover:border-minimal-olive hover:text-minimal-olive"
-                                    >
-                                        <Plus size={14} className="mr-2 inline" />
-                                        Agregar política
-                                    </button>
-                                </div>
-                            )}
+                ) : (
+                    <div className="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-gray-50 p-5 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Configurado como</span>
+                            <strong className="mt-1 block break-all text-2xl font-black text-black sm:text-3xl">{configuredWhatsapp}</strong>
                         </div>
+                        <button type="button" onClick={() => setEditingWhatsapp(true)} className="rounded-xl bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-store-red shadow-sm">Editar</button>
+                    </div>
+                )}
+            </CollapsibleCard>
 
-                        {/* Aviso de privacidad */}
-                        <div className="space-y-4 border-t border-gray-100 pt-6 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0">
-                            <div className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-2">
-                                    <div className="flex-shrink-0 rounded-xl bg-gray-50 p-2">
-                                        <ShieldCheck size={16} className="text-gray-400" />
-                                    </div>
-                                    <span className="truncate text-[10px] font-black uppercase tracking-widest text-black sm:text-[11px]">
-                                        Aviso de privacidad
-                                    </span>
-                                </div>
-
-                                {!isEditingPrivacy && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setIsEditingPrivacy(true);
-                                        }}
-                                        className="whitespace-nowrap rounded-full bg-minimal-olive/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-minimal-olive transition-all hover:bg-minimal-olive/10 sm:px-4"
-                                    >
-                                        Editar
-                                    </button>
-                                )}
+            <div className="grid gap-5 xl:grid-cols-2">
+                <CollapsibleCard
+                    title="Términos y condiciones"
+                    subtitle="Políticas de compra"
+                    icon={<FileText size={18} />}
+                    open={openSections.terms}
+                    onToggle={() => toggleSection('terms')}
+                >
+                    <div className="space-y-3">
+                        {terms.map((policy, index) => (
+                            <div key={index} className="flex gap-2 rounded-2xl border border-gray-100 bg-gray-50 p-3">
+                                <span className="mt-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-black">{index + 1}</span>
+                                <textarea
+                                    rows={2}
+                                    value={policy.text}
+                                    onChange={(event) => setTerms((current) => current.map((item, itemIndex) => itemIndex === index ? { text: event.target.value } : item))}
+                                    className="min-h-[70px] flex-1 resize-y rounded-xl border border-transparent bg-white px-3 py-2 text-xs leading-relaxed outline-none focus:border-store-red"
+                                />
+                                <button type="button" onClick={() => setTerms((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="self-start p-2 text-gray-400 hover:text-red-600"><Trash2 size={15} /></button>
                             </div>
-
-                            {isEditingPrivacy ? (
-                                <div className="space-y-3">
-                                    {privacyPolicies.map((policy, index) => (
-                                        <div key={index} className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-xs font-black text-black">
-                                                    {index + 1}
-                                                </div>
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                                                    Punto de privacidad {index + 1}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removePrivacyPolicy(index)}
-                                                    aria-label={`Eliminar punto de privacidad ${index + 1}`}
-                                                    className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-red-100 bg-white text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                                                >
-                                                    <Trash2 size={15} />
-                                                </button>
-                                            </div>
-                                            <textarea
-                                                value={policy}
-                                                onChange={(e) => {
-                                                    const updatedPolicies = [...privacyPolicies];
-                                                    updatedPolicies[index] = e.target.value;
-                                                    setPrivacyPolicies(updatedPolicies);
-                                                }}
-                                                rows={3}
-                                                className="w-full resize-none rounded-xl border border-gray-100 bg-white px-4 py-3 text-xs font-bold text-black outline-none focus:border-minimal-olive"
-                                                placeholder={`Punto de privacidad ${index + 1}`}
-                                            />
-                                        </div>
-                                    ))}
-                                    <button
-                                        type="button"
-                                        onClick={addPrivacyPolicy}
-                                        className="w-full rounded-xl border border-dashed border-gray-300 bg-white p-3 text-xs font-black uppercase tracking-widest text-gray-600 transition-all hover:border-minimal-olive hover:text-minimal-olive"
-                                    >
-                                        <Plus size={14} className="mr-2 inline" />
-                                        Agregar punto de privacidad
-                                    </button>
-                                    <div className="flex gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={handleSavePrivacy}
-                                            disabled={savingPrivacy}
-                                            className="flex-1 rounded-2xl bg-black py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-minimal-olive disabled:opacity-50"
-                                        >
-                                            {savingPrivacy ? <Loader2 size={14} className="mx-auto animate-spin" /> : 'Guardar privacidad'}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setIsEditingPrivacy(false);
-                                                loadSettings();
-                                            }}
-                                            className="rounded-2xl bg-gray-50 px-4 py-3 text-xs font-black uppercase tracking-widest text-gray-500 transition-all hover:bg-gray-100"
-                                        >
-                                            Cancelar
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="min-h-[250px] space-y-3 rounded-2xl border border-black/[0.02] bg-gray-50 p-5">
-                                    {privacyPolicies.map((policy, index) => (
-                                        <div key={index} className="flex items-start gap-3 rounded-xl border border-gray-100 bg-white p-3">
-                                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-50 text-[10px] font-black text-black">
-                                                {index + 1}
-                                            </div>
-                                            <p className="whitespace-pre-line text-xs font-bold leading-relaxed text-gray-600">
-                                                {policy}
-                                            </p>
-                                        </div>
-                                    ))}
-                                    <button
-                                        type="button"
-                                        onClick={addPrivacyPolicy}
-                                        className="w-full rounded-xl border border-dashed border-gray-300 bg-white p-3 text-xs font-black uppercase tracking-widest text-gray-600 transition-all hover:border-minimal-olive hover:text-minimal-olive"
-                                    >
-                                        <Plus size={14} className="mr-2 inline" />
-                                        Agregar punto de privacidad
-                                    </button>
-                                </div>
-                            )}
+                        ))}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                            <button type="button" onClick={() => setTerms((current) => [...current, { text: '' }])} className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-600"><Plus size={14} /> Agregar política</button>
+                            <button type="button" onClick={saveTerms} disabled={savingTerms} className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-white disabled:opacity-50">{savingTerms ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />} Guardar</button>
                         </div>
                     </div>
-                    <div className="pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center gap-2 text-gray-400">
-                            <ShieldCheck size={14} />
-                            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest">Seguridad activada</span>
-                        </div>
-                        {message && (
-                            <div className="animate-in fade-in zoom-in duration-300 flex items-center gap-2 px-3 py-1.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100">
-                                {message.type === 'success' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
-                                {message.text}
+                </CollapsibleCard>
+
+                <CollapsibleCard
+                    title="Aviso de privacidad"
+                    subtitle="Tratamiento de datos personales"
+                    icon={<ShieldCheck size={18} />}
+                    open={openSections.privacy}
+                    onToggle={() => toggleSection('privacy')}
+                >
+                    <div className="space-y-3">
+                        {privacy.map((policy, index) => (
+                            <div key={index} className="flex gap-2 rounded-2xl border border-gray-100 bg-gray-50 p-3">
+                                <span className="mt-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-black">{index + 1}</span>
+                                <textarea
+                                    rows={2}
+                                    value={policy}
+                                    onChange={(event) => setPrivacy((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))}
+                                    className="min-h-[70px] flex-1 resize-y rounded-xl border border-transparent bg-white px-3 py-2 text-xs leading-relaxed outline-none focus:border-store-red"
+                                />
+                                <button type="button" onClick={() => setPrivacy((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="self-start p-2 text-gray-400 hover:text-red-600"><Trash2 size={15} /></button>
                             </div>
-                        )}
+                        ))}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                            <button type="button" onClick={() => setPrivacy((current) => [...current, ''])} className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-600"><Plus size={14} /> Agregar punto</button>
+                            <button type="button" onClick={savePrivacy} disabled={savingPrivacy} className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-white disabled:opacity-50">{savingPrivacy ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />} Guardar</button>
+                        </div>
                     </div>
-                </div>
+                </CollapsibleCard>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white px-5 py-4 text-xs text-gray-500">
+                <Globe size={18} className="text-store-red" />
+                Los cambios guardados se sincronizan con la portada pública mediante la API del sitio.
             </div>
         </div>
     );
