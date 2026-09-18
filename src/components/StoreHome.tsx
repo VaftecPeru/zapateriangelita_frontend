@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import ReferenceLanding from "./ReferenceLanding";
 import brandLogo from "../assets/brand/logo-angelita-horizontal.png";
+import fallbackImage from "../assets/foto1.jpg";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
@@ -37,6 +38,14 @@ const money = new Intl.NumberFormat("es-MX", {
   currency: "MXN",
   minimumFractionDigits: 2,
 });
+
+const applyCatalogImageFallback = (event: React.SyntheticEvent<HTMLImageElement>) => {
+  const image = event.currentTarget;
+  if (image.dataset.fallbackApplied === "1") return;
+  image.dataset.fallbackApplied = "1";
+  image.src = fallbackImage;
+  image.alt = image.alt || "Imagen no disponible";
+};
 
 const checkoutInputStyle = {
   width: "100%",
@@ -177,7 +186,7 @@ function ProductCard({ product, onFavorite, isFavorite, onAddToCart }: any) {
           <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
         </button>
         <Link to={`/producto/${product.id}`} className="product-card__image-link" aria-label={`Ver detalles de ${product.name}`}>
-          <img src={product.image} alt={product.name} loading="lazy" />
+          <img src={product.image || fallbackImage} alt={product.name} loading="lazy" decoding="async" onError={applyCatalogImageFallback} />
         </Link>
         <button className="quick-add quick-add--media" type="button" onClick={() => onAddToCart(product)}>Agregar al carrito</button>
       </div>
@@ -706,7 +715,7 @@ export default function StoreHome() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {cart.map((item: any) => (
                     <div key={item.product.id} style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                      <img src={item.product.image} alt={item.product.name} style={{ width: '70px', height: '70px', objectFit: 'cover', borderRadius: '8px' }} />
+                      <img src={item.product.image || fallbackImage} alt={item.product.name} loading="lazy" decoding="async" onError={applyCatalogImageFallback} style={{ width: '70px', height: '70px', objectFit: 'contain', background: '#fff', borderRadius: '8px' }} />
                       <div style={{ flex: 1 }}>
                         <strong style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>{item.product.name}</strong>
                         <span style={{ color: '#666', fontSize: '13px' }}>{item.quantity} x {money.format(Number(item.product.price || 0))}</span>
@@ -818,7 +827,7 @@ export default function StoreHome() {
                     onClick={() => setOfferCategory(category.name)}
                   >
                     <span className="offers-category__image">
-                      <img src={category.image} alt="" />
+                      <img src={category.image || fallbackImage} alt={category.name || "Categoría"} loading="lazy" decoding="async" onError={applyCatalogImageFallback} />
                     </span>
                     <strong>{category.name}</strong>
                     <small>{category.offerCount}</small>
