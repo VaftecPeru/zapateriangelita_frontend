@@ -6,9 +6,9 @@ import { useAuth } from "../hooks/useAuth";
 import { authService } from "../services/authService";
 import { Order, orderService } from "../services/crudService";
 
-const money = new Intl.NumberFormat("en-US", {
+const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
-  currency: "USD",
+  currency: "MXN",
   minimumFractionDigits: 2,
 });
 
