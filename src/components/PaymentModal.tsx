@@ -21,6 +21,9 @@ export interface OpenpayChargeResult {
   requires_redirect?: boolean;
   redirect_url?: string;
   error_code?: number | string;
+  error_key?: string;
+  error_title?: string;
+  stage?: "tokenization" | "charge" | "verify" | string;
   request_id?: string;
 }
 
@@ -505,12 +508,23 @@ const PaymentModal = ({
             return;
           }
 
-          const friendly = getFriendlyPaymentError(
-            result.error_code,
-            result.message,
-            cleanCardNumber,
-            sandboxMode === true
-          );
+          const friendly =
+            result.error_title && result.message
+              ? { title: result.error_title, message: result.message }
+              : getFriendlyPaymentError(
+                  result.error_code,
+                  result.message,
+                  cleanCardNumber,
+                  sandboxMode === true
+                );
+
+          console.warn("Openpay: cargo no aprobado", {
+            stage: result.stage || "charge",
+            errorKey: result.error_key,
+            errorCode: result.error_code,
+            requestId: result.request_id,
+          });
+
           setProcessing(false);
           setPaymentNotice(null);
           setErrorTitle(friendly.title);
@@ -518,12 +532,23 @@ const PaymentModal = ({
         } catch (err: any) {
           console.error("Error procesando pago:", err);
           const data = err.response?.data;
-          const friendly = getFriendlyPaymentError(
-            data?.error_code ?? err.response?.status,
-            data?.message ?? err.message,
-            cleanCardNumber,
-            sandboxMode === true
-          );
+          const friendly =
+            data?.error_title && data?.message
+              ? { title: data.error_title, message: data.message }
+              : getFriendlyPaymentError(
+                  data?.error_code ?? err.response?.status,
+                  data?.message ?? err.message,
+                  cleanCardNumber,
+                  sandboxMode === true
+                );
+
+          console.warn("Openpay: error al crear cargo", {
+            stage: data?.stage || "charge",
+            errorKey: data?.error_key,
+            errorCode: data?.error_code ?? err.response?.status,
+            requestId: data?.request_id,
+            httpStatus: err.response?.status,
+          });
 
           setProcessing(false);
           setPaymentNotice(null);
