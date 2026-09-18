@@ -65,9 +65,9 @@ const fieldStyle = {
   background: "#fff",
 };
 
-const money = new Intl.NumberFormat("en-US", {
+const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
-  currency: "USD",
+  currency: "MXN",
   minimumFractionDigits: 2,
 });
 
@@ -83,6 +83,18 @@ const formatExpiry = (value: string) =>
     .replace(/\D/g, "")
     .slice(0, 4)
     .replace(/^(\d{2})(\d)/, "$1/$2");
+
+const getCardBrand = (cardNumber: string) => {
+  const clean = cardNumber.replace(/\D/g, "");
+  if (/^3[47]/.test(clean)) return "amex";
+  if (/^4/.test(clean)) return "visa";
+  if (/^(5[1-5]|2[2-7])/.test(clean)) return "mastercard";
+  if (/^506/.test(clean)) return "carnet";
+  return "unknown";
+};
+
+const getExpectedCvvLength = (cardNumber: string) =>
+  getCardBrand(cardNumber) === "amex" ? 4 : 3;
 
 const isExpiryInPast = (month: string, year: string) => {
   const monthNumber = Number(month);
@@ -441,9 +453,14 @@ const PaymentModal = ({
       return;
     }
 
-    if (cardCvv.length < 3 || cardCvv.length > 4) {
-      setErrorTitle("Datos incompletos");
-      setError("El CVV debe contener 3 o 4 dígitos.");
+    const expectedCvvLength = getExpectedCvvLength(cleanCardNumber);
+    if (cardCvv.length !== expectedCvvLength) {
+      setErrorTitle("CVV inválido");
+      setError(
+        expectedCvvLength === 4
+          ? "American Express requiere un CVV de 4 dígitos."
+          : "Visa, Mastercard y Carnet requieren un CVV de 3 dígitos."
+      );
       return;
     }
 
@@ -499,10 +516,10 @@ const PaymentModal = ({
             result.redirect_url
           ) {
             setPaymentNotice({
-              title: "Verificación de seguridad",
+              title: "Tarjeta válida · confirma con 3D Secure",
               message:
                 result.message ||
-                "Continúa con la verificación 3D Secure para completar tu pago.",
+                "El cargo fue generado correctamente. Continúa con la autenticación 3D Secure para confirmar el pago.",
               tone: "info",
             });
 
@@ -884,13 +901,14 @@ const PaymentModal = ({
               <input
                 required
                 value={cardCvv}
-                onChange={(event) =>
-                  setCardCvv(event.target.value.replace(/\D/g, "").slice(0, 4))
-                }
+                onChange={(event) => {
+                  const expectedLength = getExpectedCvvLength(cardNumber);
+                  setCardCvv(event.target.value.replace(/\D/g, "").slice(0, expectedLength));
+                }}
                 placeholder="•••"
                 inputMode="numeric"
                 autoComplete="cc-csc"
-                maxLength={4}
+                maxLength={getExpectedCvvLength(cardNumber)}
                 aria-describedby="cvv-help"
                 style={fieldStyle}
               />
@@ -903,7 +921,9 @@ const PaymentModal = ({
               id="cvv-help"
               style={{ display: "block", marginTop: "4px", color: "#999", fontSize: "8px" }}
             >
-              3 o 4 dígitos.
+              {getExpectedCvvLength(cardNumber) === 4
+                ? "4 dígitos para American Express."
+                : "3 dígitos para Visa, Mastercard y Carnet."}
             </span>
           </label>
         </div>
