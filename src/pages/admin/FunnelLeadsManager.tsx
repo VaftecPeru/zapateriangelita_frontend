@@ -27,7 +27,7 @@ const FunnelLeadsManager = ({ initialData }: FunnelLeadsManagerProps) => {
                 ? data
                 : [];
             setLeads(validLeads);
-        } catch (e) {
+        } catch {
             if (!initialData) {
                 setError('No se pudo cargar los listados. Verifica tu sesión.');
             }
@@ -52,7 +52,7 @@ const FunnelLeadsManager = ({ initialData }: FunnelLeadsManagerProps) => {
             setLeads(leads.filter(l => l.id !== id));
             setConfirmDelete(null);
             if (selectedLead?.id === id) setSelectedLead(null);
-        } catch (err) {
+        } catch {
             alert('Error al eliminar el registro.');
         }
     };
