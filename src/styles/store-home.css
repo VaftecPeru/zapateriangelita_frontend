@@ -2816,3 +2816,64 @@ body { background: #fffdf9; }
   .finder-card { min-height: 132px; }
   .footer__grid { padding-block: 55px 44px; }
 }
+
+
+/* Integración controlada de develop: cabecera compacta y navegación activa. */
+.announcement-bar {
+  font-size: 11px;
+  letter-spacing: .08em;
+}
+
+.header-main {
+  height: 84px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 24px;
+  padding-inline: clamp(16px, 3vw, 40px);
+  max-width: 1320px;
+  margin-inline: auto;
+}
+
+.header-main .brand-logo__image {
+  width: clamp(140px, 11vw, 175px);
+}
+
+.desktop-nav {
+  justify-self: center;
+  gap: clamp(16px, 1.6vw, 28px);
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+}
+
+.desktop-nav .nav-link {
+  color: var(--ink);
+}
+
+.desktop-nav a::after,
+.desktop-nav .nav-link::after {
+  bottom: 0;
+  height: 2px;
+  background: var(--red);
+}
+
+.header-actions {
+  gap: 6px;
+  justify-self: end;
+}
+
+@media (max-width: 1050px) {
+  .header-main {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 20px;
+    padding-inline: 20px;
+  }
+}
+
+@media (max-width: 720px) {
+  .header-main {
+    height: 76px;
+    gap: 8px;
+    padding-inline: 14px;
+    grid-template-columns: 40px 1fr auto;
+  }
+}

@@ -14,6 +14,7 @@ import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRoute from './components/AdminRoute';
+import LoadingScreen from './components/LoadingScreen';
 import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CartProvider } from './hooks/useCart';
@@ -24,13 +25,7 @@ const AppContent = () => {
   const { user, isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-minimal-beige flex items-center justify-center">
-        <div className="animate-pulse text-sm font-black uppercase tracking-widest text-gray-400">
-          Cargando sesión...
-        </div>
-      </div>
-    );
+    return <LoadingScreen label="Cargando sesión" />;
   }
 
   const fallbackPath = isAuthenticated && user?.role === 'admin' ? '/admin/dashboard' : '/';
