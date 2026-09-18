@@ -2877,3 +2877,21 @@ body { background: #fffdf9; }
     grid-template-columns: 40px 1fr auto;
   }
 }
+
+/* Catálogo: imágenes consistentes y sin recortes agresivos. */
+.product-card__image-link {
+  background: #fff;
+}
+
+.product-card__media img {
+  object-fit: contain;
+  padding: 10px;
+  background: #fff;
+  mix-blend-mode: normal;
+}
+
+@media (max-width: 600px) {
+  .product-card__media img {
+    padding: 7px;
+  }
+}

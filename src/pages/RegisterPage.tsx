@@ -13,7 +13,6 @@ const Logo = () => (
     </a>
 );
 
-const REGISTRATION_LOADING_MS = 30_000;
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
@@ -64,13 +63,8 @@ const RegisterPage = () => {
         }
 
         setLoading(true);
-        const loadingStartedAt = Date.now();
         try {
             const { data } = await authService.register(formData);
-            const remainingLoadingTime = REGISTRATION_LOADING_MS - (Date.now() - loadingStartedAt);
-            if (remainingLoadingTime > 0) {
-                await new Promise((resolve) => window.setTimeout(resolve, remainingLoadingTime));
-            }
             authLogin(data.user, data.token);
             setIsSuccess(true);
         } catch (err: any) {

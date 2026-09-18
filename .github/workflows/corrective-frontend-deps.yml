@@ -1,0 +1,43 @@
+name: Corrective frontend dependencies
+on:
+  push:
+    branches:
+      - fix/premerge-corrective-20260918
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: write
+jobs:
+  update-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/premerge-corrective-20260918
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Update production dependencies
+        run: |
+          npm install axios@latest react-router-dom@latest exceljs@latest
+          npm uninstall xlsx
+          npm install --save-dev eslint@latest typescript-eslint@latest
+      - name: Commit lockfile and dependency versions
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: actualizar dependencias frontend auditadas"
+            git push origin HEAD:fix/premerge-corrective-20260918
+          fi
+      - name: Build
+        run: npm run build
+      - name: UI tests
+        run: npm run test:ui
+      - name: Lint
+        run: npm run lint
+      - name: Production security audit
+        run: npm audit --omit=dev --audit-level=high

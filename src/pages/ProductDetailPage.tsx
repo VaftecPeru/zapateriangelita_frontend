@@ -27,6 +27,14 @@ const money = new Intl.NumberFormat("es-MX", {
   minimumFractionDigits: 2,
 });
 
+const applyProductImageFallback = (event: React.SyntheticEvent<HTMLImageElement>) => {
+  const image = event.currentTarget;
+  if (image.dataset.fallbackApplied === "1") return;
+  image.dataset.fallbackApplied = "1";
+  image.src = fallbackImage;
+  image.alt = image.alt || "Imagen no disponible";
+};
+
 function Logo({ light = false }: { light?: boolean }) {
   return (
     <a className={`logo ${light ? "logo--light" : ""}`} href="/" aria-label="Zapatería Angelita - inicio">
@@ -380,7 +388,7 @@ export default function ProductDetailPage() {
                   onFocus={() => setSelectedImage(index)}
                   onClick={() => setSelectedImage(index)}
                 >
-                  <img src={image} alt={`${product.name} vista ${index + 1}`} />
+                  <img src={image || fallbackImage} alt={`${product.name} vista ${index + 1}`} loading="lazy" decoding="async" onError={applyProductImageFallback} />
                 </button>
               ))}
             </div>
@@ -395,7 +403,7 @@ export default function ProductDetailPage() {
                 <Share2 size={16} />
               </button>
               <button className="pd-zoom-trigger" aria-label="Ampliar imagen del producto" onClick={() => zoomDialog.current?.showModal()}>
-                <img src={activeImageList[selectedImage] || activeImageList[0]} alt={product.name} />
+                <img src={activeImageList[selectedImage] || activeImageList[0] || fallbackImage} alt={product.name} decoding="async" onError={applyProductImageFallback} />
                 <span><ZoomIn size={16} /> Ampliar imagen</span>
               </button>
               <span className="pd-image-counter">{selectedImage + 1} / {activeImageList.length}</span>
