@@ -78,6 +78,24 @@ async function run() {
   await render(detail({ ...fixture, stock: 0 }));
   check('Agotado: compra deshabilitada en ambas superficies', () => { assert.ok(document.querySelector<HTMLButtonElement>('.buy-box-cart')!.disabled); assert.ok(document.querySelector<HTMLButtonElement>('.pd-mobile-bar button')!.disabled); });
   check('Responsive: reglas móvil, tablet y escritorio', () => { const css = readFileSync('src/styles/product-detail-premium.css', 'utf8'); for (const width of ['1024px', '700px', '360px']) assert.ok(css.includes(width)); assert.ok(css.includes('safe-area-inset-bottom')); assert.ok(css.includes('prefers-reduced-motion')); });
+  check('Openpay UX: Visa usa CVV de 3 dígitos', () => {
+    const paymentModal = readFileSync('src/components/PaymentModal.tsx', 'utf8');
+    assert.ok(paymentModal.includes('getExpectedCvvLength'));
+    assert.ok(paymentModal.includes('getCardBrand(cardNumber) === "amex" ? 4 : 3'));
+    assert.ok(paymentModal.includes('Tarjeta válida · confirma con 3D Secure'));
+  });
+  check('Checkout: retorno 3D Secure conserva transacción para verificación', () => {
+    const checkout = readFileSync('src/pages/CheckoutPageV2.tsx', 'utf8');
+    assert.ok(checkout.includes('/checkout/payments/openpay/verify'));
+    assert.ok(checkout.includes('transaction_id'));
+    assert.ok(checkout.includes('openpay_return'));
+  });
+  check('Moneda: checkout e historial usan MXN', () => {
+    for (const file of ['src/components/PaymentModal.tsx', 'src/components/EditableOrderSummary.tsx', 'src/pages/ClientPurchasesPage.tsx']) {
+      const source = readFileSync(file, 'utf8');
+      assert.ok(source.includes('currency: "MXN"'), `${file} debe usar MXN`);
+    }
+  });
   await act(async () => root.unmount());
   console.log(`\n${tests.length} pruebas de componentes aprobadas. No sustituyen revisión visual en navegador.`);
 }
