@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import StoreHome from '../components/StoreHome';
+import LoadingScreen from '../components/LoadingScreen';
 import { useAuth } from '../hooks/useAuth';
 import { productService, settingsService } from '../services/crudService';
 import { getImageUrl } from '../config/api';
@@ -235,10 +236,7 @@ const HomePage = () => {
       {homeReady ? (
         <StoreHome />
       ) : (
-        <div className="home-store-loading" role="status" aria-live="polite">
-          <span />
-          Cargando tienda...
-        </div>
+        <LoadingScreen label="Cargando tienda" />
       )}
 
       {welcomeOpen && isLanding && isAuthenticated && (
