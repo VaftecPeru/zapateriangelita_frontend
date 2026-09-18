@@ -28,7 +28,6 @@ import {
   X,
 } from "lucide-react";
 
-// @ts-expect-error legacy JS catalog has no declaration file
 import {
   categories as staticCategories,
 } from "../data/catalog";
