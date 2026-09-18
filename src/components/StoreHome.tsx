@@ -28,7 +28,7 @@ import {
   X,
 } from "lucide-react";
 
-// @ts-ignore
+// @ts-expect-error legacy catalog data shape
 import {
   categories as staticCategories,
 } from "../data/catalog";
