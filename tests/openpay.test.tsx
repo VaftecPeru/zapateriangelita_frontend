@@ -28,7 +28,7 @@ check("Openpay: códigos 3001-3005 muestran mensaje específico", () => {
   assert.equal(getFriendlyPaymentError(3002).title, "Tarjeta expirada");
   assert.equal(getFriendlyPaymentError(3003).title, "Fondos insuficientes");
   assert.equal(getFriendlyPaymentError(3004).title, "Tarjeta robada");
-  assert.equal(getFriendlyPaymentError(3005).title, "Tarjeta rechazada por seguridad");
+  assert.equal(getFriendlyPaymentError(3005).title, "Tarjeta rechazada por fraude/antifraude");
 });
 
 check("Openpay Sandbox: tarjetas de certificación tienen resultado determinístico", () => {
