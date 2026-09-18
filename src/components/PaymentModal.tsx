@@ -10,6 +10,12 @@ import {
 } from "lucide-react";
 import apiClient from "../services/apiClient";
 
+
+import visaLogo from "../assets/visa.png";
+import masterCardLogo from "../assets/masterCard.png";
+import americanExpressLogo from "../assets/americanExpress.png";
+import openpayLogo from "../assets/LogotipoOpenpay-01.jpg";
+
 export interface OpenpayChargeResult {
   ok: boolean;
   message?: string;
@@ -91,7 +97,7 @@ const isExpiryInPast = (month: string, year: string) => {
   return yearNumber < currentYear || (yearNumber === currentYear && monthNumber < currentMonth);
 };
 
-const getFriendlyPaymentError = (code?: number | string, message?: string) => {
+export const getFriendlyPaymentError = (code?: number | string, message?: string) => {
   const errorCode = String(code ?? "");
   const text = String(message ?? "").toLowerCase();
 
@@ -566,22 +572,21 @@ const PaymentModal = ({
               Pago seguro · 3D Secure
             </strong>
             <span style={{ display: "block", fontSize: "9px", color: "#6a918a" }}>
-              Procesado mediante Openpay 
+              Procesado mediante Openpay
             </span>
           </div>
-          <strong
+          <img
+            src={openpayLogo}
+            alt="Openpay"
             style={{
               marginLeft: "auto",
-              fontSize: "14px",
-              color: "#268d82",
-              letterSpacing: ".2px",
+              width: "85px",
+              height: "30px",
+              objectFit: "contain",
             }}
-          >
-            Openpay <span style={{ fontSize: "9px" }}></span>
-          </strong>
+          />
         </div>
-
-        <div
+<div
           style={{
             display: "flex",
             justifyContent: "space-between",
@@ -596,19 +601,44 @@ const PaymentModal = ({
         >
           <span style={{ color: "#888", fontSize: "9px" }}>Tarjetas aceptadas</span>
           <div
-            style={{
-              display: "flex",
-              gap: "6px",
-              alignItems: "center",
-              fontSize: "9px",
-              fontWeight: 800,
-              color: "#555",
-            }}
-          >
-            <span>VISA</span>
-            <span>Mastercard</span>
-            <span>AMEX</span>
-          </div>
+          
+          style={{
+            display: "flex",
+            gap: "8px",
+            alignItems: "center",
+          }}
+        >
+            <img
+              src={visaLogo}
+              alt="Visa"
+              style={{
+                width: "38px",
+                height: "24px",
+                objectFit: "contain",
+              }}
+            />
+
+            <img
+              src={masterCardLogo}
+              alt="Mastercard"
+              style={{
+                width: "38px",
+                height: "24px",
+                objectFit: "contain",
+              }}
+            />
+
+            <img
+              src={americanExpressLogo}
+              alt="American Express"
+              style={{
+                width: "38px",
+                height: "24px",
+                objectFit: "contain",
+              }}
+            />
+        </div>
+        
         </div>
 
         {sandboxMode === true && (
