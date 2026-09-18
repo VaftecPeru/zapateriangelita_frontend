@@ -84,7 +84,7 @@ const formatExpiry = (value: string) =>
     .slice(0, 4)
     .replace(/^(\d{2})(\d)/, "$1/$2");
 
-const getCardBrand = (cardNumber: string) => {
+export const getCardBrand = (cardNumber: string) => {
   const clean = cardNumber.replace(/\D/g, "");
   if (/^3[47]/.test(clean)) return "amex";
   if (/^4/.test(clean)) return "visa";
@@ -93,10 +93,10 @@ const getCardBrand = (cardNumber: string) => {
   return "unknown";
 };
 
-const getExpectedCvvLength = (cardNumber: string) =>
+export const getExpectedCvvLength = (cardNumber: string) =>
   getCardBrand(cardNumber) === "amex" ? 4 : 3;
 
-const isExpiryInPast = (month: string, year: string) => {
+export const isExpiryInPast = (month: string, year: string) => {
   const monthNumber = Number(month);
   const yearNumber = Number(year);
   if (!monthNumber || monthNumber < 1 || monthNumber > 12 || year.length !== 2) {
@@ -137,11 +137,11 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
         message: "La tarjeta ha sido identificada como una tarjeta robada.",
       },
       "4000000000000044": {
-        title: "Tarjeta rechazada por seguridad",
+        title: "Tarjeta rechazada por fraude/antifraude",
         message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
       },
       "5454545454545454": {
-        title: "Tarjeta rechazada por seguridad",
+        title: "Tarjeta rechazada por fraude/antifraude",
         message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
       },
       "340000000000009": {
@@ -194,7 +194,7 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
 
   if (errorCode === "3005") {
     return {
-      title: "Tarjeta rechazada por seguridad",
+      title: "Tarjeta rechazada por fraude/antifraude",
       message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
     };
   }
@@ -305,7 +305,7 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
 
   if (text.includes("antifraud") || text.includes("antifraude") || text.includes("fraudulent")) {
     return {
-      title: "Tarjeta rechazada por seguridad",
+      title: "Tarjeta rechazada por fraude/antifraude",
       message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
     };
   }

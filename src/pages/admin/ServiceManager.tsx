@@ -48,7 +48,7 @@ const ServiceManager = () => {
             setServices(services.filter(s => s.id !== serviceToDelete));
             setIsDeleteModalOpen(false);
             setServiceToDelete(null);
-        } catch (err) {
+        } catch {
             alert('Error al eliminar el servicio.');
         } finally {
             setIsDeleting(false);

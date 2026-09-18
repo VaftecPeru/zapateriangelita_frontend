@@ -13,7 +13,6 @@ const Logo = () => (
     </a>
 );
 
-const REGISTRATION_LOADING_MS = 30_000;
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
@@ -64,13 +63,8 @@ const RegisterPage = () => {
         }
 
         setLoading(true);
-        const loadingStartedAt = Date.now();
         try {
             const { data } = await authService.register(formData);
-            const remainingLoadingTime = REGISTRATION_LOADING_MS - (Date.now() - loadingStartedAt);
-            if (remainingLoadingTime > 0) {
-                await new Promise((resolve) => window.setTimeout(resolve, remainingLoadingTime));
-            }
             authLogin(data.user, data.token);
             setIsSuccess(true);
         } catch (err: any) {
@@ -104,7 +98,7 @@ const RegisterPage = () => {
                             ¡Registro Exitoso!
                         </h2>
                         <p style={{ color: '#6e6e6e', lineHeight: '1.8', marginBottom: '24px' }}>
-                            Tu cuenta ha sido creada correctamente. <strong>Te hemos enviado un correo electrónico</strong> con tus credenciales de acceso.
+                            Tu cuenta ha sido creada correctamente. <strong>Te hemos enviado un correo electrónico de bienvenida</strong>.
                             <br /><br />
                             Revisa tu <strong>bandeja de entrada</strong> o la carpeta de <strong>SPAM</strong>.
                         </p>

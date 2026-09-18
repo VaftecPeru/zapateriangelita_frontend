@@ -303,7 +303,8 @@ const CheckoutPage = () => {
       if (isAuthenticated) {
         try {
           await apiClient.post("/addresses", { ...form, is_default: true });
-        } catch {
+        } catch (addressError) {
+          console.warn("No fue posible guardar la dirección en el perfil; la compra puede continuar.", addressError);
         }
       }
 

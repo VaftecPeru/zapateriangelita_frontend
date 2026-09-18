@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Mail, Calendar, Package, Heart, ChevronDown, Settings, Phone, Save, LogOut } from 'lucide-react';
 import { Order, orderService, userService } from '../services/crudService';
+import { authService } from '../services/authService';
 import { onlyDigits, onlyLettersAndSpaces, validateProfileFields } from '../utils/profileValidation';
 
 const normalizeBirthdate = (value?: string | null) => {
@@ -111,12 +112,12 @@ const ProfilePage = () => {
 
     const handleLogout = async () => {
         try {
-            if (typeof logout === 'function') {
-                await logout();
-            }
+            await authService.logout();
         } catch (error) {
-            console.error('Error cerrando sesión:', error);
+            // Si el token ya expiró, igualmente limpiamos la sesión local.
+            console.warn('La sesión remota ya no estaba disponible al cerrar sesión.', error);
         } finally {
+            logout();
             navigate('/');
         }
     };
