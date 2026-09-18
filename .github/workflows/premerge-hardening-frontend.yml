@@ -1,0 +1,34 @@
+name: Premerge hardening frontend
+on:
+  push:
+    branches:
+      - fix/premerge-hardening-20260918
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/premerge-hardening-20260918
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Refresh lockfile
+        run: npm install --package-lock-only
+      - name: Commit refreshed lockfile
+        run: |
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "chore: actualizar lockfile seguro [skip ci]"
+            git push origin HEAD:fix/premerge-hardening-20260918
+          fi
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test:ui
+      - run: npm run lint
+      - run: npm audit --omit=dev --audit-level=high
