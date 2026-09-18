@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm install axios@latest react-router-dom@latest --save
+      - run: npm install axios@latest react-router-dom@latest exceljs@latest --save
       - run: npm uninstall xlsx
       - run: npm install -D eslint@8 @typescript-eslint/parser@7 @typescript-eslint/eslint-plugin@7
       - run: npm run build
