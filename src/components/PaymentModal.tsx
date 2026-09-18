@@ -84,7 +84,7 @@ const formatExpiry = (value: string) =>
     .slice(0, 4)
     .replace(/^(\d{2})(\d)/, "$1/$2");
 
-const getCardBrand = (cardNumber: string) => {
+export const getCardBrand = (cardNumber: string) => {
   const clean = cardNumber.replace(/\D/g, "");
   if (/^3[47]/.test(clean)) return "amex";
   if (/^4/.test(clean)) return "visa";
@@ -93,10 +93,10 @@ const getCardBrand = (cardNumber: string) => {
   return "unknown";
 };
 
-const getExpectedCvvLength = (cardNumber: string) =>
+export const getExpectedCvvLength = (cardNumber: string) =>
   getCardBrand(cardNumber) === "amex" ? 4 : 3;
 
-const isExpiryInPast = (month: string, year: string) => {
+export const isExpiryInPast = (month: string, year: string) => {
   const monthNumber = Number(month);
   const yearNumber = Number(year);
   if (!monthNumber || monthNumber < 1 || monthNumber > 12 || year.length !== 2) {
