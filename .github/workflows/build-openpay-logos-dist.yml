@@ -1,0 +1,28 @@
+name: Build cPanel dist Openpay logos
+on:
+  push:
+    branches:
+      - build/dist-openpay-logos-20260918
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Package cPanel files
+        run: |
+          cd dist
+          zip -r ../dist-zapateria-angelita-openpay-logos-20260918.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-zapateria-angelita-openpay-logos-20260918
+          path: dist-zapateria-angelita-openpay-logos-20260918.zip
+          if-no-files-found: error
+          retention-days: 7
