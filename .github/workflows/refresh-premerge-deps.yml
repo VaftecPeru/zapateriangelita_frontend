@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm install axios@latest react-router-dom@latest exceljs@latest --save
+      - run: npm install axios@latest react-router-dom@latest --save
       - run: npm uninstall xlsx
       - run: npm install -D eslint@8 @typescript-eslint/parser@7 @typescript-eslint/eslint-plugin@7
       - run: npm run build
@@ -32,7 +32,6 @@ jobs:
           git config user.name "VAFTEC Audit Bot"
           git config user.email "actions@users.noreply.github.com"
           git add package.json package-lock.json
-          git pull --rebase origin fix/premerge-fullstack-20260918
           if ! git diff --cached --quiet; then
             git commit -m "chore: actualizar dependencias frontend [skip ci]"
             git push origin HEAD:fix/premerge-fullstack-20260918
