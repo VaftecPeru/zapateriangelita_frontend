@@ -14,7 +14,12 @@ export default defineConfig({
                         if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
                             return 'react-vendor';
                         }
-                        if (id.includes('xlsx')) {
+                        if (
+                            id.includes('exceljs') ||
+                            id.includes('jszip') ||
+                            id.includes('fast-csv') ||
+                            id.includes('readable-stream')
+                        ) {
                             return 'excel';
                         }
                         if (id.includes('lucide-react')) {
