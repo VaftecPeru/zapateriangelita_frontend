@@ -4,9 +4,9 @@ import { productService } from "../services/crudService";
 import { getImageUrl } from "../config/api";
 import { useCart } from "../hooks/useCart";
 
-const money = new Intl.NumberFormat("en-US", {
+const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
-  currency: "USD",
+  currency: "MXN",
   minimumFractionDigits: 2,
 });
 
