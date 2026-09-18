@@ -19,7 +19,6 @@ import UsersManager from './UsersManager';
 import ProfileManager from './ProfileManager';
 import { useAuth } from '../../hooks/useAuth';
 import { statsService, DashboardStats } from '../../services/crudService';
-import * as XLSX from 'xlsx';
 
 
 
@@ -202,42 +201,48 @@ const AdminDashboard = () => {
         if (!stats) return;
 
         setIsGeneratingReport(true);
-        setTimeout(() => {
-            try {
-                const wsResumen = XLSX.utils.json_to_sheet([
-                    { Metrica: 'Total Productos', Valor: stats.charts?.benefitsDistribution?.total || 0 },
-                    { Metrica: 'Productos Libres (Costos)', Valor: stats.charts?.benefitsDistribution?.costs || 0 },
-                    { Metrica: 'Productos Ocupadas', Valor: stats.charts?.benefitsDistribution?.taxes || 0 },
-                    { Metrica: 'Interacciones WhatsApp (Lds)', Valor: stats.revenue?.total || 0 },
-                    { Metrica: 'Visitas a Productos', Valor: stats.revenue?.expenses || 0 }
-                ]);
+        try {
+            const escapeCell = (value: unknown) => {
+                const text = String(value ?? "");
+                return `"${text.replace(/"/g, '""')}"`;
+            };
 
-                const wsMeses = XLSX.utils.json_to_sheet(
-                    ((stats.charts as any).monthlyLabels || []).map((label: string, i: number) => ({
-                        Mes: label,
-                        Interacciones: stats.charts?.monthlyRevenue?.[i] || 0
-                    }))
-                );
+            const rows: Array<Array<string | number>> = [
+                ["RESUMEN GENERAL", ""],
+                ["Métrica", "Valor"],
+                ["Total Productos", stats.charts?.benefitsDistribution?.total || 0],
+                ["Productos Libres (Costos)", stats.charts?.benefitsDistribution?.costs || 0],
+                ["Productos Ocupadas", stats.charts?.benefitsDistribution?.taxes || 0],
+                ["Interacciones WhatsApp (Lds)", stats.revenue?.total || 0],
+                ["Visitas a Productos", stats.revenue?.expenses || 0],
+                [],
+                ["INTERACCIONES MENSUALES", ""],
+                ["Mes", "Interacciones"],
+                ...(((stats.charts as any).monthlyLabels || []).map((label: string, i: number) => [
+                    label,
+                    stats.charts?.monthlyRevenue?.[i] || 0,
+                ])),
+                [],
+                ["ACTIVIDAD RECIENTE", ""],
+                ["Actividad", "Tiempo"],
+                ...(stats.recentActivity || []).map((item: any) => [item.text, item.time]),
+            ];
 
-                const wsActividad = XLSX.utils.json_to_sheet(
-                    (stats.recentActivity || []).map((item: any) => ({
-                        Actividad: item.text,
-                        Tiempo: item.time
-                    }))
-                );
-
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen General');
-                XLSX.utils.book_append_sheet(wb, wsMeses, 'Interacciones Mensuales');
-                XLSX.utils.book_append_sheet(wb, wsActividad, 'Actividad Reciente');
-
-                XLSX.writeFile(wb, `Reporte_Homad_Admin_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}.xlsx`);
-            } catch (error) {
-                console.error('Error generating Excel', error);
-            } finally {
-                setIsGeneratingReport(false);
-            }
-        }, 300);
+            const csv = "\uFEFF" + rows.map((row) => row.map(escapeCell).join(",")).join("\r\n");
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `Reporte_Angelita_Admin_${new Date().toLocaleDateString("es-MX").replace(/\//g, "-")}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Error generating report", error);
+        } finally {
+            setIsGeneratingReport(false);
+        }
     };
 
     const statCards = [
@@ -357,7 +362,7 @@ const AdminDashboard = () => {
                                                 disabled={isGeneratingReport}
                                                 className={`px-4 py-2 bg-store-red text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-store-redDark transition-all ${isGeneratingReport ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
-                                                {isGeneratingReport ? 'Exportando Excel...' : 'Reporte'}
+                                                {isGeneratingReport ? 'Exportando reporte...' : 'Reporte'}
                                             </button>
                                         </div>
                                     </div>
