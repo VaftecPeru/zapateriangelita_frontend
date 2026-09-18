@@ -2816,3 +2816,22 @@ body { background: #fffdf9; }
   .finder-card { min-height: 132px; }
   .footer__grid { padding-block: 55px 44px; }
 }
+
+
+/* Catálogo: imágenes consistentes y sin recortes agresivos. */
+.product-card__image-link {
+  background: #fff;
+}
+
+.product-card__media img {
+  object-fit: contain;
+  padding: 10px;
+  background: #fff;
+  mix-blend-mode: normal;
+}
+
+@media (max-width: 600px) {
+  .product-card__media img {
+    padding: 7px;
+  }
+}

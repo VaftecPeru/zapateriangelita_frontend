@@ -8,24 +8,46 @@ export const API_URL = import.meta.env.VITE_API_URL || 'https://api.zapateriange
 export const getImageUrl = (path?: string | null): string => {
     if (!path) return '';
 
-    const baseUrl = API_URL.replace(/\/api\/?$/, '');
-    
+    const apiUrl = API_URL.replace(/\/$/, '');
+    const baseUrl = apiUrl.replace(/\/api\/?$/, '');
+
+    const buildMediaUrl = (pathname: string, search = '') => {
+        const cleanPath = pathname.startsWith('/') ? pathname : `/${pathname}`;
+
+        if (cleanPath.startsWith('/api/media/')) {
+            return `${baseUrl}${cleanPath}${search}`;
+        }
+
+        if (cleanPath.startsWith('/uploads/')) {
+            return `${apiUrl}/media${cleanPath}${search}`;
+        }
+
+        if (cleanPath.startsWith('/storage/')) {
+            return `${apiUrl}/media/${cleanPath.replace(/^\/storage\//, '')}${search}`;
+        }
+
+        return `${baseUrl}${cleanPath}${search}`;
+    };
+
     if (path.startsWith('http://') || path.startsWith('https://')) {
         try {
             const url = new URL(path);
-            if (
-                url.hostname === 'localhost' ||
-                url.hostname === '127.0.0.1' ||
-                (/\/(uploads|storage)\//.test(url.pathname) && url.origin !== baseUrl)
-            ) {
-                return `${baseUrl}${url.pathname}${url.search}`;
+
+            // Las rutas históricas de uploads/storage se sirven ahora mediante
+            // /api/media para que sigan funcionando después de un deploy en cPanel.
+            if (/^\/(uploads|storage)\//.test(url.pathname) || url.pathname.startsWith('/api/media/')) {
+                return buildMediaUrl(url.pathname, url.search);
             }
+
+            if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+                return buildMediaUrl(url.pathname, url.search);
+            }
+
+            return path;
         } catch {
             return path;
         }
-        return path;
     }
 
-    const cleanPath = path.startsWith('/') ? path : '/' + path;
-    return `${baseUrl}${cleanPath}`;
+    return buildMediaUrl(path);
 };
