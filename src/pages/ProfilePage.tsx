@@ -111,12 +111,12 @@ const ProfilePage = () => {
 
     const handleLogout = async () => {
         try {
-            if (typeof logout === 'function') {
-                await logout();
-            }
+            await authService.logout();
         } catch (error) {
-            console.error('Error cerrando sesión:', error);
+            // Si el token ya expiró, igualmente limpiamos la sesión local.
+            console.warn('La sesión remota ya no estaba disponible al cerrar sesión.', error);
         } finally {
+            logout();
             navigate('/');
         }
     };
