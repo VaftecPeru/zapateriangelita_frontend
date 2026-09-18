@@ -67,10 +67,6 @@ const RegisterPage = () => {
         const loadingStartedAt = Date.now();
         try {
             const { data } = await authService.register(formData);
-            const remainingLoadingTime = REGISTRATION_LOADING_MS - (Date.now() - loadingStartedAt);
-            if (remainingLoadingTime > 0) {
-                await new Promise((resolve) => window.setTimeout(resolve, remainingLoadingTime));
-            }
             authLogin(data.user, data.token);
             setIsSuccess(true);
         } catch (err: any) {
