@@ -6,7 +6,6 @@ import foto4Img from '../assets/foto4.jpg';
 import foto5Img from '../assets/foto5.jpg';
 import foto6Img from '../assets/foto6.jpg';
 import foto7Img from '../assets/foto7.jpg';
-import foto8Img from '../assets/foto8.jpg';
 import foto9Img from '../assets/foto9.jpg';
 import foto10Img from '../assets/foto10.jpg';
 import foto11Img from '../assets/foto11.jpg';
