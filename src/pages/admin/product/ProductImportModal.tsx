@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Loader2, Upload, X } from 'lucide-react';
 import { Brand, Category, Product, Subcategory, productService } from '../../../services/crudService';
 import { ImportPreviewRow } from './types';
@@ -66,7 +66,7 @@ const ProductImportModal = ({ open, onClose, categories, subcategories, brands, 
     const category = String(pick(raw, ['categoria', 'categoría', 'category']) || '').trim();
     const subcategory = String(pick(raw, ['subcategoria', 'subcategoría', 'subcategory']) || '').trim();
     const brand = String(pick(raw, ['marca', 'brand']) || '').trim();
-    const price = toNumber(pick(raw, ['precio usd', 'precio', 'price']));
+    const price = toNumber(pick(raw, ['precio mxn', 'precio usd', 'precio', 'price']));
     const discount = toNumber(pick(raw, ['descuento %', 'descuento', 'discount']));
     const stock = Math.max(0, Math.trunc(toNumber(pick(raw, ['stock', 'cantidad', 'inventario']))));
     const sizes = String(pick(raw, ['tallas', 'talla', 'sizes', 'size']) || '').trim();
@@ -108,44 +108,114 @@ const ProductImportModal = ({ open, onClose, categories, subcategories, brands, 
     };
   });
 
+  const parseCsv = (text: string): Record<string, unknown>[] => {
+    const rows = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter((line) => line.trim() !== '');
+    if (rows.length < 2) return [];
+
+    const parseLine = (line: string) => {
+      const values: string[] = [];
+      let current = '';
+      let quoted = false;
+
+      for (let index = 0; index < line.length; index += 1) {
+        const char = line[index];
+        if (char === '"') {
+          if (quoted && line[index + 1] === '"') {
+            current += '"';
+            index += 1;
+          } else {
+            quoted = !quoted;
+          }
+        } else if (char === ',' && !quoted) {
+          values.push(current);
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(current);
+      return values;
+    };
+
+    const headers = parseLine(rows[0]).map((value) => value.trim());
+    return rows.slice(1).map((line) => {
+      const values = parseLine(line);
+      return headers.reduce<Record<string, unknown>>((acc, header, index) => {
+        acc[header] = values[index] ?? '';
+        return acc;
+      }, {});
+    });
+  };
+
   const handleFile = async (file?: File) => {
     if (!file) return;
     setSummary(null);
     setFileName(file.name);
+
     try {
-      const buffer = await file.arrayBuffer();
-      const workbook = XLSX.read(buffer, { type: 'array' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
+      let data: Record<string, unknown>[] = [];
+
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        data = parseCsv(await file.text());
+      } else {
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(await file.arrayBuffer());
+        const worksheet = workbook.worksheets[0];
+
+        if (!worksheet) throw new Error('El archivo no contiene hojas.');
+
+        const headers: string[] = [];
+        worksheet.getRow(1).eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          headers[colNumber - 1] = String(cell.value ?? '').trim();
+        });
+
+        worksheet.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) return;
+          const record: Record<string, unknown> = {};
+          headers.forEach((header, index) => {
+            const value = row.getCell(index + 1).value;
+            record[header] = typeof value === 'object' && value && 'text' in value
+              ? (value as { text: string }).text
+              : value ?? '';
+          });
+          data.push(record);
+        });
+      }
+
       setRows(buildPreviewRows(data));
     } catch (error) {
       console.error('Error reading import file', error);
       setRows([]);
-      alert('No se pudo leer el archivo. Usa un archivo XLSX, XLS o CSV válido.');
+      alert('No se pudo leer el archivo. Usa un archivo XLSX o CSV válido.');
     }
   };
 
-  const downloadTemplate = () => {
-    const sheet = XLSX.utils.json_to_sheet([
-      {
-        'Código producto': 'ZAP-001',
-        'Producto': 'Nike Air Max 90',
-        'Categoría': 'Mujer',
-        'Subcategoría': 'Tenis deportivos',
-        'Marca': 'Nike',
-        'Precio USD': 89.9,
-        'Descuento %': 10,
-        'Stock': 25,
-        'Tallas': '36,37,38,39',
-        'Colores': 'Negro,Blanco',
-        'Material': 'Cuero sintético',
-        'Estado': 'normal',
-        'Descripción': 'Tenis deportivo para uso diario',
-      },
+  const downloadTemplate = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Productos');
+    worksheet.addRow([
+      'Código producto', 'Producto', 'Categoría', 'Subcategoría', 'Marca',
+      'Precio MXN', 'Descuento %', 'Stock', 'Tallas', 'Colores',
+      'Material', 'Estado', 'Descripción',
     ]);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, sheet, 'Productos');
-    XLSX.writeFile(workbook, 'Plantilla_Importacion_Productos_Angelita.xlsx');
+    worksheet.addRow([
+      'ZAP-001', 'Nike Air Max 90', 'Mujer', 'Tenis deportivos', 'Nike',
+      1899.9, 10, 25, '36,37,38,39', 'Negro,Blanco',
+      'Cuero sintético', 'normal', 'Tenis deportivo para uso diario',
+    ]);
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'Plantilla_Importacion_Productos_Angelita.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   const buildFormData = (row: ImportPreviewRow) => {
@@ -227,7 +297,7 @@ const ProductImportModal = ({ open, onClose, categories, subcategories, brands, 
         <div className="mb-6 flex items-start justify-between gap-4 border-b border-gray-100 pb-5">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-store-red">Inventario masivo</p>
-            <h2 className="mt-1 text-2xl font-black text-black">Importar productos desde Excel</h2>
+            <h2 className="mt-1 text-2xl font-black text-black">Importar productos desde Excel o CSV</h2>
             <p className="mt-1 text-sm text-gray-500">Sube la plantilla, valida los registros y confirma antes de guardar.</p>
           </div>
           <button type="button" onClick={close} className="rounded-full bg-gray-50 p-2 text-gray-500 hover:bg-red-50 hover:text-red-500"><X size={20} /></button>
@@ -237,10 +307,10 @@ const ProductImportModal = ({ open, onClose, categories, subcategories, brands, 
           <label className="flex cursor-pointer items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 px-5 py-8 text-center transition hover:border-store-red/40 hover:bg-red-50/30">
             <Upload size={22} className="text-store-red" />
             <div className="text-left">
-              <p className="text-sm font-black text-black">{fileName || 'Seleccionar archivo XLSX, XLS o CSV'}</p>
+              <p className="text-sm font-black text-black">{fileName || 'Seleccionar archivo XLSX o CSV'}</p>
               <p className="text-xs text-gray-400">La primera hoja del archivo será utilizada.</p>
             </div>
-            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={(event) => handleFile(event.target.files?.[0])} />
+            <input ref={fileRef} type="file" accept=".xlsx,.csv" className="hidden" onChange={(event) => handleFile(event.target.files?.[0])} />
           </label>
           <button type="button" onClick={downloadTemplate} className="flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-xs font-black uppercase tracking-widest text-gray-600 hover:border-store-red hover:text-store-red">
             <Download size={16} /> Descargar plantilla
