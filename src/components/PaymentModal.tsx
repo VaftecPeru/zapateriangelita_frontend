@@ -98,7 +98,7 @@ const isExpiryInPast = (month: string, year: string) => {
   return yearNumber < currentYear || (yearNumber === currentYear && monthNumber < currentMonth);
 };
 
-export export const getFriendlyPaymentError = (code?: number | string, message?: string, cardNumber?: string, sandboxMode = false) => {
+export const getFriendlyPaymentError = (code?: number | string, message?: string, cardNumber?: string, sandboxMode = false) => {
   const errorCode = String(code ?? "");
   const text = String(message ?? "").toLowerCase();
 
