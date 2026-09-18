@@ -21,7 +21,7 @@ jobs:
           cache: npm
       - name: Update production dependencies
         run: |
-          npm install axios@latest react-router-dom@latest
+          npm install axios@latest react-router-dom@latest exceljs@latest
           npm uninstall xlsx
           npm install --save-dev eslint@latest typescript-eslint@latest
       - name: Commit lockfile and dependency versions
