@@ -137,11 +137,11 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
         message: "La tarjeta ha sido identificada como una tarjeta robada.",
       },
       "4000000000000044": {
-        title: "Tarjeta rechazada por seguridad",
+        title: "Tarjeta rechazada por fraude/antifraude",
         message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
       },
       "5454545454545454": {
-        title: "Tarjeta rechazada por seguridad",
+        title: "Tarjeta rechazada por fraude/antifraude",
         message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
       },
       "340000000000009": {
@@ -194,7 +194,7 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
 
   if (errorCode === "3005") {
     return {
-      title: "Tarjeta rechazada por seguridad",
+      title: "Tarjeta rechazada por fraude/antifraude",
       message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
     };
   }
@@ -305,7 +305,7 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
 
   if (text.includes("antifraud") || text.includes("antifraude") || text.includes("fraudulent")) {
     return {
-      title: "Tarjeta rechazada por seguridad",
+      title: "Tarjeta rechazada por fraude/antifraude",
       message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
     };
   }
