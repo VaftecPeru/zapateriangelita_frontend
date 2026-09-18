@@ -15,9 +15,9 @@ import '../styles/home-commerce-polish.css';
 import '../styles/home-premium-motion.css';
 import '../styles/home-reference.css';
 
-const money = new Intl.NumberFormat('en-US', {
+const money = new Intl.NumberFormat('es-MX', {
   style: 'currency',
-  currency: 'USD',
+  currency: 'MXN',
   minimumFractionDigits: 2,
 });
 
