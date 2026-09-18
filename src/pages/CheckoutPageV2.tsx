@@ -9,9 +9,9 @@ import { useUbigeo } from "../hooks/useUbigeo";
 import apiClient from "../services/apiClient";
 import "../styles/checkout.css";
 
-const money = new Intl.NumberFormat("en-US", {
+const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
-  currency: "USD",
+  currency: "MXN",
   minimumFractionDigits: 2,
 });
 
