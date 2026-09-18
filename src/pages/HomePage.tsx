@@ -6,7 +6,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import { useAuth } from '../hooks/useAuth';
 import { productService, settingsService } from '../services/crudService';
 import { getImageUrl } from '../config/api';
-// @ts-ignore
+// @ts-expect-error legacy JS catalog has no declaration file
 import { heroSlides } from '../data/catalog';
 import '../styles/store-home.css';
 import '../styles/home-premium-experience.css';
