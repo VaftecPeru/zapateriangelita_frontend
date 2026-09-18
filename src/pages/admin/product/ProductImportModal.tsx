@@ -43,6 +43,12 @@ const toStatus = (value: unknown): 'normal' | 'oferta' | 'nuevo' => {
   return 'normal';
 };
 
+const importMoney = new Intl.NumberFormat('es-MX', {
+  style: 'currency',
+  currency: 'MXN',
+  minimumFractionDigits: 2,
+});
+
 const ProductImportModal = ({ open, onClose, categories, subcategories, brands, products, onImported }: Props) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState('');
@@ -366,7 +372,7 @@ const ProductImportModal = ({ open, onClose, categories, subcategories, brands, 
                       <td className="px-4 py-3 font-semibold">{row.code || '—'}</td>
                       <td className="px-4 py-3 font-bold text-black">{row.name || '—'}</td>
                       <td className="px-4 py-3">{row.category || '—'}</td>
-                      <td className="px-4 py-3">${row.price.toFixed(2)}</td>
+                      <td className="px-4 py-3">{importMoney.format(row.price)}</td>
                       <td className="px-4 py-3 font-black">{row.stock}</td>
                       <td className="px-4 py-3 uppercase">{row.status}</td>
                       <td className="px-4 py-3">
