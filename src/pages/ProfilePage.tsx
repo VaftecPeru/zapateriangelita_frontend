@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Mail, Calendar, Package, Heart, ChevronDown, Settings, Phone, Save, LogOut } from 'lucide-react';
 import { Order, orderService, userService } from '../services/crudService';
+import { authService } from '../services/authService';
 import { onlyDigits, onlyLettersAndSpaces, validateProfileFields } from '../utils/profileValidation';
 
 const normalizeBirthdate = (value?: string | null) => {
