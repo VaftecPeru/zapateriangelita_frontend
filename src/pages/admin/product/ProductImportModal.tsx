@@ -1,5 +1,4 @@
 import { useMemo, useRef, useState } from 'react';
-import ExcelJS from 'exceljs';
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Loader2, Upload, X } from 'lucide-react';
 import { Brand, Category, Product, Subcategory, productService } from '../../../services/crudService';
 import { ImportPreviewRow } from './types';
@@ -153,65 +152,43 @@ const ProductImportModal = ({ open, onClose, categories, subcategories, brands, 
     setFileName(file.name);
 
     try {
-      let data: Record<string, unknown>[] = [];
-
-      if (file.name.toLowerCase().endsWith('.csv')) {
-        data = parseCsv(await file.text());
-      } else {
-        const workbook = new ExcelJS.Workbook();
-        await workbook.xlsx.load(await file.arrayBuffer());
-        const worksheet = workbook.worksheets[0];
-
-        if (!worksheet) throw new Error('El archivo no contiene hojas.');
-
-        const headers: string[] = [];
-        worksheet.getRow(1).eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          headers[colNumber - 1] = String(cell.value ?? '').trim();
-        });
-
-        worksheet.eachRow((row, rowNumber) => {
-          if (rowNumber === 1) return;
-          const record: Record<string, unknown> = {};
-          headers.forEach((header, index) => {
-            const value = row.getCell(index + 1).value;
-            record[header] = typeof value === 'object' && value && 'text' in value
-              ? (value as { text: string }).text
-              : value ?? '';
-          });
-          data.push(record);
-        });
+      if (!file.name.toLowerCase().endsWith('.csv')) {
+        throw new Error('Formato no permitido');
       }
 
+      const data = parseCsv(await file.text());
       setRows(buildPreviewRows(data));
     } catch (error) {
       console.error('Error reading import file', error);
       setRows([]);
-      alert('No se pudo leer el archivo. Usa un archivo XLSX o CSV válido.');
+      alert('No se pudo leer el archivo. Usa la plantilla CSV.');
     }
   };
 
-  const downloadTemplate = async () => {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Productos');
-    worksheet.addRow([
+  const downloadTemplate = () => {
+    const headers = [
       'Código producto', 'Producto', 'Categoría', 'Subcategoría', 'Marca',
       'Precio MXN', 'Descuento %', 'Stock', 'Tallas', 'Colores',
       'Material', 'Estado', 'Descripción',
-    ]);
-    worksheet.addRow([
+    ];
+    const sample = [
       'ZAP-001', 'Nike Air Max 90', 'Mujer', 'Tenis deportivos', 'Nike',
-      1899.9, 10, 25, '36,37,38,39', 'Negro,Blanco',
+      '1899.90', '10', '25', '36|37|38|39', 'Negro|Blanco',
       'Cuero sintético', 'normal', 'Tenis deportivo para uso diario',
-    ]);
+    ];
 
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    });
+    const escapeCsv = (value: string) =>
+      /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+
+    const csv = '\uFEFF' + [headers, sample]
+      .map((row) => row.map(escapeCsv).join(','))
+      .join('\r\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'Plantilla_Importacion_Productos_Angelita.xlsx';
+    link.download = 'Plantilla_Importacion_Productos_Angelita.csv';
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -297,7 +274,7 @@ const ProductImportModal = ({ open, onClose, categories, subcategories, brands, 
         <div className="mb-6 flex items-start justify-between gap-4 border-b border-gray-100 pb-5">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-store-red">Inventario masivo</p>
-            <h2 className="mt-1 text-2xl font-black text-black">Importar productos desde Excel o CSV</h2>
+            <h2 className="mt-1 text-2xl font-black text-black">Importar productos desde CSV</h2>
             <p className="mt-1 text-sm text-gray-500">Sube la plantilla, valida los registros y confirma antes de guardar.</p>
           </div>
           <button type="button" onClick={close} className="rounded-full bg-gray-50 p-2 text-gray-500 hover:bg-red-50 hover:text-red-500"><X size={20} /></button>
@@ -307,10 +284,10 @@ const ProductImportModal = ({ open, onClose, categories, subcategories, brands, 
           <label className="flex cursor-pointer items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 px-5 py-8 text-center transition hover:border-store-red/40 hover:bg-red-50/30">
             <Upload size={22} className="text-store-red" />
             <div className="text-left">
-              <p className="text-sm font-black text-black">{fileName || 'Seleccionar archivo XLSX o CSV'}</p>
-              <p className="text-xs text-gray-400">La primera hoja del archivo será utilizada.</p>
+              <p className="text-sm font-black text-black">{fileName || 'Seleccionar archivo CSV'}</p>
+              <p className="text-xs text-gray-400">Usa la plantilla CSV para mantener las columnas esperadas.</p>
             </div>
-            <input ref={fileRef} type="file" accept=".xlsx,.csv" className="hidden" onChange={(event) => handleFile(event.target.files?.[0])} />
+            <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={(event) => handleFile(event.target.files?.[0])} />
           </label>
           <button type="button" onClick={downloadTemplate} className="flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-xs font-black uppercase tracking-widest text-gray-600 hover:border-store-red hover:text-store-red">
             <Download size={16} /> Descargar plantilla
