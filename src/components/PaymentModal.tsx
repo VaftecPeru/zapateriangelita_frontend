@@ -9,6 +9,10 @@ import {
   X,
 } from "lucide-react";
 import apiClient from "../services/apiClient";
+import openpayLogo from "../assets/payment/openpay-by-bbva.jpg";
+import visaLogo from "../assets/payment/visa.png";
+import mastercardLogo from "../assets/payment/mastercard.png";
+import americanExpressLogo from "../assets/payment/american-express.png";
 
 export interface OpenpayChargeResult {
   ok: boolean;
@@ -662,8 +666,8 @@ const PaymentModal = ({
             color: "#248a7d",
           }}
         >
-          <ShieldCheck size={19} />
-          <div>
+          <ShieldCheck size={19} style={{ flexShrink: 0 }} />
+          <div style={{ minWidth: 0 }}>
             <strong style={{ display: "block", fontSize: "11px" }}>
               Pago seguro · 3D Secure
             </strong>
@@ -671,16 +675,33 @@ const PaymentModal = ({
               Procesado mediante Openpay México
             </span>
           </div>
-          <strong
+          <div
             style={{
               marginLeft: "auto",
-              fontSize: "14px",
-              color: "#268d82",
-              letterSpacing: ".2px",
+              width: "96px",
+              minWidth: "78px",
+              height: "34px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              overflow: "hidden",
+              borderRadius: "4px",
+              background: "#fff",
             }}
+            aria-label="Openpay by BBVA"
           >
-            Openpay <span style={{ fontSize: "9px" }}>by BBVA</span>
-          </strong>
+            <img
+              src={openpayLogo}
+              alt="Openpay by BBVA"
+              style={{
+                display: "block",
+                width: "92px",
+                maxWidth: "100%",
+                height: "auto",
+                objectFit: "contain",
+              }}
+            />
+          </div>
         </div>
 
         <div
@@ -688,28 +709,45 @@ const PaymentModal = ({
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            gap: "8px",
+            gap: "10px",
             marginBottom: "14px",
-            padding: "7px 9px",
+            padding: "8px 10px",
             border: "1px solid #eee",
             borderRadius: "7px",
             background: "#fafafa",
           }}
         >
-          <span style={{ color: "#888", fontSize: "9px" }}>Tarjetas aceptadas</span>
+          <span style={{ color: "#777", fontSize: "9px", whiteSpace: "nowrap" }}>
+            Tarjetas aceptadas
+          </span>
           <div
             style={{
               display: "flex",
-              gap: "6px",
+              gap: "10px",
               alignItems: "center",
-              fontSize: "9px",
-              fontWeight: 800,
-              color: "#555",
+              justifyContent: "flex-end",
+              minWidth: 0,
             }}
+            aria-label="Visa, Mastercard y American Express"
           >
-            <span>VISA</span>
-            <span>Mastercard</span>
-            <span>AMEX</span>
+            <img
+              src={visaLogo}
+              alt="Visa"
+              title="Visa"
+              style={{ display: "block", width: "36px", height: "22px", objectFit: "contain" }}
+            />
+            <img
+              src={mastercardLogo}
+              alt="Mastercard"
+              title="Mastercard"
+              style={{ display: "block", width: "34px", height: "22px", objectFit: "contain" }}
+            />
+            <img
+              src={americanExpressLogo}
+              alt="American Express"
+              title="American Express"
+              style={{ display: "block", width: "26px", height: "22px", objectFit: "contain" }}
+            />
           </div>
         </div>
 
