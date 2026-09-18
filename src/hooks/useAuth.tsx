@@ -15,7 +15,7 @@ interface AuthContextType {
     loading: boolean;
     favorites: any[];
     login: (userData: User, token: string) => void;
-    logout: () => void;
+    logout: () => Promise<void>;
     updateUser: (userData: Partial<User>) => void;
     toggleFavorite: (property: any) => void;
     isAuthenticated: boolean;
@@ -97,12 +97,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(userData);
     };
 
-    const logout = () => {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        localStorage.removeItem('favorites');
-        setUser(null);
-        setFavorites([]);
+    const logout = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (token) {
+                await authService.logout();
+            }
+        } catch (error) {
+            console.warn('No se pudo invalidar la sesión en el servidor; se limpiará la sesión local.', error);
+        } finally {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            localStorage.removeItem('favorites');
+            setUser(null);
+            setFavorites([]);
+        }
     };
 
     const updateUser = (updatedData: Partial<User>) => {
