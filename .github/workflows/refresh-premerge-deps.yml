@@ -1,0 +1,35 @@
+name: Refresh frontend dependencies
+on:
+  push:
+    branches:
+      - fix/premerge-fullstack-20260918
+permissions:
+  contents: write
+jobs:
+  refresh:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/premerge-fullstack-20260918
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install axios@latest react-router-dom@latest --save
+      - run: npm uninstall xlsx
+      - run: npm install -D eslint@8 @typescript-eslint/parser@7 @typescript-eslint/eslint-plugin@7
+      - run: npm run build
+      - run: npm run test:ui
+      - run: npm run lint
+      - run: npm audit --omit=dev --audit-level=high
+      - name: Commit dependency refresh
+        run: |
+          git config user.name "VAFTEC Audit Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add package.json package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: actualizar dependencias frontend [skip ci]"
+            git push origin HEAD:fix/premerge-fullstack-20260918
+          fi
