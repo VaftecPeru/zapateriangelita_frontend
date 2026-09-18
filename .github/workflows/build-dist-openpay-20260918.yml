@@ -1,0 +1,41 @@
+name: Build dist artifact
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - build/dist-openpay-20260918
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production
+        run: npm run build
+
+      - name: Package dist
+        run: zip -r dist-zapateria-angelita-openpay-20260918.zip dist
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-zapateria-angelita-openpay-20260918
+          path: dist-zapateria-angelita-openpay-20260918.zip
+          if-no-files-found: error
+          retention-days: 7
