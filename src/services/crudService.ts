@@ -153,7 +153,16 @@ export interface Order {
     id: number;
     code: string;
     status: string;
+    subtotal?: number | string;
+    discount?: number | string;
+    shipping_cost?: number | string;
     total: number | string;
+    payment_method?: string;
+    payment_status?: string;
+    payment_reference?: string;
+    payment_transaction_id?: string;
+    payment_error?: string | null;
+    paid_at?: string | null;
     customer_name?: string;
     customer_email?: string;
     shipping_phone?: string;
