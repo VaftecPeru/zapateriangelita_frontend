@@ -695,7 +695,9 @@ body {
 .checkout-phone-prefix,
 .checkout-phone-number,
 .store-phone-prefix,
-.store-phone-number {
+.store-phone-number,
+.profile-phone-prefix,
+.profile-phone-number {
   width: 100%;
   min-width: 0;
   min-height: 44px;
@@ -708,11 +710,13 @@ body {
   outline: none;
 }
 .checkout-phone-prefix,
-.store-phone-prefix {
+.store-phone-prefix,
+.profile-phone-prefix {
   flex: 0 0 118px;
 }
 .checkout-phone-number,
-.store-phone-number {
+.store-phone-number,
+.profile-phone-number {
   flex: 1 1 auto;
 }
 @media (max-width: 520px) {
@@ -720,7 +724,8 @@ body {
     grid-template-columns: 105px 1fr;
   }
   .checkout-phone-prefix,
-  .store-phone-prefix {
+  .store-phone-prefix,
+  .profile-phone-prefix {
     flex-basis: 105px;
   }
 }
