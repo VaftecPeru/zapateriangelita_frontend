@@ -8,6 +8,7 @@ import {
   brandService,
   categoryService,
   productService,
+  subcategoryService,
 } from '../../../services/crudService';
 import { getImageUrl } from '../../../config/api';
 import { ProductVariantDraft } from './types';
@@ -36,7 +37,7 @@ type EditorForm = {
   description: string;
 };
 
-type CatalogKind = 'category' | 'brand';
+type CatalogKind = 'category' | 'subcategory' | 'brand';
 
 const emptyForm = (): EditorForm => ({
   product_code: '',
@@ -255,6 +256,19 @@ const ProductEditorModal = ({
           category_id: created.id,
           subcategory_id: undefined,
         }));
+      } else if (catalogManager === 'subcategory') {
+        if (!form.category_id) {
+          setCatalogError('Selecciona primero una categoría para agregar subcategorías.');
+          setCatalogBusy(false);
+          return;
+        }
+        const response = await subcategoryService.create({
+          name,
+          category_id: form.category_id,
+          is_active: true,
+        });
+        const created = response.data as Subcategory;
+        setForm((current) => ({ ...current, subcategory_id: created.id }));
       } else {
         const response = await brandService.create({ name, is_active: true });
         const created = response.data as Brand;
@@ -283,7 +297,12 @@ const ProductEditorModal = ({
   const deleteCatalogItem = async (id: number | undefined, name: string) => {
     if (!catalogManager || !id) return;
 
-    const entityLabel = catalogManager === 'category' ? 'categoría' : 'marca';
+    const entityLabel =
+      catalogManager === 'category'
+        ? 'categoría'
+        : catalogManager === 'subcategory'
+          ? 'subcategoría'
+          : 'marca';
     if (!window.confirm(`¿Eliminar la ${entityLabel} "${name}"?`)) return;
 
     setCatalogBusy(true);
@@ -296,6 +315,11 @@ const ProductEditorModal = ({
           current.category_id === id
             ? { ...current, category_id: undefined, subcategory_id: undefined }
             : current,
+        );
+      } else if (catalogManager === 'subcategory') {
+        await subcategoryService.delete(id);
+        setForm((current) =>
+          current.subcategory_id === id ? { ...current, subcategory_id: undefined } : current,
         );
       } else {
         await brandService.delete(id);
@@ -443,9 +467,24 @@ const ProductEditorModal = ({
 
   if (!open) return null;
 
-  const managedItems = catalogManager === 'category' ? categories : brands;
-  const managerTitle = catalogManager === 'category' ? 'Gestionar categorías' : 'Gestionar marcas';
-  const managerLabel = catalogManager === 'category' ? 'Nueva categoría' : 'Nueva marca';
+  const managedItems =
+    catalogManager === 'category'
+      ? categories
+      : catalogManager === 'subcategory'
+        ? filteredSubcategories
+        : brands;
+  const managerTitle =
+    catalogManager === 'category'
+      ? 'Gestionar categorías'
+      : catalogManager === 'subcategory'
+        ? 'Gestionar subcategorías'
+        : 'Gestionar marcas';
+  const managerLabel =
+    catalogManager === 'category'
+      ? 'Nueva categoría'
+      : catalogManager === 'subcategory'
+        ? 'Nueva subcategoría'
+        : 'Nueva marca';
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-5">
@@ -548,9 +587,20 @@ const ProductEditorModal = ({
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                Subcategoría
-              </label>
+              <div className="flex items-center justify-between gap-3">
+                <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                  Subcategoría
+                </label>
+                <button
+                  type="button"
+                  onClick={() => openCatalogManager('subcategory')}
+                  disabled={!form.category_id}
+                  title={!form.category_id ? 'Selecciona primero una categoría' : 'Gestionar subcategorías'}
+                  className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-store-red hover:underline disabled:cursor-not-allowed disabled:text-gray-300 disabled:no-underline"
+                >
+                  <Settings2 size={12} /> Gestionar
+                </button>
+              </div>
               <div className="relative">
                 <select
                   value={form.subcategory_id || ''}
@@ -1007,8 +1057,8 @@ const ProductEditorModal = ({
             </div>
 
             <p className="mt-4 text-[10px] leading-relaxed text-gray-400">
-              Por seguridad, el sistema no permitirá eliminar una categoría o marca que tenga
-              productos asociados. Una categoría con subcategorías tampoco se puede eliminar.
+              Por seguridad, el sistema no permitirá eliminar categorías, subcategorías o marcas
+              que tengan productos asociados. Una categoría con subcategorías tampoco se puede eliminar.
             </p>
           </div>
         </div>
