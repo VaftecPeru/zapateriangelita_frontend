@@ -53,6 +53,39 @@ const newBanner = (): HomeBanner => ({
     active: true,
 });
 
+const defaultHomepageBanners: HomeBanner[] = [
+    {
+        id: 'default-hero-red',
+        eyebrow: 'Nueva colección 2026',
+        title: 'Camina con tu propio estilo',
+        description: 'Calzado para cada historia, cada paso y cada día.',
+        image: '/images/home-reference/hero-red.webp',
+        imagePosition: 'center center',
+        textColor: '#ffffff',
+        active: true,
+    },
+    {
+        id: 'default-promo',
+        eyebrow: 'Comodidad en movimiento',
+        title: 'Tu ritmo. Tu estilo.',
+        description: 'Encuentra tu próximo par favorito.',
+        image: '/images/home-reference/promo.webp',
+        imagePosition: '66% center',
+        textColor: '#ffffff',
+        active: true,
+    },
+    {
+        id: 'default-man',
+        eyebrow: 'Para cada ocasión',
+        title: 'Elegancia en cada paso',
+        description: 'Descubre nuestra colección para hombre.',
+        image: '/images/home-reference/man.webp',
+        imagePosition: 'center center',
+        textColor: '#ffffff',
+        active: true,
+    },
+];
+
 const normalizeStringList = (value?: string): string[] => {
     if (!value) return [];
     try {
@@ -178,9 +211,12 @@ const SettingsManager = () => {
             setPrivacyPolicies(privacy.length ? privacy : defaultPrivacyPolicies);
 
             const parsedBanners = normalizeBanners(data.homepage_banners);
-            setBanners(parsedBanners);
+            const editableBanners = parsedBanners.length
+                ? parsedBanners
+                : defaultHomepageBanners.map((banner) => ({ ...banner }));
+            setBanners(editableBanners);
             setExpandedBanners(
-                Object.fromEntries(parsedBanners.map((banner, index) => [banner.id, index === 0])),
+                Object.fromEntries(editableBanners.map((banner, index) => [banner.id, index === 0])),
             );
         } catch (error) {
             console.error('Error loading settings:', error);
@@ -522,7 +558,7 @@ const SettingsManager = () => {
                                         <GripVertical size={17} className="flex-shrink-0 text-gray-300" />
                                         <div className="h-14 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
                                             {banner.image ? (
-                                                <img src={getImageUrl(banner.image)} alt="" className="h-full w-full object-cover" />
+                                                <img src={banner.image.startsWith('/images/') ? banner.image : getImageUrl(banner.image)} alt="" className="h-full w-full object-cover" />
                                             ) : (
                                                 <div className="grid h-full place-items-center text-gray-300"><FileImage size={18} /></div>
                                             )}
@@ -551,7 +587,7 @@ const SettingsManager = () => {
                                                 <div className="space-y-3">
                                                     <div className="aspect-[16/9] overflow-hidden rounded-xl border border-gray-200 bg-white">
                                                         {banner.image ? (
-                                                            <img src={getImageUrl(banner.image)} alt={`Vista previa ${banner.title || 'banner'}`} className="h-full w-full object-cover" />
+                                                            <img src={banner.image.startsWith('/images/') ? banner.image : getImageUrl(banner.image)} alt={`Vista previa ${banner.title || 'banner'}`} className="h-full w-full object-cover" />
                                                         ) : (
                                                             <div className="grid h-full place-items-center text-center text-gray-300">
                                                                 <div><FileImage size={26} className="mx-auto mb-2" /><span className="text-[10px] font-bold">Sin imagen</span></div>
