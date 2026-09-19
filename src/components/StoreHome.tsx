@@ -251,6 +251,7 @@ export default function StoreHome() {
   const [catalogCategory, setCatalogCategory] = useState('Todas');
   const [catalogSubcategory, setCatalogSubcategory] = useState('Todas');
   const [categorySubcategory, setCategorySubcategory] = useState('Todas');
+  const [showAllCategorySubcategories, setShowAllCategorySubcategories] = useState(false);
   const [contactForm, setContactForm] = useState({
     first_name: "",
     last_name: "",
@@ -390,6 +391,10 @@ export default function StoreHome() {
   const categorySubcategories = subcategories.filter((subcategory: any) =>
     selectedCategory ? String(subcategory.category_id) === String(selectedCategory.id) : true
   );
+  const visibleCategorySubcategories = showAllCategorySubcategories
+    ? categorySubcategories
+    : categorySubcategories.slice(0, 6);
+  const hasMoreCategorySubcategories = categorySubcategories.length > 6;
   const categoryProducts = products.filter((product: any) => {
     const categoryMatches = selectedCategory
       ? String(product.category_id) === String(selectedCategory.id)
@@ -400,6 +405,7 @@ export default function StoreHome() {
 
   useEffect(() => {
     setCategorySubcategory(selectedSubcategory?.id ? String(selectedSubcategory.id) : 'Todas');
+    setShowAllCategorySubcategories(false);
   }, [categoryName, location.search, selectedSubcategory?.id]);
 
   const filteredProducts = statusFilter
@@ -928,13 +934,30 @@ export default function StoreHome() {
                     <span>Todos</span>
                     <small>{products.filter((product: any) => selectedCategory ? String(product.category_id) === String(selectedCategory.id) : String(product.category).toLowerCase() === activeCategory.toLowerCase()).length}</small>
                   </label>
-                  {categorySubcategories.map((subcategory: any) => (
+                  {visibleCategorySubcategories.map((subcategory: any) => (
                     <label className="offers-check" key={subcategory.id}>
                       <input type="checkbox" checked={String(categorySubcategory) === String(subcategory.id)} onChange={() => setCategorySubcategory(String(subcategory.id))} />
                       <span>{subcategory.name}</span>
                       <small>{products.filter((product: any) => String(product.subcategory_id) === String(subcategory.id)).length}</small>
                     </label>
                   ))}
+                  {hasMoreCategorySubcategories && (
+                    <button
+                      type="button"
+                      className="category-subcategories-more"
+                      onClick={() => setShowAllCategorySubcategories((current) => !current)}
+                      aria-expanded={showAllCategorySubcategories}
+                    >
+                      {showAllCategorySubcategories
+                        ? 'Ver menos'
+                        : `Ver más (${categorySubcategories.length - 6})`}
+                      <ChevronDown
+                        size={14}
+                        aria-hidden="true"
+                        className={showAllCategorySubcategories ? 'is-expanded' : ''}
+                      />
+                    </button>
+                  )}
                 </aside>
               </div>
             </section>
