@@ -12,15 +12,13 @@ import {
     ArrowRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { analyticsService, leadService } from '../services/crudService';
+import { analyticsService } from '../services/crudService';
 import { useSettings } from '../hooks/useSettings';
 
 const ContactAdvisorPage = () => {
     const { settings } = useSettings();
 
     const handleWhatsAppContact = (topic: string) => {
-       
-        leadService.trackLead('service', 0).catch(console.error);
 
         const phoneNumber = settings.whatsapp_number;
         if (!phoneNumber) {
