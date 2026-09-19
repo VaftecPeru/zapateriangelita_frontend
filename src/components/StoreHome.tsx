@@ -1018,7 +1018,14 @@ export default function StoreHome() {
         </div>
         <div className="shell footer__bottom">
           <span>© 2026 Zapatería Angelita. Todos los derechos reservados.</span>
-          <span>Visa · Paypal</span>
+          <div className="footer-payment-methods" aria-label="Métodos de pago aceptados con Openpay">
+            <span className="footer-payment-label">Pagos seguros con</span>
+            <span className="payment-brand payment-brand--visa" aria-label="Visa">VISA</span>
+            <span className="payment-brand payment-brand--mastercard" aria-label="Mastercard">Mastercard</span>
+            <span className="payment-brand payment-brand--american-express" aria-label="American Express">AMEX</span>
+            <span className="payment-brand payment-brand--carnet" aria-label="Carnet">Carnet</span>
+            <span className="payment-brand payment-brand--openpay" aria-label="Openpay by BBVA">Openpay by BBVA</span>
+          </div>
         </div>
       </footer>
 
