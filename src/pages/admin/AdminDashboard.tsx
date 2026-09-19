@@ -178,6 +178,9 @@ const AdminDashboard = () => {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const dashboardRef = useRef<HTMLDivElement>(null);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+    const [statsLoading, setStatsLoading] = useState(true);
+    const [statsError, setStatsError] = useState('');
+    const [dashboardSearch, setDashboardSearch] = useState('');
 
     useEffect(() => {
         if (state?.activeTab) {
@@ -185,17 +188,27 @@ const AdminDashboard = () => {
         }
     }, [state]);
 
+    const fetchStats = async () => {
+        setStatsLoading(true);
+        setStatsError('');
+        try {
+            const response = await statsService.getStats();
+            setStats((response.data as any) || (response as any));
+        } catch (error) {
+            console.error('Error fetching stats:', error);
+            setStatsError('No se pudieron cargar las métricas del dashboard.');
+        } finally {
+            setStatsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const response = await statsService.getStats();
-                setStats((response.data as any) || (response as any));
-            } catch (error) {
-                console.error('Error fetching stats:', error);
-            }
-        };
-        fetchStats();
+        void fetchStats();
     }, []);
+
+    const filteredRecentActivity = (stats?.recentActivity || []).filter((item) =>
+        item.text.toLocaleLowerCase().includes(dashboardSearch.trim().toLocaleLowerCase()),
+    );
 
     const escapeCsv = (value: unknown) => {
         const text = String(value ?? '');
@@ -216,7 +229,7 @@ const AdminDashboard = () => {
                 ['Total Productos', stats.charts?.benefitsDistribution?.total || 0],
                 ['Productos Disponibles', stats.charts?.benefitsDistribution?.costs || 0],
                 ['Productos Ocupados', stats.charts?.benefitsDistribution?.taxes || 0],
-                ['Interacciones WhatsApp', stats.revenue?.total || 0],
+                ['Interacciones WhatsApp', stats.metrics?.whatsapp_interactions ?? stats.revenue?.whatsapp ?? 0],
                 ['Visitas a Productos', stats.revenue?.expenses || 0],
                 [],
                 ['Interacciones mensuales'],
@@ -253,8 +266,8 @@ const AdminDashboard = () => {
     const statCards = [
         {
             label: 'Interacciones WhatsApp',
-            value: stats?.revenue?.total || 0,
-            change: stats?.revenue?.change || '+0%',
+            value: stats?.metrics?.whatsapp_interactions ?? stats?.revenue?.whatsapp ?? 0,
+            change: stats?.revenue?.whatsappChange || '+0%',
             icon: <ArrowUpRight className="text-green-500" />
         },
         {
@@ -282,12 +295,14 @@ const AdminDashboard = () => {
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                             <input
                                 type="text"
-                                placeholder="Buscar..."
+                                placeholder="Buscar actividad reciente..."
+                                value={dashboardSearch}
+                                onChange={(event) => setDashboardSearch(event.target.value)}
                                 className="w-full bg-white border border-gray-200 rounded-2xl py-2.5 md:py-3 pl-10 md:pl-12 pr-4 text-xs md:text-sm font-medium focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all shadow-sm"
                             />
                         </div>
                         <div className="flex items-center gap-3">
-                            <button className="p-2.5 md:p-3 bg-white border border-gray-200 rounded-2xl text-gray-500 hover:text-black transition-all shadow-sm relative">
+                            <button onClick={() => void fetchStats()} title="Actualizar indicadores" className="p-2.5 md:p-3 bg-white border border-gray-200 rounded-2xl text-gray-500 hover:text-black transition-all shadow-sm relative">
                                 <Bell size={18} />
                                 <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-store-red rounded-full border-2 border-white" />
                             </button>
@@ -339,6 +354,14 @@ const AdminDashboard = () => {
                 </div>
 
                 {activeTab === 'stats' ? (
+                    statsLoading ? (
+                        <div className="rounded-[2rem] border border-gray-200 bg-white p-12 text-center text-sm font-bold text-gray-500">Cargando indicadores reales...</div>
+                    ) : statsError ? (
+                        <div className="rounded-[2rem] border border-red-100 bg-red-50 p-8 text-center">
+                            <p className="text-sm font-bold text-red-600">{statsError}</p>
+                            <button onClick={() => void fetchStats()} className="mt-4 rounded-xl bg-store-red px-5 py-3 text-xs font-black uppercase text-white">Reintentar</button>
+                        </div>
+                    ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
 
                         <div className="lg:col-span-8 space-y-6 md:space-y-8">
@@ -378,9 +401,9 @@ const AdminDashboard = () => {
                                     <div key={i} className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 group">
                                         <div className="flex justify-between items-start mb-4 md:mb-6">
                                             <p className="text-black/40 text-xs font-black uppercase tracking-widest">{stat.label}</p>
-                                            <div className="p-2 bg-gray-50 rounded-xl group-hover:bg-store-red/5 transition-colors">
+                                            <button onClick={handleDownloadReport} title="Exportar reporte" className="p-2 bg-gray-50 rounded-xl group-hover:bg-store-red/5 transition-colors">
                                                 <MoreHorizontal size={16} className="text-gray-400" />
-                                            </div>
+                                            </button>
                                         </div>
                                         <p className="text-2xl font-black text-black tracking-tighter mb-4">
                                             <Counter value={stat.value} prefix="" decimals={0} />
@@ -400,9 +423,9 @@ const AdminDashboard = () => {
                                 <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border border-gray-100 shadow-sm">
                                     <div className="flex justify-between items-center mb-6 md:mb-10">
                                         <h3 className="font-black text-black">Ocupación (Inventario)</h3>
-                                        <button className="flex items-center gap-2 text-xs font-bold text-gray-400">
-                                            2026 <ChevronDown size={14} />
-                                        </button>
+                                        <span className="flex items-center gap-2 text-xs font-bold text-gray-400">
+                                            {new Date().getFullYear()} <ChevronDown size={14} />
+                                        </span>
                                     </div>
                                     <div className="flex items-center justify-center py-10">
                                         <div className="relative w-48 h-48">
@@ -438,7 +461,7 @@ const AdminDashboard = () => {
                                         <span className="text-[10px] font-black text-store-red uppercase tracking-widest bg-store-red/10 px-3 py-1 rounded-lg">Hoy</span>
                                     </div>
                                     <div className="space-y-6 flex-1">
-                                        {(stats?.recentActivity || []).map((item: any, i: number) => (
+                                        {filteredRecentActivity.map((item: any, i: number) => (
                                             <div key={i} className="flex gap-4 group cursor-pointer">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-store-red mt-2 group-hover:scale-150 transition-all" />
                                                 <div className="space-y-1">
@@ -447,8 +470,8 @@ const AdminDashboard = () => {
                                                 </div>
                                             </div>
                                         ))}
-                                        {!stats?.recentActivity?.length && (
-                                            <p className="text-sm text-gray-400">No hay actividad reciente.</p>
+                                        {!filteredRecentActivity.length && (
+                                            <p className="text-sm text-gray-400">{dashboardSearch ? 'No hay actividad que coincida con la búsqueda.' : 'No hay actividad reciente.'}</p>
                                         )}
                                     </div>
                                 </div>
@@ -465,6 +488,7 @@ const AdminDashboard = () => {
                             </div>
                         </div>
                     </div>
+                    )
                 ) : (
                     <div className="space-y-6">
                         {activeTab === 'products' && <PropertyManager />}
