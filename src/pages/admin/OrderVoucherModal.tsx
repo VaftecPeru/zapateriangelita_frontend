@@ -49,7 +49,7 @@ const qrPayload = (order: Order) =>
 const qrUrl = (order: Order, size = 260) =>
   `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=8&data=${encodeURIComponent(qrPayload(order))}`;
 
-const voucherHtml = (order: Order) => {
+const voucherHtml = (order: Order, qrSource = qrUrl(order, 300)) => {
   const rows = (order.items || []).map((item) => {
     const unitPrice = Number(item.unit_price || 0);
     const quantity = Number(item.quantity || 0);
@@ -111,7 +111,7 @@ const voucherHtml = (order: Order) => {
       <div class="total"><span>Total</span><strong>${money.format(Number(order.total || 0))}</strong></div>
     </section>
     <section class="qr">
-      <img src="${escapeHtml(qrUrl(order, 300))}" alt="QR del voucher" />
+      <img src="${escapeHtml(qrSource)}" alt="QR del voucher" />
       <p><strong>QR de validación del voucher.</strong><br/>Contiene únicamente el código del pedido, referencia/transacción, total y fecha. No incluye datos personales del cliente.</p>
     </section>
     <p class="footer">Zapatería Angelita · Comprobante generado desde la intranet.</p>
@@ -124,8 +124,9 @@ const OrderVoucherModal = ({ order, onClose }: Props) => {
   const paid = isPaid(order);
 
   const openPrintable = () => {
-    const win = window.open('', '_blank', 'noopener,noreferrer,width=980,height=800');
+    const win = window.open('', '_blank', 'width=980,height=800');
     if (!win) return;
+    win.opener = null;
     win.document.open();
     win.document.write(voucherHtml(order));
     win.document.close();
@@ -135,8 +136,25 @@ const OrderVoucherModal = ({ order, onClose }: Props) => {
     }, 450);
   };
 
-  const downloadVoucher = () => {
-    const blob = new Blob([voucherHtml(order)], { type: 'text/html;charset=utf-8' });
+  const downloadVoucher = async () => {
+    let embeddedQr = qrUrl(order, 300);
+
+    try {
+      const response = await fetch(embeddedQr, { mode: 'cors' });
+      if (response.ok) {
+        const qrBlob = await response.blob();
+        embeddedQr = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ''));
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(qrBlob);
+        });
+      }
+    } catch {
+      // Si el servicio QR no permite CORS, el voucher conserva la URL remota.
+    }
+
+    const blob = new Blob([voucherHtml(order, embeddedQr)], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -208,7 +226,7 @@ const OrderVoucherModal = ({ order, onClose }: Props) => {
           </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-            <button type="button" onClick={downloadVoucher} disabled={!paid} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-xs font-black uppercase tracking-widest text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"><Download size={15} /> Descargar</button>
+            <button type="button" onClick={() => void downloadVoucher()} disabled={!paid} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-xs font-black uppercase tracking-widest text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"><Download size={15} /> Descargar</button>
             <button type="button" onClick={openPrintable} disabled={!paid} className="inline-flex items-center justify-center gap-2 rounded-xl bg-store-red px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:cursor-not-allowed disabled:opacity-40"><Printer size={15} /> Imprimir / PDF</button>
           </div>
         </div>
