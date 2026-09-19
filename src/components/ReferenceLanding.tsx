@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Award, ChevronLeft, ChevronRight, Headphones, LockKeyhole, Mail, Pause, Play, RefreshCw, ShieldCheck, Star, Truck } from 'lucide-react';
 import { heroSlides, testimonials } from '../data/catalog';
@@ -10,9 +10,9 @@ const collections = [
   { name: 'Niños', slug: 'niños', subtitle: 'Grandes aventuras comienzan aquí', image: 'kids.webp' },
 ];
 const defaultSlides = [
-  { eyebrow: 'Nueva colección 2026', title: 'Camina con tu', emphasis: 'propio estilo', description: 'Calzado para cada historia, cada paso y cada día.', image: `${assets}hero-red.webp`, href: '/categoria/mujer', imagePosition: 'center' },
-  { eyebrow: 'Comodidad en movimiento', title: 'Tu ritmo.', emphasis: 'Tu estilo.', description: 'Encuentra tu próximo par favorito.', image: `${assets}promo.webp`, href: '/catalogo', imagePosition: '66% center' },
-  { eyebrow: 'Para cada ocasión', title: 'Elegancia en', emphasis: 'cada paso', description: 'Descubre nuestra colección para hombre.', image: `${assets}man.webp`, href: '/categoria/hombre', imagePosition: 'center' },
+  { eyebrow: 'Nueva colección 2026', title: 'Camina con tu', emphasis: 'propio estilo', description: 'Calzado para cada historia, cada paso y cada día.', image: `${assets}hero-red.webp`, href: '/categoria/mujer', imagePosition: 'center', textColor: '#ffffff' },
+  { eyebrow: 'Comodidad en movimiento', title: 'Tu ritmo.', emphasis: 'Tu estilo.', description: 'Encuentra tu próximo par favorito.', image: `${assets}promo.webp`, href: '/catalogo', imagePosition: '66% center', textColor: '#ffffff' },
+  { eyebrow: 'Para cada ocasión', title: 'Elegancia en', emphasis: 'cada paso', description: 'Descubre nuestra colección para hombre.', image: `${assets}man.webp`, href: '/categoria/hombre', imagePosition: 'center', textColor: '#ffffff' },
 ];
 
 type Props = {
@@ -23,8 +23,17 @@ type Props = {
 };
 
 export default function ReferenceLanding({ products, renderProduct, loading, error }: Props) {
-  // Managed banners remain available after the reference campaign.
-  const slides = [...defaultSlides, ...heroSlides.filter((item: any) => item.managed).map((item: any) => ({ ...item, emphasis: '', href: '/catalogo' }))];
+  // Los banners administrados desde Intranet reemplazan la campaña por defecto.
+  // Si no hay banners activos guardados, se conserva la campaña de respaldo.
+  const managedSlides = heroSlides
+    .filter((item: any) => item.managed)
+    .map((item: any) => ({
+      ...item,
+      emphasis: String(item.emphasis || ''),
+      href: item.href || '/catalogo',
+      textColor: item.textColor || '#ffffff',
+    }));
+  const slides = managedSlides.length ? managedSlides : defaultSlides;
   const [slide, setSlide] = useState(0);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -73,7 +82,12 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
         onTouchCancel={() => { touch.current = null; }}>
         <img key={`photo-${slide}`} className="ref-hero__photo" src={active.image} style={{ objectPosition: active.imagePosition }} alt="" loading="eager" />
         <div className="ref-hero__shade" />
-        <div className="ref-hero__content" key={`copy-${slide}`} aria-live={rotating ? 'off' : 'polite'}>
+        <div
+          className="ref-hero__content"
+          key={`copy-${slide}`}
+          aria-live={rotating ? 'off' : 'polite'}
+          style={{ '--ref-hero-text': active.textColor || '#ffffff' } as CSSProperties}
+        >
           <p className="ref-kicker">{active.eyebrow}</p>
           <h1>{active.title}<strong>{active.emphasis}</strong></h1>
           <p className="ref-hero__description">{active.description}</p>
