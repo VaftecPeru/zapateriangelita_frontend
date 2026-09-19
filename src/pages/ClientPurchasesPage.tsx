@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Calendar, CheckCircle2, Package, ReceiptText, ShieldCheck, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Calendar, CheckCircle2, MessageCircle, Package, ReceiptText, ShieldCheck, ShoppingBag, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import GoogleIdentityButton from "../components/GoogleIdentityButton";
 import { useAuth } from "../hooks/useAuth";
 import { authService } from "../services/authService";
-import { Order, orderService } from "../services/crudService";
+import { analyticsService, Order, orderService, settingsService } from "../services/crudService";
 
 const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
@@ -18,12 +18,13 @@ const statusLabel = (status?: string) => {
     preparado: "Preparando pedido",
     enviado: "Enviado",
     entregado: "Entregado",
-    cancelado: "Cancelado",
+    cancelado: "Finalizado",
+    finalizado: "Finalizado",
     pending: "Compra recibida",
     confirmed: "Preparando pedido",
     shipped: "Enviado",
     delivered: "Entregado",
-    cancelled: "Cancelado",
+    cancelled: "Finalizado",
   };
   return map[String(status || "").toLowerCase()] || status || "Procesando";
 };
@@ -37,6 +38,14 @@ const ClientPurchasesPage = () => {
   const [googleLinking, setGoogleLinking] = useState(false);
   const [googleMessage, setGoogleMessage] = useState<string | null>(null);
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const [receiptOrder, setReceiptOrder] = useState<Order | null>(null);
+  const [supportNumber, setSupportNumber] = useState('');
+
+  useEffect(() => {
+    settingsService.getAll()
+      .then((response) => setSupportNumber(String(response.data?.data?.whatsapp_number || '')))
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -223,6 +232,22 @@ const ClientPurchasesPage = () => {
                       ))}
                     </div>
                   )}
+                  <div className="mt-5 flex flex-wrap gap-2 border-t border-black/5 pt-4">
+                    <button type="button" onClick={() => setReceiptOrder(order)} className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#121212]">
+                      <ReceiptText size={14} /> Comprobante
+                    </button>
+                    {supportNumber && (
+                      <a
+                        href={`https://wa.me/${supportNumber.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, necesito ayuda con mi pedido ${order.code}`)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => void analyticsService.track('whatsapp_click', undefined, { source: 'my_purchases', order_id: order.id }).catch(() => undefined)}
+                        className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white"
+                      >
+                        <MessageCircle size={14} /> Chat con administración
+                      </a>
+                    )}
+                  </div>
                 </article>
               ))}
             </div>
@@ -240,6 +265,34 @@ const ClientPurchasesPage = () => {
           )}
         </div>
       </section>
+
+      {receiptOrder && (
+        <div className="fixed inset-0 z-[5000] grid place-items-center bg-black/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <section className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[2rem] bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-black/5 pb-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#e30613]">Comprobante de compra</p>
+                <h2 className="mt-1 text-xl font-black">Pedido {receiptOrder.code}</h2>
+                <p className="mt-1 text-xs text-gray-500">{receiptOrder.created_at ? new Date(receiptOrder.created_at).toLocaleString('es-MX') : ''}</p>
+              </div>
+              <button onClick={() => setReceiptOrder(null)} className="rounded-full bg-gray-50 p-2" aria-label="Cerrar comprobante"><X size={18} /></button>
+            </div>
+            <div className="mt-5 space-y-3">
+              {(receiptOrder.items || []).map((item, index) => (
+                <div key={index} className="flex justify-between gap-3 rounded-xl bg-gray-50 p-3 text-sm">
+                  <div><strong>{item.product_name || 'Producto'}</strong><p className="text-xs text-gray-500">{item.color || ''} {item.size ? `· Talla ${item.size}` : ''}</p></div>
+                  <span className="font-black">x{item.quantity}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 flex items-center justify-between border-t border-black/10 pt-4">
+              <span className="text-xs font-black uppercase tracking-widest text-gray-500">Total</span>
+              <strong className="text-xl text-[#e30613]">{money.format(Number(receiptOrder.total || 0))}</strong>
+            </div>
+            <button type="button" onClick={() => window.print()} className="mt-5 w-full rounded-xl bg-[#121212] px-4 py-3 text-xs font-black uppercase tracking-widest text-white">Imprimir comprobante</button>
+          </section>
+        </div>
+      )}
     </main>
   );
 };
