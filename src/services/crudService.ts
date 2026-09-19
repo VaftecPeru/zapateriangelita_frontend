@@ -193,7 +193,8 @@ export const brandService = {
 };
 
 export const productService = {
-    getAll: () => apiClient.get<Product[]>('/products'),
+    getAll: (params: Record<string, string | number | undefined> = {}) =>
+        apiClient.get<Product[]>('/products', { params: { per_page: 200, ...params } }),
     getById: async (id: number) => {
         const response = await apiClient.get<Product>(`/products/${id}`);
         const data = response.data as Product & { subcategory?: unknown };
