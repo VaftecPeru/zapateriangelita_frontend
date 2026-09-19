@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Lock, User, ArrowLeft, Phone, Loader2 } from 'lucide-react';
+import { Mail, Lock, User, ArrowLeft, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
 import '../styles/register-home.css';
 import brandLogo from '../assets/brand/logo-angelita-horizontal.png';
-import { onlyDigits, onlyLettersAndSpaces } from '../utils/profileValidation';
+import { onlyLettersAndSpaces } from '../utils/profileValidation';
+import PhoneField from '../components/PhoneField';
 
 const Logo = () => (
     <a className="logo" href="/" aria-label="Zapatería Angelita - inicio">
@@ -15,7 +16,7 @@ const Logo = () => (
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
-        name: '', email: '', phone: '', password: '', password_confirmation: '',
+        name: '', email: '', phone: '+52', password: '', password_confirmation: '',
         gender: '', birthdate: ''
     });
 
@@ -45,8 +46,8 @@ const RegisterPage = () => {
             setError('Ingresa un nombre válido usando solo letras, espacios, apóstrofes o guiones.');
             return;
         }
-        if (!/^\d{7,20}$/.test(formData.phone)) {
-            setError('El teléfono debe contener entre 7 y 20 números.');
+        if (!/^\+[0-9]{8,20}$/.test(formData.phone)) {
+            setError('Ingresa un teléfono internacional válido.');
             return;
         }
 
@@ -79,9 +80,7 @@ const RegisterPage = () => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const value = e.target.name === 'name'
             ? onlyLettersAndSpaces(e.target.value)
-            : e.target.name === 'phone'
-                ? onlyDigits(e.target.value)
-                : e.target.value;
+            : e.target.value;
         setFormData({ ...formData, [e.target.name]: value });
     };
 
@@ -156,10 +155,17 @@ const RegisterPage = () => {
                             </div>
                             <div className="field-group">
                                 <label htmlFor="phone">Teléfono</label>
-                                <div className="input-wrapper">
-                                    <Phone className="input-icon" size={18} />
-                                    <input id="phone" type="tel" name="phone" required minLength={7} maxLength={20} inputMode="numeric" pattern="[0-9]{7,20}" autoComplete="tel" value={formData.phone} onChange={handleChange} placeholder="Ej. 999888777" />
-                                </div>
+                                <PhoneField
+                                    id="phone"
+                                    required
+                                    value={formData.phone}
+                                    onChange={(phone) => setFormData((current) => ({ ...current, phone }))}
+                                    defaultDialCode="+52"
+                                    className="international-phone"
+                                    selectClassName="international-phone__prefix"
+                                    inputClassName="international-phone__number"
+                                    placeholder="55 1234 5678"
+                                />
                             </div>
                             <div className="field-group">
                                 <label htmlFor="gender">Género</label>
