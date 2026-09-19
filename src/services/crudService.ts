@@ -37,6 +37,7 @@ export interface Product {
     id?: number;
     product_code?: string;
     name: string;
+    model?: string;
     category?: string | { id?: number; name: string; slug?: string };
     category_id?: number;
     subcategory_id?: number;
@@ -59,6 +60,7 @@ export interface Product {
     sizes?: Array<{ id?: number; size: string; stock: number }>;
     color_sizes?: Record<string, string[]>;
     colors?: Array<{ id?: number; color: string; hex?: string | null }>;
+    variant_stocks?: Array<{ id?: number; color: string; size: string; stock: number }>;
 }
 
 export interface AdditionalService {
@@ -75,21 +77,37 @@ export interface DashboardStats {
         change: string;
         expenses: number;
         expensesChange: string;
+        whatsapp?: number;
+        whatsappChange?: string;
     };
     inventory: {
         properties: number;
         services: number;
         rooms?: number;
+        units?: number;
+        low_stock?: number;
     };
     charts: {
         monthlyRevenue: number[];
         monthlyLabels: string[];
+        monthlyWhatsapp?: number[];
+        monthlyProductViews?: number[];
         benefitsDistribution: {
             total: number;
             costs: number;
             taxes: number;
             maintenance: number;
         };
+    };
+    metrics?: {
+        interactions: number;
+        whatsapp_interactions: number;
+        product_views: number;
+        orders: number;
+        paid_orders: number;
+        inventory_units: number;
+        low_stock_products: number;
+        out_of_stock_products: number;
     };
     recentActivity: {
         text: string;
@@ -104,6 +122,8 @@ export interface User {
     gender?: string;
     birthdate?: string;
     role: string;
+    must_change_password?: boolean;
+    temporary_password_set_at?: string | null;
     created_at: string;
 }
 
