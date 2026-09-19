@@ -167,3 +167,9 @@
   .buy-box { position: static; margin-top: 26px; }
   .trust-icons, .product-specification-table { grid-template-columns: 1fr; }
 }
+
+/* Galería de producto: preservar proporción y mostrar el calzado completo. */
+.product-thumbnails img { object-fit: contain; background: #fff; padding: 3px; }
+.pd-zoom-trigger { width: 100%; min-height: 580px; padding: 0; border: 0; background: transparent; }
+.pd-zoom-trigger > img { width: 100%; height: 100%; min-height: 580px; object-fit: contain; background: #fff; }
+.pd-zoom-dialog > img { max-width: min(92vw, 1100px); max-height: 82vh; object-fit: contain; background: #fff; }
