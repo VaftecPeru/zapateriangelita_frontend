@@ -57,7 +57,9 @@ const HomePage = () => {
                   eyebrow: String(banner.eyebrow || ''),
                   title: String(banner.title || '').slice(0, 120),
                   description: String(banner.description || '').slice(0, 220),
-                  image: getImageUrl(String(banner.image || '')),
+                  image: String(banner.image || '').startsWith('/images/')
+                    ? String(banner.image)
+                    : getImageUrl(String(banner.image || '')),
                   imagePosition: String(banner.imagePosition || 'center center'),
                   textColor: /^#[0-9a-fA-F]{6}$/.test(String(banner.textColor || ''))
                     ? String(banner.textColor)
