@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Search, RefreshCw, Mail, Calendar, User as UserIcon, Trash2 } from 'lucide-react';
+import { Users, Search, RefreshCw, Mail, Calendar, User as UserIcon, Trash2, KeyRound, Copy, Check } from 'lucide-react';
 import { userService, User } from '../../services/crudService';
 
 interface UsersManagerProps {
@@ -13,9 +13,13 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const [resetUser, setResetUser] = useState<User | null>(null);
+    const [resetting, setResetting] = useState(false);
+    const [sendResetEmail, setSendResetEmail] = useState(false);
+    const [temporaryPassword, setTemporaryPassword] = useState('');
+    const [copied, setCopied] = useState(false);
 
     const fetchUsers = async () => {
-        if (initialData && users.length > 0) return;
         setLoading(true);
         setError(null);
         try {
@@ -53,6 +57,43 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
             (user.email?.toLowerCase() || '').includes(search)
         );
     });
+
+    const formatDate = (value?: string) => {
+        if (!value) return 'N/A';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        return date.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    const openResetPassword = (user: User) => {
+        setResetUser(user);
+        setTemporaryPassword('');
+        setSendResetEmail(false);
+        setCopied(false);
+    };
+
+    const handleResetPassword = async () => {
+        if (!resetUser) return;
+        setResetting(true);
+        try {
+            const response = await userService.resetPassword(resetUser.id, sendResetEmail);
+            setTemporaryPassword(response.data.temporary_password || '');
+            setUsers((current) => current.map((item) =>
+                item.id === resetUser.id ? { ...item, must_change_password: true } : item,
+            ));
+        } catch (e: any) {
+            setError(e.response?.data?.message || 'No se pudo restablecer la contraseña.');
+        } finally {
+            setResetting(false);
+        }
+    };
+
+    const copyTemporaryPassword = async () => {
+        if (!temporaryPassword) return;
+        await navigator.clipboard.writeText(temporaryPassword);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1800);
+    };
 
     const handleDelete = async (id: number) => {
         setDeleting(true);
@@ -129,7 +170,7 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
 
             {!loading && filteredUsers.length > 0 && (
                 <div className="bg-white/40 backdrop-blur-sm rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
+                    <div className="hidden overflow-x-auto md:block">
                         <table className="w-full text-left border-collapse min-w-[1000px]">
                             <thead>
                                 <tr className="border-b border-gray-100 bg-store-red/5">
@@ -168,7 +209,7 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
                                             <div className="flex items-center gap-2">
                                                 <Calendar size={12} className="text-gray-300" />
                                                 <span className="text-xs font-bold text-gray-600">
-                                                    {user.birthdate || 'N/A'}
+                                                    {formatDate(user.birthdate)}
                                                 </span>
                                             </div>
                                         </td>
@@ -180,19 +221,80 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             {user.role !== 'admin' && (
-                                                <button
-                                                    onClick={() => setConfirmDelete(user.id)}
-                                                    className="p-2.5 bg-white text-gray-400 border border-red-50 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all shadow-sm"
-                                                    title="Eliminar usuario"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={() => openResetPassword(user)}
+                                                        className="p-2.5 bg-white text-gray-500 border border-gray-200 rounded-xl hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 transition-all shadow-sm"
+                                                        title="Restablecer contraseña"
+                                                    >
+                                                        <KeyRound size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setConfirmDelete(user.id)}
+                                                        className="p-2.5 bg-white text-gray-400 border border-red-50 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all shadow-sm"
+                                                        title="Eliminar usuario"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
                                             )}
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+                    <div className="grid gap-3 p-4 md:hidden">
+                        {filteredUsers.map((user) => (
+                            <article key={`mobile-${user.id}`} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-black text-black">{user.name}</p>
+                                        <p className="truncate text-xs text-gray-500">{user.email}</p>
+                                        <p className="mt-2 text-[11px] font-bold text-gray-500">{formatDate(user.birthdate)} · {user.role}</p>
+                                    </div>
+                                    {user.role !== 'admin' && (
+                                        <div className="flex shrink-0 gap-2">
+                                            <button onClick={() => openResetPassword(user)} className="rounded-xl border border-amber-100 p-2.5 text-amber-700" aria-label="Restablecer contraseña"><KeyRound size={15} /></button>
+                                            <button onClick={() => setConfirmDelete(user.id)} className="rounded-xl border border-red-100 p-2.5 text-red-500" aria-label="Eliminar usuario"><Trash2 size={15} /></button>
+                                        </div>
+                                    )}
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {resetUser && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[4100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[2rem] p-7 w-full max-w-md shadow-2xl">
+                        <div className="w-14 h-14 bg-amber-50 text-amber-700 rounded-2xl flex items-center justify-center mx-auto mb-5"><KeyRound size={28} /></div>
+                        <h3 className="text-xl font-black text-center">Restablecer contraseña</h3>
+                        <p className="mt-2 text-sm text-gray-500 text-center">Usuario: <strong>{resetUser.name}</strong></p>
+                        {!temporaryPassword ? (
+                            <>
+                                <label className="mt-6 flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3 text-sm font-semibold">
+                                    <input type="checkbox" checked={sendResetEmail} onChange={(event) => setSendResetEmail(event.target.checked)} />
+                                    Enviar también la contraseña temporal por correo
+                                </label>
+                                <div className="mt-6 grid grid-cols-2 gap-3">
+                                    <button onClick={() => setResetUser(null)} disabled={resetting} className="rounded-xl bg-gray-100 px-4 py-3 text-xs font-black uppercase">Cancelar</button>
+                                    <button onClick={handleResetPassword} disabled={resetting} className="rounded-xl bg-black px-4 py-3 text-xs font-black uppercase text-white">{resetting ? 'Generando...' : 'Confirmar'}</button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <p className="mt-5 text-xs text-gray-500">Esta contraseña se muestra una sola vez. El usuario deberá cambiarla al iniciar sesión.</p>
+                                <div className="mt-3 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                                    <code className="flex-1 break-all font-black">{temporaryPassword}</code>
+                                    <button onClick={copyTemporaryPassword} className="rounded-lg bg-white p-2 text-gray-700" title="Copiar contraseña">
+                                        {copied ? <Check size={17} /> : <Copy size={17} />}
+                                    </button>
+                                </div>
+                                <button onClick={() => setResetUser(null)} className="mt-6 w-full rounded-xl bg-store-red px-4 py-3 text-xs font-black uppercase text-white">Cerrar</button>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

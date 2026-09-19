@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ReferenceLanding from "./ReferenceLanding";
+import PhoneField from "./PhoneField";
 import brandLogo from "../assets/brand/logo-angelita-horizontal.png";
 import fallbackImage from "../assets/foto1.jpg";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
@@ -229,7 +230,7 @@ export default function StoreHome() {
   const [checkoutNotice, setCheckoutNotice] = useState<{ title: string; message: string; requiresLogin: boolean } | null>(null);
   const [checkoutForm, setCheckoutForm] = useState({
     full_name: "",
-    phone: "",
+    phone: "+52",
     country: "México",
     state: "",
     municipality: "",
@@ -255,7 +256,7 @@ export default function StoreHome() {
     first_name: "",
     last_name: "",
     email: "",
-    phone: "",
+    phone: "+52",
     product_interest: "Compra de calzado",
     shoe_size: "",
     contact_preference: "WhatsApp",
@@ -390,6 +391,9 @@ export default function StoreHome() {
   const categorySubcategories = subcategories.filter((subcategory: any) =>
     selectedCategory ? String(subcategory.category_id) === String(selectedCategory.id) : true
   );
+  const inventoryUnitsOf = (items: any[]) =>
+    items.reduce((total, item) => total + Math.max(0, Number(item.stock || 0)), 0);
+
   const categoryProducts = products.filter((product: any) => {
     const categoryMatches = selectedCategory
       ? String(product.category_id) === String(selectedCategory.id)
@@ -433,7 +437,7 @@ export default function StoreHome() {
   const catalogStatusEyebrow = catalogStatus === 'nuevo' ? 'Recién llegados' : 'Selección especial';
   const offerCategoryItems = categories.map((category: any) => ({
     ...category,
-    offerCount: products.filter((product: any) => product.status === catalogStatus && product.category_id === category.id).length,
+    offerCount: inventoryUnitsOf(products.filter((product: any) => product.status === catalogStatus && product.category_id === category.id)),
   }));
   const offerProducts = products
     .filter((product: any) => product.status === catalogStatus)
@@ -802,7 +806,7 @@ export default function StoreHome() {
                 <div>
                   <span className="offers-catalog__eyebrow">{catalogStatusEyebrow}</span>
                   <h1>{catalogStatusTitle}</h1>
-                  <p>{offerProducts.length} artículos disponibles</p>
+                  <p>{inventoryUnitsOf(offerProducts)} unidades disponibles</p>
                 </div>
                 <button className="offers-catalog__back" type="button" onClick={() => navigate('/')}>
                   Volver al inicio <ChevronRight size={16} />
@@ -895,7 +899,7 @@ export default function StoreHome() {
                 <div>
                   <span className="offers-catalog__eyebrow">Colección de calzado</span>
                   <h1>Calzado para {activeCategory}</h1>
-                  <p>{categoryProducts.length} productos disponibles</p>
+                  <p>{inventoryUnitsOf(categoryProducts)} unidades disponibles</p>
                 </div>
                 <button className="offers-catalog__back" type="button" onClick={() => navigate('/')}>
                   Volver al inicio <ChevronRight size={16} />
@@ -926,7 +930,7 @@ export default function StoreHome() {
                   <label className="offers-check">
                     <input type="checkbox" checked={categorySubcategory === 'Todas'} onChange={() => setCategorySubcategory('Todas')} />
                     <span>Todos</span>
-                    <small>{products.filter((product: any) => selectedCategory ? String(product.category_id) === String(selectedCategory.id) : String(product.category).toLowerCase() === activeCategory.toLowerCase()).length}</small>
+                    <small>{inventoryUnitsOf(products.filter((product: any) => selectedCategory ? String(product.category_id) === String(selectedCategory.id) : String(product.category).toLowerCase() === activeCategory.toLowerCase()))}</small>
                   </label>
                   {categorySubcategories.map((subcategory: any) => (
                     <label className="offers-check" key={subcategory.id}>
@@ -1024,7 +1028,7 @@ export default function StoreHome() {
                   <label>Nombre *<input required minLength={2} value={contactForm.first_name} onChange={(event) => setContactForm({ ...contactForm, first_name: event.target.value })} style={checkoutInputStyle} /></label>
                   <label>Apellido *<input required minLength={2} value={contactForm.last_name} onChange={(event) => setContactForm({ ...contactForm, last_name: event.target.value })} style={checkoutInputStyle} /></label>
                   <label>Correo electrónico<input required type="email" value={contactForm.email} onChange={(event) => setContactForm({ ...contactForm, email: event.target.value })} style={checkoutInputStyle} /></label>
-                  <label>WhatsApp / teléfono *<input required minLength={7} value={contactForm.phone} onChange={(event) => setContactForm({ ...contactForm, phone: event.target.value })} style={checkoutInputStyle} /></label>
+                  <label>WhatsApp / teléfono *<PhoneField required value={contactForm.phone} onChange={(phone) => setContactForm({ ...contactForm, phone })} defaultDialCode="+52" selectClassName="store-phone-prefix" inputClassName="store-phone-number" /></label>
                   <label>¿Qué necesitas? *<select required value={contactForm.product_interest} onChange={(event) => setContactForm({ ...contactForm, product_interest: event.target.value })} style={checkoutInputStyle}><option value="">Selecciona una opción</option><option>Compra de calzado</option><option>Disponibilidad de un producto</option><option>Asesoría de talla</option><option>Cambios y devoluciones</option><option>Compra mayorista</option></select></label>
                   <label>Talla de interés *<input required value={contactForm.shoe_size} onChange={(event) => setContactForm({ ...contactForm, shoe_size: event.target.value })} placeholder="Ej. 24, 38 o 6 US" style={checkoutInputStyle} /></label>
                   <label>Prefiero que me contacten *<select required value={contactForm.contact_preference} onChange={(event) => setContactForm({ ...contactForm, contact_preference: event.target.value })} style={checkoutInputStyle}><option value="">Selecciona una opción</option><option>WhatsApp</option><option>Llamada</option><option>Correo</option></select></label>
@@ -1061,7 +1065,7 @@ export default function StoreHome() {
             {checkoutError && <p role="alert" style={{ padding: "12px", margin: "0 0 16px", color: "#a40000", background: "#fff0f0", borderRadius: "8px" }}>{checkoutError}</p>}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "14px" }}>
               <label>Nombre completo<input required value={checkoutForm.full_name} onChange={(event) => setCheckoutForm({ ...checkoutForm, full_name: event.target.value })} style={checkoutInputStyle} /></label>
-              <label>Teléfono<input required value={checkoutForm.phone} onChange={(event) => setCheckoutForm({ ...checkoutForm, phone: event.target.value })} style={checkoutInputStyle} /></label>
+              <label>Teléfono<PhoneField required value={checkoutForm.phone} onChange={(phone) => setCheckoutForm({ ...checkoutForm, phone })} defaultDialCode="+52" selectClassName="store-phone-prefix" inputClassName="store-phone-number" /></label>
               <label>País<select required value={checkoutForm.country} onChange={(event) => setCheckoutForm({ ...checkoutForm, country: event.target.value })} style={checkoutInputStyle}><option value="México">México</option></select></label>
               <label>Estado<select required value={checkoutForm.state} disabled={ubigeoLoading} onChange={(event) => setCheckoutForm({ ...checkoutForm, state: event.target.value, municipality: "", city: "" })} style={checkoutInputStyle}><option value="">Seleccionar</option>{states.map((state) => <option key={state} value={state}>{state}</option>)}</select></label>
               <label>Municipio<select required value={checkoutForm.municipality} disabled={!checkoutForm.state || ubigeoLoading} onChange={(event) => setCheckoutForm({ ...checkoutForm, municipality: event.target.value, city: "" })} style={checkoutInputStyle}><option value="">Seleccionar</option>{municipalities.map((municipality) => <option key={municipality} value={municipality}>{municipality}</option>)}</select></label>

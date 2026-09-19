@@ -4,6 +4,7 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import ChangeTemporaryPasswordPage from './pages/ChangeTemporaryPasswordPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import ClientPurchasesPage from './pages/ClientPurchasesPage';
@@ -29,6 +30,10 @@ const AppContent = () => {
   }
 
   const fallbackPath = isAuthenticated && user?.role === 'admin' ? '/admin/dashboard' : '/';
+
+  if (isAuthenticated && user?.must_change_password && window.location.pathname !== '/change-temporary-password') {
+    return <Navigate to="/change-temporary-password" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-minimal-beige flex flex-col">
@@ -60,6 +65,7 @@ const AppContent = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/change-temporary-password" element={isAuthenticated ? <ChangeTemporaryPasswordPage /> : <Navigate to="/login" replace />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route

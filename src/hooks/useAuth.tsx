@@ -6,6 +6,9 @@ interface User {
     name: string;
     email: string;
     role?: string;
+    must_change_password?: boolean;
+    temporary_password_set_at?: string | null;
+    phone?: string;
     google_email?: string | null;
     google_linked_at?: string | null;
 }

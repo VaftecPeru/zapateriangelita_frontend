@@ -14,7 +14,7 @@ import {
   X,
   ZoomIn,
 } from "lucide-react";
-import { productService, Product } from "../services/crudService";
+import { analyticsService, productService, Product } from "../services/crudService";
 import { getImageUrl } from "../config/api";
 import { useCart } from "../hooks/useCart";
 import brandLogo from "../assets/brand/logo-angelita-horizontal.png";
@@ -163,6 +163,9 @@ export default function ProductDetailPage() {
         if (!active) return;
         const normalized = normalizeProduct((response.data as any)?.data || response.data);
         setProduct(normalized);
+        if (normalized.id) {
+          void analyticsService.track('product_view', Number(normalized.id)).catch(() => undefined);
+        }
         setSelectedColor(normalized.colorOptions?.length === 1 ? normalized.colorOptions[0].name : normalized.colorOptions ? null : normalized.color || null);
         setSelectedSize(normalized.sizeOptions?.length === 1 ? normalized.sizeOptions[0] : null);
       } catch (loadError) {
@@ -207,6 +210,20 @@ export default function ProductDetailPage() {
   const selectedColorSizes = selectedColor ? product.colorSizes?.[selectedColor] : null;
   const activeSizeOptions = selectedColorSizes?.length ? selectedColorSizes : product.sizeOptions;
 
+  const stockForSize = (sizeOption: string) => {
+    const exactVariant = product.variant_stocks?.find(
+      (item: any) =>
+        String(item.size) === String(sizeOption) &&
+        (!selectedColor || String(item.color).toLocaleLowerCase() === selectedColor.toLocaleLowerCase()),
+    );
+    if (exactVariant) return Number(exactVariant.stock || 0);
+
+    const sizeRow = product.sizes?.find((item: any) => String(item.size) === String(sizeOption));
+    return Number(sizeRow?.stock ?? stock);
+  };
+
+  const selectedStock = selectedSize ? stockForSize(selectedSize) : stock;
+
   const showPrevious = () => setSelectedImage((current) => (current - 1 + activeImageList.length) % activeImageList.length);
   const showNext = () => setSelectedImage((current) => (current + 1) % activeImageList.length);
 
@@ -218,7 +235,7 @@ export default function ProductDetailPage() {
       return false;
     }
     const alreadyInCart = cart.filter(item => item.product.id === product.id).reduce((sum, item) => sum + item.quantity, 0);
-    if (stock < 1 || quantity + alreadyInCart > stock) {
+    if (selectedStock < 1 || quantity + alreadyInCart > selectedStock) {
       setVariantError("La cantidad supera el stock disponible. Revisa tu carrito.");
       return false;
     }
@@ -232,6 +249,13 @@ export default function ProductDetailPage() {
         color: selectedColor,
       });
     }
+    if (product.id) {
+      void analyticsService.track('add_to_cart', Number(product.id), {
+        color: selectedColor,
+        size: selectedSize,
+        quantity,
+      }).catch(() => undefined);
+    }
     setToast({ product });
     window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), 3200);
@@ -240,6 +264,9 @@ export default function ProductDetailPage() {
 
   const buyNow = () => {
     if (addProductToCart()) {
+      if (product.id) {
+        void analyticsService.track('checkout_start', Number(product.id)).catch(() => undefined);
+      }
       navigate('/checkout');
     }
   };
@@ -256,7 +283,7 @@ export default function ProductDetailPage() {
 
   const toggleFavorite = () => setIsFavorite(!isFavorite);
 
-  const quantityChoices = Array.from({ length: Math.min(Math.max(stock, 0), 10) }, (_, index) => index + 1);
+  const quantityChoices = Array.from({ length: Math.min(Math.max(selectedStock, 0), 10) }, (_, index) => index + 1);
 
   return (
     <main className="product-detail-page">
@@ -500,19 +527,29 @@ export default function ProductDetailPage() {
                 <p className="variant-label">Talla: <strong>{selectedSize || "Selecciona tu talla"}</strong></p>
                 <div className="size-grid">
                   {(activeSizeOptions || [product.size]).map((sizeOption: string) => (
-                    <button
-                      type="button"
-                      key={sizeOption}
-                      className={`size-chip ${selectedSize === sizeOption ? "is-selected" : ""}`}
-                      disabled={!activeSizeOptions}
-                      aria-disabled={!activeSizeOptions}
-                      aria-pressed={selectedSize === sizeOption}
-                      onClick={() => { if (activeSizeOptions) { setSelectedSize(sizeOption); setVariantError(null); } }}
-                    >
-                      {sizeOption}
-                    </button>
+                    <div className="size-option" key={sizeOption}>
+                      <button
+                        type="button"
+                        className={`size-chip ${selectedSize === sizeOption ? "is-selected" : ""}`}
+                        disabled={!activeSizeOptions || stockForSize(sizeOption) < 1}
+                        aria-disabled={!activeSizeOptions || stockForSize(sizeOption) < 1}
+                        aria-pressed={selectedSize === sizeOption}
+                        title={stockForSize(sizeOption) > 0 ? `${stockForSize(sizeOption)} unidades disponibles` : 'Talla agotada'}
+                        onClick={() => { if (activeSizeOptions && stockForSize(sizeOption) > 0) { setSelectedSize(sizeOption); setQuantity(1); setVariantError(null); } }}
+                      >
+                        {sizeOption}
+                      </button>
+                      <small className="size-option__stock">
+                        {stockForSize(sizeOption) > 0 ? `${stockForSize(sizeOption)} disp.` : 'Agotado'}
+                      </small>
+                    </div>
                   ))}
                 </div>
+                {selectedSize && (
+                  <p className="variant-stock" role="status">
+                    Stock disponible para {selectedColor ? `${selectedColor} / ` : ''}talla {selectedSize}: <strong>{selectedStock}</strong>
+                  </p>
+                )}
               </div>
             )}
 
@@ -523,8 +560,8 @@ export default function ProductDetailPage() {
             </div>
 
             <p className="buy-box-availability">
-              {stock > 0 ? (
-                <span className="in-stock">{stock > 5 ? "Disponible" : `Solo quedan ${stock}`}</span>
+              {selectedStock > 0 ? (
+                <span className="in-stock">{selectedStock > 5 ? "Disponible" : `Solo quedan ${selectedStock}`}</span>
               ) : (
                 <span className="out-of-stock">Agotado</span>
               )}
@@ -532,7 +569,7 @@ export default function ProductDetailPage() {
 
             {product.id && <p className="buy-box-code">Código: {product.id}</p>}
 
-            {stock > 0 && (
+            {selectedStock > 0 && (
               <label className="buy-box-quantity">
                 Cantidad
                 <select value={quantity} onChange={(event) => setQuantity(Number(event.target.value))}>
@@ -543,10 +580,10 @@ export default function ProductDetailPage() {
               </label>
             )}
 
-            <button type="button" className="buy-box-cart" disabled={stock < 1} onClick={addProductToCart}>
-              {stock > 0 ? "Agregar al carrito" : "Agotado"}
+            <button type="button" className="buy-box-cart" disabled={selectedStock < 1} onClick={addProductToCart}>
+              {selectedStock > 0 ? "Agregar al carrito" : "Agotado"}
             </button>
-            <button type="button" className="buy-box-now" disabled={stock < 1} onClick={buyNow}>
+            <button type="button" className="buy-box-now" disabled={selectedStock < 1} onClick={buyNow}>
               Comprar ahora
             </button>
 
@@ -577,7 +614,7 @@ export default function ProductDetailPage() {
                 <div><span>Talla</span><strong>{selectedSize || "No especificada"}</strong></div>
                 <div><span>Color</span><strong>{selectedColor || "No especificado"}</strong></div>
                 <div><span>Material</span><strong>{product.material || "No especificado"}</strong></div>
-                <div><span>Cantidad disponible</span><strong>{stock} unidades</strong></div>
+                <div><span>Cantidad disponible</span><strong>{selectedStock} unidades</strong></div>
                 <div><span>Reseñas</span><strong>{product.reviews || 0}</strong></div>
               </div>
             </div>
@@ -588,7 +625,7 @@ export default function ProductDetailPage() {
       </div>
       <div className="pd-mobile-bar">
         <div><small>Precio en MXN</small><strong>{money.format(product.salePrice)}</strong></div>
-        <button type="button" disabled={stock < 1} onClick={addProductToCart}><ShoppingBag size={18} />{stock > 0 ? 'Agregar al carrito' : 'Agotado'}</button>
+        <button type="button" disabled={selectedStock < 1} onClick={addProductToCart}><ShoppingBag size={18} />{selectedStock > 0 ? 'Agregar al carrito' : 'Agotado'}</button>
       </div>
       <dialog ref={zoomDialog} className="pd-zoom-dialog" aria-label="Imagen ampliada del producto">
         <button className="pd-zoom-close" onClick={() => zoomDialog.current?.close()} aria-label="Cerrar imagen ampliada"><X /></button>

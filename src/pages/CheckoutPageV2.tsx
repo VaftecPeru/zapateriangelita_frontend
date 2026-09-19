@@ -3,6 +3,7 @@ import { ArrowLeft, LockKeyhole, ShoppingBag } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import PaymentModal, { OpenpayChargeResult } from "../components/PaymentModal";
 import EditableOrderSummary from "../components/EditableOrderSummary";
+import PhoneField from "../components/PhoneField";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
 import { useUbigeo } from "../hooks/useUbigeo";
@@ -52,7 +53,7 @@ const clearCheckoutSession = (orderId?: number) => {
 const initialFormState = {
   full_name: "",
   email: "",
-  phone: "",
+  phone: "+52",
   country: "México",
   state: "",
   municipality: "",
@@ -327,8 +328,8 @@ const CheckoutPageV2 = () => {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return "Ingresa un correo electrónico válido.";
     }
-    if (!/^\d{7,20}$/.test(phone)) {
-      return "El teléfono debe contener entre 7 y 20 números.";
+    if (!/^\+[0-9]{8,20}$/.test(phone)) {
+      return "Ingresa un teléfono internacional válido.";
     }
     if (!form.country || !form.state || !form.municipality || !form.city) {
       return "Selecciona país, estado, municipio y ciudad.";
@@ -545,7 +546,14 @@ const CheckoutPageV2 = () => {
               </label>
               <label style={labelStyle}>
                 Teléfono *
-                <input required type="tel" inputMode="numeric" maxLength={20} value={form.phone} onChange={(event) => updateField("phone", onlyDigits(event.target.value))} style={inputStyle} />
+                <PhoneField
+                  required
+                  value={form.phone}
+                  onChange={(phone) => updateField("phone", phone)}
+                  defaultDialCode="+52"
+                  selectClassName="checkout-phone-prefix"
+                  inputClassName="checkout-phone-number"
+                />
               </label>
               <label style={labelStyle}>
                 Correo electrónico *

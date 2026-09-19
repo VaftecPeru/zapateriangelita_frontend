@@ -37,6 +37,7 @@ export interface Product {
     id?: number;
     product_code?: string;
     name: string;
+    model?: string;
     category?: string | { id?: number; name: string; slug?: string };
     category_id?: number;
     subcategory_id?: number;
@@ -59,6 +60,7 @@ export interface Product {
     sizes?: Array<{ id?: number; size: string; stock: number }>;
     color_sizes?: Record<string, string[]>;
     colors?: Array<{ id?: number; color: string; hex?: string | null }>;
+    variant_stocks?: Array<{ id?: number; color: string; size: string; stock: number }>;
 }
 
 export interface AdditionalService {
@@ -75,21 +77,37 @@ export interface DashboardStats {
         change: string;
         expenses: number;
         expensesChange: string;
+        whatsapp?: number;
+        whatsappChange?: string;
     };
     inventory: {
         properties: number;
         services: number;
         rooms?: number;
+        units?: number;
+        low_stock?: number;
     };
     charts: {
         monthlyRevenue: number[];
         monthlyLabels: string[];
+        monthlyWhatsapp?: number[];
+        monthlyProductViews?: number[];
         benefitsDistribution: {
             total: number;
             costs: number;
             taxes: number;
             maintenance: number;
         };
+    };
+    metrics?: {
+        interactions: number;
+        whatsapp_interactions: number;
+        product_views: number;
+        orders: number;
+        paid_orders: number;
+        inventory_units: number;
+        low_stock_products: number;
+        out_of_stock_products: number;
     };
     recentActivity: {
         text: string;
@@ -101,9 +119,12 @@ export interface User {
     id: number;
     name: string;
     email: string;
+    phone?: string;
     gender?: string;
     birthdate?: string;
     role: string;
+    must_change_password?: boolean;
+    temporary_password_set_at?: string | null;
     created_at: string;
 }
 
@@ -132,7 +153,16 @@ export interface Order {
     id: number;
     code: string;
     status: string;
+    subtotal?: number | string;
+    discount?: number | string;
+    shipping_cost?: number | string;
     total: number | string;
+    payment_method?: string;
+    payment_status?: string;
+    payment_reference?: string;
+    payment_transaction_id?: string;
+    payment_error?: string | null;
+    paid_at?: string | null;
     customer_name?: string;
     customer_email?: string;
     shipping_phone?: string;
@@ -172,7 +202,8 @@ export const brandService = {
 };
 
 export const productService = {
-    getAll: () => apiClient.get<Product[]>('/products'),
+    getAll: (params: Record<string, string | number | undefined> = {}) =>
+        apiClient.get<Product[]>('/products', { params: { per_page: 200, ...params } }),
     getById: async (id: number) => {
         const response = await apiClient.get<Product>(`/products/${id}`);
         const data = response.data as Product & { subcategory?: unknown };
@@ -210,6 +241,19 @@ export const statsService = {
     getStats: () => apiClient.get<DashboardStats>('/stats'),
 };
 
+export const analyticsService = {
+    track: (type: 'product_view' | 'whatsapp_click' | 'newsletter_subscribe' | 'add_to_cart' | 'checkout_start', productId?: number, metadata?: Record<string, unknown>) =>
+        apiClient.post('/interactions', {
+            type,
+            product_id: productId || undefined,
+            metadata: metadata || undefined,
+        }),
+};
+
+export const newsletterService = {
+    subscribe: (email: string) => apiClient.post<{ success: boolean; already_subscribed?: boolean; message: string }>('/newsletter/subscribe', { email }),
+};
+
 export const settingsService = {
     getAll: () => apiClient.get<{ success: boolean; data: { [key: string]: string } }>('/settings'),
     update: (key: string, value: string) => apiClient.post(`/settings/${key}?_method=PUT`, { value }),
@@ -227,6 +271,12 @@ export const settingsService = {
 export const userService = {
     updateProfile: (data: any) => apiClient.post('/user/update', data),
     getAll: () => apiClient.get<User[]>('/users'),
+    resetPassword: (id: number, sendEmail = false) => apiClient.post(`/users/${id}/reset-password`, { send_email: sendEmail }),
+    changeTemporaryPassword: (password: string, passwordConfirmation: string) =>
+        apiClient.post('/user/change-temporary-password', {
+            password,
+            password_confirmation: passwordConfirmation,
+        }),
     delete: (id: number) => apiClient.delete(`/users/${id}`),
 };
 
@@ -263,6 +313,8 @@ export default {
     settingsService,
     userService,
     leadService,
+    analyticsService,
+    newsletterService,
 };
 
 export const orderService = {
