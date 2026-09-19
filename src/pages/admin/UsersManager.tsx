@@ -20,7 +20,6 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
     const [copied, setCopied] = useState(false);
 
     const fetchUsers = async () => {
-        if (initialData && users.length > 0) return;
         setLoading(true);
         setError(null);
         try {
