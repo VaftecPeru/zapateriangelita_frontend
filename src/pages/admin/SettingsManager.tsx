@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { settingsService } from '../../services/crudService';
 import { getImageUrl } from '../../config/api';
+import PhoneField from '../../components/PhoneField';
 import {
     AlertCircle,
     CheckCircle2,
@@ -369,11 +370,13 @@ const SettingsManager = () => {
                 <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
                     <label className="block">
                         <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-500">Número internacional</span>
-                        <input
+                        <PhoneField
                             value={whatsapp}
-                            onChange={(event) => setWhatsapp(event.target.value)}
-                            className="h-12 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 text-sm font-bold outline-none transition focus:border-store-red focus:bg-white"
-                            placeholder="51900112844"
+                            onChange={setWhatsapp}
+                            defaultDialCode="+52"
+                            selectClassName="h-12 min-w-[110px] rounded-2xl border border-gray-200 bg-gray-50 px-3 text-xs font-black outline-none focus:border-store-red"
+                            inputClassName="h-12 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 text-sm font-bold outline-none transition focus:border-store-red focus:bg-white"
+                            placeholder="55 1234 5678"
                         />
                     </label>
                     <button
