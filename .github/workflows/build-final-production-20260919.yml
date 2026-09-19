@@ -28,3 +28,5 @@ jobs:
           name: dist-zapateria-angelita-production-20260919
           path: dist-zapateria-angelita-production-20260919.zip
           retention-days: 7
+
+# trigger production package
