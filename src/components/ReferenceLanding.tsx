@@ -114,12 +114,23 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
         <button className="ref-pause" onClick={() => setPaused(value => !value)} aria-label={paused ? 'Reanudar banners' : 'Pausar banners'} aria-pressed={paused}>{paused ? <Play size={14} /> : <Pause size={14} />}</button>
       </section>
 
-      <section className="ref-collections ref-shell" aria-label="Colecciones de calzado">{collections.map(item => (
-        <Link className="ref-collection" to={`/categoria/${item.slug}`} key={item.name}>
-          <img src={`${assets}${item.image}`} alt={`Colección de calzado para ${item.name.toLowerCase()}`} loading="lazy" />
-          <div><h2>{item.name}</h2><p>{item.subtitle}</p><span>Ver colección <ArrowRight size={15} /></span></div>
-        </Link>
-      ))}</section>
+      <section className="ref-collections ref-shell" aria-label="Colecciones de calzado">{collections.map(item => {
+        const units = products
+          .filter((product: any) => String(product.category || '').toLocaleLowerCase() === item.name.toLocaleLowerCase())
+          .reduce((total: number, product: any) => total + Math.max(0, Number(product.stock || 0)), 0);
+
+        return (
+          <Link className="ref-collection" to={`/categoria/${item.slug}`} key={item.name}>
+            <img src={`${assets}${item.image}`} alt={`Colección de calzado para ${item.name.toLowerCase()}`} loading="lazy" />
+            <div>
+              <h2>{item.name}</h2>
+              <p>{item.subtitle}</p>
+              <small>{units} unidades disponibles</small>
+              <span>Ver colección <ArrowRight size={15} /></span>
+            </div>
+          </Link>
+        );
+      })}</section>
 
       <section className="ref-benefits ref-shell" aria-label="Beneficios de compra">
         <div><Truck /><p><strong>Envíos a todo México</strong><span>Compra sin límites</span></p></div>
