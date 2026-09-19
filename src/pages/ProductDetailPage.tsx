@@ -527,19 +527,22 @@ export default function ProductDetailPage() {
                 <p className="variant-label">Talla: <strong>{selectedSize || "Selecciona tu talla"}</strong></p>
                 <div className="size-grid">
                   {(activeSizeOptions || [product.size]).map((sizeOption: string) => (
-                    <button
-                      type="button"
-                      key={sizeOption}
-                      className={`size-chip ${selectedSize === sizeOption ? "is-selected" : ""}`}
-                      disabled={!activeSizeOptions || stockForSize(sizeOption) < 1}
-                      aria-disabled={!activeSizeOptions || stockForSize(sizeOption) < 1}
-                      aria-pressed={selectedSize === sizeOption}
-                      title={stockForSize(sizeOption) > 0 ? `${stockForSize(sizeOption)} unidades disponibles` : 'Talla agotada'}
-                      onClick={() => { if (activeSizeOptions && stockForSize(sizeOption) > 0) { setSelectedSize(sizeOption); setQuantity(1); setVariantError(null); } }}
-                    >
-                      <span>{sizeOption}</span>
-                      <small>{stockForSize(sizeOption)} disp.</small>
-                    </button>
+                    <div className="size-option" key={sizeOption}>
+                      <button
+                        type="button"
+                        className={`size-chip ${selectedSize === sizeOption ? "is-selected" : ""}`}
+                        disabled={!activeSizeOptions || stockForSize(sizeOption) < 1}
+                        aria-disabled={!activeSizeOptions || stockForSize(sizeOption) < 1}
+                        aria-pressed={selectedSize === sizeOption}
+                        title={stockForSize(sizeOption) > 0 ? `${stockForSize(sizeOption)} unidades disponibles` : 'Talla agotada'}
+                        onClick={() => { if (activeSizeOptions && stockForSize(sizeOption) > 0) { setSelectedSize(sizeOption); setQuantity(1); setVariantError(null); } }}
+                      >
+                        {sizeOption}
+                      </button>
+                      <small className="size-option__stock">
+                        {stockForSize(sizeOption) > 0 ? `${stockForSize(sizeOption)} disp.` : 'Agotado'}
+                      </small>
+                    </div>
                   ))}
                 </div>
                 {selectedSize && (
