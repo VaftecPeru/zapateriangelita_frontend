@@ -140,6 +140,7 @@ const ProductEditorModal = ({
       : product.img
         ? [product.img]
         : [];
+    const hasExplicitVariantStocks = Boolean(product.variant_stocks?.length);
     const productVariants = colors.length
       ? colors.map((color, colorIndex) => {
           const colorGallery = product.color_images?.[color] || [];
@@ -165,8 +166,14 @@ const ProductEditorModal = ({
               const exact = product.variant_stocks?.find(
                 (item) => item.color.toLocaleLowerCase() === color.toLocaleLowerCase() && item.size === size,
               );
+              if (hasExplicitVariantStocks) {
+                return Number(exact?.stock ?? 0);
+              }
+
+              // Productos creados antes del stock por color solo conocen stock por talla.
+              // Conservamos el total heredado en la primera variante para evitar duplicarlo.
               const legacy = product.sizes?.find((item) => item.size === size);
-              return Number(exact?.stock ?? legacy?.stock ?? 0);
+              return colorIndex === 0 ? Number(legacy?.stock ?? 0) : 0;
             }),
             files: [],
             previews: [],
