@@ -15,6 +15,7 @@ import { ProductVariantDraft } from './types';
 type Props = {
   open: boolean;
   product: Product | null;
+  products: Product[];
   categories: Category[];
   subcategories: Subcategory[];
   brands: Brand[];
@@ -25,6 +26,8 @@ type Props = {
 type EditorForm = {
   product_code: string;
   name: string;
+  model: string;
+  brand_name: string;
   category_id?: number;
   subcategory_id?: number;
   brand_id?: number;
@@ -41,6 +44,8 @@ type CatalogKind = 'category' | 'brand';
 const emptyForm = (): EditorForm => ({
   product_code: '',
   name: '',
+  model: '',
+  brand_name: '',
   category_id: undefined,
   subcategory_id: undefined,
   brand_id: undefined,
@@ -55,6 +60,7 @@ const emptyForm = (): EditorForm => ({
 const emptyVariant = (): ProductVariantDraft => ({
   color: '',
   sizes: [''],
+  stocks: [0],
   files: [],
   previews: [],
   existingImages: [],
@@ -75,6 +81,7 @@ const parseColors = (value?: string) =>
 const ProductEditorModal = ({
   open,
   product,
+  products,
   categories,
   subcategories,
   brands,
@@ -113,6 +120,8 @@ const ProductEditorModal = ({
     setForm({
       product_code: product.product_code || '',
       name: product.name || '',
+      model: product.model || '',
+      brand_name: typeof product.brand === 'object' ? product.brand.name : String(product.brand || ''),
       category_id: product.category_id,
       subcategory_id: product.subcategory_id,
       brand_id: product.brand_id,
@@ -147,6 +156,18 @@ const ProductEditorModal = ({
               : globalSizes.length
                 ? globalSizes
                 : [''],
+            stocks: (product.color_sizes?.[color]?.length
+              ? product.color_sizes[color]
+              : globalSizes.length
+                ? globalSizes
+                : ['']
+            ).map((size) => {
+              const exact = product.variant_stocks?.find(
+                (item) => item.color.toLocaleLowerCase() === color.toLocaleLowerCase() && item.size === size,
+              );
+              const legacy = product.sizes?.find((item) => item.size === size);
+              return Number(exact?.stock ?? legacy?.stock ?? 0);
+            }),
             files: [],
             previews: [],
             existingImages: gallery.slice(0, 5).map((image) => getImageUrl(image)),
@@ -164,6 +185,11 @@ const ProductEditorModal = ({
     setGeneralPreviews(previews);
     setGeneralFiles(Array(5).fill(null));
   }, [open, product]);
+
+  const modelSuggestions = useMemo(
+    () => Array.from(new Set(products.map((item) => item.model?.trim()).filter(Boolean) as string[])).sort(),
+    [products],
+  );
 
   const filteredSubcategories = useMemo(
     () => subcategories.filter((item) => item.category_id === form.category_id),
@@ -195,13 +221,26 @@ const ProductEditorModal = ({
     setVariant(variantIndex, { sizes });
   };
 
+  const updateStock = (variantIndex: number, sizeIndex: number, value: number) => {
+    const stocks = [...variants[variantIndex].stocks];
+    stocks[sizeIndex] = Math.max(0, Math.trunc(value || 0));
+    setVariant(variantIndex, { stocks });
+  };
+
   const addSize = (variantIndex: number) => {
-    setVariant(variantIndex, { sizes: [...variants[variantIndex].sizes, ''] });
+    setVariant(variantIndex, {
+      sizes: [...variants[variantIndex].sizes, ''],
+      stocks: [...variants[variantIndex].stocks, 0],
+    });
   };
 
   const removeSize = (variantIndex: number, sizeIndex: number) => {
     const sizes = variants[variantIndex].sizes.filter((_, i) => i !== sizeIndex);
-    setVariant(variantIndex, { sizes: sizes.length ? sizes : [''] });
+    const stocks = variants[variantIndex].stocks.filter((_, i) => i !== sizeIndex);
+    setVariant(variantIndex, {
+      sizes: sizes.length ? sizes : [''],
+      stocks: stocks.length ? stocks : [0],
+    });
   };
 
   const handleVariantImages = (variantIndex: number, filesList: FileList | null) => {
@@ -376,14 +415,40 @@ const ProductEditorModal = ({
         return acc;
       }, {});
 
+      let brandId = form.brand_id;
+      const typedBrand = form.brand_name.trim();
+      if (typedBrand) {
+        const existingBrand = brands.find(
+          (item) => item.name.trim().toLocaleLowerCase() === typedBrand.toLocaleLowerCase(),
+        );
+        if (existingBrand?.id) {
+          brandId = existingBrand.id;
+        } else {
+          const created = await brandService.create({ name: typedBrand, is_active: true });
+          brandId = created.data.id;
+        }
+      }
+
+      const variantStocks = activeVariants.flatMap((variant) =>
+        variant.sizes
+          .map((size, sizeIndex) => ({
+            color: variant.color.trim(),
+            size: size.trim(),
+            stock: Math.max(0, Math.trunc(Number(variant.stocks[sizeIndex] || 0))),
+          }))
+          .filter((item) => item.size),
+      );
+      const totalVariantStock = variantStocks.reduce((total, item) => total + item.stock, 0);
+
       const data = new FormData();
       data.append('name', form.name.trim());
+      if (form.model.trim()) data.append('model', form.model.trim());
       if (form.product_code.trim()) data.append('product_code', form.product_code.trim());
       data.append('category_id', String(form.category_id));
       if (form.subcategory_id) data.append('subcategory_id', String(form.subcategory_id));
-      if (form.brand_id) data.append('brand_id', String(form.brand_id));
+      if (brandId) data.append('brand_id', String(brandId));
       data.append('price', String(form.price));
-      data.append('stock', String(Math.trunc(Number(form.stock))));
+      data.append('stock', String(totalVariantStock));
       data.append('size', uniqueSizes.join(','));
       data.append('color', colors.join(','));
       data.append('material', form.material.trim());
@@ -393,6 +458,7 @@ const ProductEditorModal = ({
       data.append('status', form.status);
       data.append('description', form.description || '');
       data.append('color_sizes', JSON.stringify(colorSizes));
+      data.append('variant_stocks', JSON.stringify(variantStocks));
 
       activeVariants.forEach((variant, index) => {
         variant.files
@@ -590,26 +656,36 @@ const ProductEditorModal = ({
                   <Settings2 size={12} /> Gestionar
                 </button>
               </div>
-              <div className="relative">
-                <select
-                  value={form.brand_id || ''}
-                  onChange={(e) =>
-                    setForm({ ...form, brand_id: Number(e.target.value) || undefined })
-                  }
-                  className="w-full appearance-none rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm font-semibold outline-none"
-                >
-                  <option value="">Seleccionar marca</option>
-                  {brands.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-              </div>
+              <input
+                list="brand-suggestions"
+                value={form.brand_name}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  const match = brands.find((item) => item.name.toLocaleLowerCase() === name.trim().toLocaleLowerCase());
+                  setForm({ ...form, brand_name: name, brand_id: match?.id });
+                }}
+                className="w-full rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm font-semibold outline-none focus:border-store-red focus:ring-2 focus:ring-store-red/20"
+                placeholder="Escribe o selecciona una marca"
+              />
+              <datalist id="brand-suggestions">
+                {brands.map((item) => <option key={item.id} value={item.name} />)}
+              </datalist>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                Modelo
+              </label>
+              <input
+                list="model-suggestions"
+                value={form.model}
+                onChange={(e) => setForm({ ...form, model: e.target.value })}
+                className="w-full rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm font-semibold outline-none focus:border-store-red focus:ring-2 focus:ring-store-red/20"
+                placeholder="Escribe o selecciona un modelo"
+              />
+              <datalist id="model-suggestions">
+                {modelSuggestions.map((model) => <option key={model} value={model} />)}
+              </datalist>
             </div>
           </section>
 
@@ -652,16 +728,14 @@ const ProductEditorModal = ({
               />
             </Field>
 
-            <Field label="Stock total *">
+            <Field label="Stock total">
               <input
                 type="number"
                 min="0"
                 step="1"
-                value={form.stock}
-                onChange={(e) =>
-                  setForm({ ...form, stock: Math.max(0, Number(e.target.value)) })
-                }
-                className="field-input"
+                value={variants.reduce((total, variant) => total + variant.stocks.reduce((sum, stock) => sum + Number(stock || 0), 0), 0)}
+                readOnly
+                className="field-input bg-gray-100 text-gray-600"
               />
             </Field>
 
@@ -768,6 +842,16 @@ const ProductEditorModal = ({
                               }
                               className="w-20 rounded-lg border border-gray-200 bg-white px-2 py-2 text-center text-xs font-semibold outline-none focus:border-store-red"
                               placeholder="38"
+                            />
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              aria-label={`Stock talla ${size || sizeIndex + 1}`}
+                              value={variant.stocks[sizeIndex] ?? 0}
+                              onChange={(e) => updateStock(index, sizeIndex, Number(e.target.value))}
+                              className="w-24 rounded-lg border border-gray-200 bg-white px-2 py-2 text-center text-xs font-semibold outline-none focus:border-store-red"
+                              placeholder="Stock"
                             />
                             {variant.sizes.length > 1 && (
                               <button
