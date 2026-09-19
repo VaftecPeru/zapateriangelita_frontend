@@ -71,8 +71,8 @@ const ConcentricChart = ({ stats }: { stats: DashboardStats | null }) => {
     const layers = [
         { label: `${stats?.revenue?.total || 0} Interacciones`, size: 'w-48 h-48 md:w-56 md:h-56', color: 'bg-store-red/10' },
         { label: `${stats?.revenue?.expenses || 0} Visitas`, size: 'w-40 h-40 md:w-48 md:h-48', color: 'bg-store-red/20' },
-        { label: `${stats?.charts?.benefitsDistribution?.taxes || 0} Ocupadas`, size: 'w-32 h-32 md:w-36 md:h-36', color: 'bg-store-red/30' },
-        { label: `${stats?.charts?.benefitsDistribution?.costs || 0} Libres`, size: 'w-24 h-24 md:w-28 md:h-28', color: 'bg-store-red' },
+        { label: `${stats?.charts?.benefitsDistribution?.taxes || 0} Agotados`, size: 'w-32 h-32 md:w-36 md:h-36', color: 'bg-store-red/30' },
+        { label: `${stats?.charts?.benefitsDistribution?.costs || 0} Disponibles`, size: 'w-24 h-24 md:w-28 md:h-28', color: 'bg-store-red' },
     ];
 
     return (
@@ -91,7 +91,7 @@ const ConcentricChart = ({ stats }: { stats: DashboardStats | null }) => {
                             {i === 3 && (
                                 <>
                                     <span className="text-xl sm:text-2xl font-black leading-none">{stats?.charts?.benefitsDistribution?.costs || 0}</span>
-                                    <span className="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase mt-0.5 sm:mt-1">Libres</span>
+                                    <span className="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase mt-0.5 sm:mt-1">Disponibles</span>
                                 </>
                             )}
                         </div>
@@ -181,6 +181,7 @@ const AdminDashboard = () => {
     const [statsLoading, setStatsLoading] = useState(true);
     const [statsError, setStatsError] = useState('');
     const [dashboardSearch, setDashboardSearch] = useState('');
+    const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
     useEffect(() => {
         if (state?.activeTab) {
@@ -228,7 +229,7 @@ const AdminDashboard = () => {
                 ['Métrica', 'Valor'],
                 ['Total Productos', stats.charts?.benefitsDistribution?.total || 0],
                 ['Productos Disponibles', stats.charts?.benefitsDistribution?.costs || 0],
-                ['Productos Ocupados', stats.charts?.benefitsDistribution?.taxes || 0],
+                ['Productos Agotados', stats.charts?.benefitsDistribution?.taxes || 0],
                 ['Interacciones WhatsApp', stats.metrics?.whatsapp_interactions ?? stats.revenue?.whatsapp ?? 0],
                 ['Visitas a Productos', stats.revenue?.expenses || 0],
                 [],
@@ -306,19 +307,25 @@ const AdminDashboard = () => {
                                 <Bell size={18} />
                                 <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-store-red rounded-full border-2 border-white" />
                             </button>
-                            <div className="group relative">
-                                <button className="w-10 h-10 md:w-12 md:h-12 bg-store-red rounded-2xl flex items-center justify-center text-white font-black text-xs md:text-sm border-2 border-white shadow-xl">
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    aria-label="Abrir menú de usuario"
+                                    aria-expanded={profileMenuOpen}
+                                    onClick={() => setProfileMenuOpen((open) => !open)}
+                                    className="w-10 h-10 md:w-12 md:h-12 bg-store-red rounded-2xl flex items-center justify-center text-white font-black text-xs md:text-sm border-2 border-white shadow-xl"
+                                >
                                     {user?.name.slice(0, 2).toUpperCase()}
                                 </button>
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                                <div className={`absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 transition-all z-50 ${profileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
                                     <button
-                                        onClick={() => setActiveTab('profile')}
+                                        onClick={() => { setActiveTab('profile'); setProfileMenuOpen(false); }}
                                         className="w-full text-left px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-50"
                                     >
                                         Mi Perfil
                                     </button>
                                     <button
-                                        onClick={() => logout()}
+                                        onClick={() => { setProfileMenuOpen(false); void logout(); }}
                                         className="w-full text-left px-4 py-2 text-sm font-bold text-store-red hover:bg-red-50 transition-colors"
                                     >
                                         Cerrar Sesión
@@ -443,7 +450,7 @@ const AdminDashboard = () => {
                                         {[
                                             { val: stats?.charts?.benefitsDistribution?.total || 0, label: 'Total' },
                                             { val: stats?.charts?.benefitsDistribution?.costs || 0, label: 'Disponibles' },
-                                            { val: stats?.charts?.benefitsDistribution?.taxes || 0, label: 'Ocupadas' }
+                                            { val: stats?.charts?.benefitsDistribution?.taxes || 0, label: 'Agotados' }
                                         ].map((item, i) => (
                                             <div key={i} className="text-center">
                                                 <p className="text-sm font-black text-black">
