@@ -1,0 +1,30 @@
+name: Build final frontend production
+on:
+  push:
+    branches:
+      - build/final-production-20260919
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test:ui
+      - run: npm run lint
+      - run: npm audit --omit=dev
+      - name: Package cPanel frontend
+        run: |
+          cd dist
+          zip -r ../dist-zapateria-angelita-production-20260919.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-zapateria-angelita-production-20260919
+          path: dist-zapateria-angelita-production-20260919.zip
+          retention-days: 7
