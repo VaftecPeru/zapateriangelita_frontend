@@ -12,7 +12,7 @@ import {
     ArrowRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { leadService } from '../services/crudService';
+import { analyticsService, leadService } from '../services/crudService';
 import { useSettings } from '../hooks/useSettings';
 
 const ContactAdvisorPage = () => {
