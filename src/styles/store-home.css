@@ -2890,3 +2890,33 @@ body { background: #fffdf9; }
 @media (max-width: 600px) {
   .product-card__media img { padding: 7px; }
 }
+
+
+/* Retroalimentación: lista extensa de subcategorías */
+.category-subcategories-more {
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px dashed rgba(227, 6, 19, .28);
+  border-radius: 10px;
+  background: rgba(227, 6, 19, .035);
+  color: #e30613;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background .2s ease, border-color .2s ease;
+}
+.category-subcategories-more:hover {
+  border-color: rgba(227, 6, 19, .5);
+  background: rgba(227, 6, 19, .07);
+}
+.category-subcategories-more svg {
+  transition: transform .2s ease;
+}
+.category-subcategories-more svg.is-expanded {
+  transform: rotate(180deg);
+}
