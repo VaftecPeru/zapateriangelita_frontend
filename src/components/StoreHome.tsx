@@ -391,6 +391,9 @@ export default function StoreHome() {
   const categorySubcategories = subcategories.filter((subcategory: any) =>
     selectedCategory ? String(subcategory.category_id) === String(selectedCategory.id) : true
   );
+  const inventoryUnitsOf = (items: any[]) =>
+    items.reduce((total, item) => total + Math.max(0, Number(item.stock || 0)), 0);
+
   const categoryProducts = products.filter((product: any) => {
     const categoryMatches = selectedCategory
       ? String(product.category_id) === String(selectedCategory.id)
@@ -434,7 +437,7 @@ export default function StoreHome() {
   const catalogStatusEyebrow = catalogStatus === 'nuevo' ? 'Recién llegados' : 'Selección especial';
   const offerCategoryItems = categories.map((category: any) => ({
     ...category,
-    offerCount: products.filter((product: any) => product.status === catalogStatus && product.category_id === category.id).length,
+    offerCount: inventoryUnitsOf(products.filter((product: any) => product.status === catalogStatus && product.category_id === category.id)),
   }));
   const offerProducts = products
     .filter((product: any) => product.status === catalogStatus)
@@ -803,7 +806,7 @@ export default function StoreHome() {
                 <div>
                   <span className="offers-catalog__eyebrow">{catalogStatusEyebrow}</span>
                   <h1>{catalogStatusTitle}</h1>
-                  <p>{offerProducts.length} artículos disponibles</p>
+                  <p>{inventoryUnitsOf(offerProducts)} unidades disponibles</p>
                 </div>
                 <button className="offers-catalog__back" type="button" onClick={() => navigate('/')}>
                   Volver al inicio <ChevronRight size={16} />
@@ -896,7 +899,7 @@ export default function StoreHome() {
                 <div>
                   <span className="offers-catalog__eyebrow">Colección de calzado</span>
                   <h1>Calzado para {activeCategory}</h1>
-                  <p>{categoryProducts.length} productos disponibles</p>
+                  <p>{inventoryUnitsOf(categoryProducts)} unidades disponibles</p>
                 </div>
                 <button className="offers-catalog__back" type="button" onClick={() => navigate('/')}>
                   Volver al inicio <ChevronRight size={16} />
@@ -927,7 +930,7 @@ export default function StoreHome() {
                   <label className="offers-check">
                     <input type="checkbox" checked={categorySubcategory === 'Todas'} onChange={() => setCategorySubcategory('Todas')} />
                     <span>Todos</span>
-                    <small>{products.filter((product: any) => selectedCategory ? String(product.category_id) === String(selectedCategory.id) : String(product.category).toLowerCase() === activeCategory.toLowerCase()).length}</small>
+                    <small>{inventoryUnitsOf(products.filter((product: any) => selectedCategory ? String(product.category_id) === String(selectedCategory.id) : String(product.category).toLowerCase() === activeCategory.toLowerCase()))}</small>
                   </label>
                   {categorySubcategories.map((subcategory: any) => (
                     <label className="offers-check" key={subcategory.id}>
