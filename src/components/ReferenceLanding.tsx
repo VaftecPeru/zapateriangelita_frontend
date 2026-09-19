@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Award, ChevronLeft, ChevronRight, Headphones, LockKeyhole, Mail, Pause, Play, RefreshCw, ShieldCheck, Star, Truck } from 'lucide-react';
 import { heroSlides, testimonials } from '../data/catalog';
+import { newsletterService } from '../services/crudService';
 
 const assets = '/images/home-reference/';
 const collections = [
@@ -32,6 +33,8 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
   const [reducedMotion, setReducedMotion] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [newsletterNotice, setNewsletterNotice] = useState('');
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const brands = useRef<HTMLDivElement>(null);
   const instagram = useRef<HTMLDivElement>(null);
@@ -54,7 +57,31 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
     return () => window.clearInterval(timer);
   }, [rotating, slides.length, slide]);
 
-  const move = (direction: number) => setSlide(current => (current + direction + slides.length) % slides.length);
+  const submitNewsletter = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const email = newsletterEmail.trim().toLowerCase();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setNewsletterNotice('Ingresa un correo electrónico válido.');
+      return;
+    }
+
+    setNewsletterLoading(true);
+    setNewsletterNotice('');
+
+    try {
+      const response = await newsletterService.subscribe(email);
+      setNewsletterNotice(response.data.message || 'Suscripción registrada correctamente.');
+      setNewsletterEmail('');
+    } catch (error: any) {
+      const firstValidationError = error?.response?.data?.errors?.email?.[0];
+      setNewsletterNotice(firstValidationError || error?.response?.data?.message || 'No fue posible registrar la suscripción. Intenta nuevamente.');
+    } finally {
+      setNewsletterLoading(false);
+    }
+  };
+
+    const move = (direction: number) => setSlide(current => (current + direction + slides.length) % slides.length);
   const maxDiscount = Math.max(0, ...products.map(product => {
     const before = Number(product.oldPrice);
     const after = Number(product.price);
@@ -130,7 +157,27 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
         <button className="ref-round ref-instagram__next" aria-label="Más imágenes" onClick={() => instagram.current?.scrollBy({ left: 220, behavior: reducedMotion ? 'auto' : 'smooth' })}><ChevronRight size={18} /></button>
       </section>
 
-      <section className="ref-newsletter ref-shell"><div><Mail /><p><strong>Suscríbete a nuestro newsletter</strong><span>Recibe ofertas exclusivas, novedades y mucho más.</span></p></div><form onSubmit={event => { event.preventDefault(); setNewsletterNotice('La suscripción estará disponible próximamente. Para recibir atención, utiliza Contacto.'); }}><label className="sr-only" htmlFor="ref-email">Correo electrónico para novedades</label><input id="ref-email" name="email" type="email" placeholder="Ingresa tu correo electrónico" autoComplete="email" required /><button type="submit">Suscribirme</button></form>{newsletterNotice && <p className="ref-newsletter__notice" role="status">{newsletterNotice}</p>}</section>
+      <section className="ref-newsletter ref-shell">
+        <div><Mail /><p><strong>Suscríbete a nuestro newsletter</strong><span>Recibe ofertas exclusivas, novedades y mucho más.</span></p></div>
+        <form onSubmit={submitNewsletter}>
+          <label className="sr-only" htmlFor="ref-email">Correo electrónico para novedades</label>
+          <input
+            id="ref-email"
+            name="email"
+            type="email"
+            placeholder="Ingresa tu correo electrónico"
+            autoComplete="email"
+            required
+            value={newsletterEmail}
+            onChange={(event) => setNewsletterEmail(event.target.value)}
+            disabled={newsletterLoading}
+          />
+          <button type="submit" disabled={newsletterLoading}>
+            {newsletterLoading ? 'Suscribiendo...' : 'Suscribirme'}
+          </button>
+        </form>
+        {newsletterNotice && <p className="ref-newsletter__notice" role="status" aria-live="polite">{newsletterNotice}</p>}
+      </section>
     </div>
   );
 }
