@@ -3,7 +3,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Mail, Calendar, Package, Heart, ChevronDown, Settings, Phone, Save, LogOut } from 'lucide-react';
 import { Order, orderService, userService } from '../services/crudService';
-import { onlyDigits, onlyLettersAndSpaces, validateProfileFields } from '../utils/profileValidation';
+import { onlyLettersAndSpaces, validateProfileFields } from '../utils/profileValidation';
+import PhoneField from '../components/PhoneField';
 
 const normalizeBirthdate = (value?: string | null) => {
     if (!value) return '';
@@ -289,15 +290,13 @@ const ProfilePage = () => {
                                                 </div>
                                                 <div className="space-y-2 md:col-span-2">
                                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Teléfono / Celular</label>
-                                                    <input
-                                                        type="tel"
-                                                        value={formData.phone}
-                                                        inputMode="numeric"
-                                                        pattern="[0-9]{7,20}"
-                                                        maxLength={20}
-                                                        onChange={e => setFormData({ ...formData, phone: onlyDigits(e.target.value) })}
-                                                        className="w-full p-3.5 bg-white rounded-xl border border-black/10 focus:border-[#e30613] outline-none font-bold text-[#121212] transition-colors"
-                                                        placeholder="Ej. 999 888 777"
+                                                    <PhoneField
+                                                        value={formData.phone || '+52'}
+                                                        onChange={(phone) => setFormData({ ...formData, phone })}
+                                                        defaultDialCode="+52"
+                                                        selectClassName="profile-phone-prefix"
+                                                        inputClassName="profile-phone-number"
+                                                        placeholder="55 1234 5678"
                                                     />
                                                 </div>
                                             </div>
