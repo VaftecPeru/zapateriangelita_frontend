@@ -210,6 +210,19 @@ export const statsService = {
     getStats: () => apiClient.get<DashboardStats>('/stats'),
 };
 
+export const analyticsService = {
+    track: (type: 'product_view' | 'whatsapp_click' | 'newsletter_subscribe' | 'add_to_cart' | 'checkout_start', productId?: number, metadata?: Record<string, unknown>) =>
+        apiClient.post('/interactions', {
+            type,
+            product_id: productId || undefined,
+            metadata: metadata || undefined,
+        }),
+};
+
+export const newsletterService = {
+    subscribe: (email: string) => apiClient.post<{ success: boolean; already_subscribed?: boolean; message: string }>('/newsletter/subscribe', { email }),
+};
+
 export const settingsService = {
     getAll: () => apiClient.get<{ success: boolean; data: { [key: string]: string } }>('/settings'),
     update: (key: string, value: string) => apiClient.post(`/settings/${key}?_method=PUT`, { value }),
@@ -227,6 +240,12 @@ export const settingsService = {
 export const userService = {
     updateProfile: (data: any) => apiClient.post('/user/update', data),
     getAll: () => apiClient.get<User[]>('/users'),
+    resetPassword: (id: number, sendEmail = false) => apiClient.post(`/users/${id}/reset-password`, { send_email: sendEmail }),
+    changeTemporaryPassword: (password: string, passwordConfirmation: string) =>
+        apiClient.post('/user/change-temporary-password', {
+            password,
+            password_confirmation: passwordConfirmation,
+        }),
     delete: (id: number) => apiClient.delete(`/users/${id}`),
 };
 
@@ -263,6 +282,8 @@ export default {
     settingsService,
     userService,
     leadService,
+    analyticsService,
+    newsletterService,
 };
 
 export const orderService = {
