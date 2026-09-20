@@ -122,7 +122,7 @@ export interface User {
     phone?: string;
     gender?: string;
     birthdate?: string;
-    role: 'user' | 'admin' | 'superadmin' | string;
+    role?: 'user' | 'admin' | 'superadmin' | string;
     must_change_password?: boolean;
     temporary_password_set_at?: string | null;
     created_at: string;
