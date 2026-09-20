@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Download, Printer, QrCode, X } from 'lucide-react';
-import type { Order } from '../../services/crudService';
+import { settingsService, type Order } from '../../services/crudService';
+import { getImageUrl } from '../../config/api';
 
 type Props = {
   order: Order;
@@ -49,7 +51,26 @@ const qrPayload = (order: Order) =>
 const qrUrl = (order: Order, size = 260) =>
   `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=8&data=${encodeURIComponent(qrPayload(order))}`;
 
-const voucherHtml = (order: Order, qrSource = qrUrl(order, 300)) => {
+const brandLogoUrl = () =>
+  new URL('/logo-angelita-horizontal.png', window.location.origin).href;
+
+const toDataUrl = async (source: string) => {
+  const response = await fetch(source, { mode: 'cors' });
+  if (!response.ok) throw new Error('No se pudo cargar el recurso del voucher.');
+  const blob = await response.blob();
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+};
+
+const voucherHtml = (
+  order: Order,
+  qrSource = qrUrl(order, 300),
+  logoSource = brandLogoUrl(),
+) => {
   const rows = (order.items || []).map((item) => {
     const unitPrice = Number(item.unit_price || 0);
     const quantity = Number(item.quantity || 0);
@@ -74,7 +95,7 @@ const voucherHtml = (order: Order, qrSource = qrUrl(order, 300)) => {
   *{box-sizing:border-box} body{font-family:Arial,sans-serif;margin:0;background:#f4f4f4;color:#151515}
   .page{max-width:820px;margin:24px auto;background:white;padding:34px;border-radius:20px}
   .head{display:flex;justify-content:space-between;gap:24px;border-bottom:3px solid #e30613;padding-bottom:18px}
-  .brand small{display:block;letter-spacing:.22em;text-transform:uppercase}.brand h1{margin:2px 0;color:#e30613}
+  .brand-logo{display:block;max-width:220px;width:100%;height:auto}.brand small{display:block;margin-top:7px;letter-spacing:.16em;text-transform:uppercase;color:#666}
   .status{font-weight:800;color:#167a3d;text-transform:uppercase}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 30px;margin:24px 0}
   .label{font-size:11px;color:#777;text-transform:uppercase;font-weight:700}.value{font-size:14px;font-weight:700;margin-top:3px}
@@ -89,7 +110,7 @@ const voucherHtml = (order: Order, qrSource = qrUrl(order, 300)) => {
 <body>
   <main class="page">
     <div class="head">
-      <div class="brand"><small>Zapatería</small><h1>ANGELITA</h1><div>Voucher de compra</div></div>
+      <div class="brand"><img class="brand-logo" src="${escapeHtml(logoSource)}" alt="Zapatería Angelita" /><small>Voucher de compra</small></div>
       <div><div class="label">Pedido</div><div class="value">${escapeHtml(order.code)}</div><div class="status">${isPaid(order) ? 'Pago confirmado' : escapeHtml(order.payment_status || 'Pendiente')}</div></div>
     </div>
     <section class="grid">
@@ -122,13 +143,35 @@ const voucherHtml = (order: Order, qrSource = qrUrl(order, 300)) => {
 
 const OrderVoucherModal = ({ order, onClose }: Props) => {
   const paid = isPaid(order);
+  const [logoSource, setLogoSource] = useState(brandLogoUrl());
+
+  useEffect(() => {
+    let active = true;
+
+    const loadLogo = async () => {
+      try {
+        const response = await settingsService.getAll();
+        const configured = response.data?.data?.logo_url;
+        if (active && configured) {
+          setLogoSource(getImageUrl(configured) || brandLogoUrl());
+        }
+      } catch {
+        if (active) setLogoSource(brandLogoUrl());
+      }
+    };
+
+    void loadLogo();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const openPrintable = () => {
     const win = window.open('', '_blank', 'width=980,height=800');
     if (!win) return;
     win.opener = null;
     win.document.open();
-    win.document.write(voucherHtml(order));
+    win.document.write(voucherHtml(order, qrUrl(order, 300), logoSource));
     win.document.close();
     window.setTimeout(() => {
       win.focus();
@@ -138,23 +181,21 @@ const OrderVoucherModal = ({ order, onClose }: Props) => {
 
   const downloadVoucher = async () => {
     let embeddedQr = qrUrl(order, 300);
+    let embeddedLogo = logoSource;
 
     try {
-      const response = await fetch(embeddedQr, { mode: 'cors' });
-      if (response.ok) {
-        const qrBlob = await response.blob();
-        embeddedQr = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result || ''));
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(qrBlob);
-        });
-      }
+      embeddedQr = await toDataUrl(embeddedQr);
     } catch {
       // Si el servicio QR no permite CORS, el voucher conserva la URL remota.
     }
 
-    const blob = new Blob([voucherHtml(order, embeddedQr)], { type: 'text/html;charset=utf-8' });
+    try {
+      embeddedLogo = await toDataUrl(embeddedLogo);
+    } catch {
+      // Si el logo no pudiera incrustarse, se conserva la URL pública estable.
+    }
+
+    const blob = new Blob([voucherHtml(order, embeddedQr, embeddedLogo)], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -170,6 +211,7 @@ const OrderVoucherModal = ({ order, onClose }: Props) => {
       <section className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-[2rem] bg-white shadow-2xl">
         <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-gray-100 bg-white/95 px-6 py-5 backdrop-blur">
           <div>
+            <img src={logoSource} alt="Zapatería Angelita" className="mb-3 h-auto w-44 max-w-full" />
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-store-red">Voucher + QR</p>
             <h3 className="mt-1 text-xl font-black text-black">Pedido {order.code}</h3>
             <p className="mt-1 text-xs font-bold text-gray-400">{formatDate(order.paid_at || order.created_at)}</p>
@@ -216,7 +258,7 @@ const OrderVoucherModal = ({ order, onClose }: Props) => {
             <div className="rounded-2xl border border-gray-100 p-5">
               <div className="flex justify-between py-1 text-sm"><span className="text-gray-500">Subtotal</span><strong>{money.format(Number(order.subtotal ?? order.total ?? 0))}</strong></div>
               <div className="flex justify-between py-1 text-sm"><span className="text-gray-500">Descuento</span><strong>-{money.format(Number(order.discount || 0))}</strong></div>
-              <div className="flex justify-between py-1 text-sm"><span className="text-gray-500">Envío</span><strong>{money.format(Number(order.shipping_cost || 0))}</strong></div>
+              <div className="flex justify-between py-1 text-sm"><span className="text-gray-500">Costo de delivery</span><strong>{money.format(Number(order.shipping_cost || 0))}</strong></div>
               <div className="mt-3 flex justify-between border-t border-gray-200 pt-4 text-lg"><span className="font-black">Total</span><strong className="text-store-red">{money.format(Number(order.total || 0))}</strong></div>
             </div>
             <div className="rounded-2xl border border-gray-100 bg-white p-4 text-center">

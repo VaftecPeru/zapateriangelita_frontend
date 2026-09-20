@@ -233,7 +233,16 @@ export const productService = {
 
 export const additionalServiceService = {
     getAll: () => apiClient.get<AdditionalService[]>('/services'),
-    getDeliveryCost: () => apiClient.get<{ code: 'delivery'; price: number }>('/checkout/delivery-cost'),
+    getDeliveryCost: () => apiClient.get<{
+        code: 'delivery';
+        name: string;
+        price: number;
+        is_active: boolean;
+        description?: string | null;
+        updated_at?: string | null;
+    }>('/checkout/delivery-cost'),
+    updateDelivery: (data: { price: number; is_active: boolean; description?: string | null }) =>
+        apiClient.put<{ success: boolean; message: string; service: AdditionalService }>('/services/delivery', data),
     getById: (id: number) => apiClient.get<AdditionalService>(`/services/${id}`),
     create: (data: AdditionalService) => apiClient.post<AdditionalService>('/services', data),
     update: (id: number, data: Partial<AdditionalService>) => apiClient.put<AdditionalService>(`/services/${id}`, data),
@@ -259,12 +268,23 @@ export const newsletterService = {
 
 export const settingsService = {
     getAll: () => apiClient.get<{ success: boolean; data: { [key: string]: string } }>('/settings'),
-    update: (key: string, value: string) => apiClient.post(`/settings/${key}?_method=PUT`, { value }),
+    update: (key: string, value: string) => apiClient.put(`/settings/${key}`, { value }),
     uploadBannerImage: (file: File) => {
         const formData = new FormData();
+        formData.append('_method', 'PUT');
         formData.append('image', file);
         return apiClient.post<{ success: boolean; data: { path: string } }>(
-            '/settings/homepage_banner_image?_method=PUT',
+            '/settings/homepage_banner_image',
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } },
+        );
+    },
+    uploadLogoImage: (file: File) => {
+        const formData = new FormData();
+        formData.append('_method', 'PUT');
+        formData.append('image', file);
+        return apiClient.post<{ success: boolean; data: { path: string } }>(
+            '/settings/site_logo_image',
             formData,
             { headers: { 'Content-Type': 'multipart/form-data' } },
         );

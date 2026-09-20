@@ -7,7 +7,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import ReferenceLanding from '../src/components/ReferenceLanding';
 import ProductDetailPage from '../src/pages/ProductDetailPage';
 import { CartProvider } from '../src/hooks/useCart';
-import { productService } from '../src/services/crudService';
+import { productService, settingsService } from '../src/services/crudService';
 
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'https://test.invalid/' });
 Object.defineProperty(globalThis, 'window', { value: dom.window, configurable: true });
@@ -32,6 +32,8 @@ async function click(selector: string) {
   await act(async () => { node.click(); });
 }
 function check(name: string, assertion: () => void) { assertion(); tests.push(name); console.log(`PASS ${name}`); }
+(settingsService as any).getAll = async () => ({ data: { success: true, data: {} } });
+
 const fixture: any = {
   id: 13, name: 'Producto de prueba', category: { name: 'Hombre' }, brand: { name: 'Marca' },
   subcategory: { name: 'Zapatos de vestir' }, price: 300, discounted_price: 240, stock: 2,
@@ -72,6 +74,21 @@ async function run() {
   check('Carrito: límite de stock incluyendo unidades existentes', () => { assert.equal(JSON.parse(localStorage.getItem('cart')!)[0].quantity, 2); assert.match(document.querySelector('[role="alert"]')!.textContent!, /stock/); });
   await click('[aria-label="Marron"]');
   check('Variante con talla única: selección automática', () => assert.equal(document.querySelector('.size-chip[aria-pressed=true]')!.textContent!.trim(), '38'));
+  await render(detail({
+    ...fixture,
+    color: 'Celeste',
+    colors: [{ color: 'Celeste' }],
+    color_sizes: { Celeste: ['38'] },
+    sizes: [{ size: '38', stock: 2 }],
+    size: '38',
+  }));
+  check('Color Celeste: se muestra y usa tono correcto', () => {
+    const swatch = document.querySelector<HTMLElement>('[aria-label="Celeste"]');
+    assert.ok(swatch);
+    assert.ok(String(swatch?.getAttribute('style') || '').includes('125, 211, 252') || String(swatch?.getAttribute('style') || '').includes('#7dd3fc'));
+    assert.match(document.querySelector('.variant-label')!.textContent!, /Celeste/);
+  });
+
   await render(detail({ ...fixture, sizes: [{ size: '39' }], size: '39', color: 'Negro', colors: [{ color: 'Negro' }], color_sizes: {} }));
   await click('.buy-box-now');
   check('Comprar ahora: checkout con talla única', () => assert.ok(document.getElementById('checkout-test')));
@@ -90,6 +107,24 @@ async function run() {
     assert.ok(checkout.includes('transaction_id'));
     assert.ok(checkout.includes('openpay_return'));
   });
+  check('Delivery: costo administrable por rol administrativo', () => {
+    const service = readFileSync('src/services/crudService.ts', 'utf8');
+    const manager = readFileSync('src/pages/admin/ServiceManager.tsx', 'utf8');
+    assert.ok(service.includes("'/services/delivery'"));
+    assert.ok(service.includes('updateDelivery'));
+    assert.ok(manager.includes('Gestión habilitada para Administrador y Superadministrador'));
+    assert.ok(manager.includes('Guardar costo de delivery'));
+  });
+
+  check('Ajustes: banners usan method override y logo administrable', () => {
+    const service = readFileSync('src/services/crudService.ts', 'utf8');
+    const settings = readFileSync('src/pages/admin/SettingsManager.tsx', 'utf8');
+    assert.ok(service.includes("formData.append('_method', 'PUT')"));
+    assert.ok(service.includes('uploadLogoImage'));
+    assert.ok(settings.includes('Identidad visual'));
+    assert.ok(settings.includes('Cambiar logo'));
+  });
+
   check('Moneda: checkout e historial usan MXN', () => {
     for (const file of ['src/components/PaymentModal.tsx', 'src/components/EditableOrderSummary.tsx', 'src/pages/ClientPurchasesPage.tsx']) {
       const source = readFileSync(file, 'utf8');
