@@ -107,6 +107,15 @@ async function run() {
     assert.ok(checkout.includes('transaction_id'));
     assert.ok(checkout.includes('openpay_return'));
   });
+  check('Delivery: costo administrable por rol administrativo', () => {
+    const service = readFileSync('src/services/crudService.ts', 'utf8');
+    const manager = readFileSync('src/pages/admin/ServiceManager.tsx', 'utf8');
+    assert.ok(service.includes("'/services/delivery'"));
+    assert.ok(service.includes('updateDelivery'));
+    assert.ok(manager.includes('Gestión habilitada para Administrador y Superadministrador'));
+    assert.ok(manager.includes('Guardar costo de delivery'));
+  });
+
   check('Ajustes: banners usan method override y logo administrable', () => {
     const service = readFileSync('src/services/crudService.ts', 'utf8');
     const settings = readFileSync('src/pages/admin/SettingsManager.tsx', 'utf8');
