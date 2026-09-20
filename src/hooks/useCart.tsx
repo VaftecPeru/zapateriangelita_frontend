@@ -10,6 +10,7 @@ export interface CartContextType {
     addToCart: (product: any) => void;
     updateCartItem: (index: number, item: CartItem) => void;
     removeFromCart: (productId: number) => void;
+    removeCartItem: (index: number) => void;
     clearCart: () => void;
     cartTotal: number;
     cartCount: number;
@@ -98,6 +99,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
     };
 
+    const removeCartItem = (index: number) => {
+        setCart(prev => {
+            if (index < 0 || index >= prev.length) return prev;
+            return persistCart(prev.filter((_, itemIndex) => itemIndex !== index));
+        });
+    };
+
     const clearCart = () => {
         setCart([]);
         localStorage.removeItem('cart');
@@ -107,7 +115,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const cartCount = cart.reduce((count, item) => count + item.quantity, 0);
 
     return (
-        <CartContext.Provider value={{ cart, addToCart, updateCartItem, removeFromCart, clearCart, cartTotal, cartCount }}>
+        <CartContext.Provider value={{ cart, addToCart, updateCartItem, removeFromCart, removeCartItem, clearCart, cartTotal, cartCount }}>
             {children}
         </CartContext.Provider>
     );
