@@ -24,6 +24,25 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
     const [changingRole, setChangingRole] = useState(false);
 
     const canManageRoles = currentUser?.role === 'superadmin';
+    const isOperationalAdmin = currentUser?.role === 'admin';
+
+    // Defensa adicional en frontend: un administrador operativo nunca debe
+    // visualizar cuentas admin/superadmin ajenas aunque una respuesta antigua
+    // o un caché llegara a incluirlas.
+    const visibleUsers = users.filter((user) => {
+        if (canManageRoles) return true;
+        if (!isOperationalAdmin) return user.id === currentUser?.id;
+        if (user.id === currentUser?.id) return true;
+        return !user.role || user.role === 'user';
+    });
+
+    const canSeeRole = (user: User) =>
+        canManageRoles || user.id === currentUser?.id;
+
+    const canOperateOnUser = (user: User) => {
+        if (canManageRoles) return user.role !== 'superadmin';
+        return isOperationalAdmin && user.id !== currentUser?.id;
+    };
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -56,7 +75,7 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
         }
     }, [initialData]);
 
-    const filteredUsers = users.filter(user => {
+    const filteredUsers = visibleUsers.filter(user => {
         const search = searchTerm.toLowerCase();
         return (
             (user.name?.toLowerCase() || '').includes(search) ||
@@ -120,13 +139,13 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
         }
     };
 
-    const roleBadgeClass = (role: string) => {
+    const roleBadgeClass = (role?: string) => {
         if (role === 'superadmin') return 'bg-store-red text-white';
         if (role === 'admin') return 'bg-black text-white';
         return 'bg-gray-100 text-gray-500';
     };
 
-    const roleLabel = (role: string) => {
+    const roleLabel = (role?: string) => {
         if (role === 'superadmin') return 'Superadministrador';
         if (role === 'admin') return 'Administrador';
         return 'Usuario';
@@ -155,7 +174,7 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
                         <Users size={26} className="text-store-red" /> Usuarios Registrados
                     </h2>
                     <p className="text-xs text-gray-400 font-medium mt-1">
-                        Listado completo de personas registradas en Zapatería ANGELITA ({users.length} usuarios)
+                        Usuarios disponibles para tu nivel de acceso ({visibleUsers.length} usuarios)
                     </p>
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
@@ -263,13 +282,19 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full w-fit ${roleBadgeClass(user.role)}`}>
-                                                {user.role === 'superadmin' ? <Crown size={11} /> : user.role === 'admin' ? <ShieldCheck size={11} /> : <UserIcon size={10} />}
-                                                <span className="text-[9px] font-black uppercase tracking-widest">{roleLabel(user.role)}</span>
-                                            </div>
+                                            {canSeeRole(user) && user.role ? (
+                                                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full w-fit ${roleBadgeClass(user.role)}`}>
+                                                    {user.role === 'superadmin' ? <Crown size={11} /> : user.role === 'admin' ? <ShieldCheck size={11} /> : <UserIcon size={10} />}
+                                                    <span className="text-[9px] font-black uppercase tracking-widest">{roleLabel(user.role)}</span>
+                                                </div>
+                                            ) : (
+                                                <span className="inline-flex rounded-full bg-gray-50 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-gray-300">
+                                                    Rol privado
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            {user.role !== 'superadmin' && (canManageRoles || user.role === 'user') && (
+                                            {canOperateOnUser(user) && (
                                                 <div className="flex items-center justify-end gap-2">
                                                     {canManageRoles && user.id !== currentUser?.id && (
                                                         <button
@@ -309,9 +334,12 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
                                     <div className="min-w-0">
                                         <p className="truncate text-sm font-black text-black">{user.name}</p>
                                         <p className="truncate text-xs text-gray-500">{user.email}</p>
-                                        <p className="mt-2 text-[11px] font-bold text-gray-500">{formatDate(user.birthdate)} · {roleLabel(user.role)}</p>
+                                        <p className="mt-2 text-[11px] font-bold text-gray-500">
+                                            {formatDate(user.birthdate)}
+                                            {canSeeRole(user) && user.role ? ` · ${roleLabel(user.role)}` : ' · Rol privado'}
+                                        </p>
                                     </div>
-                                    {user.role !== 'superadmin' && (canManageRoles || user.role === 'user') && (
+                                    {canOperateOnUser(user) && (
                                         <div className="flex shrink-0 gap-2">
                                             {canManageRoles && user.id !== currentUser?.id && (
                                                 <button onClick={() => setRoleUser(user)} className="rounded-xl border border-red-100 p-2.5 text-store-red" aria-label={user.role === 'admin' ? 'Quitar rol administrador' : 'Asignar rol administrador'}><ShieldCheck size={15} /></button>
