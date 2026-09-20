@@ -66,9 +66,11 @@ export interface Product {
 export interface AdditionalService {
     id?: number;
     name: string;
+    code?: string | null;
     description?: string;
     price: number;
     tag?: string;
+    is_active?: boolean;
 }
 
 export interface DashboardStats {
@@ -231,6 +233,7 @@ export const productService = {
 
 export const additionalServiceService = {
     getAll: () => apiClient.get<AdditionalService[]>('/services'),
+    getDeliveryCost: () => apiClient.get<{ code: 'delivery'; price: number }>('/checkout/delivery-cost'),
     getById: (id: number) => apiClient.get<AdditionalService>(`/services/${id}`),
     create: (data: AdditionalService) => apiClient.post<AdditionalService>('/services', data),
     update: (id: number, data: Partial<AdditionalService>) => apiClient.put<AdditionalService>(`/services/${id}`, data),

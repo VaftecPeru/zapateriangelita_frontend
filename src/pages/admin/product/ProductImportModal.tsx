@@ -76,6 +76,7 @@ const ProductImportModal = ({ open, onClose, categories, subcategories, brands, 
 
     const errors: string[] = [];
     const categoryMatch = findCategory(category);
+    if (!code) errors.push('Código de producto obligatorio para importación');
     if (!name) errors.push('Producto obligatorio');
     if (!category) errors.push('Categoría obligatoria');
     if (category && !categoryMatch) errors.push(`Categoría no registrada: ${category}`);
@@ -226,6 +227,17 @@ const ProductImportModal = ({ open, onClose, categories, subcategories, brands, 
     return data;
   };
 
+  const resolveExistingProduct = async (code: string) => {
+    const local = products.find((product) => normalize(product.product_code) === normalize(code));
+    if (local?.id) return local;
+
+    const response = await productService.getAll({ search: code, per_page: 20 });
+    const payload: any = response.data;
+    const candidates: Product[] = Array.isArray(payload) ? payload : (payload?.data || []);
+
+    return candidates.find((product) => normalize(product.product_code) === normalize(code));
+  };
+
   const executeImport = async () => {
     if (!validRows.length || importing) return;
     setImporting(true);
@@ -237,9 +249,7 @@ const ProductImportModal = ({ open, onClose, categories, subcategories, brands, 
     for (const row of validRows) {
       try {
         const data = buildFormData(row);
-        const existing = row.code
-          ? products.find((product) => normalize(product.product_code) === normalize(row.code))
-          : undefined;
+        const existing = await resolveExistingProduct(row.code);
 
         if (existing?.id) {
           await productService.update(existing.id, data);
@@ -295,7 +305,7 @@ const ProductImportModal = ({ open, onClose, categories, subcategories, brands, 
         </div>
 
         <div className="mt-5 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-          <div className="flex gap-2"><AlertTriangle size={16} className="mt-0.5 shrink-0" /><p><strong>Categorías, subcategorías y marcas deben existir previamente.</strong> Así evitamos duplicados por diferencias de escritura. El stock importado se guarda en el stock maestro del producto.</p></div>
+          <div className="flex gap-2"><AlertTriangle size={16} className="mt-0.5 shrink-0" /><p><strong>El código de producto es obligatorio y categorías, subcategorías y marcas deben existir previamente.</strong> Si el código ya existe, el importador actualiza ese producto en lugar de duplicarlo. El stock importado se guarda en el inventario maestro.</p></div>
         </div>
 
         {rows.length > 0 && (

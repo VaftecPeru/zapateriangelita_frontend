@@ -34,6 +34,7 @@ export interface OpenpayChargeResult {
 interface PaymentModalProps {
   isOpen: boolean;
   total: number;
+  shippingCost?: number;
   cart: any[];
   customerName: string;
   customerEmail?: string;
@@ -344,6 +345,7 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
 const PaymentModal = ({
   isOpen,
   total,
+  shippingCost = 0,
   cart = [],
   customerName,
   customerEmail = "",
@@ -425,6 +427,10 @@ const PaymentModal = ({
   if (!isOpen) return null;
 
   const displayTotal = money.format(Number(total));
+  const productSubtotal = cart.reduce(
+    (sum: number, item: any) => sum + Number(item.product?.price || 0) * Number(item.quantity || 0),
+    0,
+  );
 
   const submitPayment = (event: React.FormEvent) => {
     event.preventDefault();
@@ -955,14 +961,26 @@ const PaymentModal = ({
               <span>
                 {item.product?.name || "Producto"} x {item.quantity}
               </span>
-              <span>{money.format(Number(item.product?.price || 0))}</span>
+              <span>{money.format(Number(item.product?.price || 0) * Number(item.quantity || 0))}</span>
             </div>
           ))}
+          <div style={{ display: "grid", gap: "5px", marginTop: "10px", color: "#555", fontSize: "10px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
+              <span>Subtotal productos</span>
+              <strong>{money.format(productSubtotal)}</strong>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
+              <span>Costo de delivery</span>
+              <strong>{money.format(Math.max(0, Number(shippingCost || 0)))}</strong>
+            </div>
+          </div>
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
-              marginTop: "10px",
+              marginTop: "9px",
+              paddingTop: "9px",
+              borderTop: "1px solid #ddd",
               color: "#333",
               fontSize: "12px",
               fontWeight: 700,

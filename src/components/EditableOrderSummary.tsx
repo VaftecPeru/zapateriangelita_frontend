@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, Minus, Pencil, Plus, X } from "lucide-react";
+import { Check, Minus, Pencil, Plus, Trash2, X } from "lucide-react";
 import { productService } from "../services/crudService";
 import { getImageUrl } from "../config/api";
 import { useCart } from "../hooks/useCart";
@@ -48,11 +48,13 @@ const normalizeOptions = (product: any) => {
 };
 
 type Props = {
+  deliveryCost?: number;
+  deliveryLoading?: boolean;
   onVariantChanged?: () => void;
 };
 
-export default function EditableOrderSummary({ onVariantChanged }: Props) {
-  const { cart, cartTotal, updateCartItem } = useCart();
+export default function EditableOrderSummary({ deliveryCost = 0, deliveryLoading = false, onVariantChanged }: Props) {
+  const { cart, cartTotal, updateCartItem, removeCartItem } = useCart();
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
   const [editProduct, setEditProduct] = useState<any | null>(null);
@@ -62,10 +64,25 @@ export default function EditableOrderSummary({ onVariantChanged }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const options = useMemo(() => normalizeOptions(editProduct), [editProduct]);
+  const checkoutTotal = cartTotal + Math.max(0, Number(deliveryCost || 0));
   const activeSizes = useMemo(() => {
     const allowed = color && Array.isArray(options.colorSizes?.[color]) ? options.colorSizes[color].map(String) : null;
     return allowed?.length ? options.sizeRows.filter((entry: any) => allowed.includes(entry.size)) : options.sizeRows;
   }, [color, options]);
+
+  const removeItem = (index: number) => {
+    removeCartItem(index);
+
+    if (editingIndex === index) {
+      setEditingIndex(null);
+      setEditProduct(null);
+      setError(null);
+    } else if (editingIndex !== null && index < editingIndex) {
+      setEditingIndex(editingIndex - 1);
+    }
+
+    onVariantChanged?.();
+  };
 
   const openEditor = async (index: number) => {
     const item = cart[index];
@@ -161,9 +178,14 @@ export default function EditableOrderSummary({ onVariantChanged }: Props) {
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", alignItems: "flex-start" }}>
                   <strong style={{ fontSize: "14px", lineHeight: 1.35 }}>{item.product?.name || "Producto"}</strong>
                   {!isEditing && (
-                    <button type="button" onClick={() => openEditor(index)} disabled={loadingIndex === index} aria-label="Editar producto" title="Editar producto" style={{ width: "32px", height: "32px", borderRadius: "10px", border: "1px solid #ececec", background: "#fff", color: "#e30613", display: "grid", placeItems: "center", cursor: "pointer", flexShrink: 0 }}>
-                      <Pencil size={15} />
-                    </button>
+                    <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
+                      <button type="button" onClick={() => openEditor(index)} disabled={loadingIndex === index} aria-label="Editar producto" title="Editar producto" style={{ width: "32px", height: "32px", borderRadius: "10px", border: "1px solid #ececec", background: "#fff", color: "#e30613", display: "grid", placeItems: "center", cursor: "pointer" }}>
+                        <Pencil size={15} />
+                      </button>
+                      <button type="button" onClick={() => removeItem(index)} aria-label="Eliminar producto del pedido" title="Eliminar producto" style={{ width: "32px", height: "32px", borderRadius: "10px", border: "1px solid #f1d4d4", background: "#fff", color: "#b42318", display: "grid", placeItems: "center", cursor: "pointer" }}>
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   )}
                 </div>
                 {!isEditing && (
@@ -230,9 +252,19 @@ export default function EditableOrderSummary({ onVariantChanged }: Props) {
         );
       })}
 
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "20px", paddingTop: "16px", borderTop: "2px solid #eee", fontWeight: 800 }}>
-        <span style={{ fontSize: "18px" }}>Total</span>
-        <span style={{ color: "#e30613", fontSize: "24px" }}>{money.format(cartTotal)}</span>
+      <div style={{ marginTop: "20px", paddingTop: "16px", borderTop: "2px solid #eee" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", padding: "4px 0", color: "#666", fontSize: "12px", fontWeight: 700 }}>
+          <span>Subtotal productos</span>
+          <span>{money.format(cartTotal)}</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", padding: "4px 0", color: "#666", fontSize: "12px", fontWeight: 700 }}>
+          <span>Costo de delivery</span>
+          <span>{deliveryLoading ? "Calculando..." : money.format(Math.max(0, Number(deliveryCost || 0)))}</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px", paddingTop: "12px", borderTop: "1px solid #eee", fontWeight: 800 }}>
+          <span style={{ fontSize: "18px" }}>Total</span>
+          <span style={{ color: "#e30613", fontSize: "24px" }}>{money.format(checkoutTotal)}</span>
+        </div>
       </div>
     </aside>
   );

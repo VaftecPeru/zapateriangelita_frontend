@@ -340,12 +340,12 @@ const AdminDashboard = () => {
                 <div className="flex gap-4 border-b border-gray-200 pb-1 overflow-x-auto no-scrollbar">
                     {[
                         { id: 'stats', label: 'Estadísticas' },
+                        { id: 'messages', label: 'Pedido' },
                         { id: 'products', label: 'Productos' },
                         { id: 'services', label: 'Servicios' },
                         { id: 'settings', label: 'Ajustes' },
                         { id: 'funnelLeads', label: 'Interesados en Calzado' },
-                        { id: 'users', label: 'Usuarios' },
-                        { id: 'messages', label: 'Pedido' }
+                        { id: 'users', label: 'Usuarios' }
                     ].map((tab) => (
                         <button
                             key={tab.id}
