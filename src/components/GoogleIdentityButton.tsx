@@ -85,6 +85,7 @@ const wait = (ms: number) => new Promise(resolve => window.setTimeout(resolve, m
 const GoogleIdentityButton = ({ mode, onCredential, disabled = false }: Props) => {
   const buttonRef = useRef<HTMLDivElement | null>(null);
   const callbackRef = useRef(onCredential);
+  const disabledRef = useRef(disabled);
   const mountedRef = useRef(true);
   const [state, setState] = useState<GoogleButtonState>('loading');
   const [statusText, setStatusText] = useState('Preparando acceso con Google...');
@@ -92,6 +93,10 @@ const GoogleIdentityButton = ({ mode, onCredential, disabled = false }: Props) =
   useEffect(() => {
     callbackRef.current = onCredential;
   }, [onCredential]);
+
+  useEffect(() => {
+    disabledRef.current = disabled;
+  }, [disabled]);
 
   const renderGoogleButton = useCallback(async (clientId: string) => {
     await loadGoogleScript();
@@ -106,7 +111,7 @@ const GoogleIdentityButton = ({ mode, onCredential, disabled = false }: Props) =
       cancel_on_tap_outside: true,
       ux_mode: 'popup',
       callback: async ({ credential }) => {
-        if (!credential || disabled) return;
+        if (!credential || disabledRef.current) return;
         await callbackRef.current(credential);
       },
     });
@@ -126,7 +131,7 @@ const GoogleIdentityButton = ({ mode, onCredential, disabled = false }: Props) =
 
     setStatusText('Google listo');
     setState('ready');
-  }, [disabled, mode]);
+  }, [mode]);
 
   const boot = useCallback(async (manualRetry = false) => {
     if (!mountedRef.current) return;
