@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ChevronDown, Image as ImageIcon, Plus, Settings2, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, Image as ImageIcon, Plus, Settings2, Trash2, X } from 'lucide-react';
 import {
   Brand,
   Category,
