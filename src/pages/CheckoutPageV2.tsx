@@ -109,8 +109,13 @@ const CheckoutPageV2 = () => {
   const [submitting, setSubmitting] = useState(false);
   const [verifyingPayment, setVerifyingPayment] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [deliveryCost, setDeliveryCost] = useState(0);
+  const [deliveryLoading, setDeliveryLoading] = useState(true);
+  const [deliveryError, setDeliveryError] = useState<string | null>(null);
   const [orderData, setOrderData] = useState<{
     orderId: number;
+    subtotal: number;
+    shippingCost: number;
     total: number;
     customerName: string;
     checkoutToken: string;
@@ -124,6 +129,32 @@ const CheckoutPageV2 = () => {
   useEffect(() => {
     sessionStorage.setItem(DRAFT_KEY, JSON.stringify(form));
   }, [form]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadDeliveryCost = async () => {
+      setDeliveryLoading(true);
+      setDeliveryError(null);
+
+      try {
+        const { data } = await apiClient.get("/checkout/delivery-cost");
+        if (cancelled) return;
+        setDeliveryCost(Math.max(0, Number(data?.price || 0)));
+      } catch {
+        if (cancelled) return;
+        setDeliveryError("No fue posible consultar el costo de delivery. Actualiza la página antes de continuar.");
+      } finally {
+        if (!cancelled) setDeliveryLoading(false);
+      }
+    };
+
+    void loadDeliveryCost();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated || !user) return;
@@ -378,6 +409,16 @@ const CheckoutPageV2 = () => {
       return;
     }
 
+    if (deliveryLoading) {
+      setError("Estamos calculando el costo de delivery. Espera un momento.");
+      return;
+    }
+
+    if (deliveryError) {
+      setError(deliveryError);
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -435,7 +476,9 @@ const CheckoutPageV2 = () => {
 
       setOrderData({
         orderId,
-        total: Number(data.total ?? cartTotal),
+        subtotal: Number(data.subtotal ?? cartTotal),
+        shippingCost: Number(data.shipping_cost ?? deliveryCost),
+        total: Number(data.total ?? (cartTotal + deliveryCost)),
         customerName: form.full_name.trim(),
         checkoutToken,
       });
@@ -616,7 +659,11 @@ const CheckoutPageV2 = () => {
                 cursor: submitting ? "wait" : "pointer",
               }}
             >
-              {submitting ? "Preparando pago..." : `Comprar · ${money.format(cartTotal)}`}
+              {submitting
+                ? "Preparando pago..."
+                : deliveryLoading
+                  ? "Calculando delivery..."
+                  : `Comprar · ${money.format(cartTotal + deliveryCost)}`}
             </button>
 
             <p style={{ margin: "14px 0 0", color: "#666", fontSize: "12px", textAlign: "center" }}>
@@ -640,6 +687,7 @@ const CheckoutPageV2 = () => {
         <PaymentModal
           isOpen={showPayment}
           total={orderData.total}
+          shippingCost={orderData.shippingCost}
           cart={cart}
           customerName={orderData.customerName}
           customerEmail={form.email}
