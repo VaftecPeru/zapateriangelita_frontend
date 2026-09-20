@@ -14,7 +14,7 @@ import {
   X,
   ZoomIn,
 } from "lucide-react";
-import { analyticsService, productService, Product } from "../services/crudService";
+import { analyticsService, productService, settingsService, Product } from "../services/crudService";
 import { getImageUrl } from "../config/api";
 import { useCart } from "../hooks/useCart";
 import brandLogo from "../assets/brand/logo-angelita-horizontal.png";
@@ -35,10 +35,10 @@ const applyProductImageFallback = (event: React.SyntheticEvent<HTMLImageElement>
   image.alt = image.alt || "Imagen no disponible";
 };
 
-function Logo({ light = false }: { light?: boolean }) {
+function Logo({ light = false, src = brandLogo }: { light?: boolean; src?: string }) {
   return (
     <a className={`logo ${light ? "logo--light" : ""}`} href="/" aria-label="Zapatería Angelita - inicio">
-      <img src={brandLogo} alt="Zapatería Angelita" className="pd-logo" />
+      <img src={src || brandLogo} alt="Zapatería Angelita" className="pd-logo" />
     </a>
   );
 }
@@ -67,6 +67,13 @@ function normalizeProduct(product: Product): any {
       cafe: "#8b5e3c",
       marron: "#8b5e3c",
       beige: "#d6c2a1",
+      celeste: "#7dd3fc",
+      "azul cielo": "#7dd3fc",
+      turquesa: "#2dd4bf",
+      naranja: "#f97316",
+      vino: "#7f1d1d",
+      dorado: "#d4a017",
+      plateado: "#c0c0c0",
     };
     return colors[normalizedName] || (normalizedName.startsWith("#") ? name.trim() : "#888888");
   };
@@ -143,6 +150,7 @@ export default function ProductDetailPage() {
   const [shareMessage, setShareMessage] = useState("");
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
   const [product, setProduct] = useState<any | null>(null);
+  const [siteLogo, setSiteLogo] = useState<string>(brandLogo);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -152,6 +160,27 @@ export default function ProductDetailPage() {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [toast, setToast] = useState<{ product: any } | null>(null);
   const [variantError, setVariantError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadSiteLogo = async () => {
+      try {
+        const response = await settingsService.getAll();
+        const configuredLogo = response.data?.data?.logo_url;
+        if (active && configuredLogo) {
+          setSiteLogo(getImageUrl(configuredLogo) || brandLogo);
+        }
+      } catch {
+        if (active) setSiteLogo(brandLogo);
+      }
+    };
+
+    void loadSiteLogo();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -371,7 +400,7 @@ export default function ProductDetailPage() {
           <ArrowLeft size={19} />
         </button>
 
-        <Logo />
+        <Logo src={siteLogo} />
 
         <div className="header-actions">
           <button type="button" className="favorite-button" onClick={toggleFavorite} aria-label={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"} aria-pressed={isFavorite}>
