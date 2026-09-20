@@ -174,7 +174,7 @@ const SettingsManager = () => {
             const response = await settingsService.getAll();
             const data = response.data.data || {};
             setSettings(data);
-            setLogoUrl(data.logo_url || '');
+            setLogoUrl(data.logo_url || '/logo-angelita-horizontal.png');
             setWhatsapp(data.whatsapp_number || '');
 
             const terms = normalizeStringList(data.reservation_policies);
