@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
 import { additionalServiceService, AdditionalService } from '../../services/crudService';
+import { useAuth } from '../../hooks/useAuth';
 import { Plus, Edit, Trash2, Loader2, Sparkles, X, AlertTriangle, Star, Percent, XCircle } from 'lucide-react';
 
 const ServiceManager = () => {
+    const { user: currentUser } = useAuth();
     const [services, setServices] = useState<AdditionalService[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [serviceToDelete, setServiceToDelete] = useState<number | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     
     const [editingService, setEditingService] = useState<AdditionalService | null>(null);
     const [formData, setFormData] = useState<AdditionalService>({
@@ -30,9 +34,13 @@ const ServiceManager = () => {
             const response = await additionalServiceService.getAll();
             const data = Array.isArray(response.data) ? response.data : ((response.data as any).data || []);
             setServices(data);
-            setLoading(false);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error loading services:', err);
+            setFeedback({
+                type: 'error',
+                text: err?.response?.data?.message || 'No se pudieron cargar los servicios.',
+            });
+        } finally {
             setLoading(false);
         }
     };
@@ -77,6 +85,7 @@ const ServiceManager = () => {
 
     const deliveryService = services.find((service) => service.code === 'delivery') || null;
     const regularServices = services.filter((service) => service.code !== 'delivery');
+    const canManageDelivery = ['admin', 'superadmin'].includes(String(currentUser?.role || ''));
 
     const handleOpenDeliveryModal = () => {
         if (deliveryService) {
@@ -112,17 +121,46 @@ const ServiceManager = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setFeedback(null);
+
+        const price = Number(formData.price);
+        if (!Number.isFinite(price) || price < 0) {
+            setFeedback({ type: 'error', text: 'Ingresa un costo válido mayor o igual a 0.' });
+            return;
+        }
+
         try {
-            if (editingService && editingService.id) {
-                await additionalServiceService.update(editingService.id, formData);
+            setSaving(true);
+
+            if (formData.code === 'delivery') {
+                const response = await additionalServiceService.updateDelivery({
+                    price,
+                    is_active: formData.is_active !== false,
+                    description: formData.description || null,
+                });
+
+                setFeedback({
+                    type: 'success',
+                    text: response.data?.message || 'Costo de delivery actualizado correctamente.',
+                });
+            } else if (editingService && editingService.id) {
+                await additionalServiceService.update(editingService.id, { ...formData, price });
+                setFeedback({ type: 'success', text: 'Servicio actualizado correctamente.' });
             } else {
-                await additionalServiceService.create(formData);
+                await additionalServiceService.create({ ...formData, price });
+                setFeedback({ type: 'success', text: 'Servicio creado correctamente.' });
             }
+
             handleCloseModal();
-            loadServices();
-        } catch (error) {
+            await loadServices();
+        } catch (error: any) {
             console.error("Error saving service:", error);
-            alert("Hubo un error al guardar el servicio.");
+            setFeedback({
+                type: 'error',
+                text: error?.response?.data?.message || 'No se pudo guardar el servicio.',
+            });
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -179,6 +217,9 @@ const ServiceManager = () => {
                         <p className="mt-1 text-xs font-medium text-gray-500">
                             Se suma automáticamente al total del cliente antes de ingresar a Openpay.
                         </p>
+                        <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                            Gestión habilitada para Administrador y Superadministrador
+                        </p>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="rounded-2xl bg-white px-5 py-3 text-right shadow-sm">
@@ -192,13 +233,24 @@ const ServiceManager = () => {
                         <button
                             type="button"
                             onClick={handleOpenDeliveryModal}
-                            className="rounded-xl bg-store-red px-5 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg transition hover:bg-store-redDark"
+                            disabled={!canManageDelivery}
+                            className="rounded-xl bg-store-red px-5 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg transition hover:bg-store-redDark disabled:cursor-not-allowed disabled:opacity-40"
                         >
                             {deliveryService ? 'Editar delivery' : 'Configurar delivery'}
                         </button>
                     </div>
                 </div>
             </div>
+
+            {feedback && (
+                <div className={`rounded-2xl border px-5 py-4 text-sm font-bold ${
+                    feedback.type === 'success'
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                        : 'border-red-200 bg-red-50 text-red-700'
+                }`}>
+                    {feedback.text}
+                </div>
+            )}
 
             <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden text-black font-medium">
                 <div className="overflow-x-auto">
@@ -389,10 +441,17 @@ const ServiceManager = () => {
                                     Cancelar
                                 </button>
                                 <button 
-                                    type="submit" 
-                                    className="flex-[2] py-4 bg-store-red text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-store-redDark transition-all shadow-xl shadow-black/5 active:scale-95"
+                                    type="submit"
+                                    disabled={saving}
+                                    className="flex-[2] py-4 bg-store-red text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-store-redDark transition-all shadow-xl shadow-black/5 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    {editingService ? 'Actualizar Servicio' : 'Crear Servicio'}
+                                    {saving
+                                        ? 'Guardando...'
+                                        : formData.code === 'delivery'
+                                            ? 'Guardar costo de delivery'
+                                            : editingService
+                                                ? 'Actualizar Servicio'
+                                                : 'Crear Servicio'}
                                 </button>
                             </div>
                         </form>
