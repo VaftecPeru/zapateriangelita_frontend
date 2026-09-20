@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Users, Search, RefreshCw, Mail, Calendar, User as UserIcon, Trash2, KeyRound, Copy, Check } from 'lucide-react';
+import { Users, Search, RefreshCw, Mail, Calendar, User as UserIcon, Trash2, KeyRound, Copy, Check, ShieldCheck, Crown } from 'lucide-react';
 import { userService, User } from '../../services/crudService';
+import { useAuth } from '../../hooks/useAuth';
 
 interface UsersManagerProps {
     initialData?: User[];
 }
 
 const UsersManager = ({ initialData }: UsersManagerProps) => {
+    const { user: currentUser } = useAuth();
     const [users, setUsers] = useState<User[]>(initialData || []);
     const [loading, setLoading] = useState(!initialData);
     const [error, setError] = useState<string | null>(null);
@@ -18,6 +20,10 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
     const [sendResetEmail, setSendResetEmail] = useState(false);
     const [temporaryPassword, setTemporaryPassword] = useState('');
     const [copied, setCopied] = useState(false);
+    const [roleUser, setRoleUser] = useState<User | null>(null);
+    const [changingRole, setChangingRole] = useState(false);
+
+    const canManageRoles = currentUser?.role === 'superadmin';
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -95,6 +101,37 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
         window.setTimeout(() => setCopied(false), 1800);
     };
 
+    const handleRoleChange = async () => {
+        if (!roleUser || !canManageRoles) return;
+
+        const nextRole: 'user' | 'admin' = roleUser.role === 'admin' ? 'user' : 'admin';
+        setChangingRole(true);
+        setError(null);
+
+        try {
+            const response = await userService.updateRole(roleUser.id, nextRole);
+            const updated = response.data.user;
+            setUsers((current) => current.map((item) => item.id === updated.id ? { ...item, ...updated } : item));
+            setRoleUser(null);
+        } catch (e: any) {
+            setError(e.response?.data?.message || 'No se pudo actualizar el rol del usuario.');
+        } finally {
+            setChangingRole(false);
+        }
+    };
+
+    const roleBadgeClass = (role: string) => {
+        if (role === 'superadmin') return 'bg-store-red text-white';
+        if (role === 'admin') return 'bg-black text-white';
+        return 'bg-gray-100 text-gray-500';
+    };
+
+    const roleLabel = (role: string) => {
+        if (role === 'superadmin') return 'Superadministrador';
+        if (role === 'admin') return 'Administrador';
+        return 'Usuario';
+    };
+
     const handleDelete = async (id: number) => {
         setDeleting(true);
         try {
@@ -131,6 +168,18 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
                     </button>
                 </div>
             </div>
+
+            {canManageRoles && (
+                <div className="flex items-start gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-800">
+                    <Crown size={20} className="mt-0.5 shrink-0" />
+                    <div>
+                        <p className="font-black">Modo Superadministrador</p>
+                        <p className="mt-1 text-xs font-medium text-red-700">
+                            Puedes asignar o retirar el rol Administrador. Los cambios revocan las sesiones activas del usuario para aplicar los nuevos permisos inmediatamente.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Search and Filters */}
             <div className="bg-white/40 backdrop-blur-sm p-4 rounded-3xl border border-gray-200 shadow-sm">
@@ -214,14 +263,23 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className={`flex items-center gap-2 px-3 py-1 rounded-full w-fit ${user.role === 'admin' ? 'bg-black text-white' : 'bg-gray-100 text-gray-400'}`}>
-                                                <UserIcon size={10} />
-                                                <span className="text-[9px] font-black uppercase tracking-widest">{user.role}</span>
+                                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full w-fit ${roleBadgeClass(user.role)}`}>
+                                                {user.role === 'superadmin' ? <Crown size={11} /> : user.role === 'admin' ? <ShieldCheck size={11} /> : <UserIcon size={10} />}
+                                                <span className="text-[9px] font-black uppercase tracking-widest">{roleLabel(user.role)}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            {user.role !== 'admin' && (
+                                            {user.role !== 'superadmin' && (canManageRoles || user.role === 'user') && (
                                                 <div className="flex items-center justify-end gap-2">
+                                                    {canManageRoles && user.id !== currentUser?.id && (
+                                                        <button
+                                                            onClick={() => setRoleUser(user)}
+                                                            className={`p-2.5 bg-white border rounded-xl transition-all shadow-sm ${user.role === 'admin' ? 'text-gray-600 border-gray-200 hover:bg-gray-100' : 'text-store-red border-red-100 hover:bg-red-50'}`}
+                                                            title={user.role === 'admin' ? 'Quitar rol de administrador' : 'Asignar rol de administrador'}
+                                                        >
+                                                            <ShieldCheck size={14} />
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={() => openResetPassword(user)}
                                                         className="p-2.5 bg-white text-gray-500 border border-gray-200 rounded-xl hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 transition-all shadow-sm"
@@ -251,10 +309,13 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
                                     <div className="min-w-0">
                                         <p className="truncate text-sm font-black text-black">{user.name}</p>
                                         <p className="truncate text-xs text-gray-500">{user.email}</p>
-                                        <p className="mt-2 text-[11px] font-bold text-gray-500">{formatDate(user.birthdate)} · {user.role}</p>
+                                        <p className="mt-2 text-[11px] font-bold text-gray-500">{formatDate(user.birthdate)} · {roleLabel(user.role)}</p>
                                     </div>
-                                    {user.role !== 'admin' && (
+                                    {user.role !== 'superadmin' && (canManageRoles || user.role === 'user') && (
                                         <div className="flex shrink-0 gap-2">
+                                            {canManageRoles && user.id !== currentUser?.id && (
+                                                <button onClick={() => setRoleUser(user)} className="rounded-xl border border-red-100 p-2.5 text-store-red" aria-label={user.role === 'admin' ? 'Quitar rol administrador' : 'Asignar rol administrador'}><ShieldCheck size={15} /></button>
+                                            )}
                                             <button onClick={() => openResetPassword(user)} className="rounded-xl border border-amber-100 p-2.5 text-amber-700" aria-label="Restablecer contraseña"><KeyRound size={15} /></button>
                                             <button onClick={() => setConfirmDelete(user.id)} className="rounded-xl border border-red-100 p-2.5 text-red-500" aria-label="Eliminar usuario"><Trash2 size={15} /></button>
                                         </div>
@@ -262,6 +323,44 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
                                 </div>
                             </article>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {roleUser && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[4200] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[2rem] p-7 w-full max-w-md shadow-2xl">
+                        <div className="w-14 h-14 bg-red-50 text-store-red rounded-2xl flex items-center justify-center mx-auto mb-5">
+                            <ShieldCheck size={28} />
+                        </div>
+                        <h3 className="text-xl font-black text-center">
+                            {roleUser.role === 'admin' ? 'Quitar rol Administrador' : 'Asignar rol Administrador'}
+                        </h3>
+                        <p className="mt-2 text-sm text-gray-500 text-center">
+                            Usuario: <strong>{roleUser.name}</strong>
+                        </p>
+                        <p className="mt-4 rounded-xl bg-gray-50 p-3 text-xs font-medium text-gray-600">
+                            {roleUser.role === 'admin'
+                                ? 'La cuenta volverá a tener permisos de usuario cliente.'
+                                : 'La cuenta tendrá acceso al panel administrativo de la plataforma.'}
+                            {' '}Las sesiones activas de esta cuenta se cerrarán para aplicar el cambio de permisos.
+                        </p>
+                        <div className="mt-6 grid grid-cols-2 gap-3">
+                            <button
+                                onClick={() => setRoleUser(null)}
+                                disabled={changingRole}
+                                className="rounded-xl bg-gray-100 px-4 py-3 text-xs font-black uppercase"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleRoleChange}
+                                disabled={changingRole}
+                                className="rounded-xl bg-store-red px-4 py-3 text-xs font-black uppercase text-white disabled:opacity-50"
+                            >
+                                {changingRole ? 'Guardando...' : 'Confirmar'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

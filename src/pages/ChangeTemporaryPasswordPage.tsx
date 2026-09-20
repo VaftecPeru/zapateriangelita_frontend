@@ -29,7 +29,7 @@ const ChangeTemporaryPasswordPage = () => {
     try {
       const response = await userService.changeTemporaryPassword(password, confirmation);
       updateUser(response.data.user || { must_change_password: false });
-      navigate(user?.role === 'admin' ? '/admin/dashboard' : '/home', { replace: true });
+      navigate(['admin', 'superadmin'].includes(String(user?.role || '')) ? '/admin/dashboard' : '/home', { replace: true });
     } catch (err: any) {
       setError(err?.response?.data?.errors?.password?.[0] || err?.response?.data?.message || 'No se pudo actualizar la contraseña.');
     } finally {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ChevronDown, Image as ImageIcon, Plus, Settings2, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, Image as ImageIcon, Plus, Settings2, Trash2, X } from 'lucide-react';
 import {
   Brand,
   Category,
@@ -7,6 +7,7 @@ import {
   Subcategory,
   brandService,
   categoryService,
+  subcategoryService,
   productService,
 } from '../../../services/crudService';
 import { getImageUrl } from '../../../config/api';
@@ -28,6 +29,8 @@ type EditorForm = {
   name: string;
   model: string;
   brand_name: string;
+  category_name: string;
+  subcategory_name: string;
   category_id?: number;
   subcategory_id?: number;
   brand_id?: number;
@@ -39,13 +42,15 @@ type EditorForm = {
   description: string;
 };
 
-type CatalogKind = 'category' | 'brand';
+type CatalogKind = 'category' | 'subcategory' | 'brand';
 
 const emptyForm = (): EditorForm => ({
   product_code: '',
   name: '',
   model: '',
   brand_name: '',
+  category_name: '',
+  subcategory_name: '',
   category_id: undefined,
   subcategory_id: undefined,
   brand_id: undefined,
@@ -122,6 +127,12 @@ const ProductEditorModal = ({
       name: product.name || '',
       model: product.model || '',
       brand_name: typeof product.brand === 'object' ? product.brand.name : String(product.brand || ''),
+      category_name:
+        (typeof product.category === 'object' ? product.category.name : String(product.category || '')) ||
+        categories.find((item) => item.id === product.category_id)?.name ||
+        '',
+      subcategory_name:
+        subcategories.find((item) => item.id === product.subcategory_id)?.name || '',
       category_id: product.category_id,
       subcategory_id: product.subcategory_id,
       brand_id: product.brand_id,
@@ -299,7 +310,27 @@ const ProductEditorModal = ({
         setForm((current) => ({
           ...current,
           category_id: created.id,
+          category_name: created.name,
           subcategory_id: undefined,
+          subcategory_name: '',
+        }));
+      } else if (catalogManager === 'subcategory') {
+        if (!form.category_id) {
+          setCatalogError('Selecciona primero una categoría.');
+          setCatalogBusy(false);
+          return;
+        }
+
+        const response = await subcategoryService.create({
+          category_id: form.category_id,
+          name,
+          is_active: true,
+        });
+        const created = response.data as Subcategory;
+        setForm((current) => ({
+          ...current,
+          subcategory_id: created.id,
+          subcategory_name: created.name,
         }));
       } else {
         const response = await brandService.create({ name, is_active: true });
@@ -329,7 +360,12 @@ const ProductEditorModal = ({
   const deleteCatalogItem = async (id: number | undefined, name: string) => {
     if (!catalogManager || !id) return;
 
-    const entityLabel = catalogManager === 'category' ? 'categoría' : 'marca';
+    const entityLabel =
+      catalogManager === 'category'
+        ? 'categoría'
+        : catalogManager === 'subcategory'
+          ? 'subcategoría'
+          : 'marca';
     if (!window.confirm(`¿Eliminar la ${entityLabel} "${name}"?`)) return;
 
     setCatalogBusy(true);
@@ -340,7 +376,20 @@ const ProductEditorModal = ({
         await categoryService.delete(id);
         setForm((current) =>
           current.category_id === id
-            ? { ...current, category_id: undefined, subcategory_id: undefined }
+            ? {
+                ...current,
+                category_id: undefined,
+                category_name: '',
+                subcategory_id: undefined,
+                subcategory_name: '',
+              }
+            : current,
+        );
+      } else if (catalogManager === 'subcategory') {
+        await subcategoryService.delete(id);
+        setForm((current) =>
+          current.subcategory_id === id
+            ? { ...current, subcategory_id: undefined, subcategory_name: '' }
             : current,
         );
       } else {
@@ -516,9 +565,24 @@ const ProductEditorModal = ({
 
   if (!open) return null;
 
-  const managedItems = catalogManager === 'category' ? categories : brands;
-  const managerTitle = catalogManager === 'category' ? 'Gestionar categorías' : 'Gestionar marcas';
-  const managerLabel = catalogManager === 'category' ? 'Nueva categoría' : 'Nueva marca';
+  const managedItems =
+    catalogManager === 'category'
+      ? categories
+      : catalogManager === 'subcategory'
+        ? filteredSubcategories
+        : brands;
+  const managerTitle =
+    catalogManager === 'category'
+      ? 'Gestionar categorías'
+      : catalogManager === 'subcategory'
+        ? 'Gestionar subcategorías'
+        : 'Gestionar marcas';
+  const managerLabel =
+    catalogManager === 'category'
+      ? 'Nueva categoría'
+      : catalogManager === 'subcategory'
+        ? 'Nueva subcategoría'
+        : 'Nueva marca';
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-5">
@@ -594,60 +658,50 @@ const ProductEditorModal = ({
                   <Settings2 size={12} /> Gestionar
                 </button>
               </div>
-              <div className="relative">
-                <select
-                  value={form.category_id || ''}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      category_id: Number(e.target.value) || undefined,
-                      subcategory_id: undefined,
-                    })
-                  }
-                  className="w-full appearance-none rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm font-semibold outline-none focus:border-store-red focus:ring-2 focus:ring-store-red/20"
-                >
-                  <option value="">Seleccionar categoría</option>
-                  {categories.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-              </div>
+              <CatalogSearchSelect
+                value={form.category_name}
+                options={categories}
+                placeholder="Escribe o selecciona una categoría"
+                onChange={(id, name) =>
+                  setForm((current) => ({
+                    ...current,
+                    category_id: id,
+                    category_name: name,
+                    subcategory_id: undefined,
+                    subcategory_name: '',
+                  }))
+                }
+              />
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                Subcategoría
-              </label>
-              <div className="relative">
-                <select
-                  value={form.subcategory_id || ''}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      subcategory_id: Number(e.target.value) || undefined,
-                    })
-                  }
+              <div className="flex items-center justify-between gap-3">
+                <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                  Subcategoría
+                </label>
+                <button
+                  type="button"
+                  onClick={() => openCatalogManager('subcategory')}
                   disabled={!form.category_id}
-                  className="w-full appearance-none rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm font-semibold outline-none disabled:opacity-50"
+                  className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-store-red hover:underline disabled:cursor-not-allowed disabled:opacity-35"
+                  title={form.category_id ? 'Gestionar subcategorías' : 'Selecciona primero una categoría'}
                 >
-                  <option value="">Sin subcategoría</option>
-                  {filteredSubcategories.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-                />
+                  <Settings2 size={12} /> Gestionar
+                </button>
               </div>
+              <CatalogSearchSelect
+                value={form.subcategory_name}
+                options={filteredSubcategories}
+                placeholder={form.category_id ? 'Escribe o selecciona una subcategoría' : 'Selecciona primero una categoría'}
+                disabled={!form.category_id}
+                onChange={(id, name) =>
+                  setForm((current) => ({
+                    ...current,
+                    subcategory_id: id,
+                    subcategory_name: name,
+                  }))
+                }
+              />
             </div>
 
             <div className="space-y-2">
@@ -1097,11 +1151,95 @@ const ProductEditorModal = ({
               )}
             </div>
 
+            {catalogManager === 'subcategory' && form.category_id && (
+              <p className="mt-4 rounded-xl bg-gray-50 px-3 py-2 text-[10px] font-semibold text-gray-500">
+                Mostrando subcategorías de: <strong>{form.category_name}</strong>
+              </p>
+            )}
             <p className="mt-4 text-[10px] leading-relaxed text-gray-400">
-              Por seguridad, el sistema no permitirá eliminar una categoría o marca que tenga
-              productos asociados. Una categoría con subcategorías tampoco se puede eliminar.
+              Por seguridad, no se deben eliminar categorías, subcategorías o marcas que estén en uso.
+              Una categoría con subcategorías tampoco se puede eliminar.
             </p>
           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+type CatalogSearchOption = {
+  id?: number;
+  name: string;
+};
+
+const CatalogSearchSelect = ({
+  value,
+  options,
+  placeholder,
+  disabled = false,
+  onChange,
+}: {
+  value: string;
+  options: CatalogSearchOption[];
+  placeholder: string;
+  disabled?: boolean;
+  onChange: (id: number | undefined, name: string) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const normalized = value.trim().toLocaleLowerCase();
+  const visibleOptions = options.filter((item) =>
+    !normalized || item.name.toLocaleLowerCase().includes(normalized),
+  );
+
+  return (
+    <div className="relative">
+      <input
+        value={value}
+        disabled={disabled}
+        onFocus={() => setOpen(true)}
+        onChange={(event) => {
+          const next = event.target.value;
+          const exact = options.find(
+            (item) => item.name.trim().toLocaleLowerCase() === next.trim().toLocaleLowerCase(),
+          );
+          onChange(exact?.id, next);
+          setOpen(true);
+        }}
+        onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+        className="w-full rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 pr-10 text-sm font-semibold outline-none focus:border-store-red focus:ring-2 focus:ring-store-red/20 disabled:cursor-not-allowed disabled:opacity-50"
+        placeholder={placeholder}
+        autoComplete="off"
+      />
+      <ChevronDown
+        size={16}
+        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+      />
+
+      {open && !disabled && (
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-[190] max-h-48 overflow-y-auto rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl [scrollbar-width:thin]">
+          {visibleOptions.length ? (
+            visibleOptions.map((item) => (
+              <button
+                key={item.id ?? item.name}
+                type="button"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                  onChange(item.id, item.name);
+                  setOpen(false);
+                }}
+                className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-gray-700 transition hover:bg-store-red/5 hover:text-store-red"
+              >
+                <span className="truncate">{item.name}</span>
+                {value.trim().toLocaleLowerCase() === item.name.trim().toLocaleLowerCase() && (
+                  <Check size={14} className="shrink-0" />
+                )}
+              </button>
+            ))
+          ) : (
+            <div className="px-3 py-3 text-xs font-semibold text-gray-400">
+              No hay coincidencias. Usa la opción Gestionar para crear un nuevo registro.
+            </div>
+          )}
         </div>
       )}
     </div>

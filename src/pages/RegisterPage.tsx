@@ -21,6 +21,7 @@ const RegisterPage = () => {
     });
 
     const [error, setError] = useState<string | null>(null);
+    const [errorCode, setErrorCode] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const { login: authLogin } = useAuth();
@@ -36,6 +37,7 @@ const RegisterPage = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
+        setErrorCode(null);
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
@@ -68,10 +70,21 @@ const RegisterPage = () => {
             authLogin(data.user, data.token);
             setIsSuccess(true);
         } catch (err: any) {
+            const code = err.response?.data?.error_code || null;
             const errorMsg = err.response?.data?.errors
                 ? (Object.values(err.response.data.errors)[0] as any)[0]
                 : err.response?.data?.message || err.message || 'Error al procesar la solicitud';
-            setError(errorMsg);
+
+            setErrorCode(code);
+            setError(
+                code === 'EMAIL_ALREADY_REGISTERED'
+                    ? 'Este correo electrónico ya está registrado.'
+                    : errorMsg,
+            );
+
+            if (code === 'EMAIL_ALREADY_REGISTERED') {
+                window.requestAnimationFrame(() => document.getElementById('email')?.focus());
+            }
         } finally {
             setLoading(false);
         }
@@ -82,6 +95,10 @@ const RegisterPage = () => {
             ? onlyLettersAndSpaces(e.target.value)
             : e.target.value;
         setFormData({ ...formData, [e.target.name]: value });
+        if (e.target.name === 'email' && errorCode === 'EMAIL_ALREADY_REGISTERED') {
+            setError(null);
+            setErrorCode(null);
+        }
     };
 
     if (isSuccess) {
@@ -124,13 +141,21 @@ const RegisterPage = () => {
                 </div>
 
                 {error && (
-                    <div className="error-message">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <div className="error-message" role="alert" aria-live="assertive">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                             <circle cx="12" cy="12" r="10" />
                             <line x1="12" y1="8" x2="12" y2="12" />
                             <line x1="12" y1="16" x2="12.01" y2="16" />
                         </svg>
-                        {error}
+                        <div>
+                            {errorCode === 'EMAIL_ALREADY_REGISTERED' ? (
+                                <>
+                                    <strong>Correo ya registrado.</strong>{' '}
+                                    Esta dirección ya tiene una cuenta.{' '}
+                                    <Link to="/login">Inicia sesión</Link> o usa la opción de recuperar contraseña.
+                                </>
+                            ) : error}
+                        </div>
                     </div>
                 )}
 

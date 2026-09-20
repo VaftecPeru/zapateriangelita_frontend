@@ -1,11 +1,9 @@
 name: Validate corrective frontend
 on:
-  push:
-    branches:
-      - fix/premerge-fullstack-20260918
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 jobs:
   validate:
     runs-on: ubuntu-latest

@@ -25,7 +25,7 @@ const LoginPage = () => {
 
     useEffect(() => {
         if (isAuthenticated && user) {
-            if (user.role === 'admin') {
+            if (['admin', 'superadmin'].includes(String(user.role || ''))) {
                 navigate('/admin/dashboard', { replace: true });
             } else {
                 navigate((location.state as { from?: string } | null)?.from || '/home', { replace: true });
