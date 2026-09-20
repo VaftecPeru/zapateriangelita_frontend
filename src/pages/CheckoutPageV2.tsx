@@ -138,7 +138,11 @@ const CheckoutPageV2 = () => {
       setDeliveryError(null);
 
       try {
-        const { data } = await apiClient.get("/checkout/delivery-cost");
+        const { data } = await apiClient.get("/checkout/delivery-cost", {
+          params: { _ts: Date.now() },
+          headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+          timeout: 8000,
+        });
         if (cancelled) return;
         setDeliveryCost(Math.max(0, Number(data?.price || 0)));
       } catch {
@@ -246,7 +250,7 @@ const CheckoutPageV2 = () => {
       setVerifyingPayment(true);
       setError(null);
 
-      const maxAttempts = 8;
+      const maxAttempts = 5;
       let lastMessage = "Estamos confirmando tu pago con Openpay.";
 
       try {
@@ -258,7 +262,7 @@ const CheckoutPageV2 = () => {
                 transaction_id: transactionId,
                 checkout_token: checkoutToken,
               },
-              timeout: 10000,
+              timeout: 9000,
             });
 
             if (cancelled) return;
@@ -277,7 +281,7 @@ const CheckoutPageV2 = () => {
             if (data.payment_status === "processing") {
               lastMessage = data.message || "Openpay todavía está confirmando tu pago.";
               if (attempt < maxAttempts) {
-                await sleep(attempt <= 2 ? 1200 : 2200);
+                await sleep(attempt <= 2 ? 800 : 1400);
                 continue;
               }
             } else {
@@ -319,7 +323,7 @@ const CheckoutPageV2 = () => {
               "El pago fue enviado y estamos esperando la confirmación final de Openpay.";
 
             if (attempt < maxAttempts) {
-              await sleep(attempt <= 2 ? 1200 : 2200);
+              await sleep(attempt <= 2 ? 800 : 1400);
               continue;
             }
           }
@@ -474,11 +478,13 @@ const CheckoutPageV2 = () => {
       storeCheckoutSession(orderId, checkoutToken);
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify(form));
 
+      const serverDeliveryCost = Math.max(0, Number(data.shipping_cost ?? 0));
+      setDeliveryCost(serverDeliveryCost);
       setOrderData({
         orderId,
         subtotal: Number(data.subtotal ?? cartTotal),
-        shippingCost: Number(data.shipping_cost ?? deliveryCost),
-        total: Number(data.total ?? (cartTotal + deliveryCost)),
+        shippingCost: serverDeliveryCost,
+        total: Number(data.total ?? (cartTotal + serverDeliveryCost)),
         customerName: form.full_name.trim(),
         checkoutToken,
       });
