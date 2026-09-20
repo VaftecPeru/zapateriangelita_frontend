@@ -700,12 +700,16 @@ const CheckoutPageV2 = () => {
           onClose={() => setShowPayment(false)}
           onBack={() => setShowPayment(false)}
           onPay={async ({ tokenId, deviceSessionId }) => {
-            const { data } = await apiClient.post("/checkout/payments/openpay/charge", {
-              order_id: orderData.orderId,
-              checkout_token: orderData.checkoutToken,
-              token_id: tokenId,
-              device_session_id: deviceSessionId,
-            });
+            const { data } = await apiClient.post(
+              "/checkout/payments/openpay/charge",
+              {
+                order_id: orderData.orderId,
+                checkout_token: orderData.checkoutToken,
+                token_id: tokenId,
+                device_session_id: deviceSessionId,
+              },
+              { timeout: 18000 },
+            );
             return data;
           }}
           onSuccess={handlePaymentSuccess}
