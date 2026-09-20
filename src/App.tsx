@@ -29,7 +29,8 @@ const AppContent = () => {
     return <LoadingScreen label="Cargando sesión" />;
   }
 
-  const fallbackPath = isAuthenticated && user?.role === 'admin' ? '/admin/dashboard' : '/';
+  const isAdminUser = isAuthenticated && ['admin', 'superadmin'].includes(String(user?.role || ''));
+  const fallbackPath = isAdminUser ? '/admin/dashboard' : '/';
 
   if (isAuthenticated && user?.must_change_password && window.location.pathname !== '/change-temporary-password') {
     return <Navigate to="/change-temporary-password" replace />;
@@ -42,7 +43,7 @@ const AppContent = () => {
           <Route
             path="/"
             element={
-              isAuthenticated && user?.role === 'admin' ? (
+              isAdminUser ? (
                 <Navigate to="/admin/dashboard" replace />
               ) : (
                 <HomePage />
