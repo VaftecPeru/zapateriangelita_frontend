@@ -233,7 +233,16 @@ export const productService = {
 
 export const additionalServiceService = {
     getAll: () => apiClient.get<AdditionalService[]>('/services'),
-    getDeliveryCost: () => apiClient.get<{ code: 'delivery'; price: number }>('/checkout/delivery-cost'),
+    getDeliveryCost: () => apiClient.get<{
+        code: 'delivery';
+        name: string;
+        price: number;
+        is_active: boolean;
+        description?: string | null;
+        updated_at?: string | null;
+    }>('/checkout/delivery-cost'),
+    updateDelivery: (data: { price: number; is_active: boolean; description?: string | null }) =>
+        apiClient.put<{ success: boolean; message: string; service: AdditionalService }>('/services/delivery', data),
     getById: (id: number) => apiClient.get<AdditionalService>(`/services/${id}`),
     create: (data: AdditionalService) => apiClient.post<AdditionalService>('/services', data),
     update: (id: number, data: Partial<AdditionalService>) => apiClient.put<AdditionalService>(`/services/${id}`, data),
