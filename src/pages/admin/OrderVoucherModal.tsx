@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Download, Printer, QrCode, X } from 'lucide-react';
-import type { Order } from '../../services/crudService';
+import { settingsService, type Order } from '../../services/crudService';
+import { getImageUrl } from '../../config/api';
 
 type Props = {
   order: Order;
@@ -141,13 +143,35 @@ const voucherHtml = (
 
 const OrderVoucherModal = ({ order, onClose }: Props) => {
   const paid = isPaid(order);
+  const [logoSource, setLogoSource] = useState(brandLogoUrl());
+
+  useEffect(() => {
+    let active = true;
+
+    const loadLogo = async () => {
+      try {
+        const response = await settingsService.getAll();
+        const configured = response.data?.data?.logo_url;
+        if (active && configured) {
+          setLogoSource(getImageUrl(configured) || brandLogoUrl());
+        }
+      } catch {
+        if (active) setLogoSource(brandLogoUrl());
+      }
+    };
+
+    void loadLogo();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const openPrintable = () => {
     const win = window.open('', '_blank', 'width=980,height=800');
     if (!win) return;
     win.opener = null;
     win.document.open();
-    win.document.write(voucherHtml(order));
+    win.document.write(voucherHtml(order, qrUrl(order, 300), logoSource));
     win.document.close();
     window.setTimeout(() => {
       win.focus();
@@ -157,7 +181,7 @@ const OrderVoucherModal = ({ order, onClose }: Props) => {
 
   const downloadVoucher = async () => {
     let embeddedQr = qrUrl(order, 300);
-    let embeddedLogo = brandLogoUrl();
+    let embeddedLogo = logoSource;
 
     try {
       embeddedQr = await toDataUrl(embeddedQr);
@@ -187,7 +211,7 @@ const OrderVoucherModal = ({ order, onClose }: Props) => {
       <section className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-[2rem] bg-white shadow-2xl">
         <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-gray-100 bg-white/95 px-6 py-5 backdrop-blur">
           <div>
-            <img src="/logo-angelita-horizontal.png" alt="Zapatería Angelita" className="mb-3 h-auto w-44 max-w-full" />
+            <img src={logoSource} alt="Zapatería Angelita" className="mb-3 h-auto w-44 max-w-full" />
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-store-red">Voucher + QR</p>
             <h3 className="mt-1 text-xl font-black text-black">Pedido {order.code}</h3>
             <p className="mt-1 text-xs font-bold text-gray-400">{formatDate(order.paid_at || order.created_at)}</p>
