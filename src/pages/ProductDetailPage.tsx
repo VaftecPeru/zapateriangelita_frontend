@@ -84,9 +84,12 @@ function normalizeProduct(product: Product): any {
       const name = String(typeof color === "object" ? color.name || color.color : color).trim();
       return {
         name,
-        hex: typeof color === "object" && (color.hex || color.color_hex)
-          ? color.hex || color.color_hex
-          : colorNameToHex(name),
+        hex: (() => {
+          const storedHex = typeof color === "object" ? String(color.hex || color.color_hex || "").trim() : "";
+          return !storedHex || storedHex.toLocaleLowerCase() === "#888888"
+            ? colorNameToHex(name)
+            : storedHex;
+        })(),
       };
     }).filter((color: any) => color.name)
     : typeof product.color === "string"
