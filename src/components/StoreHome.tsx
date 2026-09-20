@@ -82,7 +82,12 @@ const productColors = (product: any) => {
         hex: String(typeof item === 'object' ? item.hex || '' : '').trim(),
       }))
       .filter((item: any) => item.name)
-      .map((item: any) => ({ ...item, hex: item.hex || colorNameToHex(item.name) }));
+      .map((item: any) => ({
+        ...item,
+        hex: !item.hex || item.hex.toLocaleLowerCase() === '#888888'
+          ? colorNameToHex(item.name)
+          : item.hex,
+      }));
   }
 
   return String(product?.color || '')
