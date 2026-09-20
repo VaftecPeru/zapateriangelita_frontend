@@ -20,7 +20,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     }
 
     
-    if (!isAuthenticated || (user as any)?.role !== 'admin') {
+    if (!isAuthenticated || !['admin', 'superadmin'].includes(String((user as any)?.role || ''))) {
         return <Navigate to="/" replace />;
     }
 
