@@ -259,12 +259,23 @@ export const newsletterService = {
 
 export const settingsService = {
     getAll: () => apiClient.get<{ success: boolean; data: { [key: string]: string } }>('/settings'),
-    update: (key: string, value: string) => apiClient.post(`/settings/${key}?_method=PUT`, { value }),
+    update: (key: string, value: string) => apiClient.put(`/settings/${key}`, { value }),
     uploadBannerImage: (file: File) => {
         const formData = new FormData();
+        formData.append('_method', 'PUT');
         formData.append('image', file);
         return apiClient.post<{ success: boolean; data: { path: string } }>(
-            '/settings/homepage_banner_image?_method=PUT',
+            '/settings/homepage_banner_image',
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } },
+        );
+    },
+    uploadLogoImage: (file: File) => {
+        const formData = new FormData();
+        formData.append('_method', 'PUT');
+        formData.append('image', file);
+        return apiClient.post<{ success: boolean; data: { path: string } }>(
+            '/settings/site_logo_image',
             formData,
             { headers: { 'Content-Type': 'multipart/form-data' } },
         );
