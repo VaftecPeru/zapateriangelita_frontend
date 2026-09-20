@@ -116,6 +116,37 @@ async function run() {
     assert.ok(manager.includes('Guardar costo de delivery'));
   });
 
+  check('Compras cliente: usa el mismo voucher del administrador y muestra delivery', () => {
+    const clientPurchases = readFileSync('src/pages/ClientPurchasesPage.tsx', 'utf8');
+    assert.ok(clientPurchases.includes('OrderVoucherModal'));
+    assert.ok(clientPurchases.includes('Costo de delivery'));
+    assert.ok(clientPurchases.includes('order.shipping_cost'));
+  });
+
+  check('Checkout: delivery se refresca desde backend y verificación acotada', () => {
+    const checkout = readFileSync('src/pages/CheckoutPageV2.tsx', 'utf8');
+    assert.ok(checkout.includes('params: { _ts: Date.now() }'));
+    assert.ok(checkout.includes('const maxAttempts = 5'));
+    assert.ok(checkout.includes('serverDeliveryCost'));
+  });
+
+  check('Google: registro rápido no bloquea por SMTP y abre bienvenida', () => {
+    const login = readFileSync('src/pages/LoginPage.tsx', 'utf8');
+    const googleButton = readFileSync('src/components/GoogleIdentityButton.tsx', 'utf8');
+    const authService = readFileSync('src/services/authService.ts', 'utf8');
+    const app = readFileSync('src/App.tsx', 'utf8');
+    const welcome = readFileSync('src/pages/WelcomeDashboardPage.tsx', 'utf8');
+
+    assert.ok(login.includes('data.account_created'));
+    assert.ok(login.includes("navigate('/welcome'"));
+    assert.ok(login.includes('authService.googleWelcome()'));
+    assert.ok(login.includes('status === 429'));
+    assert.ok(googleButton.includes('disabledRef'));
+    assert.ok(authService.includes("'/auth/google/welcome'"));
+    assert.ok(app.includes('path="/welcome"'));
+    assert.ok(welcome.includes('Registro completado'));
+  });
+
   check('Ajustes: banners usan method override y logo administrable', () => {
     const service = readFileSync('src/services/crudService.ts', 'utf8');
     const settings = readFileSync('src/pages/admin/SettingsManager.tsx', 'utf8');

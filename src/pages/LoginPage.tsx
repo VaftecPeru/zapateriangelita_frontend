@@ -19,9 +19,20 @@ const LoginPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
+    const [cooldownSeconds, setCooldownSeconds] = useState(0);
     const { login: authLogin, user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
+
+    useEffect(() => {
+        if (cooldownSeconds <= 0) return;
+
+        const timer = window.setInterval(() => {
+            setCooldownSeconds((current) => Math.max(0, current - 1));
+        }, 1000);
+
+        return () => window.clearInterval(timer);
+    }, [cooldownSeconds]);
 
     useEffect(() => {
         if (isAuthenticated && user) {
@@ -35,6 +46,8 @@ const LoginPage = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (cooldownSeconds > 0) return;
+
         setError(null);
         setLoading(true);
 
@@ -42,11 +55,18 @@ const LoginPage = () => {
             const { data } = await authService.login(formData);
             authLogin(data.user, data.token);
         } catch (err: any) {
-            const msg = err.response?.data?.message
-                || err.response?.data?.errors?.email?.[0]
-                || err.message
-                || 'Error al iniciar sesión';
-            setError(msg);
+            const status = Number(err.response?.status || 0);
+            if (status === 429) {
+                const retryAfter = Math.max(5, Number(err.response?.headers?.['retry-after'] || 10));
+                setCooldownSeconds(retryAfter);
+                setError(`Se realizaron varios intentos seguidos. Espera ${retryAfter} segundos y vuelve a intentar.`);
+            } else {
+                const msg = err.response?.data?.message
+                    || err.response?.data?.errors?.email?.[0]
+                    || err.message
+                    || 'Error al iniciar sesión';
+                setError(msg);
+            }
         } finally {
             setLoading(false);
         }
@@ -61,12 +81,38 @@ const LoginPage = () => {
             if (!data?.user || !data?.token) {
                 throw new Error('Google no devolvió una sesión válida.');
             }
+
             authLogin(data.user, data.token);
+
+            if (data.account_created) {
+                sessionStorage.setItem('angelita_new_account', 'google');
+
+                // No esperamos el SMTP: el usuario entra a su panel inmediatamente.
+                void authService.googleWelcome().catch((mailError) => {
+                    console.warn('La cuenta fue creada, pero el correo de bienvenida quedó pendiente.', mailError);
+                });
+
+                navigate('/welcome', {
+                    replace: true,
+                    state: { registrationMethod: 'google' },
+                });
+                return;
+            }
         } catch (err: any) {
-            const msg = err.response?.data?.message
-                || err.message
-                || 'No fue posible continuar con Google.';
-            setError(msg);
+            const status = Number(err.response?.status || 0);
+
+            if (status === 429) {
+                const retryAfter = Math.max(5, Number(err.response?.headers?.['retry-after'] || 10));
+                setCooldownSeconds(retryAfter);
+                setError(`Google recibió varios intentos seguidos. Espera ${retryAfter} segundos y vuelve a intentar.`);
+            } else if (err.code === 'ECONNABORTED') {
+                setError('Google está tardando más de lo esperado. Intenta nuevamente en unos segundos.');
+            } else {
+                const msg = err.response?.data?.message
+                    || err.message
+                    || 'No fue posible continuar con Google.';
+                setError(msg);
+            }
         } finally {
             setGoogleLoading(false);
         }
@@ -163,10 +209,14 @@ const LoginPage = () => {
 
                     <button
                         type="submit"
-                        disabled={loading || googleLoading}
+                        disabled={loading || googleLoading || cooldownSeconds > 0}
                         className="btn-submit"
                     >
-                        {loading ? 'Ingresando...' : 'Iniciar sesión'}
+                        {loading
+                            ? 'Ingresando...'
+                            : cooldownSeconds > 0
+                                ? `Espera ${cooldownSeconds}s`
+                                : 'Iniciar sesión'}
                     </button>
                 </form>
 
@@ -188,8 +238,14 @@ const LoginPage = () => {
                     <GoogleIdentityButton
                         mode="login"
                         onCredential={handleGoogleCredential}
-                        disabled={loading || googleLoading}
+                        disabled={loading || googleLoading || cooldownSeconds > 0}
                     />
+
+                    {googleLoading && (
+                        <div className="mt-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-center text-xs font-bold text-red-700" role="status">
+                            Validando tu cuenta con Google y preparando tu panel...
+                        </div>
+                    )}
 
                     <div className="google-access__trust">
                         <ShieldCheck size={13} />

@@ -6,6 +6,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ChangeTemporaryPasswordPage from './pages/ChangeTemporaryPasswordPage';
 import RegisterPage from './pages/RegisterPage';
+import WelcomeDashboardPage from './pages/WelcomeDashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import ClientPurchasesPage from './pages/ClientPurchasesPage';
 import ContactAdvisorPage from './pages/ContactAdvisorPage';
@@ -68,6 +69,7 @@ const AppContent = () => {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/change-temporary-password" element={isAuthenticated ? <ChangeTemporaryPasswordPage /> : <Navigate to="/login" replace />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/welcome" element={<WelcomeDashboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route
             path="/profile/purchases"

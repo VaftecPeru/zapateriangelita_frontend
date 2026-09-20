@@ -33,6 +33,7 @@ export const authService = {
             Pragma: 'no-cache',
         },
     }),
-    googleLogin: (credential: string) => apiClient.post('/auth/google/login', { credential }),
-    googleLink: (credential: string) => apiClient.post('/auth/google/link', { credential }),
+    googleLogin: (credential: string) => apiClient.post('/auth/google/login', { credential }, { timeout: 12000 }),
+    googleWelcome: () => apiClient.post('/auth/google/welcome', {}, { timeout: 12000 }),
+    googleLink: (credential: string) => apiClient.post('/auth/google/link', { credential }, { timeout: 12000 }),
 };

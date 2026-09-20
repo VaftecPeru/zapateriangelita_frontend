@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Calendar, CheckCircle2, MessageCircle, Package, ReceiptText, ShieldCheck, ShoppingBag, X } from "lucide-react";
+import { ArrowLeft, Calendar, CheckCircle2, MessageCircle, Package, ReceiptText, ShieldCheck, ShoppingBag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import GoogleIdentityButton from "../components/GoogleIdentityButton";
+import OrderVoucherModal from "./admin/OrderVoucherModal";
 import { useAuth } from "../hooks/useAuth";
 import { authService } from "../services/authService";
 import { analyticsService, Order, orderService, settingsService } from "../services/crudService";
@@ -211,6 +212,16 @@ const ClientPurchasesPage = () => {
                       <span className="inline-flex px-4 py-2 rounded-full bg-[#121212] text-white text-[9px] font-black uppercase tracking-widest">
                         {statusLabel(order.status)}
                       </span>
+                      <div className="mt-3 space-y-1 text-xs text-gray-500">
+                        <div className="flex justify-between gap-5 md:justify-end">
+                          <span>Subtotal</span>
+                          <strong className="text-[#121212]">{money.format(Number(order.subtotal ?? 0))}</strong>
+                        </div>
+                        <div className="flex justify-between gap-5 md:justify-end">
+                          <span>Costo de delivery</span>
+                          <strong className="text-[#121212]">{money.format(Number(order.shipping_cost || 0))}</strong>
+                        </div>
+                      </div>
                       <p className="text-xl font-black text-[#e30613] mt-2">{money.format(Number(order.total || 0))}</p>
                     </div>
                   </div>
@@ -267,31 +278,10 @@ const ClientPurchasesPage = () => {
       </section>
 
       {receiptOrder && (
-        <div className="fixed inset-0 z-[5000] grid place-items-center bg-black/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
-          <section className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[2rem] bg-white p-6 shadow-2xl">
-            <div className="flex items-start justify-between gap-4 border-b border-black/5 pb-4">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#e30613]">Comprobante de compra</p>
-                <h2 className="mt-1 text-xl font-black">Pedido {receiptOrder.code}</h2>
-                <p className="mt-1 text-xs text-gray-500">{receiptOrder.created_at ? new Date(receiptOrder.created_at).toLocaleString('es-MX') : ''}</p>
-              </div>
-              <button onClick={() => setReceiptOrder(null)} className="rounded-full bg-gray-50 p-2" aria-label="Cerrar comprobante"><X size={18} /></button>
-            </div>
-            <div className="mt-5 space-y-3">
-              {(receiptOrder.items || []).map((item, index) => (
-                <div key={index} className="flex justify-between gap-3 rounded-xl bg-gray-50 p-3 text-sm">
-                  <div><strong>{item.product_name || 'Producto'}</strong><p className="text-xs text-gray-500">{item.color || ''} {item.size ? `· Talla ${item.size}` : ''}</p></div>
-                  <span className="font-black">x{item.quantity}</span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-5 flex items-center justify-between border-t border-black/10 pt-4">
-              <span className="text-xs font-black uppercase tracking-widest text-gray-500">Total</span>
-              <strong className="text-xl text-[#e30613]">{money.format(Number(receiptOrder.total || 0))}</strong>
-            </div>
-            <button type="button" onClick={() => window.print()} className="mt-5 w-full rounded-xl bg-[#121212] px-4 py-3 text-xs font-black uppercase tracking-widest text-white">Imprimir comprobante</button>
-          </section>
-        </div>
+        <OrderVoucherModal
+          order={receiptOrder}
+          onClose={() => setReceiptOrder(null)}
+        />
       )}
     </main>
   );
