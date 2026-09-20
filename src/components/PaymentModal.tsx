@@ -512,7 +512,7 @@ const PaymentModal = ({
               tone: "success",
             });
             setProcessing(false);
-            window.setTimeout(() => onSuccess(result), 1800);
+            window.setTimeout(() => onSuccess(result), 500);
             return;
           }
 
@@ -531,7 +531,7 @@ const PaymentModal = ({
 
             window.setTimeout(() => {
               window.location.href = result.redirect_url!;
-            }, 1200);
+            }, 500);
             return;
           }
 
