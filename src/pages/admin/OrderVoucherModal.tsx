@@ -107,7 +107,7 @@ const voucherHtml = (order: Order, qrSource = qrUrl(order, 300)) => {
     <section class="summary">
       <div><span>Subtotal</span><strong>${money.format(Number(order.subtotal ?? order.total ?? 0))}</strong></div>
       <div><span>Descuento</span><strong>-${money.format(Number(order.discount || 0))}</strong></div>
-      <div><span>Envío</span><strong>${money.format(Number(order.shipping_cost || 0))}</strong></div>
+      <div><span>Costo de delivery</span><strong>${money.format(Number(order.shipping_cost || 0))}</strong></div>
       <div class="total"><span>Total</span><strong>${money.format(Number(order.total || 0))}</strong></div>
     </section>
     <section class="qr">
