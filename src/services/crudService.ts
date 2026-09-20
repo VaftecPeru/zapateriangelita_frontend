@@ -122,7 +122,7 @@ export interface User {
     phone?: string;
     gender?: string;
     birthdate?: string;
-    role: string;
+    role: 'user' | 'admin' | 'superadmin' | string;
     must_change_password?: boolean;
     temporary_password_set_at?: string | null;
     created_at: string;
@@ -272,6 +272,8 @@ export const userService = {
     updateProfile: (data: any) => apiClient.post('/user/update', data),
     getAll: () => apiClient.get<User[]>('/users'),
     resetPassword: (id: number, sendEmail = false) => apiClient.post(`/users/${id}/reset-password`, { send_email: sendEmail }),
+    updateRole: (id: number, role: 'user' | 'admin') =>
+        apiClient.put<{ success: boolean; message: string; user: User }>(`/users/${id}/role`, { role }),
     changeTemporaryPassword: (password: string, passwordConfirmation: string) =>
         apiClient.post('/user/change-temporary-password', {
             password,
