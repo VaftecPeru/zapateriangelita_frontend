@@ -30,7 +30,7 @@ const RegisterPage = () => {
     useEffect(() => {
         if (!isSuccess) return;
 
-        const redirectTimer = window.setTimeout(() => navigate('/home', { replace: true }), 1800);
+        const redirectTimer = window.setTimeout(() => navigate('/welcome', { replace: true }), 1800);
         return () => window.clearTimeout(redirectTimer);
     }, [isSuccess, navigate]);
 
@@ -113,12 +113,12 @@ const RegisterPage = () => {
                             ¡Registro Exitoso!
                         </h2>
                         <p style={{ color: '#6e6e6e', lineHeight: '1.8', marginBottom: '24px' }}>
-                            Tu cuenta ha sido creada correctamente. <strong>Te hemos enviado un correo electrónico</strong> con tus credenciales de acceso.
+                            Tu cuenta ha sido creada correctamente y tu sesión está lista. Recibirás un correo de bienvenida.
                             <br /><br />
                             Revisa tu <strong>bandeja de entrada</strong> o la carpeta de <strong>SPAM</strong>.
                         </p>
-                        <button onClick={() => navigate('/home', { replace: true })} className="btn-submit" style={{ maxWidth: '400px', margin: '0 auto' }}>
-                            Ir a la tienda
+                        <button onClick={() => navigate('/welcome', { replace: true })} className="btn-submit" style={{ maxWidth: '400px', margin: '0 auto' }}>
+                            Ir a mi panel
                         </button>
                     </div>
                 </div>

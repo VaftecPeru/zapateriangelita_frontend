@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
 import GoogleIdentityButton from '../components/GoogleIdentityButton';
+import { authDestination } from '../utils/authDestination';
 import '../styles/login-home.css';
 import brandLogo from '../assets/brand/logo-angelita-horizontal.png';
 
@@ -19,6 +20,7 @@ const LoginPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
+    const googleInFlight = useRef(false);
     const [cooldownSeconds, setCooldownSeconds] = useState(0);
     const { login: authLogin, user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
@@ -36,11 +38,8 @@ const LoginPage = () => {
 
     useEffect(() => {
         if (isAuthenticated && user) {
-            if (['admin', 'superadmin'].includes(String(user.role || ''))) {
-                navigate('/admin/dashboard', { replace: true });
-            } else {
-                navigate((location.state as { from?: string } | null)?.from || '/home', { replace: true });
-            }
+            const from = (location.state as { from?: string } | null)?.from;
+            navigate(authDestination(user.role, from), { replace: true });
         }
     }, [isAuthenticated, user, navigate, location.state]);
 
@@ -73,6 +72,8 @@ const LoginPage = () => {
     };
 
     const handleGoogleCredential = async (credential: string) => {
+        if (googleInFlight.current || loading || cooldownSeconds > 0) return;
+        googleInFlight.current = true;
         setError(null);
         setGoogleLoading(true);
 
@@ -92,11 +93,7 @@ const LoginPage = () => {
                     console.warn('La cuenta fue creada, pero el correo de bienvenida quedó pendiente.', mailError);
                 });
 
-                navigate('/welcome', {
-                    replace: true,
-                    state: { registrationMethod: 'google' },
-                });
-                return;
+                // El efecto de sesión decide un único destino y conserva `from`.
             }
         } catch (err: any) {
             const status = Number(err.response?.status || 0);
@@ -114,6 +111,7 @@ const LoginPage = () => {
                 setError(msg);
             }
         } finally {
+            googleInFlight.current = false;
             setGoogleLoading(false);
         }
     };

@@ -8,6 +8,13 @@ import ReferenceLanding from '../src/components/ReferenceLanding';
 import ProductDetailPage from '../src/pages/ProductDetailPage';
 import { CartProvider } from '../src/hooks/useCart';
 import { productService, settingsService } from '../src/services/crudService';
+import axios from 'axios';
+import apiClient from '../src/services/apiClient';
+
+const denyNetwork = async () => { throw new Error('Unexpected network request in offline UI test'); };
+axios.defaults.adapter = denyNetwork;
+apiClient.defaults.adapter = denyNetwork;
+globalThis.fetch = async () => { throw new Error('Unexpected fetch in offline UI test'); };
 
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'https://test.invalid/' });
 Object.defineProperty(globalThis, 'window', { value: dom.window, configurable: true });
@@ -138,7 +145,7 @@ async function run() {
     const welcome = readFileSync('src/pages/WelcomeDashboardPage.tsx', 'utf8');
 
     assert.ok(login.includes('data.account_created'));
-    assert.ok(login.includes("navigate('/welcome'"));
+    assert.ok(login.includes('authDestination(user.role, from)'));
     assert.ok(login.includes('authService.googleWelcome()'));
     assert.ok(login.includes('status === 429'));
     assert.ok(googleButton.includes('disabledRef'));

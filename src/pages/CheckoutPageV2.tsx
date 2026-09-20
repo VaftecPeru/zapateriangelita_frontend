@@ -217,9 +217,9 @@ const CheckoutPageV2 = () => {
       return;
     }
 
-    // La recarga hace que AuthProvider valide el token recién emitido contra
-    // el backend y abre directamente la compra confirmada en el rol Cliente.
-    window.location.replace("/profile/purchases");
+    // La sesión ya fue entregada por el backend y guardada en AuthProvider.
+    // Conservar el proveedor evita una segunda autenticación y una recarga.
+    navigate("/profile/purchases", { replace: true });
   };
 
   useEffect(() => {

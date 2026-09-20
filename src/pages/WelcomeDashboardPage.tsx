@@ -8,14 +8,6 @@ const WelcomeDashboardPage = () => {
     const { user, isAuthenticated } = useAuth();
     const location = useLocation();
 
-    if (!isAuthenticated || !user) {
-        return <Navigate to="/login" replace />;
-    }
-
-    if (['admin', 'superadmin'].includes(String(user.role || ''))) {
-        return <Navigate to="/admin/dashboard" replace />;
-    }
-
     const [registrationMethod] = useState(() =>
         (location.state as { registrationMethod?: string } | null)?.registrationMethod
         || sessionStorage.getItem('angelita_new_account')
@@ -25,6 +17,14 @@ const WelcomeDashboardPage = () => {
     useEffect(() => {
         sessionStorage.removeItem('angelita_new_account');
     }, []);
+
+    if (!isAuthenticated || !user) {
+        return <Navigate to="/login" replace />;
+    }
+
+    if (['admin', 'superadmin'].includes(String(user.role || ''))) {
+        return <Navigate to="/admin/dashboard" replace />;
+    }
 
     const firstName = String(user.name || 'Cliente').trim().split(/\s+/)[0] || 'Cliente';
 
@@ -91,3 +91,4 @@ const WelcomeDashboardPage = () => {
 };
 
 export default WelcomeDashboardPage;
+

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { authService } from '../services/authService';
 
 interface User {
@@ -16,6 +16,8 @@ interface User {
 interface AuthContextType {
     user: User | null;
     loading: boolean;
+    sessionError: string | null;
+    retrySession: () => Promise<void>;
     favorites: any[];
     login: (userData: User, token: string) => void;
     logout: () => Promise<void>;
@@ -31,89 +33,85 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [favorites, setFavorites] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        let cancelled = false;
+    const [sessionError, setSessionError] = useState<string | null>(null);
+    const sessionVersion = useRef(0);
 
-        const restoreSession = async () => {
-            const token = localStorage.getItem('token');
-            const storedUser = localStorage.getItem('user');
-            const storedFavs = localStorage.getItem('favorites');
+    const restoreSession = useCallback(async () => {
+        const version = ++sessionVersion.current;
+        const token = localStorage.getItem('token');
+        const isCurrent = () => version === sessionVersion.current && localStorage.getItem('token') === token;
+        setLoading(true);
+        setSessionError(null);
 
-            if (storedFavs) {
-                try {
-                    setFavorites(JSON.parse(storedFavs));
-                } catch (e) {
-                    console.error('Failed to parse stored favorites', e);
-                    localStorage.removeItem('favorites');
-                }
-            }
+        if (!token) {
+            localStorage.removeItem('user');
+            setUser(null);
+            setLoading(false);
+            return;
+        }
 
-            if (!token || !storedUser) {
+        try {
+            const response = await authService.getProfile();
+            if (!isCurrent()) return;
+            const profile = response.data?.user ?? response.data;
+            if (!profile?.id || !profile?.email) throw new Error('Perfil de usuario inválido');
+            localStorage.setItem('user', JSON.stringify(profile));
+            setUser(profile as User);
+        } catch (error: any) {
+            if (!isCurrent()) return;
+            setUser(null);
+            if (error.response?.status === 401) {
+                // Solo una sesión rechazada por el servidor debe eliminarse.
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
-                if (!cancelled) {
-                    setUser(null);
-                    setLoading(false);
-                }
-                return;
+            } else {
+                // No habilitar rutas privadas con datos locales sin verificar.
+                setSessionError('No pudimos verificar tu sesión. Tu acceso está guardado; vuelve a intentar.');
             }
-
-            try {
-                // Validar la sesión contra el backend antes de habilitar rutas protegidas.
-                const response = await authService.getProfile();
-                const profile = (response.data as any)?.user ?? response.data;
-
-                if (!profile?.id || !profile?.email) {
-                    throw new Error('Perfil de usuario inválido');
-                }
-
-                localStorage.setItem('user', JSON.stringify(profile));
-
-                if (!cancelled) {
-                    setUser(profile as User);
-                }
-            } catch (error) {
-                console.warn('La sesión guardada ya no es válida o no pudo verificarse.', error);
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-
-                if (!cancelled) {
-                    setUser(null);
-                }
-            } finally {
-                if (!cancelled) {
-                    setLoading(false);
-                }
-            }
-        };
-
-        restoreSession();
-
-        return () => {
-            cancelled = true;
-        };
+        } finally {
+            if (version === sessionVersion.current) setLoading(false);
+        }
     }, []);
 
+    useEffect(() => {
+        try {
+            const stored = JSON.parse(localStorage.getItem('favorites') || '[]');
+            setFavorites(Array.isArray(stored) ? stored : []);
+        } catch {
+            localStorage.removeItem('favorites');
+        }
+        void restoreSession();
+        return () => { sessionVersion.current += 1; };
+    }, [restoreSession]);
+
     const login = (userData: User, token: string) => {
+        if (!userData?.id || !userData?.email || !token?.trim()) {
+            throw new Error('El servidor no devolvió una sesión válida.');
+        }
+        sessionVersion.current += 1;
+        setSessionError(null);
+        setLoading(false);
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('token', token);
         setUser(userData);
     };
 
     const logout = async () => {
+        const version = ++sessionVersion.current;
         try {
-            if (localStorage.getItem('token')) {
-                await authService.logout();
-            }
+            if (localStorage.getItem('token')) await authService.logout();
         } catch (error) {
-            // Aunque el backend no responda, la sesión local debe cerrarse.
-            console.warn('No fue posible revocar la sesión remota; se cerrará localmente.', error);
+            console.warn('No fue posible revocar la sesión remota.', error);
         } finally {
-            localStorage.removeItem('user');
-            localStorage.removeItem('token');
-            localStorage.removeItem('favorites');
-            setUser(null);
-            setFavorites([]);
+            if (version === sessionVersion.current) {
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+                localStorage.removeItem('favorites');
+                setUser(null);
+                setFavorites([]);
+                setSessionError(null);
+                setLoading(false);
+            }
         }
     };
 
@@ -141,7 +139,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, favorites, login, logout, updateUser, toggleFavorite, isAuthenticated: !!user }}>
+        <AuthContext.Provider value={{ user, loading, sessionError, retrySession: restoreSession, favorites, login, logout, updateUser, toggleFavorite, isAuthenticated: !!user }}>
             {children}
         </AuthContext.Provider>
     );
@@ -154,3 +152,4 @@ export const useAuth = () => {
     }
     return context;
 };
+

@@ -24,10 +24,21 @@ import './styles/product-detail-mobile.css';
 import './styles/product-detail-premium.css';
 
 const AppContent = () => {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading, sessionError, retrySession } = useAuth();
 
   if (loading) {
     return <LoadingScreen label="Cargando sesión" />;
+  }
+
+  if (sessionError) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
+        <p role="alert">{sessionError}</p>
+        <button type="button" onClick={() => void retrySession()} className="rounded-xl bg-black px-6 py-3 text-white">
+          Reintentar conexión
+        </button>
+      </main>
+    );
   }
 
   const isAdminUser = isAuthenticated && ['admin', 'superadmin'].includes(String(user?.role || ''));
@@ -109,3 +120,4 @@ function App() {
 }
 
 export default App;
+
