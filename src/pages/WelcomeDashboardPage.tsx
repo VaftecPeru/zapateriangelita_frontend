@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { CheckCircle2, ShoppingBag, UserRound, ReceiptText, ArrowRight } from 'lucide-react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -15,10 +16,15 @@ const WelcomeDashboardPage = () => {
         return <Navigate to="/admin/dashboard" replace />;
     }
 
-    const registrationMethod =
+    const [registrationMethod] = useState(() =>
         (location.state as { registrationMethod?: string } | null)?.registrationMethod
         || sessionStorage.getItem('angelita_new_account')
-        || 'password';
+        || 'password'
+    );
+
+    useEffect(() => {
+        sessionStorage.removeItem('angelita_new_account');
+    }, []);
 
     const firstName = String(user.name || 'Cliente').trim().split(/\s+/)[0] || 'Cliente';
 
