@@ -82,8 +82,8 @@ async function run() {
 
   const featuredProducts = Array.from({ length: 10 }, (_, index) => ({
     id: index + 1,
-    price: 100 + index,
-    oldPrice: 0,
+    price: index === 0 ? 60 : 100 + index,
+    oldPrice: index === 0 ? 100 : 0,
   }));
   await render(<MemoryRouter><ReferenceLanding products={featuredProducts} loading={false} error={false} renderProduct={p => <article key={p.id} data-product-id={p.id}>Producto {p.id}</article>} /></MemoryRouter>);
   check('Destacados: primera página usa dos filas de cuatro productos', () => {
