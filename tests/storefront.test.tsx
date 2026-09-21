@@ -79,6 +79,22 @@ async function run() {
   await render(<MemoryRouter><ReferenceLanding products={[{ id: 1, price: 60, oldPrice: 100 }]} loading={false} error={false} renderProduct={p => <article key={p.id}>Producto real {p.id}</article>} /></MemoryRouter>);
   check('Portada: tres categorías en el orden de la referencia', () => assert.deepEqual([...document.querySelectorAll('.ref-collection h2')].map(n => n.textContent), ['Mujer', 'Hombre', 'Niños']));
   check('Portada: fotografía roja y texto editable', () => { assert.match(document.querySelector('h1')!.textContent!, /Camina con tu/); assert.match(document.querySelector('.ref-hero__photo')!.getAttribute('src')!, /hero-red/); });
+
+  const featuredProducts = Array.from({ length: 10 }, (_, index) => ({
+    id: index + 1,
+    price: index === 0 ? 60 : 100 + index,
+    oldPrice: index === 0 ? 100 : 0,
+  }));
+  await render(<MemoryRouter><ReferenceLanding products={featuredProducts} loading={false} error={false} renderProduct={p => <article key={p.id} data-product-id={p.id}>Producto {p.id}</article>} /></MemoryRouter>);
+  check('Destacados: primera página usa dos filas de cuatro productos', () => {
+    assert.equal(document.querySelectorAll('.ref-product-grid--premium article').length, 8);
+    assert.equal(document.querySelectorAll('.ref-featured-pagination button').length, 2);
+  });
+  await click('[aria-label="Productos destacados siguientes"]');
+  check('Destacados: paginación avanza al siguiente grupo', () => {
+    assert.equal(document.querySelector('.ref-product-grid--premium article')?.getAttribute('data-product-id'), '9');
+    assert.equal(document.querySelectorAll('.ref-product-grid--premium article').length, 2);
+  });
   check('Promoción: descuento calculado, no inventado', () => assert.match(document.querySelector('.ref-promotion')!.textContent!, /40%/));
   await click('[aria-label="Banner siguiente"]');
   check('Slider: navegación siguiente', () => assert.match(document.querySelector('h1')!.textContent!, /Tu ritmo/));
@@ -177,7 +193,8 @@ async function run() {
     const welcome = readFileSync('src/pages/WelcomeDashboardPage.tsx', 'utf8');
 
     assert.ok(login.includes('data.account_created'));
-    assert.ok(login.includes('authDestination(user.role, from)'));
+    assert.ok(login.includes('Boolean(user.must_change_password)'));
+    assert.ok(login.includes('authDestination(user.role, from, Boolean(user.must_change_password))'));
     assert.ok(login.includes('authService.googleWelcome()'));
     assert.ok(login.includes('status === 429'));
     assert.ok(googleButton.includes('disabledRef'));

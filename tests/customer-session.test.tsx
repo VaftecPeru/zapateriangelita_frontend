@@ -10,6 +10,7 @@ import apiClient from '../src/services/apiClient';
 import axios from 'axios';
 import LoginPage from '../src/pages/LoginPage';
 import CheckoutPageV2 from '../src/pages/CheckoutPageV2';
+import { authDestination } from '../src/utils/authDestination';
 
 const dom = new JSDOM('<div id="root"></div>', { url: 'https://test.invalid/' });
 // Ninguna prueba puede alcanzar la API real, incluso si falta un mock.
@@ -51,6 +52,12 @@ const provider = () => <MemoryRouter><AuthProvider><Probe /></AuthProvider></Mem
 function check(name: string, assertion: () => void) { assertion(); console.log(`PASS ${name}`); }
 
 async function run() {
+  check('Contraseña temporal prioriza la ruta obligatoria', () => {
+    assert.equal(authDestination('user', '/welcome', true), '/change-temporary-password');
+    assert.equal(authDestination('admin', '/admin/dashboard', true), '/change-temporary-password');
+    assert.equal(authDestination('superadmin', undefined, true), '/change-temporary-password');
+  });
+
   authService.getProfile = async () => { throw { response: { status: 503 } }; };
   await mount(provider(), 'persisted-token');
   check('Fallo temporal conserva token y no autoriza con datos locales', () => {

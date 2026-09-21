@@ -39,7 +39,7 @@ const LoginPage = () => {
     useEffect(() => {
         if (isAuthenticated && user) {
             const from = (location.state as { from?: string } | null)?.from;
-            navigate(authDestination(user.role, from), { replace: true });
+            navigate(authDestination(user.role, from, Boolean(user.must_change_password)), { replace: true });
         }
     }, [isAuthenticated, user, navigate, location.state]);
 
