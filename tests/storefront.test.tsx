@@ -65,6 +65,17 @@ async function run() {
       { title: 'Tarjeta rechazada', message: 'La tarjeta fue rechazada.' },
     );
   });
+
+  check('Openpay 3005: antifraude se presenta como tarjeta rechazada', () => {
+    assert.deepEqual(
+      getFriendlyPaymentError('3005', 'The card was rejected by antifraud'),
+      { title: 'Tarjeta rechazada', message: 'La tarjeta fue rechazada.' },
+    );
+    assert.deepEqual(
+      getFriendlyPaymentError('3005', 'The card was rejected by antifraud', '4000000000000044', true),
+      { title: 'Tarjeta rechazada', message: 'La tarjeta fue rechazada.' },
+    );
+  });
   await render(<MemoryRouter><ReferenceLanding products={[{ id: 1, price: 60, oldPrice: 100 }]} loading={false} error={false} renderProduct={p => <article key={p.id}>Producto real {p.id}</article>} /></MemoryRouter>);
   check('Portada: tres categorías en el orden de la referencia', () => assert.deepEqual([...document.querySelectorAll('.ref-collection h2')].map(n => n.textContent), ['Mujer', 'Hombre', 'Niños']));
   check('Portada: fotografía roja y texto editable', () => { assert.match(document.querySelector('h1')!.textContent!, /Camina con tu/); assert.match(document.querySelector('.ref-hero__photo')!.getAttribute('src')!, /hero-red/); });
