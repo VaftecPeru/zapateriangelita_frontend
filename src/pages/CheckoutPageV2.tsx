@@ -492,6 +492,12 @@ const CheckoutPageV2 = () => {
     } catch (err: any) {
       const data = err.response?.data;
 
+      if (err.response?.status === 429) {
+        const retryAfter = Math.max(1, Number(data?.retry_after || err.response?.headers?.['retry-after'] || 30));
+        setError(`Has realizado varios intentos seguidos. Espera aproximadamente ${retryAfter} segundos y vuelve a intentar.`);
+        return;
+      }
+
       if (err.response?.status === 409 && data?.requires_login) {
         sessionStorage.setItem(DRAFT_KEY, JSON.stringify(form));
         setError("Este correo ya tiene una cuenta. Inicia sesión y volverás automáticamente a tu compra.");
@@ -678,6 +684,8 @@ const CheckoutPageV2 = () => {
           </form>
 
           <EditableOrderSummary
+  deliveryCost={deliveryCost}
+  deliveryLoading={deliveryLoading}
   onVariantChanged={() => {
     // Cualquier cambio de cantidad/talla/color invalida sesiones de pago previas.
     clearCheckoutSession();
