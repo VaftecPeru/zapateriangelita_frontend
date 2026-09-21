@@ -306,8 +306,8 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
 
   if (text.includes("antifraud") || text.includes("antifraude") || text.includes("fraudulent")) {
     return {
-      title: "Tarjeta rechazada por seguridad",
-      message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
+      title: "Tarjeta rechazada",
+      message: "La tarjeta fue rechazada.",
     };
   }
 
