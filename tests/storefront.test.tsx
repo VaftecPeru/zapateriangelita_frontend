@@ -10,6 +10,7 @@ import { CartProvider } from '../src/hooks/useCart';
 import { productService, settingsService } from '../src/services/crudService';
 import axios from 'axios';
 import apiClient from '../src/services/apiClient';
+import { getFriendlyPaymentError } from '../src/components/PaymentModal';
 
 const denyNetwork = async () => { throw new Error('Unexpected network request in offline UI test'); };
 axios.defaults.adapter = denyNetwork;
@@ -54,6 +55,16 @@ function detail(product = fixture) {
 }
 
 async function run() {
+  check('Openpay 3004: mensaje genérico de tarjeta rechazada', () => {
+    assert.deepEqual(
+      getFriendlyPaymentError('3004', 'The card was reported stolen'),
+      { title: 'Tarjeta rechazada', message: 'La tarjeta fue rechazada.' },
+    );
+    assert.deepEqual(
+      getFriendlyPaymentError('3004', 'The card was reported stolen', '4000000000000119', true),
+      { title: 'Tarjeta rechazada', message: 'La tarjeta fue rechazada.' },
+    );
+  });
   await render(<MemoryRouter><ReferenceLanding products={[{ id: 1, price: 60, oldPrice: 100 }]} loading={false} error={false} renderProduct={p => <article key={p.id}>Producto real {p.id}</article>} /></MemoryRouter>);
   check('Portada: tres categorías en el orden de la referencia', () => assert.deepEqual([...document.querySelectorAll('.ref-collection h2')].map(n => n.textContent), ['Mujer', 'Hombre', 'Niños']));
   check('Portada: fotografía roja y texto editable', () => { assert.match(document.querySelector('h1')!.textContent!, /Camina con tu/); assert.match(document.querySelector('.ref-hero__photo')!.getAttribute('src')!, /hero-red/); });
