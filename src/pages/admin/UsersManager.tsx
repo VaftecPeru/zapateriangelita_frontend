@@ -153,13 +153,23 @@ const UsersManager = ({ initialData }: UsersManagerProps) => {
 
     const handleDelete = async (id: number) => {
         setDeleting(true);
+        setError(null);
         try {
             await userService.delete(id);
-            setUsers(users.filter(u => u.id !== id));
+            setUsers((current) => current.filter((user) => user.id !== id));
             setConfirmDelete(null);
         } catch (e: any) {
             console.error('Error deleting user:', e);
-            alert(e.response?.data?.message || 'Error al eliminar el usuario.');
+
+            // Si el registro desapareció entre la carga de la tabla y la acción,
+            // sincronizamos la UI en vez de mostrar el error técnico del backend.
+            if (Number(e.response?.status || 0) === 404) {
+                setUsers((current) => current.filter((user) => user.id !== id));
+                setConfirmDelete(null);
+                return;
+            }
+
+            setError(e.response?.data?.message || 'No se pudo eliminar el usuario.');
         } finally {
             setDeleting(false);
         }
