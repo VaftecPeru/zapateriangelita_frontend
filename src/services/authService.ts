@@ -25,8 +25,9 @@ export const authService = {
     login: (data: LoginData) => apiClient.post('/login', data),
     register: (data: RegisterData) => apiClient.post('/register', data),
     logout: () => apiClient.post('/logout'),
-    getProfile: () => apiClient.get('/user'),
+    getProfile: () => apiClient.get('/user', { timeout: 10000 }),
     googleConfig: () => apiClient.get<GoogleConfigResponse>('/auth/google/config', {
+        timeout: 8000,
         params: { _ts: Date.now() },
         headers: {
             'Cache-Control': 'no-cache',

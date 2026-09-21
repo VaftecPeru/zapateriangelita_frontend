@@ -40,33 +40,34 @@ const loadGoogleScript = () => {
 
   googleScriptPromise = new Promise<void>((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>('script[data-angelita-google-identity="true"]');
-    if (existing) {
-      if (window.google?.accounts?.id) {
-        resolve();
-        return;
-      }
-
-      existing.addEventListener('load', () => resolve(), { once: true });
-      existing.addEventListener('error', () => {
-        existing.remove();
-        googleScriptPromise = null;
-        reject(new Error('No se pudo cargar Google Identity Services.'));
-      }, { once: true });
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.dataset.angelitaGoogleIdentity = 'true';
-    script.onload = () => resolve();
-    script.onerror = () => {
+    const script = existing || document.createElement('script');
+    const cleanup = () => {
+      window.clearTimeout(timer);
+      script.removeEventListener('load', onLoad);
+      script.removeEventListener('error', onError);
+    };
+    const fail = () => {
+      cleanup();
       script.remove();
       googleScriptPromise = null;
       reject(new Error('No se pudo cargar Google Identity Services.'));
     };
-    document.head.appendChild(script);
+    const onLoad = () => {
+      if (!window.google?.accounts?.id) { fail(); return; }
+      cleanup();
+      resolve();
+    };
+    const onError = () => fail();
+    const timer = window.setTimeout(fail, 10000);
+    script.addEventListener('load', onLoad, { once: true });
+    script.addEventListener('error', onError, { once: true });
+    if (!existing) {
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.dataset.angelitaGoogleIdentity = 'true';
+      document.head.appendChild(script);
+    }
   });
 
   return googleScriptPromise;
@@ -226,3 +227,4 @@ const GoogleIdentityButton = ({ mode, onCredential, disabled = false }: Props) =
 };
 
 export default GoogleIdentityButton;
+
