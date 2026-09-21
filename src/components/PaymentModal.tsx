@@ -134,8 +134,8 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
         message: "La tarjeta no tiene fondos suficientes.",
       },
       "4000000000000119": {
-        title: "Tarjeta robada",
-        message: "La tarjeta ha sido identificada como una tarjeta robada.",
+        title: "Tarjeta rechazada",
+        message: "La tarjeta fue rechazada.",
       },
       "4000000000000044": {
         title: "Tarjeta rechazada por seguridad",
@@ -188,8 +188,8 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
 
   if (errorCode === "3004") {
     return {
-      title: "Tarjeta robada",
-      message: "La tarjeta ha sido identificada como una tarjeta robada.",
+      title: "Tarjeta rechazada",
+      message: "La tarjeta fue rechazada.",
     };
   }
 
@@ -299,8 +299,8 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
 
   if (text.includes("stolen") || text.includes("robada")) {
     return {
-      title: "Tarjeta robada",
-      message: "La tarjeta ha sido identificada como una tarjeta robada.",
+      title: "Tarjeta rechazada",
+      message: "La tarjeta fue rechazada.",
     };
   }
 
