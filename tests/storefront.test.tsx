@@ -141,11 +141,21 @@ async function run() {
     assert.ok(clientPurchases.includes('order.shipping_cost'));
   });
 
-  check('Checkout: delivery se refresca desde backend y verificación acotada', () => {
+  check('Checkout: delivery se refresca y el total coincide en resumen y botón', () => {
     const checkout = readFileSync('src/pages/CheckoutPageV2.tsx', 'utf8');
     assert.ok(checkout.includes('params: { _ts: Date.now() }'));
     assert.ok(checkout.includes('const maxAttempts = 5'));
     assert.ok(checkout.includes('serverDeliveryCost'));
+    assert.ok(checkout.includes('deliveryCost={deliveryCost}'));
+    assert.ok(checkout.includes('deliveryLoading={deliveryLoading}'));
+    assert.ok(checkout.includes('cartTotal + deliveryCost'));
+  });
+
+  check('Checkout: HTTP 429 se presenta como espera controlada y no como error técnico', () => {
+    const checkout = readFileSync('src/pages/CheckoutPageV2.tsx', 'utf8');
+    assert.ok(checkout.includes('err.response?.status === 429'));
+    assert.ok(checkout.includes('retry_after'));
+    assert.ok(checkout.includes('Has realizado varios intentos seguidos'));
   });
 
   check('Google: registro rápido no bloquea por SMTP y abre bienvenida', () => {
