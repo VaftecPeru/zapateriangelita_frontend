@@ -138,12 +138,12 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
         message: "La tarjeta fue rechazada.",
       },
       "4000000000000044": {
-        title: "Tarjeta rechazada por seguridad",
-        message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
+        title: "Tarjeta rechazada",
+        message: "La tarjeta fue rechazada.",
       },
       "5454545454545454": {
-        title: "Tarjeta rechazada por seguridad",
-        message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
+        title: "Tarjeta rechazada",
+        message: "La tarjeta fue rechazada.",
       },
       "340000000000009": {
         title: "Tarjeta rechazada",
@@ -195,8 +195,8 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
 
   if (errorCode === "3005") {
     return {
-      title: "Tarjeta rechazada por seguridad",
-      message: "La tarjeta ha sido rechazada por el sistema antifraudes.",
+      title: "Tarjeta rechazada",
+      message: "La tarjeta fue rechazada.",
     };
   }
 
