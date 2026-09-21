@@ -68,6 +68,16 @@
 .ref-heading h2 { font:400 21px/1.2 Georgia,serif; text-transform:uppercase; letter-spacing:.02em; }
 .ref-heading > a { display:flex; align-items:center; gap:7px; color:#d4000c; font-size:12px; }
 .ref-product-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:18px; }
+.ref-featured-slider { position:relative; }
+.ref-featured-viewport { overflow:hidden; padding:5px 3px 9px; margin:-5px -3px -9px; }
+.ref-product-grid--premium { grid-template-rows:repeat(2,auto); min-height:1px; animation:ref-featured-enter .5s cubic-bezier(.22,.8,.3,1) both; }
+.ref-featured-arrow { position:absolute; top:50%; z-index:5; width:42px; height:42px; display:grid; place-items:center; transform:translateY(-50%); border:1px solid #ececec; border-radius:50%; background:#fff; color:#171717; box-shadow:0 8px 24px #00000014; transition:transform .22s ease,color .22s ease,box-shadow .22s ease; }
+.ref-featured-arrow--left { left:-21px; }
+.ref-featured-arrow--right { right:-21px; }
+.ref-featured-pagination { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:18px; }
+.ref-featured-pagination button { width:8px; height:8px; padding:0; border:0; border-radius:999px; background:#d8d8d8; transition:width .25s ease,background .25s ease,transform .25s ease; }
+.ref-featured-pagination button[aria-current="true"] { width:27px; background:#e30613; }
+.ref-featured-pagination button:focus-visible,.ref-featured-arrow:focus-visible { outline:3px solid #e3061340; outline-offset:3px; }
 .reference-landing .product-card { display:flex !important; flex-direction:column; padding:0; overflow:hidden; background:#fff; border:1px solid #efefef; border-radius:7px; box-shadow:0 2px 5px #00000009; transition:transform .3s,box-shadow .3s; }
 .reference-landing .product-card__media { aspect-ratio:1.31; border-radius:0; background:#f5f3f2; }
 .reference-landing .product-card__image-link { width:100%; height:100%; }
@@ -113,6 +123,7 @@
 .home-experience--landing .footer .brand-logo__image { width:195px; filter:grayscale(1) brightness(0) invert(1); }.home-experience--landing .footer h2 { font-family:'Inter',sans-serif; font-size:11px; letter-spacing:.08em; color:#e2c9a2; margin-bottom:20px; }.home-experience--landing .footer p,.home-experience--landing .footer a:not(.logo) { font-size:12px; line-height:1.5; }.home-experience--landing .footer__brand p { max-width:225px; margin-top:16px; }.home-experience--landing .footer__bottom { padding-top:22px; border-top:1px solid #ffffff35; gap:22px; }.home-experience--landing .footer__bottom > span { font-size:11px; }.home-experience--landing .footer-payment-methods { gap:13px; }.home-experience--landing .payment-brand { border:0; background:none; padding:0; }.home-experience--landing .payment-brand--visa { font-size:20px; }
 @media (hover:hover) and (pointer:fine) {
   .ref-collection:hover img,.reference-landing .product-card:hover img,.ref-instagram__track a:hover img { transform:scale(1.055); }
+  .ref-featured-arrow:hover { color:#e30613; transform:translateY(-50%) scale(1.08); box-shadow:0 10px 28px #0000001c; }
   .reference-landing .product-card:hover { transform:translateY(-4px); box-shadow:0 7px 18px #0000000d; }
   .ref-button:hover { transform:translateY(-2px); box-shadow:0 5px 14px #0002; }.ref-button--ghost:hover { color:#111; background:#fff; }
   .ref-button::after { content:''; position:absolute; top:0; left:-70%; width:45%; height:100%; background:linear-gradient(90deg,transparent,#ffffff38,transparent); transform:skewX(-20deg); transition:left .55s; }.ref-button:hover::after { left:125%; }
@@ -121,6 +132,7 @@
 @keyframes ref-photo-in { from { opacity:.55; transform:scale(1.035); } to { opacity:1; transform:scale(1); } }
 @keyframes ref-copy-in { from { opacity:0; transform:translateY(13px); } to { opacity:1; transform:none; } }
 @keyframes ref-loading { to { background-position:-200% 0; } }
+@keyframes ref-featured-enter { from { opacity:.35; transform:translateX(-34px); } to { opacity:1; transform:translateX(0); } }
 @media (max-width:1150px) {
   .home-experience--landing .header-main { grid-template-columns:180px minmax(0,1fr) auto; gap:14px; height:78px; }.home-experience--landing .header-main .brand-logo__image { width:175px; }.home-experience--landing .desktop-nav { gap:12px; }.header-search { width:165px; }.home-experience--landing .header-actions { gap:3px; }.home-experience--landing .desktop-nav .nav-link { font-size:9px; }
   .ref-hero__content { padding-top:5.5%; }.ref-hero h1 { margin-top:22px; }.ref-hero__description { font-size:12px; }.ref-hero__promises { gap:25px; margin-top:25px; }.ref-hero__actions { margin-top:20px; }.ref-button { min-height:43px; font-size:10px; }.ref-kicker { font-size:10px; }.ref-handwriting { font-size:28px; }.ref-benefits { padding:20px 5px; }.ref-benefits > div { gap:10px; }.ref-benefits strong,.ref-benefits span { font-size:10px; }.ref-instagram { height:188px; }.ref-instagram__intro { padding:18px; }.ref-instagram h2 { font-size:28px; }.home-experience--landing .footer__grid { gap:30px; }
