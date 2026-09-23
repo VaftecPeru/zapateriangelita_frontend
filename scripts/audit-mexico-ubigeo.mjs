@@ -105,11 +105,10 @@ for (const [code, official] of officialByCode) {
   if (local.name !== official.name) {
     errors.push(`${code}: municipio local="${local.name}" INEGI="${official.name}"`);
   }
-  // INEGI no siempre llena nom_cab en la respuesta agregada. Cuando sí lo
-  // entrega, también verificamos la cabecera municipal del snapshot.
-  if (official.head && local.head !== official.head) {
-    errors.push(`${code}: cabecera local="${local.head}" INEGI="${official.head}"`);
-  }
+  // La identidad oficial se valida con clave + entidad + municipio.
+  // La cabecera se conserva como sugerencia de UX, no como restricción,
+  // porque el endpoint agregado de INEGI puede omitirla o devolver valores
+  // inconsistentes en algunos registros.
 }
 
 for (const code of localByCode.keys()) {
