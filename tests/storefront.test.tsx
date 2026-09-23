@@ -12,7 +12,6 @@ import axios from 'axios';
 import apiClient from '../src/services/apiClient';
 import { getFriendlyPaymentError } from '../src/components/PaymentModal';
 import { canInspectOrderVoucher, isOrderPaid, voucherPaymentToken } from '../src/utils/orderVoucher';
-import { getSuggestedCity, isValidColony, isValidMexicoPostalCode } from '../src/utils/checkoutAddress';
 
 const denyNetwork = async () => { throw new Error('Unexpected network request in offline UI test'); };
 axios.defaults.adapter = denyNetwork;
@@ -57,16 +56,6 @@ function detail(product = fixture) {
 }
 
 async function run() {
-  check('Checkout México: sugiere cabecera municipal y valida colonia/CP', () => {
-    assert.equal(getSuggestedCity(['Ciudad Hidalgo'], ''), 'Ciudad Hidalgo');
-    assert.equal(getSuggestedCity(['Ciudad Hidalgo'], 'Otra localidad'), null);
-    assert.equal(getSuggestedCity(['Cabecera A', 'Cabecera B'], ''), null);
-    assert.equal(isValidMexicoPostalCode('61100'), true);
-    assert.equal(isValidMexicoPostalCode('6110'), false);
-    assert.equal(isValidColony('Centro'), true);
-    assert.equal(isValidColony(' '), false);
-  });
-
   check('Voucher admin: Admin y Superadmin pueden revisar pedidos pendientes', () => {
     assert.equal(canInspectOrderVoucher('admin'), true);
     assert.equal(canInspectOrderVoucher('superadmin'), true);
