@@ -80,14 +80,14 @@ const CheckoutPage = () => {
   const { states, municipalities, cities, loading: ubigeoLoading } = useUbigeo(form.state, form.municipality);
 
   useEffect(() => {
-    const suggestedCity = getSuggestedCity(cities, form.city);
-    if (!suggestedCity) return;
+    if (!form.municipality || cities.length !== 1) return;
 
     setForm((current) => {
-      if (!current.municipality || current.city.trim()) return current;
+      const suggestedCity = getSuggestedCity(cities, current.city);
+      if (!suggestedCity || current.municipality !== form.municipality) return current;
       return { ...current, city: suggestedCity };
     });
-  }, [form.municipality, form.city, cities]);
+  }, [form.municipality, cities]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -205,6 +205,7 @@ const CheckoutPage = () => {
     const email = form.email.trim();
     const phone = form.phone.trim();
     const postalCode = form.postal_code.trim();
+    const colony = form.colony.trim();
     const address = form.address.trim();
 
     if (!name || !/^[\p{L}]+(?:[\s'-][\p{L}]+)*$/u.test(name)) {
@@ -219,8 +220,11 @@ const CheckoutPage = () => {
     if (!form.country || !form.state || !form.municipality || !form.city) {
       return "Selecciona país, estado, municipio y ciudad.";
     }
-    if (!/^\d{4,20}$/.test(postalCode)) {
-      return "El código postal debe contener entre 4 y 20 números.";
+    if (!isValidMexicoPostalCode(postalCode)) {
+      return "Ingresa un código postal mexicano válido de 5 dígitos.";
+    }
+    if (!isValidColony(colony)) {
+      return "Ingresa una colonia válida.";
     }
     if (address.length < 5 || address.length > 255) {
       return "Ingresa una dirección válida de entre 5 y 255 caracteres.";
