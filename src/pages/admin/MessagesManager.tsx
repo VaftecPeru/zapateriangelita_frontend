@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Eye, MessageCircle, MessageSquare, RefreshCw, ShoppingBag, User, X } from 'lucide-react';
 import { analyticsService, orderService, Order } from '../../services/crudService';
+import { useAuth } from '../../hooks/useAuth';
+import { canInspectOrderVoucher, isOrderPaid } from '../../utils/orderVoucher';
 import OrderVoucherModal from './OrderVoucherModal';
 
 const money = new Intl.NumberFormat('es-MX', {
@@ -18,6 +20,8 @@ const statusOptions = [
 ];
 
 const MessagesManager = () => {
+    const { user } = useAuth();
+    const canInspectVoucher = canInspectOrderVoucher(user?.role);
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -73,9 +77,7 @@ const MessagesManager = () => {
     const getCustomerEmail = (order: Order) => order.customer_email || order.user?.email || '';
     const getArticleCount = (order: Order) => order.items?.reduce((total, item) => total + Number(item.quantity || 0), 0) || 0;
     const whatsappUrl = (order: Order) => `https://wa.me/${getPhone(order).replace(/[^0-9]/g, '')}`;
-    const isPaid = (order: Order) =>
-        Boolean(order.paid_at) ||
-        ['paid', 'completed', 'complete', 'succeeded'].includes(String(order.payment_status || '').toLowerCase());
+    const isPaid = (order: Order) => isOrderPaid(order);
     const paymentLabel = (order: Order) => {
         if (isPaid(order)) return 'Pagado';
         const status = String(order.payment_status || '').toLowerCase();
@@ -120,8 +122,8 @@ const MessagesManager = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => setVoucherOrder(order)}
-                                                disabled={!isPaid(order)}
-                                                title={isPaid(order) ? 'Ver voucher y QR' : 'Disponible cuando el pago esté confirmado'}
+                                                disabled={!canInspectVoucher}
+                                                title={canInspectVoucher ? (isPaid(order) ? 'Ver voucher y QR' : 'Ver detalle provisional del voucher') : 'Disponible solo para Administrador y Superadmin'}
                                                 className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-gray-700 transition hover:border-store-red hover:text-store-red disabled:cursor-not-allowed disabled:opacity-35"
                                             >
                                                 <Eye size={14} /> Ver

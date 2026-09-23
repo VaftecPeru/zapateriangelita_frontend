@@ -11,6 +11,7 @@ import { productService, settingsService } from '../src/services/crudService';
 import axios from 'axios';
 import apiClient from '../src/services/apiClient';
 import { getFriendlyPaymentError } from '../src/components/PaymentModal';
+import { canInspectOrderVoucher, isOrderPaid, voucherPaymentToken } from '../src/utils/orderVoucher';
 
 const denyNetwork = async () => { throw new Error('Unexpected network request in offline UI test'); };
 axios.defaults.adapter = denyNetwork;
@@ -55,6 +56,15 @@ function detail(product = fixture) {
 }
 
 async function run() {
+  check('Voucher admin: Admin y Superadmin pueden revisar pedidos pendientes', () => {
+    assert.equal(canInspectOrderVoucher('admin'), true);
+    assert.equal(canInspectOrderVoucher('superadmin'), true);
+    assert.equal(canInspectOrderVoucher('user'), false);
+    assert.equal(isOrderPaid({ paid_at: null, payment_status: 'pending' }), false);
+    assert.equal(voucherPaymentToken({ paid_at: null, payment_status: 'pending' }), 'PENDING');
+    assert.equal(voucherPaymentToken({ paid_at: '2026-09-23T15:00:00-05:00', payment_status: 'pending', payment_reference: 'REF-1' }), 'REF-1');
+  });
+
   check('Openpay 3004: mensaje genérico de tarjeta rechazada', () => {
     assert.deepEqual(
       getFriendlyPaymentError('3004', 'The card was reported stolen'),
