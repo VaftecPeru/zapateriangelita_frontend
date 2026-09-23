@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Download, Printer, QrCode, X } from 'lucide-react';
 import { settingsService, type Order } from '../../services/crudService';
 import { getImageUrl } from '../../config/api';
+import { isOrderPaid, voucherPaymentToken } from '../../utils/orderVoucher';
 
 type Props = {
   order: Order;
@@ -35,15 +36,11 @@ const formatDate = (value?: string | null) => {
   });
 };
 
-const isPaid = (order: Order) =>
-  Boolean(order.paid_at) ||
-  ['paid', 'completed', 'complete', 'succeeded'].includes(String(order.payment_status || '').toLowerCase());
-
 const qrPayload = (order: Order) =>
   [
     'ZAPATERIA ANGELITA',
     `PEDIDO:${order.code}`,
-    `PAGO:${order.payment_reference || order.payment_transaction_id || 'CONFIRMADO'}`,
+    `PAGO:${voucherPaymentToken(order)}`,
     `TOTAL:${Number(order.total || 0).toFixed(2)} MXN`,
     `FECHA:${order.paid_at || order.created_at || ''}`,
   ].join('|');
@@ -111,7 +108,7 @@ const voucherHtml = (
   <main class="page">
     <div class="head">
       <div class="brand"><img class="brand-logo" src="${escapeHtml(logoSource)}" alt="Zapatería Angelita" /><small>Voucher de compra</small></div>
-      <div><div class="label">Pedido</div><div class="value">${escapeHtml(order.code)}</div><div class="status">${isPaid(order) ? 'Pago confirmado' : escapeHtml(order.payment_status || 'Pendiente')}</div></div>
+      <div><div class="label">Pedido</div><div class="value">${escapeHtml(order.code)}</div><div class="status">${isOrderPaid(order) ? 'Pago confirmado' : escapeHtml(order.payment_status || 'Pendiente')}</div></div>
     </div>
     <section class="grid">
       <div><div class="label">Cliente</div><div class="value">${escapeHtml(order.customer_name || order.user?.name || 'Cliente')}</div></div>
@@ -142,7 +139,7 @@ const voucherHtml = (
 };
 
 const OrderVoucherModal = ({ order, onClose }: Props) => {
-  const paid = isPaid(order);
+  const paid = isOrderPaid(order);
   const [logoSource, setLogoSource] = useState(brandLogoUrl());
 
   useEffect(() => {
