@@ -23,7 +23,7 @@ assert.equal(new Set(codes).size, codes.length, 'Cada clave INEGI municipal debe
 for (const [state, entries] of Object.entries(ubigeo)) {
   assert.ok(entries.length > 0, `${state} debe contener municipios`);
   for (const entry of entries) {
-    assert.match(entry.code, /^\\d{5}$/, `Clave INEGI inválida: ${entry.code}`);
+    assert.match(entry.code, /^\d{5}$/, `Clave INEGI inválida: ${entry.code}`);
     assert.ok(entry.name.trim(), `Municipio sin nombre: ${entry.code}`);
     assert.ok(entry.head.trim(), `Municipio sin cabecera: ${entry.code}`);
   }
