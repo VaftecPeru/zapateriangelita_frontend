@@ -1,6 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-type UbigeoData = Record<string, Record<string, string[]>>;
+type MunicipalityEntry = {
+    code: string;
+    name: string;
+    head: string;
+};
+
+type UbigeoData = Record<string, MunicipalityEntry[]>;
+
+const sortEsMx = (values: string[]) =>
+    [...values].sort((a, b) => a.localeCompare(b, 'es-MX'));
 
 export const useUbigeo = (selectedState: string, selectedMunicipality: string) => {
     const [ubigeo, setUbigeo] = useState<UbigeoData>({});
@@ -21,13 +30,34 @@ export const useUbigeo = (selectedState: string, selectedMunicipality: string) =
             });
     }, []);
 
-    const states = Object.keys(ubigeo).sort();
-    const municipalities = selectedState && ubigeo[selectedState]
-        ? Object.keys(ubigeo[selectedState]).sort()
-        : [];
-    const cities = selectedState && selectedMunicipality && ubigeo[selectedState]?.[selectedMunicipality]
-        ? [...ubigeo[selectedState][selectedMunicipality]].sort()
-        : [];
+    const states = useMemo(
+        () => sortEsMx(Object.keys(ubigeo)),
+        [ubigeo],
+    );
+
+    const stateEntries = selectedState ? ubigeo[selectedState] || [] : [];
+
+    // Algunos municipios de Oaxaca comparten exactamente el mismo nombre.
+    // El selector muestra el nombre una sola vez y las cabeceras permiten
+    // distinguir la ciudad/localidad correspondiente sin perder registros.
+    const municipalities = useMemo(
+        () => sortEsMx([...new Set(stateEntries.map(entry => entry.name))]),
+        [stateEntries],
+    );
+
+    const cities = useMemo(
+        () => selectedMunicipality
+            ? sortEsMx([
+                ...new Set(
+                    stateEntries
+                        .filter(entry => entry.name === selectedMunicipality)
+                        .map(entry => entry.head)
+                        .filter(Boolean),
+                ),
+            ])
+            : [],
+        [stateEntries, selectedMunicipality],
+    );
 
     return { states, municipalities, cities, loading };
 };

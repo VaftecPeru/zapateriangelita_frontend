@@ -478,17 +478,20 @@ const CheckoutPage = () => {
                   {municipalities.map((m) => <option key={m}>{m}</option>)}
                 </select>
               </label>
-              <label style={labelStyle}>Ciudad *
-                <select 
-                  required 
-                  value={form.city || ""} 
-                  disabled={!form.municipality || ubigeoLoading} 
-                  onChange={(e) => updateField("city", e.target.value)} 
-                  style={{ ...inputStyle, cursor: "pointer" }}
-                >
-                  <option value="">Seleccionar</option>
-                  {cities.map((c) => <option key={c}>{c}</option>)}
-                </select>
+              <label style={labelStyle}>Ciudad / Localidad *
+                <input
+                  required
+                  list="checkout-city-suggestions-legacy"
+                  value={form.city || ""}
+                  disabled={!form.municipality || ubigeoLoading}
+                  onChange={(e) => updateField("city", e.target.value)}
+                  placeholder="Escribe tu ciudad o localidad"
+                  maxLength={100}
+                  style={inputStyle}
+                />
+                <datalist id="checkout-city-suggestions-legacy">
+                  {cities.map((c) => <option key={c} value={c} />)}
+                </datalist>
               </label>
               
               <div className="checkout-page__address-fields" style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 2fr", gap: "14px" }}>
