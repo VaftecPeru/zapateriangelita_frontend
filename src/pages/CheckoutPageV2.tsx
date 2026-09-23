@@ -7,6 +7,7 @@ import PhoneField from "../components/PhoneField";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
 import { useUbigeo } from "../hooks/useUbigeo";
+import { getSuggestedCity, isValidColony, isValidMexicoPostalCode } from "../utils/checkoutAddress";
 import apiClient from "../services/apiClient";
 import "../styles/checkout.css";
 
@@ -59,6 +60,7 @@ const initialFormState = {
   municipality: "",
   city: "",
   postal_code: "",
+  colony: "",
   address: "",
   reference: "",
 };
@@ -127,6 +129,16 @@ const CheckoutPageV2 = () => {
   );
 
   useEffect(() => {
+    if (!form.municipality || cities.length !== 1) return;
+
+    setForm((current) => {
+      const suggestedCity = getSuggestedCity(cities, current.city);
+      if (!suggestedCity || current.municipality !== form.municipality) return current;
+      return { ...current, city: suggestedCity };
+    });
+  }, [form.municipality, cities]);
+
+  useEffect(() => {
     sessionStorage.setItem(DRAFT_KEY, JSON.stringify(form));
   }, [form]);
 
@@ -186,6 +198,7 @@ const CheckoutPageV2 = () => {
           municipality: current.municipality || defaultAddress.municipality || "",
           city: current.city || defaultAddress.city || "",
           postal_code: current.postal_code || defaultAddress.postal_code || "",
+          colony: current.colony || defaultAddress.colony || "",
           address: current.address || defaultAddress.address || "",
           reference: current.reference || defaultAddress.reference || "",
         }));
@@ -355,6 +368,7 @@ const CheckoutPageV2 = () => {
     const email = form.email.trim();
     const phone = form.phone.trim();
     const postalCode = form.postal_code.trim();
+    const colony = form.colony.trim();
     const address = form.address.trim();
 
     if (!name || !/^[\p{L}]+(?:[\s'-][\p{L}]+)*$/u.test(name)) {
@@ -369,8 +383,11 @@ const CheckoutPageV2 = () => {
     if (!form.country || !form.state || !form.municipality || !form.city) {
       return "Selecciona país, estado, municipio y ciudad.";
     }
-    if (!/^\d{4,20}$/.test(postalCode)) {
-      return "Ingresa un código postal válido.";
+    if (!isValidMexicoPostalCode(postalCode)) {
+      return "Ingresa un código postal mexicano válido de 5 dígitos.";
+    }
+    if (!isValidColony(colony)) {
+      return "Ingresa una colonia válida.";
     }
     if (address.length < 5 || address.length > 255) {
       return "Ingresa una dirección válida.";
@@ -462,6 +479,7 @@ const CheckoutPageV2 = () => {
         shipping_state: form.state.trim(),
         shipping_municipality: form.municipality.trim(),
         shipping_postal_code: form.postal_code.trim(),
+        shipping_colony: form.colony.trim(),
         payment_method: "openpay",
         notes: form.reference.trim() || null,
       });
@@ -622,14 +640,14 @@ const CheckoutPageV2 = () => {
               </label>
               <label style={labelStyle}>
                 Estado *
-                <select required value={form.state} disabled={ubigeoLoading} onChange={(event) => setForm((current) => ({ ...current, state: event.target.value, municipality: "", city: "" }))} style={inputStyle}>
+                <select required value={form.state} disabled={ubigeoLoading} onChange={(event) => setForm((current) => ({ ...current, state: event.target.value, municipality: "", city: "", postal_code: "", colony: "" }))} style={inputStyle}>
                   <option value="">Seleccionar</option>
                   {states.map((state) => <option key={state}>{state}</option>)}
                 </select>
               </label>
               <label style={labelStyle}>
                 Municipio *
-                <select required value={form.municipality} disabled={!form.state || ubigeoLoading} onChange={(event) => setForm((current) => ({ ...current, municipality: event.target.value, city: "" }))} style={inputStyle}>
+                <select required value={form.municipality} disabled={!form.state || ubigeoLoading} onChange={(event) => setForm((current) => ({ ...current, municipality: event.target.value, city: "", postal_code: "", colony: "" }))} style={inputStyle}>
                   <option value="">Seleccionar</option>
                   {municipalities.map((municipality) => <option key={municipality}>{municipality}</option>)}
                 </select>
@@ -652,11 +670,32 @@ const CheckoutPageV2 = () => {
               </label>
               <label style={labelStyle}>
                 Código postal *
-                <input required inputMode="numeric" maxLength={20} value={form.postal_code} onChange={(event) => updateField("postal_code", onlyDigits(event.target.value))} style={inputStyle} />
+                <input
+                  required
+                  inputMode="numeric"
+                  pattern="[0-9]{5}"
+                  maxLength={5}
+                  value={form.postal_code}
+                  onChange={(event) => updateField("postal_code", onlyDigits(event.target.value))}
+                  placeholder="00000"
+                  style={inputStyle}
+                />
+              </label>
+              <label style={labelStyle}>
+                Colonia *
+                <input
+                  required
+                  maxLength={120}
+                  value={form.colony}
+                  onChange={(event) => updateField("colony", event.target.value)}
+                  placeholder="Ej. Centro"
+                  autoComplete="address-level3"
+                  style={inputStyle}
+                />
               </label>
               <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>
                 Dirección *
-                <input required maxLength={255} value={form.address} onChange={(event) => updateField("address", event.target.value)} placeholder="Calle, número y colonia" style={inputStyle} />
+                <input required maxLength={255} value={form.address} onChange={(event) => updateField("address", event.target.value)} placeholder="Calle y número" autoComplete="street-address" style={inputStyle} />
               </label>
               <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>
                 Referencia (opcional)

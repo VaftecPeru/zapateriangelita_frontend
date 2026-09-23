@@ -168,6 +168,13 @@ export interface Order {
     customer_name?: string;
     customer_email?: string;
     shipping_phone?: string;
+    shipping_address?: string;
+    shipping_city?: string;
+    shipping_country?: string;
+    shipping_state?: string;
+    shipping_municipality?: string;
+    shipping_postal_code?: string;
+    shipping_colony?: string;
     created_at?: string;
     user?: { id: number; name: string; email: string; phone?: string };
     items?: Array<{ product_name?: string; size?: string | null; color?: string | null; quantity: number; unit_price?: number | string }>;

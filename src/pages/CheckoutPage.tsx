@@ -4,6 +4,7 @@ import { ArrowLeft, PackageCheck, ShoppingBag } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
 import { useUbigeo } from "../hooks/useUbigeo";
+import { getSuggestedCity, isValidColony, isValidMexicoPostalCode } from "../utils/checkoutAddress";
 import apiClient from "../services/apiClient";
 import PaymentModal, { OpenpayChargeResult, getFriendlyPaymentError } from "../components/PaymentModal";
 import "../styles/checkout.css";
@@ -50,6 +51,7 @@ const initialFormState = {
   municipality: "",
   city: "",
   postal_code: "",
+  colony: "",
   address: "",
   reference: "",
 };
@@ -78,6 +80,16 @@ const CheckoutPage = () => {
   const { states, municipalities, cities, loading: ubigeoLoading } = useUbigeo(form.state, form.municipality);
 
   useEffect(() => {
+    if (!form.municipality || cities.length !== 1) return;
+
+    setForm((current) => {
+      const suggestedCity = getSuggestedCity(cities, current.city);
+      if (!suggestedCity || current.municipality !== form.municipality) return current;
+      return { ...current, city: suggestedCity };
+    });
+  }, [form.municipality, cities]);
+
+  useEffect(() => {
     if (!isAuthenticated) return;
     setForm((current) => ({ ...current, email: user?.email || current.email }));
     apiClient.get<any[]>("/addresses")
@@ -94,6 +106,7 @@ const CheckoutPage = () => {
             municipality: defaultAddress.municipality || "",
             city: defaultAddress.city || "",
             postal_code: defaultAddress.postal_code || "",
+            colony: defaultAddress.colony || "",
             address: defaultAddress.address || "",
             reference: defaultAddress.reference || "",
           }));
@@ -192,6 +205,7 @@ const CheckoutPage = () => {
     const email = form.email.trim();
     const phone = form.phone.trim();
     const postalCode = form.postal_code.trim();
+    const colony = form.colony.trim();
     const address = form.address.trim();
 
     if (!name || !/^[\p{L}]+(?:[\s'-][\p{L}]+)*$/u.test(name)) {
@@ -206,8 +220,11 @@ const CheckoutPage = () => {
     if (!form.country || !form.state || !form.municipality || !form.city) {
       return "Selecciona país, estado, municipio y ciudad.";
     }
-    if (!/^\d{4,20}$/.test(postalCode)) {
-      return "El código postal debe contener entre 4 y 20 números.";
+    if (!isValidMexicoPostalCode(postalCode)) {
+      return "Ingresa un código postal mexicano válido de 5 dígitos.";
+    }
+    if (!isValidColony(colony)) {
+      return "Ingresa una colonia válida.";
     }
     if (address.length < 5 || address.length > 255) {
       return "Ingresa una dirección válida de entre 5 y 255 caracteres.";
@@ -297,6 +314,7 @@ const CheckoutPage = () => {
         shipping_state: form.state?.trim() || "",
         shipping_municipality: form.municipality?.trim() || "",
         shipping_postal_code: form.postal_code?.trim() || "",
+        shipping_colony: form.colony?.trim() || "",
         payment_method: "openpay",
       };
 
@@ -458,7 +476,7 @@ const CheckoutPage = () => {
                   required 
                   value={form.state || ""} 
                   disabled={ubigeoLoading} 
-                  onChange={(e) => setForm((c) => ({ ...c, state: e.target.value, municipality: "", city: "" }))} 
+                  onChange={(e) => setForm((c) => ({ ...c, state: e.target.value, municipality: "", city: "", postal_code: "", colony: "" }))} 
                   style={{ ...inputStyle, cursor: "pointer" }}
                 >
                   <option value="">Seleccionar</option>
@@ -471,7 +489,7 @@ const CheckoutPage = () => {
                   required 
                   value={form.municipality || ""} 
                   disabled={!form.state || ubigeoLoading} 
-                  onChange={(e) => setForm((c) => ({ ...c, municipality: e.target.value, city: "" }))} 
+                  onChange={(e) => setForm((c) => ({ ...c, municipality: e.target.value, city: "", postal_code: "", colony: "" }))} 
                   style={{ ...inputStyle, cursor: "pointer" }}
                 >
                   <option value="">Seleccionar</option>
@@ -494,30 +512,43 @@ const CheckoutPage = () => {
                 </datalist>
               </label>
               
-              <div className="checkout-page__address-fields" style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 2fr", gap: "14px" }}>
+              <div className="checkout-page__address-fields" style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
                 <label style={labelStyle}>Código postal *
-                  <input 
-                    required 
-                    inputMode="numeric" 
-                    pattern="[0-9]{4,20}"
-                    maxLength={20}
-                    value={form.postal_code || ""} 
-                    onChange={(e) => updateField("postal_code", onlyDigits(e.target.value))} 
-                    style={inputStyle} 
+                  <input
+                    required
+                    inputMode="numeric"
+                    pattern="[0-9]{5}"
+                    maxLength={5}
+                    value={form.postal_code || ""}
+                    onChange={(e) => updateField("postal_code", onlyDigits(e.target.value))}
+                    placeholder="00000"
+                    style={inputStyle}
                   />
                 </label>
-                <label style={labelStyle}>Dirección *
-                  <input 
-                    required 
-                    minLength={5}
-                    maxLength={255}
-                    value={form.address || ""} 
-                    onChange={(e) => updateField("address", e.target.value)} 
-                    placeholder="Calle, número y colonia" 
-                    style={inputStyle} 
+                <label style={labelStyle}>Colonia *
+                  <input
+                    required
+                    maxLength={120}
+                    value={form.colony || ""}
+                    onChange={(e) => updateField("colony", e.target.value)}
+                    placeholder="Ej. Centro"
+                    autoComplete="address-level3"
+                    style={inputStyle}
                   />
                 </label>
               </div>
+              <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>Dirección *
+                <input
+                  required
+                  minLength={5}
+                  maxLength={255}
+                  value={form.address || ""}
+                  onChange={(e) => updateField("address", e.target.value)}
+                  placeholder="Calle y número"
+                  autoComplete="street-address"
+                  style={inputStyle}
+                />
+              </label>
 
               <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>Referencia (opcional)
                 <input 
