@@ -129,14 +129,14 @@ const CheckoutPageV2 = () => {
   );
 
   useEffect(() => {
-    const suggestedCity = getSuggestedCity(cities, form.city);
-    if (!suggestedCity) return;
+    if (!form.municipality || cities.length !== 1) return;
 
     setForm((current) => {
-      if (!current.municipality || current.city.trim()) return current;
+      const suggestedCity = getSuggestedCity(cities, current.city);
+      if (!suggestedCity || current.municipality !== form.municipality) return current;
       return { ...current, city: suggestedCity };
     });
-  }, [form.municipality, form.city, cities]);
+  }, [form.municipality, cities]);
 
   useEffect(() => {
     sessionStorage.setItem(DRAFT_KEY, JSON.stringify(form));
