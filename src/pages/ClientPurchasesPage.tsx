@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Calendar, CheckCircle2, MessageCircle, Package, ReceiptText, ShieldCheck, ShoppingBag } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import GoogleIdentityButton from "../components/GoogleIdentityButton";
 import OrderVoucherModal from "./admin/OrderVoucherModal";
 import { useAuth } from "../hooks/useAuth";
@@ -32,6 +32,7 @@ const statusLabel = (status?: string) => {
 
 const ClientPurchasesPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading, updateUser } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
@@ -41,6 +42,14 @@ const ClientPurchasesPage = () => {
   const [googleError, setGoogleError] = useState<string | null>(null);
   const [receiptOrder, setReceiptOrder] = useState<Order | null>(null);
   const [supportNumber, setSupportNumber] = useState('');
+  const purchaseConfirmed = (location.state as any)?.purchaseConfirmed as
+    | {
+        orderCode?: string | null;
+        transactionId?: string | null;
+        paymentReference?: string | null;
+        emailScheduled?: boolean;
+      }
+    | undefined;
 
   useEffect(() => {
     settingsService.getAll()
@@ -122,6 +131,39 @@ const ClientPurchasesPage = () => {
       </header>
 
       <section className="max-w-6xl mx-auto mt-8">
+        {purchaseConfirmed && (
+          <div
+            role="status"
+            className="mb-6 rounded-[2rem] border border-emerald-200 bg-emerald-50 p-6 md:p-8 shadow-sm"
+          >
+            <div className="flex items-start gap-4">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-600 text-white">
+                <CheckCircle2 size={24} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-700">Pago confirmado</p>
+                <h2 className="mt-1 text-2xl font-black text-[#121212]">¡Gracias por tu compra!</h2>
+                <p className="mt-2 text-sm leading-6 text-emerald-900/70">
+                  Tu pago fue confirmado y tu pedido ya está registrado.
+                  {purchaseConfirmed.emailScheduled
+                    ? " Estamos preparando el correo con tu voucher y datos de acceso."
+                    : ""}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-bold text-emerald-900/70">
+                  {purchaseConfirmed.orderCode && (
+                    <span className="rounded-full bg-white/80 px-3 py-1.5">Pedido: {purchaseConfirmed.orderCode}</span>
+                  )}
+                  {purchaseConfirmed.transactionId && (
+                    <span className="rounded-full bg-white/80 px-3 py-1.5">Movimiento: {purchaseConfirmed.transactionId}</span>
+                  )}
+                  {purchaseConfirmed.paymentReference && (
+                    <span className="rounded-full bg-white/80 px-3 py-1.5">Referencia: {purchaseConfirmed.paymentReference}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="bg-white rounded-[2rem] border border-black/5 shadow-sm p-6 md:p-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
