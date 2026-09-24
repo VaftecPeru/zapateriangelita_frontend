@@ -76,6 +76,16 @@ async function run() {
     );
   });
 
+  check('Openpay 401: informa que no hubo cargo y la pasarela no autenticó', () => {
+    assert.deepEqual(
+      getFriendlyPaymentError('401', 'Unauthorized'),
+      {
+        title: 'Pasarela no disponible',
+        message: 'No pudimos autenticar la conexión con Openpay. No se realizó ningún cargo. Intenta nuevamente en unos minutos.',
+      },
+    );
+  });
+
   check('Openpay 3005: antifraude se presenta como tarjeta rechazada', () => {
     assert.deepEqual(
       getFriendlyPaymentError('3005', 'The card was rejected by antifraud'),
