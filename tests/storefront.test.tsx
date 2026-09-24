@@ -205,7 +205,8 @@ async function run() {
     assert.ok(login.includes('data.account_created'));
     assert.ok(login.includes('Boolean(user.must_change_password)'));
     assert.ok(login.includes('authDestination(user.role, from, Boolean(user.must_change_password))'));
-    assert.ok(login.includes('authService.googleWelcome()'));
+    assert.ok(!login.includes('authService.googleWelcome()'));
+    assert.ok(login.includes('backend deja el correo de bienvenida persistido'));
     assert.ok(login.includes('status === 429'));
     assert.ok(googleButton.includes('disabledRef'));
     assert.ok(authService.includes("'/auth/google/welcome'"));
