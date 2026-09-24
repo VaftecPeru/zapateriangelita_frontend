@@ -231,8 +231,18 @@ const CheckoutPageV2 = () => {
     }
 
     // La sesión ya fue entregada por el backend y guardada en AuthProvider.
-    // Conservar el proveedor evita una segunda autenticación y una recarga.
-    navigate("/profile/purchases", { replace: true });
+    // Mostramos una confirmación de compra sin guardar datos sensibles de tarjeta.
+    navigate("/profile/purchases", {
+      replace: true,
+      state: {
+        purchaseConfirmed: {
+          orderCode: result?.order_code || null,
+          transactionId: result?.transaction_id || null,
+          paymentReference: result?.payment_reference || null,
+          emailScheduled: Boolean(result?.purchase_email_scheduled),
+        },
+      },
+    });
   };
 
   useEffect(() => {

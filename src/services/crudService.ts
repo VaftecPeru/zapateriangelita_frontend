@@ -165,6 +165,12 @@ export interface Order {
     payment_transaction_id?: string;
     payment_error?: string | null;
     paid_at?: string | null;
+    purchase_email_sent_at?: string | null;
+    credential_email_sent_at?: string | null;
+    credential_email_pending?: boolean;
+    notification_attempts?: number;
+    notification_next_attempt_at?: string | null;
+    notification_last_error?: string | null;
     customer_name?: string;
     customer_email?: string;
     shipping_phone?: string;
@@ -353,4 +359,42 @@ export const orderService = {
     getAll: () => apiClient.get<{ data: Order[] }>('/orders'),
     getMyOrders: () => apiClient.get<Order[]>('/my-orders'),
     updateStatus: (id: number, status: string) => apiClient.put<Order>(`/orders/${id}/status`, { status }),
+    reconcilePayments: (limit = 10, orderId?: number) =>
+        apiClient.post<{
+            success: boolean;
+            reviewed: number;
+            changed: Array<{ id: number; code: string; from: string; to: string; transaction_id?: string }>;
+            summary: Record<string, number>;
+        }>('/orders/reconcile-payments', {
+            limit,
+            order_id: orderId || undefined,
+        }, { timeout: 30000 }),
+    retryNotifications: (id: number, forcePurchase = false) =>
+        apiClient.post<{
+            success: boolean;
+            message: string;
+            order: Order;
+            notification: {
+                purchase_email_sent_at?: string | null;
+                credential_email_sent_at?: string | null;
+                credential_pending: boolean;
+                attempts: number;
+                next_attempt_at?: string | null;
+                last_error?: string | null;
+            };
+        }>(`/orders/${id}/notifications/retry`, { force_purchase: forcePurchase }, { timeout: 30000 }),
+    mailHealth: () => apiClient.get<{
+        configured: boolean;
+        mailer: string;
+        from_address: string | null;
+        smtp?: {
+            host_configured: boolean;
+            port: number;
+            encryption?: string | null;
+            username_configured: boolean;
+            password_configured: boolean;
+        } | null;
+        pending: { order_notifications: number | null; welcome_emails: number | null };
+        errors: string[];
+    }>('/mail/health'),
 };

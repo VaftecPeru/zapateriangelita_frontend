@@ -88,10 +88,8 @@ const LoginPage = () => {
             if (data.account_created) {
                 sessionStorage.setItem('angelita_new_account', 'google');
 
-                // No esperamos el SMTP: el usuario entra a su panel inmediatamente.
-                void authService.googleWelcome().catch((mailError) => {
-                    console.warn('La cuenta fue creada, pero el correo de bienvenida quedó pendiente.', mailError);
-                });
+                // El backend deja el correo de bienvenida persistido para reintento.
+                // No dependemos de una segunda llamada del navegador ni de la latencia SMTP.
 
                 // El efecto de sesión decide un único destino y conserva `from`.
             }
