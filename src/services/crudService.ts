@@ -167,6 +167,7 @@ export interface Order {
     paid_at?: string | null;
     purchase_email_sent_at?: string | null;
     credential_email_sent_at?: string | null;
+    credential_email_pending?: boolean;
     notification_attempts?: number;
     notification_next_attempt_at?: string | null;
     notification_last_error?: string | null;
