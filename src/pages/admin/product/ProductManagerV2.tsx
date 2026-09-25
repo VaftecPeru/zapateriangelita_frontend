@@ -242,6 +242,18 @@ const ProductManagerV2 = () => {
               <Detail label="Stock total" value={`${Number(viewProduct.stock || 0)} unidades`} />
               <Detail label="Colores" value={viewProduct.color || 'Sin información'} />
               <Detail label="Tallas" value={viewProduct.size || 'Sin información'} />
+              <Detail
+                label="Inventario por talla"
+                value={
+                  viewProduct.sizes?.length
+                    ? viewProduct.sizes
+                        .slice()
+                        .sort((a, b) => String(a.size).localeCompare(String(b.size), undefined, { numeric: true }))
+                        .map((item) => `${item.size}: ${Number(item.stock || 0)}`)
+                        .join(' · ')
+                    : 'Sin desglose'
+                }
+              />
               <Detail label="Material" value={viewProduct.material || 'Sin información'} />
               <Detail label="Precio" value={`$${Number(viewProduct.price || 0).toFixed(2)}`} />
               <div className="sm:col-span-2"><Detail label="Descripción" value={viewProduct.description || 'Sin descripción'} /></div>
