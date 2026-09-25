@@ -237,6 +237,7 @@ const ProductManagerV2 = () => {
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="border-b border-gray-100 bg-store-red/5">
+                <th className="w-16 px-4 py-4 text-center text-[10px] font-black uppercase tracking-widest text-store-red/80">N°</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Producto</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Categoría</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Marca</th>
@@ -247,9 +248,12 @@ const ProductManagerV2 = () => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredProducts.length === 0 ? (
-                <tr><td colSpan={6} className="px-6 py-12 text-center font-medium text-gray-400">No hay productos registrados.</td></tr>
-              ) : filteredProducts.map((product) => (
+                <tr><td colSpan={7} className="px-6 py-12 text-center font-medium text-gray-400">No hay productos registrados.</td></tr>
+              ) : filteredProducts.map((product, index) => (
                 <tr key={product.id} className="group transition-colors hover:bg-store-red/[0.02]">
+                  <td className="w-16 px-4 py-4 text-center">
+                    <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-gray-100 px-2 text-xs font-black text-gray-600">{index + 1}</span>
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
