@@ -17,7 +17,7 @@ export type ImportPreviewRow = {
   price: number;
   discount: number;
   stock: number;
-  sizes: string;
+  size: string;
   colors: string;
   material: string;
   status: 'normal' | 'oferta' | 'nuevo';

@@ -242,6 +242,13 @@ export const productService = {
         return apiClient.put<Product>(`/products/${id}`, data);
     },
     delete: (id: number) => apiClient.delete(`/products/${id}`),
+    exportInventory: (
+        format: 'excel' | 'pdf',
+        params: Record<string, string | number | undefined> = {},
+    ) => apiClient.get<Blob>(`/inventory/export/${format}`, {
+        params,
+        responseType: 'blob',
+    }),
 };
 
 export const additionalServiceService = {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Edit, Eye, FileSpreadsheet, Loader2, Plus, Search, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Download, Edit, Eye, FileSpreadsheet, FileText, Loader2, Plus, Search, Trash2, X } from 'lucide-react';
 import { Brand, Category, Product, Subcategory, brandService, categoryService, productService, subcategoryService } from '../../../services/crudService';
 import { getImageUrl } from '../../../config/api';
 import ProductEditorModal from './ProductEditorModal';
@@ -22,6 +22,7 @@ const ProductManagerV2 = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
   const [stockFilter, setStockFilter] = useState<'all' | 'available' | 'low' | 'out'>('all');
+  const [exporting, setExporting] = useState<'excel' | 'pdf' | null>(null);
 
   const loadData = async () => {
     try {
@@ -114,6 +115,43 @@ const ProductManagerV2 = () => {
     }
   };
 
+  const downloadInventory = async (format: 'excel' | 'pdf') => {
+    if (exporting) return;
+
+    setExporting(format);
+    try {
+      const response = await productService.exportInventory(format, {
+        search: search.trim() || undefined,
+        category_id: categoryFilter || undefined,
+        brand_id: brandFilter || undefined,
+        stock_state: stockFilter === 'all' ? undefined : stockFilter,
+      });
+
+      const blob = response.data instanceof Blob
+        ? response.data
+        : new Blob([response.data]);
+
+      const disposition = String(response.headers?.['content-disposition'] || '');
+      const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
+      const fallback = `inventario-zapateria-angelita-${new Date().toISOString().slice(0, 10)}.${format === 'excel' ? 'xls' : 'pdf'}`;
+      const filename = filenameMatch?.[1] || fallback;
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(`Error exporting inventory to ${format}`, error);
+      alert('No se pudo descargar el inventario. Intenta nuevamente.');
+    } finally {
+      setExporting(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center rounded-[2rem] border border-gray-200 bg-store-surface py-20">
@@ -132,6 +170,26 @@ const ProductManagerV2 = () => {
             <p className="text-xs font-medium text-gray-400">Administra catálogo, variantes e inventario de Zapatería Angelita.</p>
           </div>
           <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => downloadInventory('excel')}
+              disabled={exporting !== null}
+              title="Descargar inventario actual en Excel"
+              className="inline-flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs font-black uppercase tracking-widest text-emerald-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {exporting === 'excel' ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              Excel
+            </button>
+            <button
+              type="button"
+              onClick={() => downloadInventory('pdf')}
+              disabled={exporting !== null}
+              title="Descargar inventario actual en PDF"
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs font-black uppercase tracking-widest text-gray-700 shadow-sm transition hover:border-gray-400 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {exporting === 'pdf' ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
+              PDF
+            </button>
             <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-xs font-black uppercase tracking-widest text-gray-600 shadow-sm transition hover:border-store-red hover:text-store-red">
               <FileSpreadsheet size={16} /> Importar
             </button>
@@ -242,6 +300,18 @@ const ProductManagerV2 = () => {
               <Detail label="Stock total" value={`${Number(viewProduct.stock || 0)} unidades`} />
               <Detail label="Colores" value={viewProduct.color || 'Sin información'} />
               <Detail label="Tallas" value={viewProduct.size || 'Sin información'} />
+              <Detail
+                label="Inventario por talla"
+                value={
+                  viewProduct.sizes?.length
+                    ? viewProduct.sizes
+                        .slice()
+                        .sort((a, b) => String(a.size).localeCompare(String(b.size), undefined, { numeric: true }))
+                        .map((item) => `${item.size}: ${Number(item.stock || 0)}`)
+                        .join(' · ')
+                    : 'Sin desglose'
+                }
+              />
               <Detail label="Material" value={viewProduct.material || 'Sin información'} />
               <Detail label="Precio" value={`$${Number(viewProduct.price || 0).toFixed(2)}`} />
               <div className="sm:col-span-2"><Detail label="Descripción" value={viewProduct.description || 'Sin descripción'} /></div>
