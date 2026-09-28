@@ -14,12 +14,25 @@ const Logo = ({ light = false }: { light?: boolean }) => (
     </a>
 );
 
+export const getRetryAfterSeconds = (error: any, fallback = 10): number => {
+    const fromBody = Number(error?.response?.data?.retry_after);
+    const fromHeader = Number(error?.response?.headers?.['retry-after']);
+    const value = Number.isFinite(fromBody) && fromBody > 0
+        ? fromBody
+        : Number.isFinite(fromHeader) && fromHeader > 0
+            ? fromHeader
+            : fallback;
+
+    return Math.max(1, Math.ceil(value));
+};
+
 const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
+    const loginInFlight = useRef(false);
     const googleInFlight = useRef(false);
     const [cooldownSeconds, setCooldownSeconds] = useState(0);
     const { login: authLogin, user, isAuthenticated } = useAuth();
@@ -45,8 +58,9 @@ const LoginPage = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (cooldownSeconds > 0) return;
+        if (loginInFlight.current || googleInFlight.current || loading || googleLoading || cooldownSeconds > 0) return;
 
+        loginInFlight.current = true;
         setError(null);
         setLoading(true);
 
@@ -56,7 +70,7 @@ const LoginPage = () => {
         } catch (err: any) {
             const status = Number(err.response?.status || 0);
             if (status === 429) {
-                const retryAfter = Math.max(5, Number(err.response?.headers?.['retry-after'] || 10));
+                const retryAfter = getRetryAfterSeconds(err);
                 setCooldownSeconds(retryAfter);
                 setError(`Se realizaron varios intentos seguidos. Espera ${retryAfter} segundos y vuelve a intentar.`);
             } else {
@@ -67,6 +81,7 @@ const LoginPage = () => {
                 setError(msg);
             }
         } finally {
+            loginInFlight.current = false;
             setLoading(false);
         }
     };
@@ -97,7 +112,7 @@ const LoginPage = () => {
             const status = Number(err.response?.status || 0);
 
             if (status === 429) {
-                const retryAfter = Math.max(5, Number(err.response?.headers?.['retry-after'] || 10));
+                const retryAfter = getRetryAfterSeconds(err);
                 setCooldownSeconds(retryAfter);
                 setError(`Google recibió varios intentos seguidos. Espera ${retryAfter} segundos y vuelve a intentar.`);
             } else if (err.code === 'ECONNABORTED') {
