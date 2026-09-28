@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '../src/hooks/useAuth';
 import { CartProvider } from '../src/hooks/useCart';
 import { authService } from '../src/services/authService';
 import apiClient from '../src/services/apiClient';
+import { userService } from '../src/services/crudService';
 import axios from 'axios';
 import LoginPage from '../src/pages/LoginPage';
 import CheckoutPageV2 from '../src/pages/CheckoutPageV2';
@@ -52,6 +53,23 @@ const provider = () => <MemoryRouter><AuthProvider><Probe /></AuthProvider></Mem
 function check(name: string, assertion: () => void) { assertion(); console.log(`PASS ${name}`); }
 
 async function run() {
+  const originalPost = (apiClient as any).post;
+  let passwordRequest: { url?: string; data?: any } = {};
+  (apiClient as any).post = async (url: string, data: any) => {
+    passwordRequest = { url, data };
+    return { data: { success: true, user: customer } };
+  };
+  await userService.changePassword('Actual123!', 'NuevaClave123!', 'NuevaClave123!');
+  check('Cambio de contraseña envía contraseña actual y confirmación al backend', () => {
+    assert.equal(passwordRequest.url, '/user/change-password');
+    assert.deepEqual(passwordRequest.data, {
+      current_password: 'Actual123!',
+      password: 'NuevaClave123!',
+      password_confirmation: 'NuevaClave123!',
+    });
+  });
+  (apiClient as any).post = originalPost;
+
   check('Contraseña temporal prioriza la ruta obligatoria', () => {
     assert.equal(authDestination('user', '/welcome', true), '/change-temporary-password');
     assert.equal(authDestination('admin', '/admin/dashboard', true), '/change-temporary-password');
