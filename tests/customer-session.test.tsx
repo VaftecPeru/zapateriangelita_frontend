@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '../src/hooks/useAuth';
 import { CartProvider } from '../src/hooks/useCart';
 import { authService } from '../src/services/authService';
 import apiClient from '../src/services/apiClient';
+import { userService } from '../src/services/crudService';
 import axios from 'axios';
 import LoginPage from '../src/pages/LoginPage';
 import CheckoutPageV2 from '../src/pages/CheckoutPageV2';
@@ -52,6 +53,23 @@ const provider = () => <MemoryRouter><AuthProvider><Probe /></AuthProvider></Mem
 function check(name: string, assertion: () => void) { assertion(); console.log(`PASS ${name}`); }
 
 async function run() {
+  const originalPost = (apiClient as any).post;
+  let passwordRequest: { url?: string; data?: any } = {};
+  (apiClient as any).post = async (url: string, data: any) => {
+    passwordRequest = { url, data };
+    return { data: { success: true, user: customer } };
+  };
+  await userService.changePassword('Actual123!', 'NuevaClave123!', 'NuevaClave123!');
+  check('Cambio de contraseña envía contraseña actual y confirmación al backend', () => {
+    assert.equal(passwordRequest.url, '/user/change-password');
+    assert.deepEqual(passwordRequest.data, {
+      current_password: 'Actual123!',
+      password: 'NuevaClave123!',
+      password_confirmation: 'NuevaClave123!',
+    });
+  });
+  (apiClient as any).post = originalPost;
+
   check('Contraseña temporal prioriza la ruta obligatoria', () => {
     assert.equal(authDestination('user', '/welcome', true), '/change-temporary-password');
     assert.equal(authDestination('admin', '/admin/dashboard', true), '/change-temporary-password');
@@ -80,6 +98,59 @@ async function run() {
   await act(async () => { auth.login(customer, 'new-token'); rejectOld({ response: { status: 401 } }); });
   check('Respuesta antigua no borra una sesión recién emitida', () => {
     assert.equal(localStorage.getItem('token'), 'new-token'); assert.equal(auth.user?.id, 17);
+  });
+
+  let loginCalls = 0;
+  let resolveLogin: ((value: any) => void) | undefined;
+  authService.login = () => {
+    loginCalls++;
+    return new Promise(resolve => { resolveLogin = resolve; }) as any;
+  };
+
+  await mount(<MemoryRouter initialEntries={['/login']}>
+    <AuthProvider><Routes><Route path="/login" element={<LoginPage />} />
+      <Route path="*" element={<Probe />} /></Routes></AuthProvider>
+  </MemoryRouter>);
+
+  const loginForm = document.querySelector('form.login-form') as HTMLFormElement;
+  assert.ok(loginForm);
+  await act(async () => {
+    loginForm.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+    loginForm.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+    await Promise.resolve();
+  });
+  check('Doble submit de login genera una sola petición', () => {
+    assert.equal(loginCalls, 1);
+  });
+
+  await act(async () => {
+    resolveLogin?.({ data: { user: customer, token: 'login-token' } });
+    await Promise.resolve();
+  });
+
+  authService.login = async () => {
+    throw {
+      response: {
+        status: 429,
+        data: { retry_after: 46 },
+        headers: { 'retry-after': '10' },
+      },
+    };
+  };
+
+  await mount(<MemoryRouter initialEntries={['/login']}>
+    <AuthProvider><Routes><Route path="/login" element={<LoginPage />} />
+      <Route path="*" element={<Probe />} /></Routes></AuthProvider>
+  </MemoryRouter>);
+
+  const throttledForm = document.querySelector('form.login-form') as HTMLFormElement;
+  await act(async () => {
+    throttledForm.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+    await Promise.resolve();
+  });
+  check('Login respeta retry_after del backend sobre el fallback local', () => {
+    assert.match(document.querySelector('[role="alert"]')?.textContent || '', /46 segundos/);
+    assert.match(document.querySelector('.btn-submit')?.textContent || '', /Espera 46s/);
   });
 
   for (const from of ['/profile/purchases', '/checkout', undefined]) {

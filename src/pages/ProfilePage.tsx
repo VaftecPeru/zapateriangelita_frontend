@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Mail, Calendar, Package, Heart, ChevronDown, Settings, Phone, Save, LogOut } from 'lucide-react';
+import { ArrowLeft, User, Mail, Calendar, Package, Heart, ChevronDown, Settings, Phone, Save, LogOut, KeyRound } from 'lucide-react';
 import { Order, orderService, userService } from '../services/crudService';
 import { onlyLettersAndSpaces, validateProfileFields } from '../utils/profileValidation';
 import PhoneField from '../components/PhoneField';
@@ -186,12 +186,21 @@ const ProfilePage = () => {
                                 </div>
                             </div>
 
-                            <button
-                                onClick={handleEdit}
-                                className="w-fit mx-auto px-6 py-2.5 bg-[#e30613] text-white rounded-full flex items-center justify-center gap-2 hover:bg-[#bd0711] transition-all text-[11px] font-black uppercase tracking-wider"
-                            >
-                                <Settings size={14} /> Editar Perfil
-                            </button>
+                            <div className="flex flex-wrap items-center justify-center gap-3">
+                                <button
+                                    onClick={handleEdit}
+                                    className="w-fit px-6 py-2.5 bg-[#e30613] text-white rounded-full flex items-center justify-center gap-2 hover:bg-[#bd0711] transition-all text-[11px] font-black uppercase tracking-wider"
+                                >
+                                    <Settings size={14} /> Editar Perfil
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/change-password')}
+                                    className="w-fit px-6 py-2.5 border border-black/10 bg-white text-[#121212] rounded-full flex items-center justify-center gap-2 hover:border-[#e30613] hover:text-[#e30613] transition-all text-[11px] font-black uppercase tracking-wider"
+                                >
+                                    <KeyRound size={14} /> Cambiar contraseña
+                                </button>
+                            </div>
                         </div>
                     </div>
 
