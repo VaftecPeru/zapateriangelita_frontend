@@ -167,11 +167,24 @@ const GoogleIdentityButton = ({ mode, onCredential, disabled = false }: Props) =
           ? 'La configuración de Google necesita corrección.'
           : 'Google todavía no está activado en el servidor.'
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error('Google Identity Services:', error);
       if (!mountedRef.current) return;
+
+      const httpStatus = Number(error?.response?.status || 0);
+      const retryAfter = Math.max(
+        1,
+        Math.ceil(Number(error?.response?.data?.retry_after || error?.response?.headers?.['retry-after'] || 5))
+      );
+
       setState('error');
-      setStatusText('No pudimos conectar con Google. Intenta nuevamente.');
+      if (httpStatus === 429) {
+        setStatusText(`Google recibió varios intentos. Espera ${retryAfter}s y vuelve a intentar.`);
+      } else if (httpStatus === 503) {
+        setStatusText('Google está temporalmente no disponible. Intenta nuevamente en unos segundos.');
+      } else {
+        setStatusText('No pudimos conectar con Google. Intenta nuevamente.');
+      }
     }
   }, [renderGoogleButton]);
 
