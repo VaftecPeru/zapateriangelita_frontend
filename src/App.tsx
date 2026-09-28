@@ -79,6 +79,7 @@ const AppContent = () => {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/change-temporary-password" element={isAuthenticated ? <ChangeTemporaryPasswordPage /> : <Navigate to="/login" replace />} />
+          <Route path="/change-password" element={isAuthenticated ? <ChangeTemporaryPasswordPage /> : <Navigate to="/login" replace />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/welcome" element={<WelcomeDashboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
