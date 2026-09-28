@@ -322,6 +322,12 @@ export const userService = {
             password,
             password_confirmation: passwordConfirmation,
         }),
+    changePassword: (currentPassword: string, password: string, passwordConfirmation: string) =>
+        apiClient.post('/user/change-password', {
+            current_password: currentPassword,
+            password,
+            password_confirmation: passwordConfirmation,
+        }),
     delete: (id: number) => apiClient.delete(`/users/${id}`),
 };
 
