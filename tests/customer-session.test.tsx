@@ -82,6 +82,59 @@ async function run() {
     assert.equal(localStorage.getItem('token'), 'new-token'); assert.equal(auth.user?.id, 17);
   });
 
+  let loginCalls = 0;
+  let resolveLogin: ((value: any) => void) | undefined;
+  authService.login = () => {
+    loginCalls++;
+    return new Promise(resolve => { resolveLogin = resolve; }) as any;
+  };
+
+  await mount(<MemoryRouter initialEntries={['/login']}>
+    <AuthProvider><Routes><Route path="/login" element={<LoginPage />} />
+      <Route path="*" element={<Probe />} /></Routes></AuthProvider>
+  </MemoryRouter>);
+
+  const loginForm = document.querySelector('form.login-form') as HTMLFormElement;
+  assert.ok(loginForm);
+  await act(async () => {
+    loginForm.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+    loginForm.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+    await Promise.resolve();
+  });
+  check('Doble submit de login genera una sola petición', () => {
+    assert.equal(loginCalls, 1);
+  });
+
+  await act(async () => {
+    resolveLogin?.({ data: { user: customer, token: 'login-token' } });
+    await Promise.resolve();
+  });
+
+  authService.login = async () => {
+    throw {
+      response: {
+        status: 429,
+        data: { retry_after: 46 },
+        headers: { 'retry-after': '10' },
+      },
+    };
+  };
+
+  await mount(<MemoryRouter initialEntries={['/login']}>
+    <AuthProvider><Routes><Route path="/login" element={<LoginPage />} />
+      <Route path="*" element={<Probe />} /></Routes></AuthProvider>
+  </MemoryRouter>);
+
+  const throttledForm = document.querySelector('form.login-form') as HTMLFormElement;
+  await act(async () => {
+    throttledForm.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+    await Promise.resolve();
+  });
+  check('Login respeta retry_after del backend sobre el fallback local', () => {
+    assert.match(document.querySelector('[role="alert"]')?.textContent || '', /46 segundos/);
+    assert.match(document.querySelector('.btn-submit')?.textContent || '', /Espera 46s/);
+  });
+
   for (const from of ['/profile/purchases', '/checkout', undefined]) {
     let calls = 0;
     authService.googleLogin = async () => { calls++; return { data: { user: customer, token: 'google-token', account_created: true } } as any; };
