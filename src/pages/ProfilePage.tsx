@@ -1,7 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Mail, Calendar, Package, Heart, ChevronDown, Settings, Phone, Save, LogOut } from 'lucide-react';
+import {
+  ArrowLeft,
+  User,
+  Mail,
+  Calendar,
+  Package,
+  Heart,
+  ChevronDown,
+  Settings,
+  Phone,
+  Save,
+  LogOut,
+  KeyRound
+} from 'lucide-react';  
 import { Order, orderService, userService } from '../services/crudService';
 import { onlyDigits, onlyLettersAndSpaces, validateProfileFields } from '../utils/profileValidation';
 
@@ -196,24 +209,41 @@ const ProfilePage = () => {
 
                     <div className="bg-white rounded-3xl p-3 border border-black/5 hidden lg:block">
                         <nav className="flex flex-col gap-1">
-                            {tabs.map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => { setActiveTab(tab.id); setIsEditing(false); }}
-                                    className={`flex items-center justify-between px-4 py-3.5 rounded-2xl font-bold text-sm transition-all ${
-                                        activeTab === tab.id
-                                            ? 'bg-[#e30613] text-white'
-                                            : 'text-[#121212]/60 hover:bg-[#f7f7f7] hover:text-[#121212]'
-                                    }`}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        {tab.icon}
-                                        {tab.label}
-                                    </div>
-                                    {activeTab === tab.id && <span className="w-2 h-2 bg-white rounded-full" />}
-                                </button>
-                            ))}
-                        </nav>
+    {tabs.map((tab) => (
+        <button
+            key={tab.id}
+            onClick={() => {
+                setActiveTab(tab.id);
+                setIsEditing(false);
+            }}
+            className={`flex items-center justify-between px-4 py-3.5 rounded-2xl font-bold text-sm transition-all ${
+                activeTab === tab.id
+                    ? 'bg-[#e30613] text-white'
+                    : 'text-[#121212]/60 hover:bg-[#f7f7f7] hover:text-[#121212]'
+            }`}
+        >
+            <div className="flex items-center gap-3">
+                {tab.icon}
+                {tab.label}
+            </div>
+
+            {activeTab === tab.id && (
+                <span className="w-2 h-2 bg-white rounded-full" />
+            )}
+        </button>
+    ))}
+
+    <button
+        type="button"
+        onClick={() => navigate('/change-temporary-password')}
+        className="flex items-center justify-between px-4 py-3.5 rounded-2xl font-bold text-sm transition-all text-[#121212]/60 hover:bg-[#f7f7f7] hover:text-[#121212]"
+    >
+        <div className="flex items-center gap-3">
+            <KeyRound size={18} />
+            Actualizar contraseña
+        </div>
+    </button>
+</nav>
                     </div>
                 </aside>
 

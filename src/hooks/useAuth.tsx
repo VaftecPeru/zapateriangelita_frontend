@@ -8,6 +8,8 @@ interface User {
     role?: string;
     google_email?: string | null;
     google_linked_at?: string | null;
+    must_change_password?: boolean | number;
+    temporary_password_set_at?: string | null;
 }
 
 interface AuthContextType {

@@ -227,8 +227,22 @@ export const settingsService = {
 export const userService = {
     updateProfile: (data: any) => apiClient.post('/user/update', data),
     getAll: () => apiClient.get<User[]>('/users'),
+    resetPassword: (id: number, sendEmail = false) => apiClient.post(`/users/${id}/reset-password`, { send_email: sendEmail }),
+    updateRole: (id: number, role: 'user' | 'admin') =>
+        apiClient.put<{ success: boolean; message: string; user: User }>(`/users/${id}/role`, { role }),
+    changeTemporaryPassword: (password: string, passwordConfirmation: string) =>
+        apiClient.post('/user/change-temporary-password', {
+            password,
+            password_confirmation: passwordConfirmation,
+        }),
+    changePassword: (password: string, passwordConfirmation: string) =>
+    apiClient.post('/user/change-password', {
+        password,
+        password_confirmation: passwordConfirmation,
+    }),
     delete: (id: number) => apiClient.delete(`/users/${id}`),
 };
+
 
 export const leadService = {
     trackLead: (type: 'property' | 'service' | 'store', itemId: number, contactData?: {
