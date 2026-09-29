@@ -112,8 +112,33 @@ async function run() {
   check('Slider: navegación anterior', () => assert.match(document.querySelector('h1')!.textContent!, /Camina/));
   await click('[aria-label="Pausar banners"]');
   check('Slider: pausa explícita accesible', () => assert.ok(document.querySelector('[aria-label="Reanudar banners"][aria-pressed="true"]')));
-  await render(<MemoryRouter><ReferenceLanding products={[]} loading={false} error={true} renderProduct={() => null} /></MemoryRouter>);
-  check('Catálogo: error sin productos ficticios', () => { assert.match(document.querySelector('.ref-empty')!.textContent!, /No pudimos/); assert.equal(document.querySelectorAll('.ref-product-grid article').length, 0); });
+  let retryCount = 0;
+  await render(
+    <MemoryRouter>
+      <ReferenceLanding
+        products={[]}
+        loading={false}
+        error={true}
+        onRetry={() => { retryCount += 1; }}
+        renderProduct={() => null}
+      />
+    </MemoryRouter>
+  );
+  check('Catálogo: error sin productos ficticios', () => {
+    assert.match(document.querySelector('.ref-empty')!.textContent!, /No pudimos/);
+    assert.equal(document.querySelectorAll('.ref-product-grid article').length, 0);
+  });
+  await click('.ref-empty .ref-button');
+  check('Catálogo: error permite reintentar sin recargar toda la página', () => {
+    assert.equal(retryCount, 1);
+  });
+  check('Catálogo: StoreHome tolera fallos parciales de categorías/subcategorías', () => {
+    const storeHome = readFileSync('src/components/StoreHome.tsx', 'utf8');
+    assert.ok(storeHome.includes('Promise.allSettled'));
+    assert.ok(storeHome.includes("productsResult.status === 'fulfilled'"));
+    assert.ok(storeHome.includes('setCatalogReloadKey'));
+    assert.ok(storeHome.includes('Catálogo no disponible'));
+  });
 
   await render(detail());
   check('Detalle: datos y precio reales', () => { assert.equal(document.querySelector('h1')?.textContent, fixture.name); assert.match(document.querySelector('.product-price-line')!.textContent!, /240/); });
