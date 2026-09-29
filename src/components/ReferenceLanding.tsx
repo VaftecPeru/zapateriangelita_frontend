@@ -21,9 +21,10 @@ type Props = {
   renderProduct: (product: any) => ReactNode;
   loading: boolean;
   error: boolean;
+  onRetry?: () => void;
 };
 
-export default function ReferenceLanding({ products, renderProduct, loading, error }: Props) {
+export default function ReferenceLanding({ products, renderProduct, loading, error, onRetry }: Props) {
   // Managed banners remain available after the reference campaign.
   const slides = [...defaultSlides, ...heroSlides.filter((item: any) => item.managed).map((item: any) => ({ ...item, emphasis: '', href: '/catalogo' }))];
   const [slide, setSlide] = useState(0);
@@ -218,7 +219,16 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
           </div>
         )}
 
-        {!loading && !products.length && <p className="ref-empty" role="status">{error ? 'No pudimos cargar el catálogo. Intenta recargar la página.' : 'Pronto encontrarás aquí nuestros productos destacados.'}</p>}
+        {!loading && !products.length && (
+          <div className="ref-empty" role={error ? 'alert' : 'status'}>
+            <p>{error ? 'No pudimos cargar el catálogo en este momento.' : 'Pronto encontrarás aquí nuestros productos destacados.'}</p>
+            {error && onRetry && (
+              <button type="button" className="ref-button" onClick={onRetry}>
+                Reintentar catálogo
+              </button>
+            )}
+          </div>
+        )}
       </section>
 
       <section className="ref-promotion ref-shell" id="ofertas" aria-label="Ofertas de temporada">

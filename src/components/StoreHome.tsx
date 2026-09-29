@@ -300,6 +300,7 @@ export default function StoreHome() {
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [catalogError, setCatalogError] = useState(false);
+  const [catalogReloadKey, setCatalogReloadKey] = useState(0);
   const [searchText, setSearchText] = useState("");
   const [favorites, setFavorites] = useState<number[]>([]);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -375,22 +376,44 @@ export default function StoreHome() {
   }, []);
 
   useEffect(() => {
+    let active = true;
+
+    const unwrapList = (response: any) => (
+      Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.data?.data)
+          ? response.data.data
+          : []
+    );
+
     const loadCatalog = async () => {
-      try {
-        const [productsResponse, categoriesResponse, subcategoriesResponse] = await Promise.all([
-          productService.getAll(),
-          categoryService.getPublic(),
-          subcategoryService.getPublic(),
-        ]);
-        const productsData = Array.isArray(productsResponse.data)
-          ? productsResponse.data
-          : (productsResponse.data as any)?.data || [];
-        const categoriesData = Array.isArray(categoriesResponse.data)
-          ? categoriesResponse.data
-          : (categoriesResponse.data as any)?.data || [];
-        const subcategoriesData = Array.isArray(subcategoriesResponse.data)
-          ? subcategoriesResponse.data
-          : (subcategoriesResponse.data as any)?.data || [];
+      setCatalogLoading(true);
+      setCatalogError(false);
+
+      const [productsResult, categoriesResult, subcategoriesResult] = await Promise.allSettled([
+        productService.getAll(),
+        categoryService.getPublic(),
+        subcategoryService.getPublic(),
+      ]);
+
+      if (!active) return;
+
+      const categoriesData = categoriesResult.status === 'fulfilled'
+        ? unwrapList(categoriesResult.value)
+        : [];
+      const subcategoriesData = subcategoriesResult.status === 'fulfilled'
+        ? unwrapList(subcategoriesResult.value)
+        : [];
+
+      if (categoriesResult.status === 'rejected') {
+        console.warn('No se pudieron cargar categorías públicas:', categoriesResult.reason);
+      }
+      if (subcategoriesResult.status === 'rejected') {
+        console.warn('No se pudieron cargar subcategorías públicas:', subcategoriesResult.reason);
+      }
+
+      if (productsResult.status === 'fulfilled') {
+        const productsData = unwrapList(productsResult.value);
 
         setProducts(productsData.map((product: Product) => ({
           ...product,
@@ -402,6 +425,13 @@ export default function StoreHome() {
           oldPrice: product.discounted_price ? Number(product.price) : null,
           rating: Math.round(Number(product.rating || 0)),
         })));
+      } else {
+        console.error('No se pudo cargar el catálogo de productos:', productsResult.reason);
+        setProducts([]);
+        setCatalogError(true);
+      }
+
+      if (categoriesResult.status === 'fulfilled') {
         setCategories(categoriesData.map((category: Category, index: number) => {
           const visual = staticCategories.find((item) => item.name.toLowerCase() === category.name.toLowerCase()) || staticCategories[index % staticCategories.length];
           return {
@@ -410,17 +440,21 @@ export default function StoreHome() {
             color: visual?.color || "#f5eee8",
           };
         }));
-        setSubcategories(subcategoriesData);
-      } catch (error) {
-        console.error("Error loading public catalog:", error);
-        setCatalogError(true);
-      } finally {
-        setCatalogLoading(false);
       }
+
+      if (subcategoriesResult.status === 'fulfilled') {
+        setSubcategories(subcategoriesData);
+      }
+
+      setCatalogLoading(false);
     };
 
-    loadCatalog();
-  }, []);
+    void loadCatalog();
+
+    return () => {
+      active = false;
+    };
+  }, [catalogReloadKey]);
 
   const handleAddToCart = (product: any) => {
     navigate(`/producto/${product.id}`);
@@ -886,10 +920,25 @@ export default function StoreHome() {
                   {catalogSubcategoryOptions.map((subcategory: any) => <option key={subcategory.id} value={subcategory.id}>{subcategory.name}</option>)}
                 </select>
               </label>
-              <span className="full-catalog__count">{catalogProducts.length} productos</span>
+              <span className="full-catalog__count">
+                {catalogLoading ? 'Cargando…' : catalogError ? 'Catálogo no disponible' : `${catalogProducts.length} productos`}
+              </span>
             </div>
             <div className="product-grid full-catalog__grid">
-              {catalogProducts.length > 0 ? catalogProducts.map((product: any) => (
+              {catalogLoading ? (
+                <p className="offers-results__empty" role="status">Cargando catálogo...</p>
+              ) : catalogError ? (
+                <div className="offers-results__empty" role="alert">
+                  <p>No pudimos cargar los productos en este momento.</p>
+                  <button
+                    type="button"
+                    className="text-link"
+                    onClick={() => setCatalogReloadKey((current) => current + 1)}
+                  >
+                    Reintentar catálogo
+                  </button>
+                </div>
+              ) : catalogProducts.length > 0 ? catalogProducts.map((product: any) => (
                 <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />
               )) : (
                 <p className="offers-results__empty">No hay productos con estos filtros.</p>
@@ -901,6 +950,7 @@ export default function StoreHome() {
             products={products}
             loading={catalogLoading}
             error={catalogError}
+            onRetry={() => setCatalogReloadKey((current) => current + 1)}
             renderProduct={product => <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />}
           />
         ) : (
