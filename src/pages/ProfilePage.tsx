@@ -1,22 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import {
-  ArrowLeft,
-  User,
-  Mail,
-  Calendar,
-  Package,
-  Heart,
-  ChevronDown,
-  Settings,
-  Phone,
-  Save,
-  LogOut,
-  KeyRound
-} from 'lucide-react';  
+import { ArrowLeft, User, Mail, Calendar, Package, Heart, ChevronDown, Settings, Phone, Save, LogOut, KeyRound } from 'lucide-react';
 import { Order, orderService, userService } from '../services/crudService';
-import { onlyDigits, onlyLettersAndSpaces, validateProfileFields } from '../utils/profileValidation';
+import { onlyLettersAndSpaces, validateProfileFields } from '../utils/profileValidation';
+import PhoneField from '../components/PhoneField';
 
 const normalizeBirthdate = (value?: string | null) => {
     if (!value) return '';
@@ -198,12 +186,21 @@ const ProfilePage = () => {
                                 </div>
                             </div>
 
-                            <button
-                                onClick={handleEdit}
-                                className="w-fit mx-auto px-6 py-2.5 bg-[#e30613] text-white rounded-full flex items-center justify-center gap-2 hover:bg-[#bd0711] transition-all text-[11px] font-black uppercase tracking-wider"
-                            >
-                                <Settings size={14} /> Editar Perfil
-                            </button>
+                            <div className="flex flex-wrap items-center justify-center gap-3">
+                                <button
+                                    onClick={handleEdit}
+                                    className="w-fit px-6 py-2.5 bg-[#e30613] text-white rounded-full flex items-center justify-center gap-2 hover:bg-[#bd0711] transition-all text-[11px] font-black uppercase tracking-wider"
+                                >
+                                    <Settings size={14} /> Editar Perfil
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/change-password')}
+                                    className="w-fit px-6 py-2.5 border border-black/10 bg-white text-[#121212] rounded-full flex items-center justify-center gap-2 hover:border-[#e30613] hover:text-[#e30613] transition-all text-[11px] font-black uppercase tracking-wider"
+                                >
+                                    <KeyRound size={14} /> Cambiar contraseña
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -319,15 +316,13 @@ const ProfilePage = () => {
                                                 </div>
                                                 <div className="space-y-2 md:col-span-2">
                                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Teléfono / Celular</label>
-                                                    <input
-                                                        type="tel"
-                                                        value={formData.phone}
-                                                        inputMode="numeric"
-                                                        pattern="[0-9]{7,20}"
-                                                        maxLength={20}
-                                                        onChange={e => setFormData({ ...formData, phone: onlyDigits(e.target.value) })}
-                                                        className="w-full p-3.5 bg-white rounded-xl border border-black/10 focus:border-[#e30613] outline-none font-bold text-[#121212] transition-colors"
-                                                        placeholder="Ej. 999 888 777"
+                                                    <PhoneField
+                                                        value={formData.phone || '+52'}
+                                                        onChange={(phone) => setFormData({ ...formData, phone })}
+                                                        defaultDialCode="+52"
+                                                        selectClassName="profile-phone-prefix"
+                                                        inputClassName="profile-phone-number"
+                                                        placeholder="55 1234 5678"
                                                     />
                                                 </div>
                                             </div>

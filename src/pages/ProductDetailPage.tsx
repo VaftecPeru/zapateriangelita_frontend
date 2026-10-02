@@ -14,7 +14,7 @@ import {
   X,
   ZoomIn,
 } from "lucide-react";
-import { productService, Product } from "../services/crudService";
+import { analyticsService, productService, settingsService, Product } from "../services/crudService";
 import { getImageUrl } from "../config/api";
 import { useCart } from "../hooks/useCart";
 import brandLogo from "../assets/brand/logo-angelita-horizontal.png";
@@ -27,10 +27,18 @@ const money = new Intl.NumberFormat("es-MX", {
   minimumFractionDigits: 2,
 });
 
-function Logo({ light = false }: { light?: boolean }) {
+const applyProductImageFallback = (event: React.SyntheticEvent<HTMLImageElement>) => {
+  const image = event.currentTarget;
+  if (image.dataset.fallbackApplied === "1") return;
+  image.dataset.fallbackApplied = "1";
+  image.src = fallbackImage;
+  image.alt = image.alt || "Imagen no disponible";
+};
+
+function Logo({ light = false, src = brandLogo }: { light?: boolean; src?: string }) {
   return (
     <a className={`logo ${light ? "logo--light" : ""}`} href="/" aria-label="Zapatería Angelita - inicio">
-      <img src={brandLogo} alt="Zapatería Angelita" className="pd-logo" />
+      <img src={src || brandLogo} alt="Zapatería Angelita" className="pd-logo" />
     </a>
   );
 }
@@ -59,6 +67,13 @@ function normalizeProduct(product: Product): any {
       cafe: "#8b5e3c",
       marron: "#8b5e3c",
       beige: "#d6c2a1",
+      celeste: "#7dd3fc",
+      "azul cielo": "#7dd3fc",
+      turquesa: "#2dd4bf",
+      naranja: "#f97316",
+      vino: "#7f1d1d",
+      dorado: "#d4a017",
+      plateado: "#c0c0c0",
     };
     return colors[normalizedName] || (normalizedName.startsWith("#") ? name.trim() : "#888888");
   };
@@ -69,9 +84,12 @@ function normalizeProduct(product: Product): any {
       const name = String(typeof color === "object" ? color.name || color.color : color).trim();
       return {
         name,
-        hex: typeof color === "object" && (color.hex || color.color_hex)
-          ? color.hex || color.color_hex
-          : colorNameToHex(name),
+        hex: (() => {
+          const storedHex = typeof color === "object" ? String(color.hex || color.color_hex || "").trim() : "";
+          return !storedHex || storedHex.toLocaleLowerCase() === "#888888"
+            ? colorNameToHex(name)
+            : storedHex;
+        })(),
       };
     }).filter((color: any) => color.name)
     : typeof product.color === "string"
@@ -135,6 +153,7 @@ export default function ProductDetailPage() {
   const [shareMessage, setShareMessage] = useState("");
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
   const [product, setProduct] = useState<any | null>(null);
+  const [siteLogo, setSiteLogo] = useState<string>(brandLogo);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -147,6 +166,27 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     let active = true;
+
+    const loadSiteLogo = async () => {
+      try {
+        const response = await settingsService.getAll();
+        const configuredLogo = response.data?.data?.logo_url;
+        if (active && configuredLogo) {
+          setSiteLogo(getImageUrl(configuredLogo) || brandLogo);
+        }
+      } catch {
+        if (active) setSiteLogo(brandLogo);
+      }
+    };
+
+    void loadSiteLogo();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
     setError(false); setSelectedImage(0); setQuantity(1); setVariantError(null); setToast(null);
     const loadProduct = async () => {
       try {
@@ -155,6 +195,9 @@ export default function ProductDetailPage() {
         if (!active) return;
         const normalized = normalizeProduct((response.data as any)?.data || response.data);
         setProduct(normalized);
+        if (normalized.id) {
+          void analyticsService.track('product_view', Number(normalized.id)).catch(() => undefined);
+        }
         setSelectedColor(normalized.colorOptions?.length === 1 ? normalized.colorOptions[0].name : normalized.colorOptions ? null : normalized.color || null);
         setSelectedSize(normalized.sizeOptions?.length === 1 ? normalized.sizeOptions[0] : null);
       } catch (loadError) {
@@ -199,6 +242,20 @@ export default function ProductDetailPage() {
   const selectedColorSizes = selectedColor ? product.colorSizes?.[selectedColor] : null;
   const activeSizeOptions = selectedColorSizes?.length ? selectedColorSizes : product.sizeOptions;
 
+  const stockForSize = (sizeOption: string) => {
+    const exactVariant = product.variant_stocks?.find(
+      (item: any) =>
+        String(item.size) === String(sizeOption) &&
+        (!selectedColor || String(item.color).toLocaleLowerCase() === selectedColor.toLocaleLowerCase()),
+    );
+    if (exactVariant) return Number(exactVariant.stock || 0);
+
+    const sizeRow = product.sizes?.find((item: any) => String(item.size) === String(sizeOption));
+    return Number(sizeRow?.stock ?? stock);
+  };
+
+  const selectedStock = selectedSize ? stockForSize(selectedSize) : stock;
+
   const showPrevious = () => setSelectedImage((current) => (current - 1 + activeImageList.length) % activeImageList.length);
   const showNext = () => setSelectedImage((current) => (current + 1) % activeImageList.length);
 
@@ -210,7 +267,7 @@ export default function ProductDetailPage() {
       return false;
     }
     const alreadyInCart = cart.filter(item => item.product.id === product.id).reduce((sum, item) => sum + item.quantity, 0);
-    if (stock < 1 || quantity + alreadyInCart > stock) {
+    if (selectedStock < 1 || quantity + alreadyInCart > selectedStock) {
       setVariantError("La cantidad supera el stock disponible. Revisa tu carrito.");
       return false;
     }
@@ -224,6 +281,13 @@ export default function ProductDetailPage() {
         color: selectedColor,
       });
     }
+    if (product.id) {
+      void analyticsService.track('add_to_cart', Number(product.id), {
+        color: selectedColor,
+        size: selectedSize,
+        quantity,
+      }).catch(() => undefined);
+    }
     setToast({ product });
     window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), 3200);
@@ -232,6 +296,9 @@ export default function ProductDetailPage() {
 
   const buyNow = () => {
     if (addProductToCart()) {
+      if (product.id) {
+        void analyticsService.track('checkout_start', Number(product.id)).catch(() => undefined);
+      }
       navigate('/checkout');
     }
   };
@@ -248,7 +315,7 @@ export default function ProductDetailPage() {
 
   const toggleFavorite = () => setIsFavorite(!isFavorite);
 
-  const quantityChoices = Array.from({ length: Math.min(Math.max(stock, 0), 10) }, (_, index) => index + 1);
+  const quantityChoices = Array.from({ length: Math.min(Math.max(selectedStock, 0), 10) }, (_, index) => index + 1);
 
   return (
     <main className="product-detail-page">
@@ -336,7 +403,7 @@ export default function ProductDetailPage() {
           <ArrowLeft size={19} />
         </button>
 
-        <Logo />
+        <Logo src={siteLogo} />
 
         <div className="header-actions">
           <button type="button" className="favorite-button" onClick={toggleFavorite} aria-label={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"} aria-pressed={isFavorite}>
@@ -380,7 +447,7 @@ export default function ProductDetailPage() {
                   onFocus={() => setSelectedImage(index)}
                   onClick={() => setSelectedImage(index)}
                 >
-                  <img src={image} alt={`${product.name} vista ${index + 1}`} />
+                  <img src={image || fallbackImage} alt={`${product.name} vista ${index + 1}`} loading="lazy" decoding="async" onError={applyProductImageFallback} />
                 </button>
               ))}
             </div>
@@ -395,7 +462,7 @@ export default function ProductDetailPage() {
                 <Share2 size={16} />
               </button>
               <button className="pd-zoom-trigger" aria-label="Ampliar imagen del producto" onClick={() => zoomDialog.current?.showModal()}>
-                <img src={activeImageList[selectedImage] || activeImageList[0]} alt={product.name} />
+                <img src={activeImageList[selectedImage] || activeImageList[0] || fallbackImage} alt={product.name} decoding="async" onError={applyProductImageFallback} />
                 <span><ZoomIn size={16} /> Ampliar imagen</span>
               </button>
               <span className="pd-image-counter">{selectedImage + 1} / {activeImageList.length}</span>
@@ -492,19 +559,29 @@ export default function ProductDetailPage() {
                 <p className="variant-label">Talla: <strong>{selectedSize || "Selecciona tu talla"}</strong></p>
                 <div className="size-grid">
                   {(activeSizeOptions || [product.size]).map((sizeOption: string) => (
-                    <button
-                      type="button"
-                      key={sizeOption}
-                      className={`size-chip ${selectedSize === sizeOption ? "is-selected" : ""}`}
-                      disabled={!activeSizeOptions}
-                      aria-disabled={!activeSizeOptions}
-                      aria-pressed={selectedSize === sizeOption}
-                      onClick={() => { if (activeSizeOptions) { setSelectedSize(sizeOption); setVariantError(null); } }}
-                    >
-                      {sizeOption}
-                    </button>
+                    <div className="size-option" key={sizeOption}>
+                      <button
+                        type="button"
+                        className={`size-chip ${selectedSize === sizeOption ? "is-selected" : ""}`}
+                        disabled={!activeSizeOptions || stockForSize(sizeOption) < 1}
+                        aria-disabled={!activeSizeOptions || stockForSize(sizeOption) < 1}
+                        aria-pressed={selectedSize === sizeOption}
+                        title={stockForSize(sizeOption) > 0 ? `${stockForSize(sizeOption)} unidades disponibles` : 'Talla agotada'}
+                        onClick={() => { if (activeSizeOptions && stockForSize(sizeOption) > 0) { setSelectedSize(sizeOption); setQuantity(1); setVariantError(null); } }}
+                      >
+                        {sizeOption}
+                      </button>
+                      <small className="size-option__stock">
+                        {stockForSize(sizeOption) > 0 ? `${stockForSize(sizeOption)} disp.` : 'Agotado'}
+                      </small>
+                    </div>
                   ))}
                 </div>
+                {selectedSize && (
+                  <p className="variant-stock" role="status">
+                    Stock disponible para {selectedColor ? `${selectedColor} / ` : ''}talla {selectedSize}: <strong>{selectedStock}</strong>
+                  </p>
+                )}
               </div>
             )}
 
@@ -515,8 +592,8 @@ export default function ProductDetailPage() {
             </div>
 
             <p className="buy-box-availability">
-              {stock > 0 ? (
-                <span className="in-stock">{stock > 5 ? "Disponible" : `Solo quedan ${stock}`}</span>
+              {selectedStock > 0 ? (
+                <span className="in-stock">{selectedStock > 5 ? "Disponible" : `Solo quedan ${selectedStock}`}</span>
               ) : (
                 <span className="out-of-stock">Agotado</span>
               )}
@@ -524,7 +601,7 @@ export default function ProductDetailPage() {
 
             {product.id && <p className="buy-box-code">Código: {product.id}</p>}
 
-            {stock > 0 && (
+            {selectedStock > 0 && (
               <label className="buy-box-quantity">
                 Cantidad
                 <select value={quantity} onChange={(event) => setQuantity(Number(event.target.value))}>
@@ -535,10 +612,10 @@ export default function ProductDetailPage() {
               </label>
             )}
 
-            <button type="button" className="buy-box-cart" disabled={stock < 1} onClick={addProductToCart}>
-              {stock > 0 ? "Agregar al carrito" : "Agotado"}
+            <button type="button" className="buy-box-cart" disabled={selectedStock < 1} onClick={addProductToCart}>
+              {selectedStock > 0 ? "Agregar al carrito" : "Agotado"}
             </button>
-            <button type="button" className="buy-box-now" disabled={stock < 1} onClick={buyNow}>
+            <button type="button" className="buy-box-now" disabled={selectedStock < 1} onClick={buyNow}>
               Comprar ahora
             </button>
 
@@ -569,7 +646,7 @@ export default function ProductDetailPage() {
                 <div><span>Talla</span><strong>{selectedSize || "No especificada"}</strong></div>
                 <div><span>Color</span><strong>{selectedColor || "No especificado"}</strong></div>
                 <div><span>Material</span><strong>{product.material || "No especificado"}</strong></div>
-                <div><span>Cantidad disponible</span><strong>{stock} unidades</strong></div>
+                <div><span>Cantidad disponible</span><strong>{selectedStock} unidades</strong></div>
                 <div><span>Reseñas</span><strong>{product.reviews || 0}</strong></div>
               </div>
             </div>
@@ -580,11 +657,11 @@ export default function ProductDetailPage() {
       </div>
       <div className="pd-mobile-bar">
         <div><small>Precio en MXN</small><strong>{money.format(product.salePrice)}</strong></div>
-        <button type="button" disabled={stock < 1} onClick={addProductToCart}><ShoppingBag size={18} />{stock > 0 ? 'Agregar al carrito' : 'Agotado'}</button>
+        <button type="button" disabled={selectedStock < 1} onClick={addProductToCart}><ShoppingBag size={18} />{selectedStock > 0 ? 'Agregar al carrito' : 'Agotado'}</button>
       </div>
       <dialog ref={zoomDialog} className="pd-zoom-dialog" aria-label="Imagen ampliada del producto">
         <button className="pd-zoom-close" onClick={() => zoomDialog.current?.close()} aria-label="Cerrar imagen ampliada"><X /></button>
-        <img src={activeImageList[selectedImage] || activeImageList[0]} alt={product.name} />
+        <img src={activeImageList[selectedImage] || activeImageList[0] || fallbackImage} alt={product.name} decoding="async" onError={applyProductImageFallback} />
         <div><button onClick={showPrevious} aria-label="Vista anterior"><ChevronLeft /></button><span>{selectedImage + 1} / {activeImageList.length}</span><button onClick={showNext} aria-label="Vista siguiente"><ChevronRight /></button></div>
       </dialog>
     </main>

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Lock, User, ArrowLeft, Phone, Loader2 } from 'lucide-react';
+import { Mail, Lock, User, ArrowLeft, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
 import '../styles/register-home.css';
 import brandLogo from '../assets/brand/logo-angelita-horizontal.png';
-import { onlyDigits, onlyLettersAndSpaces } from '../utils/profileValidation';
+import { onlyLettersAndSpaces } from '../utils/profileValidation';
+import PhoneField from '../components/PhoneField';
 
 const Logo = () => (
     <a className="logo" href="/" aria-label="Zapatería Angelita - inicio">
@@ -13,15 +14,14 @@ const Logo = () => (
     </a>
 );
 
-const REGISTRATION_LOADING_MS = 30_000;
-
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
-        name: '', email: '', phone: '', password: '', password_confirmation: '',
+        name: '', email: '', phone: '+52', password: '', password_confirmation: '',
         gender: '', birthdate: ''
     });
 
     const [error, setError] = useState<string | null>(null);
+    const [errorCode, setErrorCode] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const { login: authLogin } = useAuth();
@@ -30,13 +30,14 @@ const RegisterPage = () => {
     useEffect(() => {
         if (!isSuccess) return;
 
-        const redirectTimer = window.setTimeout(() => navigate('/home', { replace: true }), 1800);
+        const redirectTimer = window.setTimeout(() => navigate('/welcome', { replace: true }), 1800);
         return () => window.clearTimeout(redirectTimer);
     }, [isSuccess, navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
+        setErrorCode(null);
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
@@ -47,8 +48,8 @@ const RegisterPage = () => {
             setError('Ingresa un nombre válido usando solo letras, espacios, apóstrofes o guiones.');
             return;
         }
-        if (!/^\d{7,20}$/.test(formData.phone)) {
-            setError('El teléfono debe contener entre 7 y 20 números.');
+        if (!/^\+[0-9]{8,20}$/.test(formData.phone)) {
+            setError('Ingresa un teléfono internacional válido.');
             return;
         }
 
@@ -64,20 +65,26 @@ const RegisterPage = () => {
         }
 
         setLoading(true);
-        const loadingStartedAt = Date.now();
         try {
             const { data } = await authService.register(formData);
-            const remainingLoadingTime = REGISTRATION_LOADING_MS - (Date.now() - loadingStartedAt);
-            if (remainingLoadingTime > 0) {
-                await new Promise((resolve) => window.setTimeout(resolve, remainingLoadingTime));
-            }
             authLogin(data.user, data.token);
             setIsSuccess(true);
         } catch (err: any) {
+            const code = err.response?.data?.error_code || null;
             const errorMsg = err.response?.data?.errors
                 ? (Object.values(err.response.data.errors)[0] as any)[0]
                 : err.response?.data?.message || err.message || 'Error al procesar la solicitud';
-            setError(errorMsg);
+
+            setErrorCode(code);
+            setError(
+                code === 'EMAIL_ALREADY_REGISTERED'
+                    ? 'Este correo electrónico ya está registrado.'
+                    : errorMsg,
+            );
+
+            if (code === 'EMAIL_ALREADY_REGISTERED') {
+                window.requestAnimationFrame(() => document.getElementById('email')?.focus());
+            }
         } finally {
             setLoading(false);
         }
@@ -86,10 +93,12 @@ const RegisterPage = () => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const value = e.target.name === 'name'
             ? onlyLettersAndSpaces(e.target.value)
-            : e.target.name === 'phone'
-                ? onlyDigits(e.target.value)
-                : e.target.value;
+            : e.target.value;
         setFormData({ ...formData, [e.target.name]: value });
+        if (e.target.name === 'email' && errorCode === 'EMAIL_ALREADY_REGISTERED') {
+            setError(null);
+            setErrorCode(null);
+        }
     };
 
     if (isSuccess) {
@@ -104,12 +113,12 @@ const RegisterPage = () => {
                             ¡Registro Exitoso!
                         </h2>
                         <p style={{ color: '#6e6e6e', lineHeight: '1.8', marginBottom: '24px' }}>
-                            Tu cuenta ha sido creada correctamente. <strong>Te hemos enviado un correo electrónico</strong> con tus credenciales de acceso.
+                            Tu cuenta ha sido creada correctamente y tu sesión está lista. Recibirás un correo de bienvenida.
                             <br /><br />
                             Revisa tu <strong>bandeja de entrada</strong> o la carpeta de <strong>SPAM</strong>.
                         </p>
-                        <button onClick={() => navigate('/home', { replace: true })} className="btn-submit" style={{ maxWidth: '400px', margin: '0 auto' }}>
-                            Ir a la tienda
+                        <button onClick={() => navigate('/welcome', { replace: true })} className="btn-submit" style={{ maxWidth: '400px', margin: '0 auto' }}>
+                            Ir a mi panel
                         </button>
                     </div>
                 </div>
@@ -132,13 +141,21 @@ const RegisterPage = () => {
                 </div>
 
                 {error && (
-                    <div className="error-message">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <div className="error-message" role="alert" aria-live="assertive">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                             <circle cx="12" cy="12" r="10" />
                             <line x1="12" y1="8" x2="12" y2="12" />
                             <line x1="12" y1="16" x2="12.01" y2="16" />
                         </svg>
-                        {error}
+                        <div>
+                            {errorCode === 'EMAIL_ALREADY_REGISTERED' ? (
+                                <>
+                                    <strong>Correo ya registrado.</strong>{' '}
+                                    Esta dirección ya tiene una cuenta.{' '}
+                                    <Link to="/login">Inicia sesión</Link> o usa la opción de recuperar contraseña.
+                                </>
+                            ) : error}
+                        </div>
                     </div>
                 )}
 
@@ -163,10 +180,17 @@ const RegisterPage = () => {
                             </div>
                             <div className="field-group">
                                 <label htmlFor="phone">Teléfono</label>
-                                <div className="input-wrapper">
-                                    <Phone className="input-icon" size={18} />
-                                    <input id="phone" type="tel" name="phone" required minLength={7} maxLength={20} inputMode="numeric" pattern="[0-9]{7,20}" autoComplete="tel" value={formData.phone} onChange={handleChange} placeholder="Ej. 999888777" />
-                                </div>
+                                <PhoneField
+                                    id="phone"
+                                    required
+                                    value={formData.phone}
+                                    onChange={(phone) => setFormData((current) => ({ ...current, phone }))}
+                                    defaultDialCode="+52"
+                                    className="international-phone"
+                                    selectClassName="international-phone__prefix"
+                                    inputClassName="international-phone__number"
+                                    placeholder="55 1234 5678"
+                                />
                             </div>
                             <div className="field-group">
                                 <label htmlFor="gender">Género</label>

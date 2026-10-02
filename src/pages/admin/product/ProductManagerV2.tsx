@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Edit, Eye, FileSpreadsheet, Loader2, Plus, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Download, Edit, Eye, FileSpreadsheet, FileText, Loader2, Plus, Search, Trash2, X } from 'lucide-react';
 import { Brand, Category, Product, Subcategory, brandService, categoryService, productService, subcategoryService } from '../../../services/crudService';
 import { getImageUrl } from '../../../config/api';
 import ProductEditorModal from './ProductEditorModal';
@@ -18,6 +18,11 @@ const ProductManagerV2 = () => {
   const [viewProduct, setViewProduct] = useState<Product | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [brandFilter, setBrandFilter] = useState('');
+  const [stockFilter, setStockFilter] = useState<'all' | 'available' | 'low' | 'out'>('all');
+  const [exporting, setExporting] = useState<'excel' | 'pdf' | null>(null);
 
   const loadData = async () => {
     try {
@@ -45,6 +50,33 @@ const ProductManagerV2 = () => {
   const totalInventory = useMemo(() => products.reduce((sum, product) => sum + Number(product.stock || 0), 0), [products]);
   const productsWithStock = useMemo(() => products.filter((product) => Number(product.stock || 0) > 0).length, [products]);
   const outOfStock = products.length - productsWithStock;
+
+  const filteredProducts = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+
+    return products.filter((product) => {
+      const brandName = typeof product.brand === 'object' ? product.brand.name : String(product.brand || '');
+      const categoryName = typeof product.category === 'object' ? product.category.name : String(product.category || '');
+      const searchable = [
+        product.product_code,
+        product.name,
+        product.model,
+        brandName,
+        categoryName,
+      ].map((value) => String(value || '').toLocaleLowerCase());
+
+      if (query && !searchable.some((value) => value.includes(query))) return false;
+      if (categoryFilter && String(product.category_id || '') !== categoryFilter) return false;
+      if (brandFilter && String(product.brand_id || '') !== brandFilter) return false;
+
+      const stock = Number(product.stock || 0);
+      if (stockFilter === 'available' && stock <= 5) return false;
+      if (stockFilter === 'low' && (stock < 1 || stock > 5)) return false;
+      if (stockFilter === 'out' && stock > 0) return false;
+
+      return true;
+    });
+  }, [products, search, categoryFilter, brandFilter, stockFilter]);
 
   const getCategoryName = (product: Product) => {
     if (typeof product.category === 'string') return product.category || 'Sin categoría';
@@ -83,6 +115,43 @@ const ProductManagerV2 = () => {
     }
   };
 
+  const downloadInventory = async (format: 'excel' | 'pdf') => {
+    if (exporting) return;
+
+    setExporting(format);
+    try {
+      const response = await productService.exportInventory(format, {
+        search: search.trim() || undefined,
+        category_id: categoryFilter || undefined,
+        brand_id: brandFilter || undefined,
+        stock_state: stockFilter === 'all' ? undefined : stockFilter,
+      });
+
+      const blob = response.data instanceof Blob
+        ? response.data
+        : new Blob([response.data]);
+
+      const disposition = String(response.headers?.['content-disposition'] || '');
+      const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
+      const fallback = `inventario-zapateria-angelita-${new Date().toISOString().slice(0, 10)}.${format === 'excel' ? 'xls' : 'pdf'}`;
+      const filename = filenameMatch?.[1] || fallback;
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(`Error exporting inventory to ${format}`, error);
+      alert('No se pudo descargar el inventario. Intenta nuevamente.');
+    } finally {
+      setExporting(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center rounded-[2rem] border border-gray-200 bg-store-surface py-20">
@@ -101,6 +170,26 @@ const ProductManagerV2 = () => {
             <p className="text-xs font-medium text-gray-400">Administra catálogo, variantes e inventario de Zapatería Angelita.</p>
           </div>
           <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => downloadInventory('excel')}
+              disabled={exporting !== null}
+              title="Descargar inventario actual en Excel"
+              className="inline-flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs font-black uppercase tracking-widest text-emerald-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {exporting === 'excel' ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              Excel
+            </button>
+            <button
+              type="button"
+              onClick={() => downloadInventory('pdf')}
+              disabled={exporting !== null}
+              title="Descargar inventario actual en PDF"
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs font-black uppercase tracking-widest text-gray-700 shadow-sm transition hover:border-gray-400 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {exporting === 'pdf' ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
+              PDF
+            </button>
             <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-xs font-black uppercase tracking-widest text-gray-600 shadow-sm transition hover:border-store-red hover:text-store-red">
               <FileSpreadsheet size={16} /> Importar
             </button>
@@ -115,6 +204,32 @@ const ProductManagerV2 = () => {
           <InventoryCard label="Productos con stock" value={productsWithStock} helper={`${products.length} productos registrados`} />
           <InventoryCard label="Agotados" value={outOfStock} helper="Requieren reposición" danger={outOfStock > 0} />
         </div>
+
+        <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(260px,1.6fr)_1fr_1fr_1fr]">
+          <label className="relative">
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar por código de producto, nombre, modelo o marca"
+              className="h-12 w-full rounded-xl border border-gray-200 bg-gray-50 pl-11 pr-4 text-sm font-semibold outline-none focus:border-store-red focus:bg-white"
+            />
+          </label>
+          <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="h-12 rounded-xl border border-gray-200 bg-white px-3 text-xs font-bold">
+            <option value="">Todas las categorías</option>
+            {categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+          <select value={brandFilter} onChange={(event) => setBrandFilter(event.target.value)} className="h-12 rounded-xl border border-gray-200 bg-white px-3 text-xs font-bold">
+            <option value="">Todas las marcas</option>
+            {brands.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+          <select value={stockFilter} onChange={(event) => setStockFilter(event.target.value as typeof stockFilter)} className="h-12 rounded-xl border border-gray-200 bg-white px-3 text-xs font-bold">
+            <option value="all">Todo el inventario</option>
+            <option value="available">Stock mayor a 5</option>
+            <option value="low">Stock bajo (1 a 5)</option>
+            <option value="out">Agotados</option>
+          </select>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-[2rem] border border-gray-200 bg-white/50 shadow-sm backdrop-blur-sm">
@@ -122,6 +237,7 @@ const ProductManagerV2 = () => {
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="border-b border-gray-100 bg-store-red/5">
+                <th className="w-16 px-4 py-4 text-center text-[10px] font-black uppercase tracking-widest text-store-red/80">N°</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Producto</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Categoría</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Marca</th>
@@ -131,10 +247,13 @@ const ProductManagerV2 = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {products.length === 0 ? (
-                <tr><td colSpan={6} className="px-6 py-12 text-center font-medium text-gray-400">No hay productos registrados.</td></tr>
-              ) : products.map((product) => (
+              {filteredProducts.length === 0 ? (
+                <tr><td colSpan={7} className="px-6 py-12 text-center font-medium text-gray-400">No hay productos registrados.</td></tr>
+              ) : filteredProducts.map((product, index) => (
                 <tr key={product.id} className="group transition-colors hover:bg-store-red/[0.02]">
+                  <td className="w-16 px-4 py-4 text-center">
+                    <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-gray-100 px-2 text-xs font-black text-gray-600">{index + 1}</span>
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -168,7 +287,7 @@ const ProductManagerV2 = () => {
         </div>
       </div>
 
-      <ProductEditorModal open={editorOpen} product={editingProduct} categories={categories} subcategories={subcategories} brands={brands} onClose={() => setEditorOpen(false)} onSaved={loadData} />
+      <ProductEditorModal open={editorOpen} product={editingProduct} products={products} categories={categories} subcategories={subcategories} brands={brands} onClose={() => setEditorOpen(false)} onSaved={loadData} />
       <ProductImportModal open={importOpen} onClose={() => setImportOpen(false)} categories={categories} subcategories={subcategories} brands={brands} products={products} onImported={loadData} />
 
       {viewProduct && (
@@ -185,6 +304,18 @@ const ProductManagerV2 = () => {
               <Detail label="Stock total" value={`${Number(viewProduct.stock || 0)} unidades`} />
               <Detail label="Colores" value={viewProduct.color || 'Sin información'} />
               <Detail label="Tallas" value={viewProduct.size || 'Sin información'} />
+              <Detail
+                label="Inventario por talla"
+                value={
+                  viewProduct.sizes?.length
+                    ? viewProduct.sizes
+                        .slice()
+                        .sort((a, b) => String(a.size).localeCompare(String(b.size), undefined, { numeric: true }))
+                        .map((item) => `${item.size}: ${Number(item.stock || 0)}`)
+                        .join(' · ')
+                    : 'Sin desglose'
+                }
+              />
               <Detail label="Material" value={viewProduct.material || 'Sin información'} />
               <Detail label="Precio" value={`$${Number(viewProduct.price || 0).toFixed(2)}`} />
               <div className="sm:col-span-2"><Detail label="Descripción" value={viewProduct.description || 'Sin descripción'} /></div>

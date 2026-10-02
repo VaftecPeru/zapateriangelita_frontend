@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Award, ChevronLeft, ChevronRight, Headphones, LockKeyhole, Mail, Pause, Play, RefreshCw, ShieldCheck, Star, Truck } from 'lucide-react';
-// @ts-ignore
 import { heroSlides, testimonials } from '../data/catalog';
+import { newsletterService } from '../services/crudService';
 
 const assets = '/images/home-reference/';
 const collections = [
@@ -21,23 +21,32 @@ type Props = {
   renderProduct: (product: any) => ReactNode;
   loading: boolean;
   error: boolean;
+  onRetry?: () => void;
 };
 
-export default function ReferenceLanding({ products, renderProduct, loading, error }: Props) {
+export default function ReferenceLanding({ products, renderProduct, loading, error, onRetry }: Props) {
   // Managed banners remain available after the reference campaign.
   const slides = [...defaultSlides, ...heroSlides.filter((item: any) => item.managed).map((item: any) => ({ ...item, emphasis: '', href: '/catalogo' }))];
   const [slide, setSlide] = useState(0);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [featuredPage, setFeaturedPage] = useState(0);
+  const [featuredPaused, setFeaturedPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [newsletterNotice, setNewsletterNotice] = useState('');
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const brands = useRef<HTMLDivElement>(null);
   const instagram = useRef<HTMLDivElement>(null);
   const active = slides[slide % slides.length];
   const rotating = !hovered && !focused && !paused && !reducedMotion && !hidden;
+  const featuredPageSize = 8;
+  const featuredPageCount = Math.max(1, Math.ceil(products.length / featuredPageSize));
+  const featuredStart = (featuredPage % featuredPageCount) * featuredPageSize;
+  const featuredProducts = products.slice(featuredStart, featuredStart + featuredPageSize);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -55,7 +64,44 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
     return () => window.clearInterval(timer);
   }, [rotating, slides.length, slide]);
 
-  const move = (direction: number) => setSlide(current => (current + direction + slides.length) % slides.length);
+  useEffect(() => {
+    if (featuredPage >= featuredPageCount) setFeaturedPage(0);
+  }, [featuredPage, featuredPageCount]);
+
+  useEffect(() => {
+    if (featuredPaused || reducedMotion || hidden || featuredPageCount < 2) return;
+    const timer = window.setInterval(
+      () => setFeaturedPage(current => (current + 1) % featuredPageCount),
+      5200,
+    );
+    return () => window.clearInterval(timer);
+  }, [featuredPaused, reducedMotion, hidden, featuredPageCount]);
+
+  const submitNewsletter = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const email = newsletterEmail.trim().toLowerCase();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setNewsletterNotice('Ingresa un correo electrónico válido.');
+      return;
+    }
+
+    setNewsletterLoading(true);
+    setNewsletterNotice('');
+
+    try {
+      const response = await newsletterService.subscribe(email);
+      setNewsletterNotice(response.data.message || 'Suscripción registrada correctamente.');
+      setNewsletterEmail('');
+    } catch (error: any) {
+      const firstValidationError = error?.response?.data?.errors?.email?.[0];
+      setNewsletterNotice(firstValidationError || error?.response?.data?.message || 'No fue posible registrar la suscripción. Intenta nuevamente.');
+    } finally {
+      setNewsletterLoading(false);
+    }
+  };
+
+    const move = (direction: number) => setSlide(current => (current + direction + slides.length) % slides.length);
   const maxDiscount = Math.max(0, ...products.map(product => {
     const before = Number(product.oldPrice);
     const after = Number(product.price);
@@ -88,12 +134,23 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
         <button className="ref-pause" onClick={() => setPaused(value => !value)} aria-label={paused ? 'Reanudar banners' : 'Pausar banners'} aria-pressed={paused}>{paused ? <Play size={14} /> : <Pause size={14} />}</button>
       </section>
 
-      <section className="ref-collections ref-shell" aria-label="Colecciones de calzado">{collections.map(item => (
-        <Link className="ref-collection" to={`/categoria/${item.slug}`} key={item.name}>
-          <img src={`${assets}${item.image}`} alt={`Colección de calzado para ${item.name.toLowerCase()}`} loading="lazy" />
-          <div><h2>{item.name}</h2><p>{item.subtitle}</p><span>Ver colección <ArrowRight size={15} /></span></div>
-        </Link>
-      ))}</section>
+      <section className="ref-collections ref-shell" aria-label="Colecciones de calzado">{collections.map(item => {
+        const units = products
+          .filter((product: any) => String(product.category || '').toLocaleLowerCase() === item.name.toLocaleLowerCase())
+          .reduce((total: number, product: any) => total + Math.max(0, Number(product.stock || 0)), 0);
+
+        return (
+          <Link className="ref-collection" to={`/categoria/${item.slug}`} key={item.name}>
+            <img src={`${assets}${item.image}`} alt={`Colección de calzado para ${item.name.toLowerCase()}`} loading="lazy" />
+            <div>
+              <h2>{item.name}</h2>
+              <p>{item.subtitle}</p>
+              <small>{units} unidades disponibles</small>
+              <span>Ver colección <ArrowRight size={15} /></span>
+            </div>
+          </Link>
+        );
+      })}</section>
 
       <section className="ref-benefits ref-shell" aria-label="Beneficios de compra">
         <div><Truck /><p><strong>Envíos a todo México</strong><span>Compra sin límites</span></p></div>
@@ -102,10 +159,76 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
         <div><Headphones /><p><strong>Atención personalizada</strong><span>Siempre contigo</span></p></div>
       </section>
 
-      <section className="ref-products ref-shell" id="productos">
+      <section
+        className="ref-products ref-shell"
+        id="productos"
+        aria-label="Productos destacados"
+        aria-roledescription="carrusel"
+        onMouseEnter={() => setFeaturedPaused(true)}
+        onMouseLeave={() => setFeaturedPaused(false)}
+        onFocusCapture={() => setFeaturedPaused(true)}
+        onBlurCapture={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setFeaturedPaused(false);
+        }}
+      >
         <div className="ref-heading"><h2>Productos destacados</h2><Link to="/catalogo">Ver todos los productos <ArrowRight size={15} /></Link></div>
-        <div className="ref-product-grid">{loading ? Array.from({ length: 4 }, (_, i) => <div className="ref-skeleton" role="status" aria-label="Cargando producto" key={i} />) : products.slice(0, 4).map(renderProduct)}</div>
-        {!loading && !products.length && <p className="ref-empty" role="status">{error ? 'No pudimos cargar el catálogo. Intenta recargar la página.' : 'Pronto encontrarás aquí nuestros productos destacados.'}</p>}
+
+        <div className="ref-featured-slider">
+          {featuredPageCount > 1 && !loading && (
+            <button
+              type="button"
+              className="ref-featured-arrow ref-featured-arrow--left"
+              aria-label="Productos destacados anteriores"
+              onClick={() => setFeaturedPage(current => (current - 1 + featuredPageCount) % featuredPageCount)}
+            >
+              <ChevronLeft size={20} />
+            </button>
+          )}
+
+          <div className="ref-featured-viewport" aria-live={featuredPaused || reducedMotion ? 'polite' : 'off'}>
+            <div className="ref-product-grid ref-product-grid--premium" key={`featured-${featuredPage}`}>
+              {loading
+                ? Array.from({ length: 8 }, (_, i) => <div className="ref-skeleton" role="status" aria-label="Cargando producto" key={i} />)
+                : featuredProducts.map(renderProduct)}
+            </div>
+          </div>
+
+          {featuredPageCount > 1 && !loading && (
+            <button
+              type="button"
+              className="ref-featured-arrow ref-featured-arrow--right"
+              aria-label="Productos destacados siguientes"
+              onClick={() => setFeaturedPage(current => (current + 1) % featuredPageCount)}
+            >
+              <ChevronRight size={20} />
+            </button>
+          )}
+        </div>
+
+        {!loading && featuredPageCount > 1 && (
+          <div className="ref-featured-pagination" aria-label="Paginación de productos destacados">
+            {Array.from({ length: featuredPageCount }, (_, index) => (
+              <button
+                type="button"
+                key={index}
+                aria-label={`Mostrar página ${index + 1} de productos destacados`}
+                aria-current={index === featuredPage ? 'true' : undefined}
+                onClick={() => setFeaturedPage(index)}
+              />
+            ))}
+          </div>
+        )}
+
+        {!loading && !products.length && (
+          <div className="ref-empty" role={error ? 'alert' : 'status'}>
+            <p>{error ? 'No pudimos cargar el catálogo en este momento.' : 'Pronto encontrarás aquí nuestros productos destacados.'}</p>
+            {error && onRetry && (
+              <button type="button" className="ref-button" onClick={onRetry}>
+                Reintentar catálogo
+              </button>
+            )}
+          </div>
+        )}
       </section>
 
       <section className="ref-promotion ref-shell" id="ofertas" aria-label="Ofertas de temporada">
@@ -131,7 +254,27 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
         <button className="ref-round ref-instagram__next" aria-label="Más imágenes" onClick={() => instagram.current?.scrollBy({ left: 220, behavior: reducedMotion ? 'auto' : 'smooth' })}><ChevronRight size={18} /></button>
       </section>
 
-      <section className="ref-newsletter ref-shell"><div><Mail /><p><strong>Suscríbete a nuestro newsletter</strong><span>Recibe ofertas exclusivas, novedades y mucho más.</span></p></div><form onSubmit={event => { event.preventDefault(); setNewsletterNotice('La suscripción estará disponible próximamente. Para recibir atención, utiliza Contacto.'); }}><label className="sr-only" htmlFor="ref-email">Correo electrónico para novedades</label><input id="ref-email" name="email" type="email" placeholder="Ingresa tu correo electrónico" autoComplete="email" required /><button type="submit">Suscribirme</button></form>{newsletterNotice && <p className="ref-newsletter__notice" role="status">{newsletterNotice}</p>}</section>
+      <section className="ref-newsletter ref-shell">
+        <div><Mail /><p><strong>Suscríbete a nuestro newsletter</strong><span>Recibe ofertas exclusivas, novedades y mucho más.</span></p></div>
+        <form onSubmit={submitNewsletter}>
+          <label className="sr-only" htmlFor="ref-email">Correo electrónico para novedades</label>
+          <input
+            id="ref-email"
+            name="email"
+            type="email"
+            placeholder="Ingresa tu correo electrónico"
+            autoComplete="email"
+            required
+            value={newsletterEmail}
+            onChange={(event) => setNewsletterEmail(event.target.value)}
+            disabled={newsletterLoading}
+          />
+          <button type="submit" disabled={newsletterLoading}>
+            {newsletterLoading ? 'Suscribiendo...' : 'Suscribirme'}
+          </button>
+        </form>
+        {newsletterNotice && <p className="ref-newsletter__notice" role="status" aria-live="polite">{newsletterNotice}</p>}
+      </section>
     </div>
   );
 }

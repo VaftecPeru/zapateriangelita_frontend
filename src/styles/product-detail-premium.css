@@ -61,3 +61,9 @@
 }
 @media (max-width:360px) { .product-detail-page .pd-logo { width:125px; }.product-detail-page .product-detail-header { gap:5px; padding-inline:10px; }.product-detail-page .product-detail-header .header-actions { gap:0; }.pd-announcement { font-size:9px; gap:6px; }.pd-announcement span { margin-inline:5px; }.pd-mobile-bar { gap:8px; padding-inline:12px; }.pd-mobile-bar strong { font-size:18px; }.pd-mobile-bar button { font-size:11px; padding-inline:12px; } }
 @media (prefers-reduced-motion:reduce) { .product-detail-page *, .product-detail-page *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
+
+
+.product-detail-page .size-option { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.product-detail-page .size-option__stock { font-size:10px; font-weight:700; color:#777; line-height:1; }
+.product-detail-page .size-chip:disabled + .size-option__stock { color:#b91c1c; }
+.product-detail-page .variant-stock { margin:10px 0 0; font-size:12px; color:#4b5563; }

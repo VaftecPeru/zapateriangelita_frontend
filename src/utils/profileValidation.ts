@@ -17,8 +17,8 @@ export const validateProfileFields = (data: {
   if (!name || !/^[\p{L}]+(?:[\s'-][\p{L}]+)*$/u.test(name)) {
     return "Ingresa un nombre válido usando solo letras, espacios, apóstrofes o guiones.";
   }
-  if (phone && !/^\d{7,20}$/.test(phone)) {
-    return "El teléfono debe contener entre 7 y 20 números.";
+  if (phone && !/^\+[0-9]{8,20}$/.test(phone)) {
+    return "Ingresa un teléfono internacional válido.";
   }
 
   if (data.states && (!data.state || !data.states.includes(data.state))) {

@@ -25,14 +25,16 @@ export const authService = {
     login: (data: LoginData) => apiClient.post('/login', data),
     register: (data: RegisterData) => apiClient.post('/register', data),
     logout: () => apiClient.post('/logout'),
-    getProfile: () => apiClient.get('/user'),
+    getProfile: () => apiClient.get('/user', { timeout: 10000 }),
     googleConfig: () => apiClient.get<GoogleConfigResponse>('/auth/google/config', {
+        timeout: 8000,
         params: { _ts: Date.now() },
         headers: {
             'Cache-Control': 'no-cache',
             Pragma: 'no-cache',
         },
     }),
-    googleLogin: (credential: string) => apiClient.post('/auth/google/login', { credential }),
-    googleLink: (credential: string) => apiClient.post('/auth/google/link', { credential }),
+    googleLogin: (credential: string) => apiClient.post('/auth/google/login', { credential }, { timeout: 12000 }),
+    googleWelcome: () => apiClient.post('/auth/google/welcome', {}, { timeout: 12000 }),
+    googleLink: (credential: string) => apiClient.post('/auth/google/link', { credential }, { timeout: 12000 }),
 };

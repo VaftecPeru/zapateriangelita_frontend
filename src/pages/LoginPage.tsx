@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
 import GoogleIdentityButton from '../components/GoogleIdentityButton';
+import { authDestination } from '../utils/authDestination';
 import '../styles/login-home.css';
 import brandLogo from '../assets/brand/logo-angelita-horizontal.png';
 
@@ -13,28 +14,53 @@ const Logo = ({ light = false }: { light?: boolean }) => (
     </a>
 );
 
+export const getRetryAfterSeconds = (error: any, fallback = 10): number => {
+    const fromBody = Number(error?.response?.data?.retry_after);
+    const fromHeader = Number(error?.response?.headers?.['retry-after']);
+    const value = Number.isFinite(fromBody) && fromBody > 0
+        ? fromBody
+        : Number.isFinite(fromHeader) && fromHeader > 0
+            ? fromHeader
+            : fallback;
+
+    return Math.max(1, Math.ceil(value));
+};
+
 const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
+    const loginInFlight = useRef(false);
+    const googleInFlight = useRef(false);
+    const [cooldownSeconds, setCooldownSeconds] = useState(0);
     const { login: authLogin, user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
     useEffect(() => {
+        if (cooldownSeconds <= 0) return;
+
+        const timer = window.setInterval(() => {
+            setCooldownSeconds((current) => Math.max(0, current - 1));
+        }, 1000);
+
+        return () => window.clearInterval(timer);
+    }, [cooldownSeconds]);
+
+    useEffect(() => {
         if (isAuthenticated && user) {
-            if (user.role === 'admin') {
-                navigate('/admin/dashboard', { replace: true });
-            } else {
-                navigate((location.state as { from?: string } | null)?.from || '/home', { replace: true });
-            }
+            const from = (location.state as { from?: string } | null)?.from;
+            navigate(authDestination(user.role, from, Boolean(user.must_change_password)), { replace: true });
         }
     }, [isAuthenticated, user, navigate, location.state]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (loginInFlight.current || googleInFlight.current || loading || googleLoading || cooldownSeconds > 0) return;
+
+        loginInFlight.current = true;
         setError(null);
         setLoading(true);
 
@@ -42,17 +68,27 @@ const LoginPage = () => {
             const { data } = await authService.login(formData);
             authLogin(data.user, data.token);
         } catch (err: any) {
-            const msg = err.response?.data?.message
-                || err.response?.data?.errors?.email?.[0]
-                || err.message
-                || 'Error al iniciar sesión';
-            setError(msg);
+            const status = Number(err.response?.status || 0);
+            if (status === 429) {
+                const retryAfter = getRetryAfterSeconds(err);
+                setCooldownSeconds(retryAfter);
+                setError(`Se realizaron varios intentos seguidos. Espera ${retryAfter} segundos y vuelve a intentar.`);
+            } else {
+                const msg = err.response?.data?.message
+                    || err.response?.data?.errors?.email?.[0]
+                    || err.message
+                    || 'Error al iniciar sesión';
+                setError(msg);
+            }
         } finally {
+            loginInFlight.current = false;
             setLoading(false);
         }
     };
 
     const handleGoogleCredential = async (credential: string) => {
+        if (googleInFlight.current || loading || cooldownSeconds > 0) return;
+        googleInFlight.current = true;
         setError(null);
         setGoogleLoading(true);
 
@@ -61,13 +97,34 @@ const LoginPage = () => {
             if (!data?.user || !data?.token) {
                 throw new Error('Google no devolvió una sesión válida.');
             }
+
             authLogin(data.user, data.token);
+
+            if (data.account_created) {
+                sessionStorage.setItem('angelita_new_account', 'google');
+
+                // El backend deja el correo de bienvenida persistido para reintento.
+                // No dependemos de una segunda llamada del navegador ni de la latencia SMTP.
+
+                // El efecto de sesión decide un único destino y conserva `from`.
+            }
         } catch (err: any) {
-            const msg = err.response?.data?.message
-                || err.message
-                || 'No fue posible continuar con Google.';
-            setError(msg);
+            const status = Number(err.response?.status || 0);
+
+            if (status === 429) {
+                const retryAfter = getRetryAfterSeconds(err);
+                setCooldownSeconds(retryAfter);
+                setError(`Google recibió varios intentos seguidos. Espera ${retryAfter} segundos y vuelve a intentar.`);
+            } else if (err.code === 'ECONNABORTED') {
+                setError('Google está tardando más de lo esperado. Intenta nuevamente en unos segundos.');
+            } else {
+                const msg = err.response?.data?.message
+                    || err.message
+                    || 'No fue posible continuar con Google.';
+                setError(msg);
+            }
         } finally {
+            googleInFlight.current = false;
             setGoogleLoading(false);
         }
     };
@@ -163,10 +220,14 @@ const LoginPage = () => {
 
                     <button
                         type="submit"
-                        disabled={loading || googleLoading}
+                        disabled={loading || googleLoading || cooldownSeconds > 0}
                         className="btn-submit"
                     >
-                        {loading ? 'Ingresando...' : 'Iniciar sesión'}
+                        {loading
+                            ? 'Ingresando...'
+                            : cooldownSeconds > 0
+                                ? `Espera ${cooldownSeconds}s`
+                                : 'Iniciar sesión'}
                     </button>
                 </form>
 
@@ -188,8 +249,14 @@ const LoginPage = () => {
                     <GoogleIdentityButton
                         mode="login"
                         onCredential={handleGoogleCredential}
-                        disabled={loading || googleLoading}
+                        disabled={loading || googleLoading || cooldownSeconds > 0}
                     />
+
+                    {googleLoading && (
+                        <div className="mt-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-center text-xs font-bold text-red-700" role="status">
+                            Validando tu cuenta con Google y preparando tu panel...
+                        </div>
+                    )}
 
                     <div className="google-access__trust">
                         <ShieldCheck size={13} />

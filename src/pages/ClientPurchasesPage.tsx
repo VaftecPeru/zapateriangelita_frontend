@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Calendar, CheckCircle2, Package, ReceiptText, ShieldCheck, ShoppingBag } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Calendar, CheckCircle2, MessageCircle, Package, ReceiptText, ShieldCheck, ShoppingBag } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import GoogleIdentityButton from "../components/GoogleIdentityButton";
+import OrderVoucherModal from "./admin/OrderVoucherModal";
 import { useAuth } from "../hooks/useAuth";
 import { authService } from "../services/authService";
-import { Order, orderService } from "../services/crudService";
+import { analyticsService, Order, orderService, settingsService } from "../services/crudService";
 
-const money = new Intl.NumberFormat("en-US", {
+const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
-  currency: "USD",
+  currency: "MXN",
   minimumFractionDigits: 2,
 });
 
@@ -18,18 +19,20 @@ const statusLabel = (status?: string) => {
     preparado: "Preparando pedido",
     enviado: "Enviado",
     entregado: "Entregado",
-    cancelado: "Cancelado",
+    cancelado: "Finalizado",
+    finalizado: "Finalizado",
     pending: "Compra recibida",
     confirmed: "Preparando pedido",
     shipped: "Enviado",
     delivered: "Entregado",
-    cancelled: "Cancelado",
+    cancelled: "Finalizado",
   };
   return map[String(status || "").toLowerCase()] || status || "Procesando";
 };
 
 const ClientPurchasesPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading, updateUser } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
@@ -37,6 +40,22 @@ const ClientPurchasesPage = () => {
   const [googleLinking, setGoogleLinking] = useState(false);
   const [googleMessage, setGoogleMessage] = useState<string | null>(null);
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const [receiptOrder, setReceiptOrder] = useState<Order | null>(null);
+  const [supportNumber, setSupportNumber] = useState('');
+  const purchaseConfirmed = (location.state as any)?.purchaseConfirmed as
+    | {
+        orderCode?: string | null;
+        transactionId?: string | null;
+        paymentReference?: string | null;
+        emailScheduled?: boolean;
+      }
+    | undefined;
+
+  useEffect(() => {
+    settingsService.getAll()
+      .then((response) => setSupportNumber(String(response.data?.data?.whatsapp_number || '')))
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -112,6 +131,39 @@ const ClientPurchasesPage = () => {
       </header>
 
       <section className="max-w-6xl mx-auto mt-8">
+        {purchaseConfirmed && (
+          <div
+            role="status"
+            className="mb-6 rounded-[2rem] border border-emerald-200 bg-emerald-50 p-6 md:p-8 shadow-sm"
+          >
+            <div className="flex items-start gap-4">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-600 text-white">
+                <CheckCircle2 size={24} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-700">Pago confirmado</p>
+                <h2 className="mt-1 text-2xl font-black text-[#121212]">¡Gracias por tu compra!</h2>
+                <p className="mt-2 text-sm leading-6 text-emerald-900/70">
+                  Tu pago fue confirmado y tu pedido ya está registrado.
+                  {purchaseConfirmed.emailScheduled
+                    ? " Estamos preparando el correo con tu voucher y datos de acceso."
+                    : ""}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-bold text-emerald-900/70">
+                  {purchaseConfirmed.orderCode && (
+                    <span className="rounded-full bg-white/80 px-3 py-1.5">Pedido: {purchaseConfirmed.orderCode}</span>
+                  )}
+                  {purchaseConfirmed.transactionId && (
+                    <span className="rounded-full bg-white/80 px-3 py-1.5">Movimiento: {purchaseConfirmed.transactionId}</span>
+                  )}
+                  {purchaseConfirmed.paymentReference && (
+                    <span className="rounded-full bg-white/80 px-3 py-1.5">Referencia: {purchaseConfirmed.paymentReference}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="bg-white rounded-[2rem] border border-black/5 shadow-sm p-6 md:p-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
@@ -202,6 +254,16 @@ const ClientPurchasesPage = () => {
                       <span className="inline-flex px-4 py-2 rounded-full bg-[#121212] text-white text-[9px] font-black uppercase tracking-widest">
                         {statusLabel(order.status)}
                       </span>
+                      <div className="mt-3 space-y-1 text-xs text-gray-500">
+                        <div className="flex justify-between gap-5 md:justify-end">
+                          <span>Subtotal</span>
+                          <strong className="text-[#121212]">{money.format(Number(order.subtotal ?? 0))}</strong>
+                        </div>
+                        <div className="flex justify-between gap-5 md:justify-end">
+                          <span>Costo de delivery</span>
+                          <strong className="text-[#121212]">{money.format(Number(order.shipping_cost || 0))}</strong>
+                        </div>
+                      </div>
                       <p className="text-xl font-black text-[#e30613] mt-2">{money.format(Number(order.total || 0))}</p>
                     </div>
                   </div>
@@ -223,6 +285,22 @@ const ClientPurchasesPage = () => {
                       ))}
                     </div>
                   )}
+                  <div className="mt-5 flex flex-wrap gap-2 border-t border-black/5 pt-4">
+                    <button type="button" onClick={() => setReceiptOrder(order)} className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#121212]">
+                      <ReceiptText size={14} /> Comprobante
+                    </button>
+                    {supportNumber && (
+                      <a
+                        href={`https://wa.me/${supportNumber.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, necesito ayuda con mi pedido ${order.code}`)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => void analyticsService.track('whatsapp_click', undefined, { source: 'my_purchases', order_id: order.id }).catch(() => undefined)}
+                        className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white"
+                      >
+                        <MessageCircle size={14} /> Chat con administración
+                      </a>
+                    )}
+                  </div>
                 </article>
               ))}
             </div>
@@ -240,6 +318,13 @@ const ClientPurchasesPage = () => {
           )}
         </div>
       </section>
+
+      {receiptOrder && (
+        <OrderVoucherModal
+          order={receiptOrder}
+          onClose={() => setReceiptOrder(null)}
+        />
+      )}
     </main>
   );
 };

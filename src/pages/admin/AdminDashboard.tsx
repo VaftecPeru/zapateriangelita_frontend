@@ -19,7 +19,6 @@ import UsersManager from './UsersManager';
 import ProfileManager from './ProfileManager';
 import { useAuth } from '../../hooks/useAuth';
 import { statsService, DashboardStats } from '../../services/crudService';
-import * as XLSX from 'xlsx';
 import InventoryManager from './InventoryManager';
 
 
@@ -73,8 +72,8 @@ const ConcentricChart = ({ stats }: { stats: DashboardStats | null }) => {
     const layers = [
         { label: `${stats?.revenue?.total || 0} Interacciones`, size: 'w-48 h-48 md:w-56 md:h-56', color: 'bg-store-red/10' },
         { label: `${stats?.revenue?.expenses || 0} Visitas`, size: 'w-40 h-40 md:w-48 md:h-48', color: 'bg-store-red/20' },
-        { label: `${stats?.charts?.benefitsDistribution?.taxes || 0} Ocupadas`, size: 'w-32 h-32 md:w-36 md:h-36', color: 'bg-store-red/30' },
-        { label: `${stats?.charts?.benefitsDistribution?.costs || 0} Libres`, size: 'w-24 h-24 md:w-28 md:h-28', color: 'bg-store-red' },
+        { label: `${stats?.charts?.benefitsDistribution?.taxes || 0} Agotados`, size: 'w-32 h-32 md:w-36 md:h-36', color: 'bg-store-red/30' },
+        { label: `${stats?.charts?.benefitsDistribution?.costs || 0} Disponibles`, size: 'w-24 h-24 md:w-28 md:h-28', color: 'bg-store-red' },
     ];
 
     return (
@@ -93,7 +92,7 @@ const ConcentricChart = ({ stats }: { stats: DashboardStats | null }) => {
                             {i === 3 && (
                                 <>
                                     <span className="text-xl sm:text-2xl font-black leading-none">{stats?.charts?.benefitsDistribution?.costs || 0}</span>
-                                    <span className="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase mt-0.5 sm:mt-1">Libres</span>
+                                    <span className="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase mt-0.5 sm:mt-1">Disponibles</span>
                                 </>
                             )}
                         </div>
@@ -180,6 +179,10 @@ const AdminDashboard = () => {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const dashboardRef = useRef<HTMLDivElement>(null);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+    const [statsLoading, setStatsLoading] = useState(true);
+    const [statsError, setStatsError] = useState('');
+    const [dashboardSearch, setDashboardSearch] = useState('');
+    const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
     useEffect(() => {
         if (state?.activeTab) {
@@ -187,65 +190,86 @@ const AdminDashboard = () => {
         }
     }, [state]);
 
+    const fetchStats = async () => {
+        setStatsLoading(true);
+        setStatsError('');
+        try {
+            const response = await statsService.getStats();
+            setStats((response.data as any) || (response as any));
+        } catch (error) {
+            console.error('Error fetching stats:', error);
+            setStatsError('No se pudieron cargar las métricas del dashboard.');
+        } finally {
+            setStatsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const response = await statsService.getStats();
-                setStats((response.data as any) || (response as any));
-            } catch (error) {
-                console.error('Error fetching stats:', error);
-            }
-        };
-        fetchStats();
+        void fetchStats();
     }, []);
+
+    const filteredRecentActivity = (stats?.recentActivity || []).filter((item) =>
+        item.text.toLocaleLowerCase().includes(dashboardSearch.trim().toLocaleLowerCase()),
+    );
+
+    const escapeCsv = (value: unknown) => {
+        const text = String(value ?? '');
+        return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
 
     const handleDownloadReport = () => {
         if (!stats) return;
 
         setIsGeneratingReport(true);
-        setTimeout(() => {
-            try {
-                const wsResumen = XLSX.utils.json_to_sheet([
-                    { Metrica: 'Total Productos', Valor: stats.charts?.benefitsDistribution?.total || 0 },
-                    { Metrica: 'Productos Libres (Costos)', Valor: stats.charts?.benefitsDistribution?.costs || 0 },
-                    { Metrica: 'Productos Ocupadas', Valor: stats.charts?.benefitsDistribution?.taxes || 0 },
-                    { Metrica: 'Interacciones WhatsApp (Lds)', Valor: stats.revenue?.total || 0 },
-                    { Metrica: 'Visitas a Productos', Valor: stats.revenue?.expenses || 0 }
-                ]);
+        try {
+            const rows: unknown[][] = [
+                ['Reporte Zapatería Angelita'],
+                ['Generado', new Date().toLocaleString('es-MX')],
+                [],
+                ['Resumen general'],
+                ['Métrica', 'Valor'],
+                ['Total Productos', stats.charts?.benefitsDistribution?.total || 0],
+                ['Productos Disponibles', stats.charts?.benefitsDistribution?.costs || 0],
+                ['Productos Agotados', stats.charts?.benefitsDistribution?.taxes || 0],
+                ['Interacciones WhatsApp', stats.metrics?.whatsapp_interactions ?? stats.revenue?.whatsapp ?? 0],
+                ['Visitas a Productos', stats.revenue?.expenses || 0],
+                [],
+                ['Interacciones mensuales'],
+                ['Mes', 'Interacciones'],
+                ...(((stats.charts as any).monthlyLabels || []).map((label: string, i: number) => [
+                    label,
+                    stats.charts?.monthlyRevenue?.[i] || 0,
+                ])),
+                [],
+                ['Actividad reciente'],
+                ['Actividad', 'Tiempo'],
+                ...(stats.recentActivity || []).map((item: any) => [item.text, item.time]),
+            ];
 
-                const wsMeses = XLSX.utils.json_to_sheet(
-                    ((stats.charts as any).monthlyLabels || []).map((label: string, i: number) => ({
-                        Mes: label,
-                        Interacciones: stats.charts?.monthlyRevenue?.[i] || 0
-                    }))
-                );
-
-                const wsActividad = XLSX.utils.json_to_sheet(
-                    (stats.recentActivity || []).map((item: any) => ({
-                        Actividad: item.text,
-                        Tiempo: item.time
-                    }))
-                );
-
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen General');
-                XLSX.utils.book_append_sheet(wb, wsMeses, 'Interacciones Mensuales');
-                XLSX.utils.book_append_sheet(wb, wsActividad, 'Actividad Reciente');
-
-                XLSX.writeFile(wb, `Reporte_Homad_Admin_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}.xlsx`);
-            } catch (error) {
-                console.error('Error generating Excel', error);
-            } finally {
-                setIsGeneratingReport(false);
-            }
-        }, 300);
+            const csv = '\uFEFF' + rows
+                .map((row) => row.map(escapeCsv).join(','))
+                .join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Reporte_Angelita_Admin_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error generating CSV report', error);
+        } finally {
+            setIsGeneratingReport(false);
+        }
     };
 
     const statCards = [
         {
             label: 'Interacciones WhatsApp',
-            value: stats?.revenue?.total || 0,
-            change: stats?.revenue?.change || '+0%',
+            value: stats?.metrics?.whatsapp_interactions ?? stats?.revenue?.whatsapp ?? 0,
+            change: stats?.revenue?.whatsappChange || '+0%',
             icon: <ArrowUpRight className="text-green-500" />
         },
         {
@@ -273,28 +297,36 @@ const AdminDashboard = () => {
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                             <input
                                 type="text"
-                                placeholder="Buscar..."
+                                placeholder="Buscar actividad reciente..."
+                                value={dashboardSearch}
+                                onChange={(event) => setDashboardSearch(event.target.value)}
                                 className="w-full bg-white border border-gray-200 rounded-2xl py-2.5 md:py-3 pl-10 md:pl-12 pr-4 text-xs md:text-sm font-medium focus:ring-2 focus:ring-store-red/20 focus:border-store-red outline-none transition-all shadow-sm"
                             />
                         </div>
                         <div className="flex items-center gap-3">
-                            <button className="p-2.5 md:p-3 bg-white border border-gray-200 rounded-2xl text-gray-500 hover:text-black transition-all shadow-sm relative">
+                            <button onClick={() => void fetchStats()} title="Actualizar indicadores" className="p-2.5 md:p-3 bg-white border border-gray-200 rounded-2xl text-gray-500 hover:text-black transition-all shadow-sm relative">
                                 <Bell size={18} />
                                 <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-store-red rounded-full border-2 border-white" />
                             </button>
-                            <div className="group relative">
-                                <button className="w-10 h-10 md:w-12 md:h-12 bg-store-red rounded-2xl flex items-center justify-center text-white font-black text-xs md:text-sm border-2 border-white shadow-xl">
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    aria-label="Abrir menú de usuario"
+                                    aria-expanded={profileMenuOpen}
+                                    onClick={() => setProfileMenuOpen((open) => !open)}
+                                    className="w-10 h-10 md:w-12 md:h-12 bg-store-red rounded-2xl flex items-center justify-center text-white font-black text-xs md:text-sm border-2 border-white shadow-xl"
+                                >
                                     {user?.name.slice(0, 2).toUpperCase()}
                                 </button>
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                                <div className={`absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 transition-all z-50 ${profileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
                                     <button
-                                        onClick={() => setActiveTab('profile')}
+                                        onClick={() => { setActiveTab('profile'); setProfileMenuOpen(false); }}
                                         className="w-full text-left px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-50"
                                     >
                                         Mi Perfil
                                     </button>
                                     <button
-                                        onClick={() => logout()}
+                                        onClick={() => { setProfileMenuOpen(false); void logout(); }}
                                         className="w-full text-left px-4 py-2 text-sm font-bold text-store-red hover:bg-red-50 transition-colors"
                                     >
                                         Cerrar Sesión
@@ -309,13 +341,13 @@ const AdminDashboard = () => {
                 <div className="flex gap-4 border-b border-gray-200 pb-1 overflow-x-auto no-scrollbar">
                     {[
                         { id: 'stats', label: 'Estadísticas' },
+                        { id: 'messages', label: 'Pedido' },
                         { id: 'products', label: 'Productos' },
                         { id: 'inventory', label: 'Inventario' },
                         { id: 'services', label: 'Servicios' },
                         { id: 'settings', label: 'Ajustes' },
                         { id: 'funnelLeads', label: 'Interesados en Calzado' },
-                        { id: 'users', label: 'Usuarios' },
-                        { id: 'messages', label: 'Pedido' }
+                        { id: 'users', label: 'Usuarios' }
                     ].map((tab) => (
                         <button
                             key={tab.id}
@@ -331,6 +363,14 @@ const AdminDashboard = () => {
                 </div>
 
                 {activeTab === 'stats' ? (
+                    statsLoading ? (
+                        <div className="rounded-[2rem] border border-gray-200 bg-white p-12 text-center text-sm font-bold text-gray-500">Cargando indicadores reales...</div>
+                    ) : statsError ? (
+                        <div className="rounded-[2rem] border border-red-100 bg-red-50 p-8 text-center">
+                            <p className="text-sm font-bold text-red-600">{statsError}</p>
+                            <button onClick={() => void fetchStats()} className="mt-4 rounded-xl bg-store-red px-5 py-3 text-xs font-black uppercase text-white">Reintentar</button>
+                        </div>
+                    ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
 
                         <div className="lg:col-span-8 space-y-6 md:space-y-8">
@@ -359,7 +399,7 @@ const AdminDashboard = () => {
                                                 disabled={isGeneratingReport}
                                                 className={`px-4 py-2 bg-store-red text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-store-redDark transition-all ${isGeneratingReport ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
-                                                {isGeneratingReport ? 'Exportando Excel...' : 'Reporte'}
+                                                {isGeneratingReport ? 'Exportando...' : 'Reporte'}
                                             </button>
                                         </div>
                                     </div>
@@ -370,9 +410,9 @@ const AdminDashboard = () => {
                                     <div key={i} className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 group">
                                         <div className="flex justify-between items-start mb-4 md:mb-6">
                                             <p className="text-black/40 text-xs font-black uppercase tracking-widest">{stat.label}</p>
-                                            <div className="p-2 bg-gray-50 rounded-xl group-hover:bg-store-red/5 transition-colors">
+                                            <button onClick={handleDownloadReport} title="Exportar reporte" className="p-2 bg-gray-50 rounded-xl group-hover:bg-store-red/5 transition-colors">
                                                 <MoreHorizontal size={16} className="text-gray-400" />
-                                            </div>
+                                            </button>
                                         </div>
                                         <p className="text-2xl font-black text-black tracking-tighter mb-4">
                                             <Counter value={stat.value} prefix="" decimals={0} />
@@ -392,9 +432,9 @@ const AdminDashboard = () => {
                                 <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border border-gray-100 shadow-sm">
                                     <div className="flex justify-between items-center mb-6 md:mb-10">
                                         <h3 className="font-black text-black">Ocupación (Inventario)</h3>
-                                        <button className="flex items-center gap-2 text-xs font-bold text-gray-400">
-                                            2026 <ChevronDown size={14} />
-                                        </button>
+                                        <span className="flex items-center gap-2 text-xs font-bold text-gray-400">
+                                            {new Date().getFullYear()} <ChevronDown size={14} />
+                                        </span>
                                     </div>
                                     <div className="flex items-center justify-center py-10">
                                         <div className="relative w-48 h-48">
@@ -412,7 +452,7 @@ const AdminDashboard = () => {
                                         {[
                                             { val: stats?.charts?.benefitsDistribution?.total || 0, label: 'Total' },
                                             { val: stats?.charts?.benefitsDistribution?.costs || 0, label: 'Disponibles' },
-                                            { val: stats?.charts?.benefitsDistribution?.taxes || 0, label: 'Ocupadas' }
+                                            { val: stats?.charts?.benefitsDistribution?.taxes || 0, label: 'Agotados' }
                                         ].map((item, i) => (
                                             <div key={i} className="text-center">
                                                 <p className="text-sm font-black text-black">
@@ -430,7 +470,7 @@ const AdminDashboard = () => {
                                         <span className="text-[10px] font-black text-store-red uppercase tracking-widest bg-store-red/10 px-3 py-1 rounded-lg">Hoy</span>
                                     </div>
                                     <div className="space-y-6 flex-1">
-                                        {(stats?.recentActivity || []).map((item: any, i: number) => (
+                                        {filteredRecentActivity.map((item: any, i: number) => (
                                             <div key={i} className="flex gap-4 group cursor-pointer">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-store-red mt-2 group-hover:scale-150 transition-all" />
                                                 <div className="space-y-1">
@@ -439,8 +479,8 @@ const AdminDashboard = () => {
                                                 </div>
                                             </div>
                                         ))}
-                                        {!stats?.recentActivity?.length && (
-                                            <p className="text-sm text-gray-400">No hay actividad reciente.</p>
+                                        {!filteredRecentActivity.length && (
+                                            <p className="text-sm text-gray-400">{dashboardSearch ? 'No hay actividad que coincida con la búsqueda.' : 'No hay actividad reciente.'}</p>
                                         )}
                                     </div>
                                 </div>
@@ -457,6 +497,7 @@ const AdminDashboard = () => {
                             </div>
                         </div>
                     </div>
+                    )
                 ) : (
                     <div className="space-y-6">
                         {activeTab === 'products' && <PropertyManager />}

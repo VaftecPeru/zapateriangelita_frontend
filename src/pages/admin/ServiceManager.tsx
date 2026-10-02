@@ -1,21 +1,27 @@
 import { useEffect, useState } from 'react';
 import { additionalServiceService, AdditionalService } from '../../services/crudService';
+import { useAuth } from '../../hooks/useAuth';
 import { Plus, Edit, Trash2, Loader2, Sparkles, X, AlertTriangle, Star, Percent, XCircle } from 'lucide-react';
 
 const ServiceManager = () => {
+    const { user: currentUser } = useAuth();
     const [services, setServices] = useState<AdditionalService[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [serviceToDelete, setServiceToDelete] = useState<number | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     
     const [editingService, setEditingService] = useState<AdditionalService | null>(null);
     const [formData, setFormData] = useState<AdditionalService>({
         name: '',
         description: '',
         price: 0,
-        tag: ''
+        tag: '',
+        code: null,
+        is_active: true
     });
 
     useEffect(() => {
@@ -28,9 +34,13 @@ const ServiceManager = () => {
             const response = await additionalServiceService.getAll();
             const data = Array.isArray(response.data) ? response.data : ((response.data as any).data || []);
             setServices(data);
-            setLoading(false);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error loading services:', err);
+            setFeedback({
+                type: 'error',
+                text: err?.response?.data?.message || 'No se pudieron cargar los servicios.',
+            });
+        } finally {
             setLoading(false);
         }
     };
@@ -62,12 +72,36 @@ const ServiceManager = () => {
                 name: service.name,
                 description: service.description || '',
                 price: service.price,
-                tag: service.tag || ''
+                tag: service.tag || '',
+                code: service.code || null,
+                is_active: service.is_active !== false
             });
         } else {
             setEditingService(null);
-            setFormData({ name: '', description: '', price: 0, tag: '' });
+            setFormData({ name: '', description: '', price: 0, tag: '', code: null, is_active: true });
         }
+        setIsModalOpen(true);
+    };
+
+    const deliveryService = services.find((service) => service.code === 'delivery') || null;
+    const regularServices = services.filter((service) => service.code !== 'delivery');
+    const canManageDelivery = ['admin', 'superadmin'].includes(String(currentUser?.role || ''));
+
+    const handleOpenDeliveryModal = () => {
+        if (deliveryService) {
+            handleOpenModal(deliveryService);
+            return;
+        }
+
+        setEditingService(null);
+        setFormData({
+            name: 'Costo de delivery',
+            description: 'Costo de entrega aplicado automáticamente al total de la compra.',
+            price: 0,
+            tag: 'Delivery',
+            code: 'delivery',
+            is_active: true,
+        });
         setIsModalOpen(true);
     };
 
@@ -87,17 +121,46 @@ const ServiceManager = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setFeedback(null);
+
+        const price = Number(formData.price);
+        if (!Number.isFinite(price) || price < 0) {
+            setFeedback({ type: 'error', text: 'Ingresa un costo válido mayor o igual a 0.' });
+            return;
+        }
+
         try {
-            if (editingService && editingService.id) {
-                await additionalServiceService.update(editingService.id, formData);
+            setSaving(true);
+
+            if (formData.code === 'delivery') {
+                const response = await additionalServiceService.updateDelivery({
+                    price,
+                    is_active: formData.is_active !== false,
+                    description: formData.description || null,
+                });
+
+                setFeedback({
+                    type: 'success',
+                    text: response.data?.message || 'Costo de delivery actualizado correctamente.',
+                });
+            } else if (editingService && editingService.id) {
+                await additionalServiceService.update(editingService.id, { ...formData, price });
+                setFeedback({ type: 'success', text: 'Servicio actualizado correctamente.' });
             } else {
-                await additionalServiceService.create(formData);
+                await additionalServiceService.create({ ...formData, price });
+                setFeedback({ type: 'success', text: 'Servicio creado correctamente.' });
             }
+
             handleCloseModal();
-            loadServices();
-        } catch (error) {
+            await loadServices();
+        } catch (error: any) {
             console.error("Error saving service:", error);
-            alert("Hubo un error al guardar el servicio.");
+            setFeedback({
+                type: 'error',
+                text: error?.response?.data?.message || 'No se pudo guardar el servicio.',
+            });
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -146,6 +209,49 @@ const ServiceManager = () => {
                 </button>
             </div>
 
+            <div className="rounded-[2rem] border border-store-red/15 bg-red-50/40 p-6 shadow-sm">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-store-red">Checkout</p>
+                        <h3 className="mt-1 text-lg font-black text-black">Costo de delivery</h3>
+                        <p className="mt-1 text-xs font-medium text-gray-500">
+                            Se suma automáticamente al total del cliente antes de ingresar a Openpay.
+                        </p>
+                        <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                            Gestión habilitada para Administrador y Superadministrador
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="rounded-2xl bg-white px-5 py-3 text-right shadow-sm">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                                {deliveryService?.is_active === false ? 'Desactivado' : 'Costo vigente'}
+                            </p>
+                            <p className="text-xl font-black text-black">
+                                ${Number(deliveryService?.price || 0).toFixed(2)} MXN
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleOpenDeliveryModal}
+                            disabled={!canManageDelivery}
+                            className="rounded-xl bg-store-red px-5 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg transition hover:bg-store-redDark disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            {deliveryService ? 'Editar delivery' : 'Configurar delivery'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {feedback && (
+                <div className={`rounded-2xl border px-5 py-4 text-sm font-bold ${
+                    feedback.type === 'success'
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                        : 'border-red-200 bg-red-50 text-red-700'
+                }`}>
+                    {feedback.text}
+                </div>
+            )}
+
             <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden text-black font-medium">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
@@ -159,12 +265,12 @@ const ServiceManager = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50 text-black font-medium">
-                            {services.length === 0 ? (
+                            {regularServices.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-12 text-center text-gray-400 font-medium italic">No hay servicios registrados.</td>
                                 </tr>
                             ) : (
-                                services.map((s) => (
+                                regularServices.map((s) => (
                                     <tr key={s.id} className="hover:bg-gray-50/80 transition-colors group">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
@@ -224,8 +330,14 @@ const ServiceManager = () => {
                     <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300">
                         <div className="flex justify-between items-center mb-8">
                             <div>
-                                <h2 className="text-2xl font-black text-black tracking-tight">{editingService ? 'Editar Servicio' : 'Nuevo Servicio'}</h2>
-                                <p className="text-gray-400 text-xs font-medium mt-1">Completa los detalles del servicio adicional.</p>
+                                <h2 className="text-2xl font-black text-black tracking-tight">
+                                    {formData.code === 'delivery' ? 'Configurar costo de delivery' : editingService ? 'Editar Servicio' : 'Nuevo Servicio'}
+                                </h2>
+                                <p className="text-gray-400 text-xs font-medium mt-1">
+                                    {formData.code === 'delivery'
+                                        ? 'Este costo se aplicará automáticamente al checkout.'
+                                        : 'Completa los detalles del servicio adicional.'}
+                                </p>
                             </div>
                             <button onClick={handleCloseModal} className="p-2.5 bg-gray-100 text-gray-500 rounded-full hover:bg-gray-200 transition-colors active:scale-90">
                                 <X size={20} />
@@ -241,12 +353,14 @@ const ServiceManager = () => {
                                         name="name" 
                                         value={formData.name} 
                                         onChange={handleInputChange} 
-                                        required 
-                                        placeholder="Ej. Desayuno Premium"
+                                        required
+                                        readOnly={formData.code === 'delivery'}
+                                        placeholder="Ej. Servicio adicional"
                                         className="w-full px-5 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:ring-4 focus:ring-store-red/10 focus:border-store-red outline-none transition-all text-sm font-bold placeholder:text-gray-300" 
                                     />
                                 </div>
                                 
+                                {formData.code !== 'delivery' && (
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Etiqueta de Servicio</label>
                                     <div className="flex flex-wrap gap-2">
@@ -272,9 +386,27 @@ const ServiceManager = () => {
                                         ))}
                                     </div>
                                 </div>
+                                )}
+
+                                {formData.code === 'delivery' && (
+                                    <label className="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-gray-50 px-5 py-4">
+                                        <span>
+                                            <span className="block text-xs font-black text-black">Aplicar delivery en compras</span>
+                                            <span className="mt-1 block text-[10px] font-medium text-gray-400">Si lo desactivas, el checkout cobrará $0.00 de delivery.</span>
+                                        </span>
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.is_active !== false}
+                                            onChange={(event) => setFormData((current) => ({ ...current, is_active: event.target.checked }))}
+                                            className="h-5 w-5 accent-store-red"
+                                        />
+                                    </label>
+                                )}
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Precio (USD)</label>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                                        {formData.code === 'delivery' ? 'Costo de delivery (MXN)' : 'Precio (MXN)'}
+                                    </label>
                                     <input 
                                         type="number" 
                                         name="price" 
@@ -309,10 +441,17 @@ const ServiceManager = () => {
                                     Cancelar
                                 </button>
                                 <button 
-                                    type="submit" 
-                                    className="flex-[2] py-4 bg-store-red text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-store-redDark transition-all shadow-xl shadow-black/5 active:scale-95"
+                                    type="submit"
+                                    disabled={saving}
+                                    className="flex-[2] py-4 bg-store-red text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-store-redDark transition-all shadow-xl shadow-black/5 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    {editingService ? 'Actualizar Servicio' : 'Crear Servicio'}
+                                    {saving
+                                        ? 'Guardando...'
+                                        : formData.code === 'delivery'
+                                            ? 'Guardar costo de delivery'
+                                            : editingService
+                                                ? 'Actualizar Servicio'
+                                                : 'Crear Servicio'}
                                 </button>
                             </div>
                         </form>

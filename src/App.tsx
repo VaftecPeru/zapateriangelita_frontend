@@ -6,6 +6,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ChangeTemporaryPasswordPage from './pages/ChangeTemporaryPasswordPage';
 import RegisterPage from './pages/RegisterPage';
+import WelcomeDashboardPage from './pages/WelcomeDashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import ClientPurchasesPage from './pages/ClientPurchasesPage';
 import ContactAdvisorPage from './pages/ContactAdvisorPage';
@@ -23,13 +24,29 @@ import './styles/product-detail-mobile.css';
 import './styles/product-detail-premium.css';
 
 const AppContent = () => {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading, sessionError, retrySession } = useAuth();
 
   if (loading) {
     return <LoadingScreen label="Cargando sesión" />;
   }
 
-  const fallbackPath = isAuthenticated && user?.role === 'admin' ? '/admin/dashboard' : '/';
+  if (sessionError) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
+        <p role="alert">{sessionError}</p>
+        <button type="button" onClick={() => void retrySession()} className="rounded-xl bg-black px-6 py-3 text-white">
+          Reintentar conexión
+        </button>
+      </main>
+    );
+  }
+
+  const isAdminUser = isAuthenticated && ['admin', 'superadmin'].includes(String(user?.role || ''));
+  const fallbackPath = isAdminUser ? '/admin/dashboard' : '/';
+
+  if (isAuthenticated && user?.must_change_password && window.location.pathname !== '/change-temporary-password') {
+    return <Navigate to="/change-temporary-password" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-minimal-beige flex flex-col">
@@ -38,7 +55,7 @@ const AppContent = () => {
           <Route
             path="/"
             element={
-              isAuthenticated && user?.role === 'admin' ? (
+              isAdminUser ? (
                 <Navigate to="/admin/dashboard" replace />
               ) : (
                 <HomePage />
@@ -61,8 +78,10 @@ const AppContent = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route  path="/change-temporary-password"  element={    isAuthenticated ? (<ChangeTemporaryPasswordPage />) : (<Navigate to="/login" replace />)}/>
+          <Route path="/change-temporary-password" element={isAuthenticated ? <ChangeTemporaryPasswordPage /> : <Navigate to="/login" replace />} />
+          <Route path="/change-password" element={isAuthenticated ? <ChangeTemporaryPasswordPage /> : <Navigate to="/login" replace />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/welcome" element={<WelcomeDashboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route
             path="/profile/purchases"
@@ -102,3 +121,4 @@ function App() {
 }
 
 export default App;
+

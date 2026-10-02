@@ -37,6 +37,7 @@ export interface Product {
     id?: number;
     product_code?: string;
     name: string;
+    model?: string;
     category?: string | { id?: number; name: string; slug?: string };
     category_id?: number;
     subcategory_id?: number;
@@ -59,14 +60,17 @@ export interface Product {
     sizes?: Array<{ id?: number; size: string; stock: number }>;
     color_sizes?: Record<string, string[]>;
     colors?: Array<{ id?: number; color: string; hex?: string | null }>;
+    variant_stocks?: Array<{ id?: number; color: string; size: string; stock: number }>;
 }
 
 export interface AdditionalService {
     id?: number;
     name: string;
+    code?: string | null;
     description?: string;
     price: number;
     tag?: string;
+    is_active?: boolean;
 }
 
 export interface DashboardStats {
@@ -75,21 +79,37 @@ export interface DashboardStats {
         change: string;
         expenses: number;
         expensesChange: string;
+        whatsapp?: number;
+        whatsappChange?: string;
     };
     inventory: {
         properties: number;
         services: number;
         rooms?: number;
+        units?: number;
+        low_stock?: number;
     };
     charts: {
         monthlyRevenue: number[];
         monthlyLabels: string[];
+        monthlyWhatsapp?: number[];
+        monthlyProductViews?: number[];
         benefitsDistribution: {
             total: number;
             costs: number;
             taxes: number;
             maintenance: number;
         };
+    };
+    metrics?: {
+        interactions: number;
+        whatsapp_interactions: number;
+        product_views: number;
+        orders: number;
+        paid_orders: number;
+        inventory_units: number;
+        low_stock_products: number;
+        out_of_stock_products: number;
     };
     recentActivity: {
         text: string;
@@ -101,9 +121,12 @@ export interface User {
     id: number;
     name: string;
     email: string;
+    phone?: string;
     gender?: string;
     birthdate?: string;
-    role: string;
+    role?: 'user' | 'admin' | 'superadmin' | string;
+    must_change_password?: boolean;
+    temporary_password_set_at?: string | null;
     created_at: string;
 }
 
@@ -132,10 +155,32 @@ export interface Order {
     id: number;
     code: string;
     status: string;
+    subtotal?: number | string;
+    discount?: number | string;
+    shipping_cost?: number | string;
     total: number | string;
+    payment_method?: string;
+    payment_status?: string;
+    payment_reference?: string;
+    payment_transaction_id?: string;
+    payment_error?: string | null;
+    paid_at?: string | null;
+    purchase_email_sent_at?: string | null;
+    credential_email_sent_at?: string | null;
+    credential_email_pending?: boolean;
+    notification_attempts?: number;
+    notification_next_attempt_at?: string | null;
+    notification_last_error?: string | null;
     customer_name?: string;
     customer_email?: string;
     shipping_phone?: string;
+    shipping_address?: string;
+    shipping_city?: string;
+    shipping_country?: string;
+    shipping_state?: string;
+    shipping_municipality?: string;
+    shipping_postal_code?: string;
+    shipping_colony?: string;
     created_at?: string;
     user?: { id: number; name: string; email: string; phone?: string };
     items?: Array<{ product_name?: string; size?: string | null; color?: string | null; quantity: number; unit_price?: number | string }>;
@@ -172,7 +217,8 @@ export const brandService = {
 };
 
 export const productService = {
-    getAll: () => apiClient.get<Product[]>('/products'),
+    getAll: (params: Record<string, string | number | undefined> = {}) =>
+        apiClient.get<Product[]>('/products', { params: { per_page: 200, ...params } }),
     getById: async (id: number) => {
         const response = await apiClient.get<Product>(`/products/${id}`);
         const data = response.data as Product & { subcategory?: unknown };
@@ -196,10 +242,27 @@ export const productService = {
         return apiClient.put<Product>(`/products/${id}`, data);
     },
     delete: (id: number) => apiClient.delete(`/products/${id}`),
+    exportInventory: (
+        format: 'excel' | 'pdf',
+        params: Record<string, string | number | undefined> = {},
+    ) => apiClient.get<Blob>(`/inventory/export/${format}`, {
+        params,
+        responseType: 'blob',
+    }),
 };
 
 export const additionalServiceService = {
     getAll: () => apiClient.get<AdditionalService[]>('/services'),
+    getDeliveryCost: () => apiClient.get<{
+        code: 'delivery';
+        name: string;
+        price: number;
+        is_active: boolean;
+        description?: string | null;
+        updated_at?: string | null;
+    }>('/checkout/delivery-cost'),
+    updateDelivery: (data: { price: number; is_active: boolean; description?: string | null }) =>
+        apiClient.put<{ success: boolean; message: string; service: AdditionalService }>('/services/delivery', data),
     getById: (id: number) => apiClient.get<AdditionalService>(`/services/${id}`),
     create: (data: AdditionalService) => apiClient.post<AdditionalService>('/services', data),
     update: (id: number, data: Partial<AdditionalService>) => apiClient.put<AdditionalService>(`/services/${id}`, data),
@@ -210,14 +273,38 @@ export const statsService = {
     getStats: () => apiClient.get<DashboardStats>('/stats'),
 };
 
+export const analyticsService = {
+    track: (type: 'product_view' | 'whatsapp_click' | 'newsletter_subscribe' | 'add_to_cart' | 'checkout_start', productId?: number, metadata?: Record<string, unknown>) =>
+        apiClient.post('/interactions', {
+            type,
+            product_id: productId || undefined,
+            metadata: metadata || undefined,
+        }),
+};
+
+export const newsletterService = {
+    subscribe: (email: string) => apiClient.post<{ success: boolean; already_subscribed?: boolean; message: string }>('/newsletter/subscribe', { email }),
+};
+
 export const settingsService = {
     getAll: () => apiClient.get<{ success: boolean; data: { [key: string]: string } }>('/settings'),
-    update: (key: string, value: string) => apiClient.post(`/settings/${key}?_method=PUT`, { value }),
+    update: (key: string, value: string) => apiClient.put(`/settings/${key}`, { value }),
     uploadBannerImage: (file: File) => {
         const formData = new FormData();
+        formData.append('_method', 'PUT');
         formData.append('image', file);
         return apiClient.post<{ success: boolean; data: { path: string } }>(
-            '/settings/homepage_banner_image?_method=PUT',
+            '/settings/homepage_banner_image',
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } },
+        );
+    },
+    uploadLogoImage: (file: File) => {
+        const formData = new FormData();
+        formData.append('_method', 'PUT');
+        formData.append('image', file);
+        return apiClient.post<{ success: boolean; data: { path: string } }>(
+            '/settings/site_logo_image',
             formData,
             { headers: { 'Content-Type': 'multipart/form-data' } },
         );
@@ -235,11 +322,11 @@ export const userService = {
             password,
             password_confirmation: passwordConfirmation,
         }),
-    changePassword: (password: string, passwordConfirmation: string) =>
-    apiClient.post('/user/change-password', {
-        password,
-        password_confirmation: passwordConfirmation,
-    }),
+    changePassword: ( password: string, passwordConfirmation: string) =>
+        apiClient.post('/user/change-password', {
+            password,
+            password_confirmation: passwordConfirmation,
+        }),
     delete: (id: number) => apiClient.delete(`/users/${id}`),
 };
 
@@ -277,17 +364,64 @@ export default {
     settingsService,
     userService,
     leadService,
+    analyticsService,
+    newsletterService,
 };
 
 export const orderService = {
     getAll: () => apiClient.get<{ data: Order[] }>('/orders'),
     getMyOrders: () => apiClient.get<Order[]>('/my-orders'),
     updateStatus: (id: number, status: string) => apiClient.put<Order>(`/orders/${id}/status`, { status }),
+    reconcilePayments: (limit = 10, orderId?: number) =>
+        apiClient.post<{
+            success: boolean;
+            reviewed: number;
+            changed: Array<{ id: number; code: string; from: string; to: string; transaction_id?: string }>;
+            summary: Record<string, number>;
+        }>('/orders/reconcile-payments', {
+            limit,
+            order_id: orderId || undefined,
+        }, { timeout: 30000 }),
+    retryNotifications: (id: number, forcePurchase = false) =>
+        apiClient.post<{
+            success: boolean;
+            message: string;
+            order: Order;
+            notification: {
+                purchase_email_sent_at?: string | null;
+                credential_email_sent_at?: string | null;
+                credential_pending: boolean;
+                attempts: number;
+                next_attempt_at?: string | null;
+                last_error?: string | null;
+            };
+        }>(`/orders/${id}/notifications/retry`, { force_purchase: forcePurchase }, { timeout: 30000 }),
+    mailHealth: () => apiClient.get<{
+        configured: boolean;
+        mailer: string;
+        from_address: string | null;
+        smtp?: {
+            host_configured: boolean;
+            port: number;
+            encryption?: string | null;
+            username_configured: boolean;
+            password_configured: boolean;
+        } | null;
+        pending: { order_notifications: number | null; welcome_emails: number | null };
+        errors: string[];
+    }>('/mail/health'),
 };
-
 export const inventoryService = {
-    getInventory: () => apiClient.get('/admin/inventory'),
-    getMovements: (productId?: number) => apiClient.get('/admin/inventory/movements', { params: productId ? { product_id: productId } : {}}),
+    getInventory: () =>
+        apiClient.get('/admin/inventory'),
+
+    getMovements: (productId?: number) =>
+        apiClient.get('/admin/inventory/movements', {
+            params: productId
+                ? { product_id: productId }
+                : {}
+        }),
+
     adjustStock: (data: {
         product_id: number;
         color?: string | null;

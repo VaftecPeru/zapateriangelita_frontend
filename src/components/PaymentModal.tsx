@@ -9,12 +9,10 @@ import {
   X,
 } from "lucide-react";
 import apiClient from "../services/apiClient";
-
-
-import visaLogo from "../assets/visa.png";
-import masterCardLogo from "../assets/masterCard.png";
-import americanExpressLogo from "../assets/americanExpress.png";
-import openpayLogo from "../assets/LogotipoOpenpay-01.jpg";
+import openpayLogo from "../assets/payment/openpay-by-bbva.jpg";
+import visaLogo from "../assets/payment/visa.png";
+import mastercardLogo from "../assets/payment/mastercard.png";
+import americanExpressLogo from "../assets/payment/american-express.png";
 
 export interface OpenpayChargeResult {
   ok: boolean;
@@ -27,12 +25,16 @@ export interface OpenpayChargeResult {
   requires_redirect?: boolean;
   redirect_url?: string;
   error_code?: number | string;
+  error_key?: string;
+  error_title?: string;
+  stage?: "tokenization" | "charge" | "verify" | string;
   request_id?: string;
 }
 
 interface PaymentModalProps {
   isOpen: boolean;
   total: number;
+  shippingCost?: number;
   cart: any[];
   customerName: string;
   customerEmail?: string;
@@ -64,9 +66,9 @@ const fieldStyle = {
   background: "#fff",
 };
 
-const money = new Intl.NumberFormat("en-US", {
+const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
-  currency: "USD",
+  currency: "MXN",
   minimumFractionDigits: 2,
 });
 
@@ -83,6 +85,18 @@ const formatExpiry = (value: string) =>
     .slice(0, 4)
     .replace(/^(\d{2})(\d)/, "$1/$2");
 
+const getCardBrand = (cardNumber: string) => {
+  const clean = cardNumber.replace(/\D/g, "");
+  if (/^3[47]/.test(clean)) return "amex";
+  if (/^4/.test(clean)) return "visa";
+  if (/^(5[1-5]|2[2-7])/.test(clean)) return "mastercard";
+  if (/^506/.test(clean)) return "carnet";
+  return "unknown";
+};
+
+const getExpectedCvvLength = (cardNumber: string) =>
+  getCardBrand(cardNumber) === "amex" ? 4 : 3;
+
 const isExpiryInPast = (month: string, year: string) => {
   const monthNumber = Number(month);
   const yearNumber = Number(year);
@@ -97,9 +111,57 @@ const isExpiryInPast = (month: string, year: string) => {
   return yearNumber < currentYear || (yearNumber === currentYear && monthNumber < currentMonth);
 };
 
-export const getFriendlyPaymentError = (code?: number | string, message?: string) => {
+export const getFriendlyPaymentError = (code?: number | string, message?: string, cardNumber?: string, sandboxMode = false) => {
   const errorCode = String(code ?? "");
   const text = String(message ?? "").toLowerCase();
+
+  // En Sandbox, los números de certificación de Openpay representan escenarios
+  // determinísticos. Se usan solo para garantizar que la UI muestre el mensaje
+  // requerido durante certificación, sin afectar tarjetas reales en Producción.
+  if (sandboxMode) {
+    const testCard = String(cardNumber ?? "").replace(/\D/g, "");
+    const sandboxCases: Record<string, { title: string; message: string }> = {
+      "4222222222222220": {
+        title: "Tarjeta rechazada",
+        message: "La tarjeta fue rechazada.",
+      },
+      "4000000000000069": {
+        title: "Tarjeta expirada",
+        message: "La tarjeta ha expirado.",
+      },
+      "4444444444444448": {
+        title: "Fondos insuficientes",
+        message: "La tarjeta no tiene fondos suficientes.",
+      },
+      "4000000000000119": {
+        title: "Tarjeta rechazada",
+        message: "La tarjeta fue rechazada.",
+      },
+      "4000000000000044": {
+        title: "Tarjeta rechazada",
+        message: "La tarjeta fue rechazada.",
+      },
+      "5454545454545454": {
+        title: "Tarjeta rechazada",
+        message: "La tarjeta fue rechazada.",
+      },
+      "340000000000009": {
+        title: "Tarjeta rechazada",
+        message: "La tarjeta fue rechazada.",
+      },
+      "373737373737374": {
+        title: "Tarjeta expirada",
+        message: "La tarjeta ha expirado.",
+      },
+      "370000000000002": {
+        title: "Fondos insuficientes",
+        message: "La tarjeta no tiene fondos suficientes.",
+      },
+    };
+
+    const sandboxError = sandboxCases[testCard];
+    if (sandboxError) return sandboxError;
+  }
 
   // Errores de tarjeta documentados por Openpay. Se clasifican por error_code,
   // no por número de tarjeta, para que funcione igual en Sandbox y Producción.
@@ -113,28 +175,28 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
   if (["3002", "2005"].includes(errorCode)) {
     return {
       title: "Tarjeta expirada",
-      message: "La tarjeta ha expirado. Usa una tarjeta vigente para completar la compra.",
+      message: "La tarjeta ha expirado.",
     };
   }
 
   if (errorCode === "3003") {
     return {
       title: "Fondos insuficientes",
-      message: "La tarjeta no tiene fondos suficientes. Intenta con otra tarjeta o método de pago.",
+      message: "La tarjeta no tiene fondos suficientes.",
     };
   }
 
   if (errorCode === "3004") {
     return {
-      title: "Tarjeta no autorizada",
-      message: "El banco no autorizó esta tarjeta. Utiliza otra tarjeta o comunícate con tu banco.",
+      title: "Tarjeta rechazada",
+      message: "La tarjeta fue rechazada.",
     };
   }
 
   if (errorCode === "3005") {
     return {
       title: "Tarjeta rechazada",
-      message: "El pago fue rechazado por una validación de seguridad. Intenta con otra tarjeta.",
+      message: "La tarjeta fue rechazada.",
     };
   }
 
@@ -216,25 +278,42 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
   }
 
   // Respaldo por descripción cuando un intermediario no devuelve error_code.
-  if (text.includes("fondos insuficientes") || text.includes("insufficient funds")) {
+  if (
+    text.includes("fondos insuficientes") ||
+    text.includes("insufficient funds") ||
+    text.includes("enough funds") ||
+    text.includes("fondos suficientes")
+  ) {
     return {
       title: "Fondos insuficientes",
-      message: "La tarjeta no tiene fondos suficientes. Intenta con otra tarjeta o método de pago.",
+      message: "La tarjeta no tiene fondos suficientes.",
     };
   }
 
   if (text.includes("expir") || text.includes("venc")) {
     return {
       title: "Tarjeta expirada",
-      message: "La tarjeta ha expirado. Usa una tarjeta vigente para completar la compra.",
+      message: "La tarjeta ha expirado.",
+    };
+  }
+
+  if (text.includes("stolen") || text.includes("robada")) {
+    return {
+      title: "Tarjeta rechazada",
+      message: "La tarjeta fue rechazada.",
+    };
+  }
+
+  if (text.includes("antifraud") || text.includes("antifraude") || text.includes("fraudulent")) {
+    return {
+      title: "Tarjeta rechazada",
+      message: "La tarjeta fue rechazada.",
     };
   }
 
   if (
     text.includes("declin") ||
     text.includes("rechaz") ||
-    text.includes("robada") ||
-    text.includes("fraudulent") ||
     text.includes("reportada como perdida") ||
     text.includes("restringida")
   ) {
@@ -266,6 +345,7 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
 const PaymentModal = ({
   isOpen,
   total,
+  shippingCost = 0,
   cart = [],
   customerName,
   customerEmail = "",
@@ -347,6 +427,10 @@ const PaymentModal = ({
   if (!isOpen) return null;
 
   const displayTotal = money.format(Number(total));
+  const productSubtotal = cart.reduce(
+    (sum: number, item: any) => sum + Number(item.product?.price || 0) * Number(item.quantity || 0),
+    0,
+  );
 
   const submitPayment = (event: React.FormEvent) => {
     event.preventDefault();
@@ -375,9 +459,14 @@ const PaymentModal = ({
       return;
     }
 
-    if (cardCvv.length < 3 || cardCvv.length > 4) {
-      setErrorTitle("Datos incompletos");
-      setError("El CVV debe contener 3 o 4 dígitos.");
+    const expectedCvvLength = getExpectedCvvLength(cleanCardNumber);
+    if (cardCvv.length !== expectedCvvLength) {
+      setErrorTitle("CVV inválido");
+      setError(
+        expectedCvvLength === 4
+          ? "American Express requiere un CVV de 4 dígitos."
+          : "Visa, Mastercard y Carnet requieren un CVV de 3 dígitos."
+      );
       return;
     }
 
@@ -423,7 +512,7 @@ const PaymentModal = ({
               tone: "success",
             });
             setProcessing(false);
-            window.setTimeout(() => onSuccess(result), 1800);
+            window.setTimeout(() => onSuccess(result), 500);
             return;
           }
 
@@ -433,20 +522,36 @@ const PaymentModal = ({
             result.redirect_url
           ) {
             setPaymentNotice({
-              title: "Verificación de seguridad",
+              title: "Tarjeta válida · confirma con 3D Secure",
               message:
                 result.message ||
-                "Continúa con la verificación 3D Secure para completar tu pago.",
+                "El cargo fue generado correctamente. Continúa con la autenticación 3D Secure para confirmar el pago.",
               tone: "info",
             });
 
             window.setTimeout(() => {
               window.location.href = result.redirect_url!;
-            }, 1200);
+            }, 500);
             return;
           }
 
-          const friendly = getFriendlyPaymentError(result.error_code, result.message);
+          const friendly =
+            result.error_title && result.message
+              ? { title: result.error_title, message: result.message }
+              : getFriendlyPaymentError(
+                  result.error_code,
+                  result.message,
+                  cleanCardNumber,
+                  sandboxMode === true
+                );
+
+          console.warn("Openpay: cargo no aprobado", {
+            stage: result.stage || "charge",
+            errorKey: result.error_key,
+            errorCode: result.error_code,
+            requestId: result.request_id,
+          });
+
           setProcessing(false);
           setPaymentNotice(null);
           setErrorTitle(friendly.title);
@@ -454,10 +559,23 @@ const PaymentModal = ({
         } catch (err: any) {
           console.error("Error procesando pago:", err);
           const data = err.response?.data;
-          const friendly = getFriendlyPaymentError(
-            data?.error_code ?? err.response?.status,
-            data?.message ?? err.message
-          );
+          const friendly =
+            data?.error_title && data?.message
+              ? { title: data.error_title, message: data.message }
+              : getFriendlyPaymentError(
+                  data?.error_code ?? err.response?.status,
+                  data?.message ?? err.message,
+                  cleanCardNumber,
+                  sandboxMode === true
+                );
+
+          console.warn("Openpay: error al crear cargo", {
+            stage: data?.stage || "charge",
+            errorKey: data?.error_key,
+            errorCode: data?.error_code ?? err.response?.status,
+            requestId: data?.request_id,
+            httpStatus: err.response?.status,
+          });
 
           setProcessing(false);
           setPaymentNotice(null);
@@ -478,7 +596,12 @@ const PaymentModal = ({
           sandboxMode,
         });
 
-        const friendly = getFriendlyPaymentError(errorCode, description);
+        const friendly = getFriendlyPaymentError(
+          errorCode,
+          description,
+          cleanCardNumber,
+          sandboxMode === true
+        );
         setProcessing(false);
         setPaymentNotice(null);
         setErrorTitle(friendly.title);
@@ -566,8 +689,8 @@ const PaymentModal = ({
             color: "#248a7d",
           }}
         >
-          <ShieldCheck size={19} />
-          <div>
+          <ShieldCheck size={19} style={{ flexShrink: 0 }} />
+          <div style={{ minWidth: 0 }}>
             <strong style={{ display: "block", fontSize: "11px" }}>
               Pago seguro · 3D Secure
             </strong>
@@ -575,70 +698,79 @@ const PaymentModal = ({
               Procesado mediante Openpay
             </span>
           </div>
-          <img
-            src={openpayLogo}
-            alt="Openpay"
+          <div
             style={{
               marginLeft: "auto",
-              width: "85px",
-              height: "30px",
-              objectFit: "contain",
+              width: "96px",
+              minWidth: "78px",
+              height: "34px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              overflow: "hidden",
+              borderRadius: "4px",
+              background: "#fff",
             }}
-          />
+            aria-label="Openpay by BBVA"
+          >
+            <img
+              src={openpayLogo}
+              alt="Openpay by BBVA"
+              style={{
+                display: "block",
+                width: "92px",
+                maxWidth: "100%",
+                height: "auto",
+                objectFit: "contain",
+              }}
+            />
+          </div>
         </div>
 <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            gap: "8px",
+            gap: "10px",
             marginBottom: "14px",
-            padding: "7px 9px",
+            padding: "8px 10px",
             border: "1px solid #eee",
             borderRadius: "7px",
             background: "#fafafa",
           }}
         >
-          <span style={{ color: "#888", fontSize: "9px" }}>Tarjetas aceptadas</span>
+          <span style={{ color: "#777", fontSize: "9px", whiteSpace: "nowrap" }}>
+            Tarjetas aceptadas
+          </span>
           <div
-          
-          style={{
-            display: "flex",
-            gap: "8px",
-            alignItems: "center",
-          }}
-        >
+            style={{
+              display: "flex",
+              gap: "10px",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              minWidth: 0,
+            }}
+            aria-label="Visa, Mastercard y American Express"
+          >
             <img
               src={visaLogo}
               alt="Visa"
-              style={{
-                width: "38px",
-                height: "24px",
-                objectFit: "contain",
-              }}
+              title="Visa"
+              style={{ display: "block", width: "36px", height: "22px", objectFit: "contain" }}
             />
-
             <img
-              src={masterCardLogo}
+              src={mastercardLogo}
               alt="Mastercard"
-              style={{
-                width: "38px",
-                height: "24px",
-                objectFit: "contain",
-              }}
+              title="Mastercard"
+              style={{ display: "block", width: "34px", height: "22px", objectFit: "contain" }}
             />
-
             <img
               src={americanExpressLogo}
               alt="American Express"
-              style={{
-                width: "38px",
-                height: "24px",
-                objectFit: "contain",
-              }}
+              title="American Express"
+              style={{ display: "block", width: "26px", height: "22px", objectFit: "contain" }}
             />
-        </div>
-        
+          </div>
         </div>
 
         {sandboxMode === true && (
@@ -774,13 +906,14 @@ const PaymentModal = ({
               <input
                 required
                 value={cardCvv}
-                onChange={(event) =>
-                  setCardCvv(event.target.value.replace(/\D/g, "").slice(0, 4))
-                }
+                onChange={(event) => {
+                  const expectedLength = getExpectedCvvLength(cardNumber);
+                  setCardCvv(event.target.value.replace(/\D/g, "").slice(0, expectedLength));
+                }}
                 placeholder="•••"
                 inputMode="numeric"
                 autoComplete="cc-csc"
-                maxLength={4}
+                maxLength={getExpectedCvvLength(cardNumber)}
                 aria-describedby="cvv-help"
                 style={fieldStyle}
               />
@@ -793,7 +926,9 @@ const PaymentModal = ({
               id="cvv-help"
               style={{ display: "block", marginTop: "4px", color: "#999", fontSize: "8px" }}
             >
-              3 o 4 dígitos.
+              {getExpectedCvvLength(cardNumber) === 4
+                ? "4 dígitos para American Express."
+                : "3 dígitos para Visa, Mastercard y Carnet."}
             </span>
           </label>
         </div>
@@ -825,14 +960,26 @@ const PaymentModal = ({
               <span>
                 {item.product?.name || "Producto"} x {item.quantity}
               </span>
-              <span>{money.format(Number(item.product?.price || 0))}</span>
+              <span>{money.format(Number(item.product?.price || 0) * Number(item.quantity || 0))}</span>
             </div>
           ))}
+          <div style={{ display: "grid", gap: "5px", marginTop: "10px", color: "#555", fontSize: "10px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
+              <span>Subtotal productos</span>
+              <strong>{money.format(productSubtotal)}</strong>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
+              <span>Costo de delivery</span>
+              <strong>{money.format(Math.max(0, Number(shippingCost || 0)))}</strong>
+            </div>
+          </div>
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
-              marginTop: "10px",
+              marginTop: "9px",
+              paddingTop: "9px",
+              borderTop: "1px solid #ddd",
               color: "#333",
               fontSize: "12px",
               fontWeight: 700,

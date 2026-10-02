@@ -7,7 +7,16 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import ReferenceLanding from '../src/components/ReferenceLanding';
 import ProductDetailPage from '../src/pages/ProductDetailPage';
 import { CartProvider } from '../src/hooks/useCart';
-import { productService } from '../src/services/crudService';
+import { productService, settingsService } from '../src/services/crudService';
+import axios from 'axios';
+import apiClient from '../src/services/apiClient';
+import { getFriendlyPaymentError } from '../src/components/PaymentModal';
+import { canInspectOrderVoucher, isOrderPaid, voucherPaymentToken } from '../src/utils/orderVoucher';
+
+const denyNetwork = async () => { throw new Error('Unexpected network request in offline UI test'); };
+axios.defaults.adapter = denyNetwork;
+apiClient.defaults.adapter = denyNetwork;
+globalThis.fetch = async () => { throw new Error('Unexpected fetch in offline UI test'); };
 
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'https://test.invalid/' });
 Object.defineProperty(globalThis, 'window', { value: dom.window, configurable: true });
@@ -32,6 +41,8 @@ async function click(selector: string) {
   await act(async () => { node.click(); });
 }
 function check(name: string, assertion: () => void) { assertion(); tests.push(name); console.log(`PASS ${name}`); }
+(settingsService as any).getAll = async () => ({ data: { success: true, data: {} } });
+
 const fixture: any = {
   id: 13, name: 'Producto de prueba', category: { name: 'Hombre' }, brand: { name: 'Marca' },
   subcategory: { name: 'Zapatos de vestir' }, price: 300, discounted_price: 240, stock: 2,
@@ -45,9 +56,55 @@ function detail(product = fixture) {
 }
 
 async function run() {
+  check('Voucher admin: Admin y Superadmin pueden revisar pedidos pendientes', () => {
+    assert.equal(canInspectOrderVoucher('admin'), true);
+    assert.equal(canInspectOrderVoucher('superadmin'), true);
+    assert.equal(canInspectOrderVoucher('user'), false);
+    assert.equal(isOrderPaid({ paid_at: null, payment_status: 'pending' }), false);
+    assert.equal(voucherPaymentToken({ paid_at: null, payment_status: 'pending' }), 'PENDING');
+    assert.equal(voucherPaymentToken({ paid_at: '2026-09-23T15:00:00-05:00', payment_status: 'pending', payment_reference: 'REF-1' }), 'REF-1');
+  });
+
+  check('Openpay 3004: mensaje genérico de tarjeta rechazada', () => {
+    assert.deepEqual(
+      getFriendlyPaymentError('3004', 'The card was reported stolen'),
+      { title: 'Tarjeta rechazada', message: 'La tarjeta fue rechazada.' },
+    );
+    assert.deepEqual(
+      getFriendlyPaymentError('3004', 'The card was reported stolen', '4000000000000119', true),
+      { title: 'Tarjeta rechazada', message: 'La tarjeta fue rechazada.' },
+    );
+  });
+
+  check('Openpay 3005: antifraude se presenta como tarjeta rechazada', () => {
+    assert.deepEqual(
+      getFriendlyPaymentError('3005', 'The card was rejected by antifraud'),
+      { title: 'Tarjeta rechazada', message: 'La tarjeta fue rechazada.' },
+    );
+    assert.deepEqual(
+      getFriendlyPaymentError('3005', 'The card was rejected by antifraud', '4000000000000044', true),
+      { title: 'Tarjeta rechazada', message: 'La tarjeta fue rechazada.' },
+    );
+  });
   await render(<MemoryRouter><ReferenceLanding products={[{ id: 1, price: 60, oldPrice: 100 }]} loading={false} error={false} renderProduct={p => <article key={p.id}>Producto real {p.id}</article>} /></MemoryRouter>);
   check('Portada: tres categorías en el orden de la referencia', () => assert.deepEqual([...document.querySelectorAll('.ref-collection h2')].map(n => n.textContent), ['Mujer', 'Hombre', 'Niños']));
   check('Portada: fotografía roja y texto editable', () => { assert.match(document.querySelector('h1')!.textContent!, /Camina con tu/); assert.match(document.querySelector('.ref-hero__photo')!.getAttribute('src')!, /hero-red/); });
+
+  const featuredProducts = Array.from({ length: 10 }, (_, index) => ({
+    id: index + 1,
+    price: index === 0 ? 60 : 100 + index,
+    oldPrice: index === 0 ? 100 : 0,
+  }));
+  await render(<MemoryRouter><ReferenceLanding products={featuredProducts} loading={false} error={false} renderProduct={p => <article key={p.id} data-product-id={p.id}>Producto {p.id}</article>} /></MemoryRouter>);
+  check('Destacados: primera página usa dos filas de cuatro productos', () => {
+    assert.equal(document.querySelectorAll('.ref-product-grid--premium article').length, 8);
+    assert.equal(document.querySelectorAll('.ref-featured-pagination button').length, 2);
+  });
+  await click('[aria-label="Productos destacados siguientes"]');
+  check('Destacados: paginación avanza al siguiente grupo', () => {
+    assert.equal(document.querySelector('.ref-product-grid--premium article')?.getAttribute('data-product-id'), '9');
+    assert.equal(document.querySelectorAll('.ref-product-grid--premium article').length, 2);
+  });
   check('Promoción: descuento calculado, no inventado', () => assert.match(document.querySelector('.ref-promotion')!.textContent!, /40%/));
   await click('[aria-label="Banner siguiente"]');
   check('Slider: navegación siguiente', () => assert.match(document.querySelector('h1')!.textContent!, /Tu ritmo/));
@@ -55,8 +112,33 @@ async function run() {
   check('Slider: navegación anterior', () => assert.match(document.querySelector('h1')!.textContent!, /Camina/));
   await click('[aria-label="Pausar banners"]');
   check('Slider: pausa explícita accesible', () => assert.ok(document.querySelector('[aria-label="Reanudar banners"][aria-pressed="true"]')));
-  await render(<MemoryRouter><ReferenceLanding products={[]} loading={false} error={true} renderProduct={() => null} /></MemoryRouter>);
-  check('Catálogo: error sin productos ficticios', () => { assert.match(document.querySelector('.ref-empty')!.textContent!, /No pudimos/); assert.equal(document.querySelectorAll('.ref-product-grid article').length, 0); });
+  let retryCount = 0;
+  await render(
+    <MemoryRouter>
+      <ReferenceLanding
+        products={[]}
+        loading={false}
+        error={true}
+        onRetry={() => { retryCount += 1; }}
+        renderProduct={() => null}
+      />
+    </MemoryRouter>
+  );
+  check('Catálogo: error sin productos ficticios', () => {
+    assert.match(document.querySelector('.ref-empty')!.textContent!, /No pudimos/);
+    assert.equal(document.querySelectorAll('.ref-product-grid article').length, 0);
+  });
+  await click('.ref-empty .ref-button');
+  check('Catálogo: error permite reintentar sin recargar toda la página', () => {
+    assert.equal(retryCount, 1);
+  });
+  check('Catálogo: StoreHome tolera fallos parciales de categorías/subcategorías', () => {
+    const storeHome = readFileSync('src/components/StoreHome.tsx', 'utf8');
+    assert.ok(storeHome.includes('Promise.allSettled'));
+    assert.ok(storeHome.includes("productsResult.status === 'fulfilled'"));
+    assert.ok(storeHome.includes('setCatalogReloadKey'));
+    assert.ok(storeHome.includes('Catálogo no disponible'));
+  });
 
   await render(detail());
   check('Detalle: datos y precio reales', () => { assert.equal(document.querySelector('h1')?.textContent, fixture.name); assert.match(document.querySelector('.product-price-line')!.textContent!, /240/); });
@@ -72,12 +154,106 @@ async function run() {
   check('Carrito: límite de stock incluyendo unidades existentes', () => { assert.equal(JSON.parse(localStorage.getItem('cart')!)[0].quantity, 2); assert.match(document.querySelector('[role="alert"]')!.textContent!, /stock/); });
   await click('[aria-label="Marron"]');
   check('Variante con talla única: selección automática', () => assert.equal(document.querySelector('.size-chip[aria-pressed=true]')!.textContent!.trim(), '38'));
+  await render(detail({
+    ...fixture,
+    color: 'Celeste',
+    colors: [{ color: 'Celeste' }],
+    color_sizes: { Celeste: ['38'] },
+    sizes: [{ size: '38', stock: 2 }],
+    size: '38',
+  }));
+  check('Color Celeste: se muestra y usa tono correcto', () => {
+    const swatch = document.querySelector<HTMLElement>('[aria-label="Celeste"]');
+    assert.ok(swatch);
+    assert.ok(String(swatch?.getAttribute('style') || '').includes('125, 211, 252') || String(swatch?.getAttribute('style') || '').includes('#7dd3fc'));
+    assert.match(document.querySelector('.variant-label')!.textContent!, /Celeste/);
+  });
+
   await render(detail({ ...fixture, sizes: [{ size: '39' }], size: '39', color: 'Negro', colors: [{ color: 'Negro' }], color_sizes: {} }));
   await click('.buy-box-now');
   check('Comprar ahora: checkout con talla única', () => assert.ok(document.getElementById('checkout-test')));
   await render(detail({ ...fixture, stock: 0 }));
   check('Agotado: compra deshabilitada en ambas superficies', () => { assert.ok(document.querySelector<HTMLButtonElement>('.buy-box-cart')!.disabled); assert.ok(document.querySelector<HTMLButtonElement>('.pd-mobile-bar button')!.disabled); });
   check('Responsive: reglas móvil, tablet y escritorio', () => { const css = readFileSync('src/styles/product-detail-premium.css', 'utf8'); for (const width of ['1024px', '700px', '360px']) assert.ok(css.includes(width)); assert.ok(css.includes('safe-area-inset-bottom')); assert.ok(css.includes('prefers-reduced-motion')); });
+  check('Openpay UX: Visa usa CVV de 3 dígitos', () => {
+    const paymentModal = readFileSync('src/components/PaymentModal.tsx', 'utf8');
+    assert.ok(paymentModal.includes('getExpectedCvvLength'));
+    assert.ok(paymentModal.includes('getCardBrand(cardNumber) === "amex" ? 4 : 3'));
+    assert.ok(paymentModal.includes('Tarjeta válida · confirma con 3D Secure'));
+  });
+  check('Checkout: retorno 3D Secure conserva transacción para verificación', () => {
+    const checkout = readFileSync('src/pages/CheckoutPageV2.tsx', 'utf8');
+    assert.ok(checkout.includes('/checkout/payments/openpay/verify'));
+    assert.ok(checkout.includes('transaction_id'));
+    assert.ok(checkout.includes('openpay_return'));
+  });
+  check('Delivery: costo administrable por rol administrativo', () => {
+    const service = readFileSync('src/services/crudService.ts', 'utf8');
+    const manager = readFileSync('src/pages/admin/ServiceManager.tsx', 'utf8');
+    assert.ok(service.includes("'/services/delivery'"));
+    assert.ok(service.includes('updateDelivery'));
+    assert.ok(manager.includes('Gestión habilitada para Administrador y Superadministrador'));
+    assert.ok(manager.includes('Guardar costo de delivery'));
+  });
+
+  check('Compras cliente: usa el mismo voucher del administrador y muestra delivery', () => {
+    const clientPurchases = readFileSync('src/pages/ClientPurchasesPage.tsx', 'utf8');
+    assert.ok(clientPurchases.includes('OrderVoucherModal'));
+    assert.ok(clientPurchases.includes('Costo de delivery'));
+    assert.ok(clientPurchases.includes('order.shipping_cost'));
+  });
+
+  check('Checkout: delivery se refresca y el total coincide en resumen y botón', () => {
+    const checkout = readFileSync('src/pages/CheckoutPageV2.tsx', 'utf8');
+    assert.ok(checkout.includes('params: { _ts: Date.now() }'));
+    assert.ok(checkout.includes('const maxAttempts = 5'));
+    assert.ok(checkout.includes('serverDeliveryCost'));
+    assert.ok(checkout.includes('deliveryCost={deliveryCost}'));
+    assert.ok(checkout.includes('deliveryLoading={deliveryLoading}'));
+    assert.ok(checkout.includes('cartTotal + deliveryCost'));
+  });
+
+  check('Checkout: HTTP 429 se presenta como espera controlada y no como error técnico', () => {
+    const checkout = readFileSync('src/pages/CheckoutPageV2.tsx', 'utf8');
+    assert.ok(checkout.includes('err.response?.status === 429'));
+    assert.ok(checkout.includes('retry_after'));
+    assert.ok(checkout.includes('Has realizado varios intentos seguidos'));
+  });
+
+  check('Google: registro rápido no bloquea por SMTP y abre bienvenida', () => {
+    const login = readFileSync('src/pages/LoginPage.tsx', 'utf8');
+    const googleButton = readFileSync('src/components/GoogleIdentityButton.tsx', 'utf8');
+    const authService = readFileSync('src/services/authService.ts', 'utf8');
+    const app = readFileSync('src/App.tsx', 'utf8');
+    const welcome = readFileSync('src/pages/WelcomeDashboardPage.tsx', 'utf8');
+
+    assert.ok(login.includes('data.account_created'));
+    assert.ok(login.includes('Boolean(user.must_change_password)'));
+    assert.ok(login.includes('authDestination(user.role, from, Boolean(user.must_change_password))'));
+    assert.ok(!login.includes('authService.googleWelcome()'));
+    assert.ok(login.includes('backend deja el correo de bienvenida persistido'));
+    assert.ok(login.includes('status === 429'));
+    assert.ok(googleButton.includes('disabledRef'));
+    assert.ok(authService.includes("'/auth/google/welcome'"));
+    assert.ok(app.includes('path="/welcome"'));
+    assert.ok(welcome.includes('Registro completado'));
+  });
+
+  check('Ajustes: banners usan method override y logo administrable', () => {
+    const service = readFileSync('src/services/crudService.ts', 'utf8');
+    const settings = readFileSync('src/pages/admin/SettingsManager.tsx', 'utf8');
+    assert.ok(service.includes("formData.append('_method', 'PUT')"));
+    assert.ok(service.includes('uploadLogoImage'));
+    assert.ok(settings.includes('Identidad visual'));
+    assert.ok(settings.includes('Cambiar logo'));
+  });
+
+  check('Moneda: checkout e historial usan MXN', () => {
+    for (const file of ['src/components/PaymentModal.tsx', 'src/components/EditableOrderSummary.tsx', 'src/pages/ClientPurchasesPage.tsx']) {
+      const source = readFileSync(file, 'utf8');
+      assert.ok(source.includes('currency: "MXN"'), `${file} debe usar MXN`);
+    }
+  });
   await act(async () => root.unmount());
   console.log(`\n${tests.length} pruebas de componentes aprobadas. No sustituyen revisión visual en navegador.`);
 }

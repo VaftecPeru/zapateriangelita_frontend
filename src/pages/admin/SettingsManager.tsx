@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { settingsService } from '../../services/crudService';
 import { getImageUrl } from '../../config/api';
+import PhoneField from '../../components/PhoneField';
 import {
     AlertCircle,
     CheckCircle2,
@@ -35,7 +36,7 @@ type HomeBanner = {
     active: boolean;
 };
 
-type CollapsibleKey = 'contact' | 'legal' | 'banners';
+type CollapsibleKey = 'branding' | 'contact' | 'legal' | 'banners';
 
 const defaultPrivacyPolicies = [
     'Usamos tus datos personales únicamente para gestionar tus pedidos, coordinar la entrega y brindarte atención relacionada con tu compra.',
@@ -134,6 +135,9 @@ const SettingsManager = () => {
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+    const [logoUrl, setLogoUrl] = useState('');
+    const [uploadingLogo, setUploadingLogo] = useState(false);
+
     const [whatsapp, setWhatsapp] = useState('');
     const [savingWhatsapp, setSavingWhatsapp] = useState(false);
 
@@ -147,7 +151,8 @@ const SettingsManager = () => {
     const [expandedBanners, setExpandedBanners] = useState<Record<string, boolean>>({});
 
     const [openSections, setOpenSections] = useState<Record<CollapsibleKey, boolean>>({
-        contact: true,
+        branding: true,
+        contact: false,
         legal: false,
         banners: true,
     });
@@ -169,6 +174,7 @@ const SettingsManager = () => {
             const response = await settingsService.getAll();
             const data = response.data.data || {};
             setSettings(data);
+            setLogoUrl(data.logo_url || '/logo-angelita-horizontal.png');
             setWhatsapp(data.whatsapp_number || '');
 
             const terms = normalizeStringList(data.reservation_policies);
@@ -194,6 +200,35 @@ const SettingsManager = () => {
         setOpenSections((current) => ({ ...current, [key]: !current[key] }));
     };
 
+    const errorMessage = (error: any, fallback: string) =>
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        fallback;
+
+    const uploadLogo = async (file?: File) => {
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            notify('error', 'Selecciona un logo JPG, PNG o WEBP.');
+            return;
+        }
+
+        try {
+            setUploadingLogo(true);
+            const response = await settingsService.uploadLogoImage(file);
+            const path = response.data?.data?.path;
+            if (!path) throw new Error('El servidor no devolvió la ruta del logo.');
+
+            setLogoUrl(path);
+            setSettings((current) => ({ ...current, logo_url: path }));
+            notify('success', 'Logo actualizado. Recarga la tienda para ver el cambio.');
+        } catch (error: any) {
+            console.error(error);
+            notify('error', errorMessage(error, 'No se pudo actualizar el logo.'));
+        } finally {
+            setUploadingLogo(false);
+        }
+    };
+
     const saveWhatsapp = async () => {
         const cleanValue = whatsapp.replace(/[^0-9]/g, '');
         if (!cleanValue) {
@@ -206,9 +241,9 @@ const SettingsManager = () => {
             setWhatsapp(cleanValue);
             setSettings((current) => ({ ...current, whatsapp_number: cleanValue }));
             notify('success', 'Número de WhatsApp actualizado.');
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            notify('error', 'No se pudo guardar el número de WhatsApp.');
+            notify('error', errorMessage(error, 'No se pudo guardar el número de WhatsApp.'));
         } finally {
             setSavingWhatsapp(false);
         }
@@ -230,9 +265,9 @@ const SettingsManager = () => {
                 settingsService.update('privacy_policy', JSON.stringify(privacy)),
             ]);
             notify('success', 'Términos y privacidad actualizados.');
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            notify('error', 'No se pudieron guardar las políticas.');
+            notify('error', errorMessage(error, 'No se pudieron guardar las políticas.'));
         } finally {
             setSavingLegal(false);
         }
@@ -276,9 +311,9 @@ const SettingsManager = () => {
             if (!path) throw new Error('El servidor no devolvió la ruta de la imagen.');
             updateBanner(bannerId, 'image', path);
             notify('success', 'Imagen cargada. Guarda los banners para publicarla.');
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            notify('error', 'No se pudo cargar la imagen del banner.');
+            notify('error', errorMessage(error, 'No se pudo cargar la imagen del banner.'));
         } finally {
             setUploadingBannerId(null);
         }
@@ -315,9 +350,9 @@ const SettingsManager = () => {
             setSettings((current) => ({ ...current, homepage_banners: serialized }));
             setBanners(payload);
             notify('success', 'Banners de portada guardados correctamente.');
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            notify('error', 'No se pudieron guardar los banners.');
+            notify('error', errorMessage(error, 'No se pudieron guardar los banners.'));
         } finally {
             setSavingBanners(false);
         }
@@ -360,6 +395,59 @@ const SettingsManager = () => {
             </div>
 
             <CollapsibleCard
+                title="Identidad visual"
+                subtitle="Logo principal visible en la tienda y vouchers"
+                icon={<FileImage size={17} />}
+                open={openSections.branding}
+                onToggle={() => toggleSection('branding')}
+            >
+                <div className="grid gap-5 lg:grid-cols-[280px_1fr] lg:items-center">
+                    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+                        <div className="grid min-h-[120px] place-items-center rounded-xl bg-white p-4">
+                            {logoUrl ? (
+                                <img
+                                    src={getImageUrl(logoUrl)}
+                                    alt="Logo actual de Zapatería Angelita"
+                                    className="max-h-24 max-w-full object-contain"
+                                />
+                            ) : (
+                                <div className="text-center text-gray-300">
+                                    <FileImage size={30} className="mx-auto mb-2" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Logo predeterminado</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 className="text-sm font-black text-black">Logo de Zapatería Angelita</h4>
+                        <p className="mt-2 max-w-2xl text-[11px] leading-relaxed text-gray-500">
+                            El archivo se utilizará en la cabecera y pie de la tienda, detalle de productos y vouchers.
+                            Recomendado: PNG o WEBP horizontal con fondo transparente. Máximo 4 MB.
+                        </p>
+                        <div className="mt-4 flex flex-wrap items-center gap-3">
+                            <label className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-store-red px-5 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-red-700">
+                                {uploadingLogo ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
+                                {uploadingLogo ? 'Cargando...' : 'Cambiar logo'}
+                                <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    className="hidden"
+                                    disabled={uploadingLogo}
+                                    onChange={(event) => void uploadLogo(event.target.files?.[0])}
+                                />
+                            </label>
+                            {logoUrl && (
+                                <span className="max-w-full truncate text-[10px] font-semibold text-gray-400">
+                                    {logoUrl}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </CollapsibleCard>
+
+            <CollapsibleCard
                 title="Número de WhatsApp"
                 subtitle="Canal principal de atención al cliente"
                 icon={<Smartphone size={17} />}
@@ -369,11 +457,13 @@ const SettingsManager = () => {
                 <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
                     <label className="block">
                         <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-500">Número internacional</span>
-                        <input
+                        <PhoneField
                             value={whatsapp}
-                            onChange={(event) => setWhatsapp(event.target.value)}
-                            className="h-12 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 text-sm font-bold outline-none transition focus:border-store-red focus:bg-white"
-                            placeholder="51900112844"
+                            onChange={setWhatsapp}
+                            defaultDialCode="+52"
+                            selectClassName="h-12 min-w-[110px] rounded-2xl border border-gray-200 bg-gray-50 px-3 text-xs font-black outline-none focus:border-store-red"
+                            inputClassName="h-12 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 text-sm font-bold outline-none transition focus:border-store-red focus:bg-white"
+                            placeholder="55 1234 5678"
                         />
                     </label>
                     <button

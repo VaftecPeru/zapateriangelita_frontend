@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import ReferenceLanding from "./ReferenceLanding";
+import PhoneField from "./PhoneField";
 import brandLogo from "../assets/brand/logo-angelita-horizontal.png";
+import fallbackImage from "../assets/foto1.jpg";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
 import apiClient from "../services/apiClient";
 import { useUbigeo } from "../hooks/useUbigeo";
-import { categoryService, productService, subcategoryService, Category, Product } from "../services/crudService";
+import { categoryService, productService, settingsService, subcategoryService, Category, Product } from "../services/crudService";
 import { getImageUrl } from "../config/api";
 import {
   ChevronLeft,
@@ -27,7 +29,6 @@ import {
   X,
 } from "lucide-react";
 
-// @ts-ignore
 import {
   categories as staticCategories,
 } from "../data/catalog";
@@ -37,6 +38,64 @@ const money = new Intl.NumberFormat("es-MX", {
   currency: "MXN",
   minimumFractionDigits: 2,
 });
+
+const applyCatalogImageFallback = (event: React.SyntheticEvent<HTMLImageElement>) => {
+  const image = event.currentTarget;
+  if (image.dataset.fallbackApplied === "1") return;
+  image.dataset.fallbackApplied = "1";
+  image.src = fallbackImage;
+  image.alt = image.alt || "Imagen no disponible";
+};
+
+const colorNameToHex = (name: string) => {
+  const normalized = String(name || '').trim().toLocaleLowerCase();
+  const palette: Record<string, string> = {
+    blanco: '#ffffff',
+    negro: '#111111',
+    rojo: '#d62828',
+    azul: '#2563eb',
+    celeste: '#7dd3fc',
+    'azul cielo': '#7dd3fc',
+    verde: '#2e8b57',
+    amarillo: '#facc15',
+    rosa: '#f472b6',
+    morado: '#7c3aed',
+    gris: '#9ca3af',
+    cafe: '#8b5e3c',
+    marron: '#8b5e3c',
+    beige: '#d6c2a1',
+    turquesa: '#2dd4bf',
+    naranja: '#f97316',
+    vino: '#7f1d1d',
+    dorado: '#d4a017',
+    plateado: '#c0c0c0',
+  };
+
+  return palette[normalized] || (normalized.startsWith('#') ? normalized : '#888888');
+};
+
+const productColors = (product: any) => {
+  if (Array.isArray(product?.colors) && product.colors.length) {
+    return product.colors
+      .map((item: any) => ({
+        name: String(typeof item === 'object' ? item.color || item.name || '' : item).trim(),
+        hex: String(typeof item === 'object' ? item.hex || '' : '').trim(),
+      }))
+      .filter((item: any) => item.name)
+      .map((item: any) => ({
+        ...item,
+        hex: !item.hex || item.hex.toLocaleLowerCase() === '#888888'
+          ? colorNameToHex(item.name)
+          : item.hex,
+      }));
+  }
+
+  return String(product?.color || '')
+    .split(/[,/|]+/)
+    .map((name) => name.trim())
+    .filter(Boolean)
+    .map((name) => ({ name, hex: colorNameToHex(name) }));
+};
 
 const checkoutInputStyle = {
   width: "100%",
@@ -127,10 +186,10 @@ function FacebookIcon({ size = 18 }: { size?: number }) {
   );
 }
 
-function Logo({ light = false }: { light?: boolean }) {
+function Logo({ light = false, src = brandLogo }: { light?: boolean; src?: string }) {
   return (
     <a className={`logo ${light ? "logo--light" : ""}`} href="/" aria-label="Zapatería Angelita - inicio">
-      <img className="brand-logo__image" src={brandLogo} alt="Zapatería Angelita" />
+      <img className="brand-logo__image" src={src || brandLogo} alt="Zapatería Angelita" />
     </a>
   );
 }
@@ -162,6 +221,7 @@ function ProductCard({ product, onFavorite, isFavorite, onAddToCart }: any) {
   const discountLabel = discountValue && !Number.isNaN(Number(discountValue))
     ? `-${Math.abs(Number(discountValue))}%`
     : product.discount;
+  const colors = productColors(product);
 
   return (
     <article className="product-card">
@@ -177,13 +237,44 @@ function ProductCard({ product, onFavorite, isFavorite, onAddToCart }: any) {
           <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
         </button>
         <Link to={`/producto/${product.id}`} className="product-card__image-link" aria-label={`Ver detalles de ${product.name}`}>
-          <img src={product.image} alt={product.name} loading="lazy" />
+          <img src={product.image || fallbackImage} alt={product.name} loading="lazy" decoding="async" onError={applyCatalogImageFallback} />
         </Link>
         <button className="quick-add quick-add--media" type="button" onClick={() => onAddToCart(product)}>Agregar al carrito</button>
       </div>
       <div className="product-card__body">
         <span className="product-card__category">{product.category}</span>
         <h3><Link to={`/producto/${product.id}`}>{product.name}</Link></h3>
+        {colors.length > 0 && (
+          <div
+            className="product-card__colors"
+            aria-label={`Colores disponibles: ${colors.map((item: any) => item.name).join(', ')}`}
+            style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px', margin: '6px 0 2px' }}
+          >
+            <span style={{ fontSize: '10px', fontWeight: 700, color: '#777' }}>
+              {colors.length === 1 ? `Color: ${colors[0].name}` : 'Colores:'}
+            </span>
+            {colors.slice(0, 5).map((item: any) => (
+              <span
+                key={item.name}
+                title={item.name}
+                aria-label={item.name}
+                style={{
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: '50%',
+                  background: item.hex,
+                  border: item.hex.toLowerCase() === '#ffffff' ? '1px solid #cfcfcf' : '1px solid rgba(0,0,0,.14)',
+                  boxShadow: '0 0 0 1px rgba(255,255,255,.7) inset',
+                }}
+              />
+            ))}
+            {colors.length > 1 && (
+              <span style={{ fontSize: '10px', color: '#777' }}>
+                {colors.map((item: any) => item.name).join(', ')}
+              </span>
+            )}
+          </div>
+        )}
         <div className="stars" aria-label={`${product.rating} de 5 estrellas`}>
           {Array.from({ length: product.rating }).map((_, index) => (
             <Star key={index} size={12} fill="currentColor" aria-hidden="true" />
@@ -202,12 +293,14 @@ function ProductCard({ product, onFavorite, isFavorite, onAddToCart }: any) {
 
 export default function StoreHome() {
   const [products, setProducts] = useState<any[]>([]);
+  const [siteLogo, setSiteLogo] = useState<string>(brandLogo);
   const [categories, setCategories] = useState<any[]>([]);
   const [subcategories, setSubcategories] = useState<any[]>([]);
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [catalogError, setCatalogError] = useState(false);
+  const [catalogReloadKey, setCatalogReloadKey] = useState(0);
   const [searchText, setSearchText] = useState("");
   const [favorites, setFavorites] = useState<number[]>([]);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -221,7 +314,7 @@ export default function StoreHome() {
   const [checkoutNotice, setCheckoutNotice] = useState<{ title: string; message: string; requiresLogin: boolean } | null>(null);
   const [checkoutForm, setCheckoutForm] = useState({
     full_name: "",
-    phone: "",
+    phone: "+52",
     country: "México",
     state: "",
     municipality: "",
@@ -247,7 +340,7 @@ export default function StoreHome() {
     first_name: "",
     last_name: "",
     email: "",
-    phone: "",
+    phone: "+52",
     product_interest: "Compra de calzado",
     shoe_size: "",
     contact_preference: "WhatsApp",
@@ -262,22 +355,65 @@ export default function StoreHome() {
   }, [location.state]);
 
   useEffect(() => {
-    const loadCatalog = async () => {
+    let active = true;
+
+    const loadSiteLogo = async () => {
       try {
-        const [productsResponse, categoriesResponse, subcategoriesResponse] = await Promise.all([
-          productService.getAll(),
-          categoryService.getPublic(),
-          subcategoryService.getPublic(),
-        ]);
-        const productsData = Array.isArray(productsResponse.data)
-          ? productsResponse.data
-          : (productsResponse.data as any)?.data || [];
-        const categoriesData = Array.isArray(categoriesResponse.data)
-          ? categoriesResponse.data
-          : (categoriesResponse.data as any)?.data || [];
-        const subcategoriesData = Array.isArray(subcategoriesResponse.data)
-          ? subcategoriesResponse.data
-          : (subcategoriesResponse.data as any)?.data || [];
+        const response = await settingsService.getAll();
+        const configuredLogo = response.data?.data?.logo_url;
+        if (active && configuredLogo) {
+          setSiteLogo(getImageUrl(configuredLogo) || brandLogo);
+        }
+      } catch {
+        if (active) setSiteLogo(brandLogo);
+      }
+    };
+
+    void loadSiteLogo();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const unwrapList = (response: any) => (
+      Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.data?.data)
+          ? response.data.data
+          : []
+    );
+
+    const loadCatalog = async () => {
+      setCatalogLoading(true);
+      setCatalogError(false);
+
+      const [productsResult, categoriesResult, subcategoriesResult] = await Promise.allSettled([
+        productService.getAll(),
+        categoryService.getPublic(),
+        subcategoryService.getPublic(),
+      ]);
+
+      if (!active) return;
+
+      const categoriesData = categoriesResult.status === 'fulfilled'
+        ? unwrapList(categoriesResult.value)
+        : [];
+      const subcategoriesData = subcategoriesResult.status === 'fulfilled'
+        ? unwrapList(subcategoriesResult.value)
+        : [];
+
+      if (categoriesResult.status === 'rejected') {
+        console.warn('No se pudieron cargar categorías públicas:', categoriesResult.reason);
+      }
+      if (subcategoriesResult.status === 'rejected') {
+        console.warn('No se pudieron cargar subcategorías públicas:', subcategoriesResult.reason);
+      }
+
+      if (productsResult.status === 'fulfilled') {
+        const productsData = unwrapList(productsResult.value);
 
         setProducts(productsData.map((product: Product) => ({
           ...product,
@@ -289,6 +425,13 @@ export default function StoreHome() {
           oldPrice: product.discounted_price ? Number(product.price) : null,
           rating: Math.round(Number(product.rating || 0)),
         })));
+      } else {
+        console.error('No se pudo cargar el catálogo de productos:', productsResult.reason);
+        setProducts([]);
+        setCatalogError(true);
+      }
+
+      if (categoriesResult.status === 'fulfilled') {
         setCategories(categoriesData.map((category: Category, index: number) => {
           const visual = staticCategories.find((item) => item.name.toLowerCase() === category.name.toLowerCase()) || staticCategories[index % staticCategories.length];
           return {
@@ -297,17 +440,21 @@ export default function StoreHome() {
             color: visual?.color || "#f5eee8",
           };
         }));
-        setSubcategories(subcategoriesData);
-      } catch (error) {
-        console.error("Error loading public catalog:", error);
-        setCatalogError(true);
-      } finally {
-        setCatalogLoading(false);
       }
+
+      if (subcategoriesResult.status === 'fulfilled') {
+        setSubcategories(subcategoriesData);
+      }
+
+      setCatalogLoading(false);
     };
 
-    loadCatalog();
-  }, []);
+    void loadCatalog();
+
+    return () => {
+      active = false;
+    };
+  }, [catalogReloadKey]);
 
   const handleAddToCart = (product: any) => {
     navigate(`/producto/${product.id}`);
@@ -382,6 +529,9 @@ export default function StoreHome() {
   const categorySubcategories = subcategories.filter((subcategory: any) =>
     selectedCategory ? String(subcategory.category_id) === String(selectedCategory.id) : true
   );
+  const inventoryUnitsOf = (items: any[]) =>
+    items.reduce((total, item) => total + Math.max(0, Number(item.stock || 0)), 0);
+
   const categoryProducts = products.filter((product: any) => {
     const categoryMatches = selectedCategory
       ? String(product.category_id) === String(selectedCategory.id)
@@ -425,7 +575,7 @@ export default function StoreHome() {
   const catalogStatusEyebrow = catalogStatus === 'nuevo' ? 'Recién llegados' : 'Selección especial';
   const offerCategoryItems = categories.map((category: any) => ({
     ...category,
-    offerCount: products.filter((product: any) => product.status === catalogStatus && product.category_id === category.id).length,
+    offerCount: inventoryUnitsOf(products.filter((product: any) => product.status === catalogStatus && product.category_id === category.id)),
   }));
   const offerProducts = products
     .filter((product: any) => product.status === catalogStatus)
@@ -535,7 +685,7 @@ export default function StoreHome() {
           <button className="mobile-menu-button" type="button" onClick={() => setMenuOpen(true)} aria-label="Abrir menú">
             <Menu />
           </button>
-          <Logo />
+          <Logo src={siteLogo} />
           <nav className="desktop-nav" aria-label="Navegación principal">
             {menuItems.map((item) => {
               const isChildrenMenu = item.name === "Niños" && Array.isArray(item.submenu) && item.submenu.length > 0 && "talla" in (item.submenu[0] as object);
@@ -649,7 +799,7 @@ export default function StoreHome() {
           <button className="mobile-drawer__backdrop" type="button" aria-label="Cerrar menú" onClick={() => setMenuOpen(false)} />
           <div className="mobile-drawer__panel">
             <div className="mobile-drawer__header">
-              <Logo />
+              <Logo src={siteLogo} />
               <button type="button" onClick={() => setMenuOpen(false)} aria-label="Cerrar menú"><X /></button>
             </div>
             <nav aria-label="Navegación móvil">
@@ -706,7 +856,7 @@ export default function StoreHome() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {cart.map((item: any) => (
                     <div key={item.product.id} style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                      <img src={item.product.image} alt={item.product.name} style={{ width: '70px', height: '70px', objectFit: 'cover', borderRadius: '8px' }} />
+                      <img src={item.product.image || fallbackImage} alt={item.product.name} loading="lazy" decoding="async" onError={applyCatalogImageFallback} style={{ width: '70px', height: '70px', objectFit: 'contain', background: '#fff', borderRadius: '8px' }} />
                       <div style={{ flex: 1 }}>
                         <strong style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>{item.product.name}</strong>
                         <span style={{ color: '#666', fontSize: '13px' }}>{item.quantity} x {money.format(Number(item.product.price || 0))}</span>
@@ -770,10 +920,25 @@ export default function StoreHome() {
                   {catalogSubcategoryOptions.map((subcategory: any) => <option key={subcategory.id} value={subcategory.id}>{subcategory.name}</option>)}
                 </select>
               </label>
-              <span className="full-catalog__count">{catalogProducts.length} productos</span>
+              <span className="full-catalog__count">
+                {catalogLoading ? 'Cargando…' : catalogError ? 'Catálogo no disponible' : `${catalogProducts.length} productos`}
+              </span>
             </div>
             <div className="product-grid full-catalog__grid">
-              {catalogProducts.length > 0 ? catalogProducts.map((product: any) => (
+              {catalogLoading ? (
+                <p className="offers-results__empty" role="status">Cargando catálogo...</p>
+              ) : catalogError ? (
+                <div className="offers-results__empty" role="alert">
+                  <p>No pudimos cargar los productos en este momento.</p>
+                  <button
+                    type="button"
+                    className="text-link"
+                    onClick={() => setCatalogReloadKey((current) => current + 1)}
+                  >
+                    Reintentar catálogo
+                  </button>
+                </div>
+              ) : catalogProducts.length > 0 ? catalogProducts.map((product: any) => (
                 <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />
               )) : (
                 <p className="offers-results__empty">No hay productos con estos filtros.</p>
@@ -785,6 +950,7 @@ export default function StoreHome() {
             products={products}
             loading={catalogLoading}
             error={catalogError}
+            onRetry={() => setCatalogReloadKey((current) => current + 1)}
             renderProduct={product => <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />}
           />
         ) : (
@@ -794,7 +960,7 @@ export default function StoreHome() {
                 <div>
                   <span className="offers-catalog__eyebrow">{catalogStatusEyebrow}</span>
                   <h1>{catalogStatusTitle}</h1>
-                  <p>{offerProducts.length} artículos disponibles</p>
+                  <p>{inventoryUnitsOf(offerProducts)} unidades disponibles</p>
                 </div>
                 <button className="offers-catalog__back" type="button" onClick={() => navigate('/')}>
                   Volver al inicio <ChevronRight size={16} />
@@ -818,7 +984,7 @@ export default function StoreHome() {
                     onClick={() => setOfferCategory(category.name)}
                   >
                     <span className="offers-category__image">
-                      <img src={category.image} alt="" />
+                      <img src={category.image || fallbackImage} alt={category.name || "Categoría"} loading="lazy" decoding="async" onError={applyCatalogImageFallback} />
                     </span>
                     <strong>{category.name}</strong>
                     <small>{category.offerCount}</small>
@@ -887,7 +1053,7 @@ export default function StoreHome() {
                 <div>
                   <span className="offers-catalog__eyebrow">Colección de calzado</span>
                   <h1>Calzado para {activeCategory}</h1>
-                  <p>{categoryProducts.length} productos disponibles</p>
+                  <p>{inventoryUnitsOf(categoryProducts)} unidades disponibles</p>
                 </div>
                 <button className="offers-catalog__back" type="button" onClick={() => navigate('/')}>
                   Volver al inicio <ChevronRight size={16} />
@@ -918,7 +1084,7 @@ export default function StoreHome() {
                   <label className="offers-check">
                     <input type="checkbox" checked={categorySubcategory === 'Todas'} onChange={() => setCategorySubcategory('Todas')} />
                     <span>Todos</span>
-                    <small>{products.filter((product: any) => selectedCategory ? String(product.category_id) === String(selectedCategory.id) : String(product.category).toLowerCase() === activeCategory.toLowerCase()).length}</small>
+                    <small>{inventoryUnitsOf(products.filter((product: any) => selectedCategory ? String(product.category_id) === String(selectedCategory.id) : String(product.category).toLowerCase() === activeCategory.toLowerCase()))}</small>
                   </label>
                   {categorySubcategories.map((subcategory: any) => (
                     <label className="offers-check" key={subcategory.id}>
@@ -956,7 +1122,7 @@ export default function StoreHome() {
       <footer className="footer">
         <div className="shell footer__grid">
           <div className="footer__brand">
-            <Logo light />
+            <Logo light src={siteLogo} />
             <p>Tu tienda de calzado para toda la familia. Calidad, comodidad y estilo desde 1980.</p>
             <div className="footer__social">
               <a href="#facebook" aria-label="Facebook"><FacebookIcon /></a>
@@ -1016,7 +1182,7 @@ export default function StoreHome() {
                   <label>Nombre *<input required minLength={2} value={contactForm.first_name} onChange={(event) => setContactForm({ ...contactForm, first_name: event.target.value })} style={checkoutInputStyle} /></label>
                   <label>Apellido *<input required minLength={2} value={contactForm.last_name} onChange={(event) => setContactForm({ ...contactForm, last_name: event.target.value })} style={checkoutInputStyle} /></label>
                   <label>Correo electrónico<input required type="email" value={contactForm.email} onChange={(event) => setContactForm({ ...contactForm, email: event.target.value })} style={checkoutInputStyle} /></label>
-                  <label>WhatsApp / teléfono *<input required minLength={7} value={contactForm.phone} onChange={(event) => setContactForm({ ...contactForm, phone: event.target.value })} style={checkoutInputStyle} /></label>
+                  <label>WhatsApp / teléfono *<PhoneField required value={contactForm.phone} onChange={(phone) => setContactForm({ ...contactForm, phone })} defaultDialCode="+52" selectClassName="store-phone-prefix" inputClassName="store-phone-number" /></label>
                   <label>¿Qué necesitas? *<select required value={contactForm.product_interest} onChange={(event) => setContactForm({ ...contactForm, product_interest: event.target.value })} style={checkoutInputStyle}><option value="">Selecciona una opción</option><option>Compra de calzado</option><option>Disponibilidad de un producto</option><option>Asesoría de talla</option><option>Cambios y devoluciones</option><option>Compra mayorista</option></select></label>
                   <label>Talla de interés *<input required value={contactForm.shoe_size} onChange={(event) => setContactForm({ ...contactForm, shoe_size: event.target.value })} placeholder="Ej. 24, 38 o 6 US" style={checkoutInputStyle} /></label>
                   <label>Prefiero que me contacten *<select required value={contactForm.contact_preference} onChange={(event) => setContactForm({ ...contactForm, contact_preference: event.target.value })} style={checkoutInputStyle}><option value="">Selecciona una opción</option><option>WhatsApp</option><option>Llamada</option><option>Correo</option></select></label>
@@ -1053,7 +1219,7 @@ export default function StoreHome() {
             {checkoutError && <p role="alert" style={{ padding: "12px", margin: "0 0 16px", color: "#a40000", background: "#fff0f0", borderRadius: "8px" }}>{checkoutError}</p>}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "14px" }}>
               <label>Nombre completo<input required value={checkoutForm.full_name} onChange={(event) => setCheckoutForm({ ...checkoutForm, full_name: event.target.value })} style={checkoutInputStyle} /></label>
-              <label>Teléfono<input required value={checkoutForm.phone} onChange={(event) => setCheckoutForm({ ...checkoutForm, phone: event.target.value })} style={checkoutInputStyle} /></label>
+              <label>Teléfono<PhoneField required value={checkoutForm.phone} onChange={(phone) => setCheckoutForm({ ...checkoutForm, phone })} defaultDialCode="+52" selectClassName="store-phone-prefix" inputClassName="store-phone-number" /></label>
               <label>País<select required value={checkoutForm.country} onChange={(event) => setCheckoutForm({ ...checkoutForm, country: event.target.value })} style={checkoutInputStyle}><option value="México">México</option></select></label>
               <label>Estado<select required value={checkoutForm.state} disabled={ubigeoLoading} onChange={(event) => setCheckoutForm({ ...checkoutForm, state: event.target.value, municipality: "", city: "" })} style={checkoutInputStyle}><option value="">Seleccionar</option>{states.map((state) => <option key={state} value={state}>{state}</option>)}</select></label>
               <label>Municipio<select required value={checkoutForm.municipality} disabled={!checkoutForm.state || ubigeoLoading} onChange={(event) => setCheckoutForm({ ...checkoutForm, municipality: event.target.value, city: "" })} style={checkoutInputStyle}><option value="">Seleccionar</option>{municipalities.map((municipality) => <option key={municipality} value={municipality}>{municipality}</option>)}</select></label>

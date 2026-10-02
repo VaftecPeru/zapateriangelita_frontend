@@ -3,15 +3,17 @@ import { ArrowLeft, LockKeyhole, ShoppingBag } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import PaymentModal, { OpenpayChargeResult } from "../components/PaymentModal";
 import EditableOrderSummary from "../components/EditableOrderSummary";
+import PhoneField from "../components/PhoneField";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
 import { useUbigeo } from "../hooks/useUbigeo";
+import { getSuggestedCity, isValidColony, isValidMexicoPostalCode } from "../utils/checkoutAddress";
 import apiClient from "../services/apiClient";
 import "../styles/checkout.css";
 
-const money = new Intl.NumberFormat("en-US", {
+const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
-  currency: "USD",
+  currency: "MXN",
   minimumFractionDigits: 2,
 });
 
@@ -52,12 +54,13 @@ const clearCheckoutSession = (orderId?: number) => {
 const initialFormState = {
   full_name: "",
   email: "",
-  phone: "",
+  phone: "+52",
   country: "México",
   state: "",
   municipality: "",
   city: "",
   postal_code: "",
+  colony: "",
   address: "",
   reference: "",
 };
@@ -108,8 +111,13 @@ const CheckoutPageV2 = () => {
   const [submitting, setSubmitting] = useState(false);
   const [verifyingPayment, setVerifyingPayment] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [deliveryCost, setDeliveryCost] = useState(0);
+  const [deliveryLoading, setDeliveryLoading] = useState(true);
+  const [deliveryError, setDeliveryError] = useState<string | null>(null);
   const [orderData, setOrderData] = useState<{
     orderId: number;
+    subtotal: number;
+    shippingCost: number;
     total: number;
     customerName: string;
     checkoutToken: string;
@@ -121,8 +129,48 @@ const CheckoutPageV2 = () => {
   );
 
   useEffect(() => {
+    if (!form.municipality || cities.length !== 1) return;
+
+    setForm((current) => {
+      const suggestedCity = getSuggestedCity(cities, current.city);
+      if (!suggestedCity || current.municipality !== form.municipality) return current;
+      return { ...current, city: suggestedCity };
+    });
+  }, [form.municipality, cities]);
+
+  useEffect(() => {
     sessionStorage.setItem(DRAFT_KEY, JSON.stringify(form));
   }, [form]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadDeliveryCost = async () => {
+      setDeliveryLoading(true);
+      setDeliveryError(null);
+
+      try {
+        const { data } = await apiClient.get("/checkout/delivery-cost", {
+          params: { _ts: Date.now() },
+          headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+          timeout: 8000,
+        });
+        if (cancelled) return;
+        setDeliveryCost(Math.max(0, Number(data?.price || 0)));
+      } catch {
+        if (cancelled) return;
+        setDeliveryError("No fue posible consultar el costo de delivery. Actualiza la página antes de continuar.");
+      } finally {
+        if (!cancelled) setDeliveryLoading(false);
+      }
+    };
+
+    void loadDeliveryCost();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated || !user) return;
@@ -150,6 +198,7 @@ const CheckoutPageV2 = () => {
           municipality: current.municipality || defaultAddress.municipality || "",
           city: current.city || defaultAddress.city || "",
           postal_code: current.postal_code || defaultAddress.postal_code || "",
+          colony: current.colony || defaultAddress.colony || "",
           address: current.address || defaultAddress.address || "",
           reference: current.reference || defaultAddress.reference || "",
         }));
@@ -181,9 +230,19 @@ const CheckoutPageV2 = () => {
       return;
     }
 
-    // La recarga hace que AuthProvider valide el token recién emitido contra
-    // el backend y abre directamente la compra confirmada en el rol Cliente.
-    window.location.replace("/profile/purchases");
+    // La sesión ya fue entregada por el backend y guardada en AuthProvider.
+    // Mostramos una confirmación de compra sin guardar datos sensibles de tarjeta.
+    navigate("/profile/purchases", {
+      replace: true,
+      state: {
+        purchaseConfirmed: {
+          orderCode: result?.order_code || null,
+          transactionId: result?.transaction_id || null,
+          paymentReference: result?.payment_reference || null,
+          emailScheduled: Boolean(result?.purchase_email_scheduled),
+        },
+      },
+    });
   };
 
   useEffect(() => {
@@ -214,7 +273,7 @@ const CheckoutPageV2 = () => {
       setVerifyingPayment(true);
       setError(null);
 
-      const maxAttempts = 8;
+      const maxAttempts = 5;
       let lastMessage = "Estamos confirmando tu pago con Openpay.";
 
       try {
@@ -226,7 +285,7 @@ const CheckoutPageV2 = () => {
                 transaction_id: transactionId,
                 checkout_token: checkoutToken,
               },
-              timeout: 10000,
+              timeout: 9000,
             });
 
             if (cancelled) return;
@@ -245,7 +304,7 @@ const CheckoutPageV2 = () => {
             if (data.payment_status === "processing") {
               lastMessage = data.message || "Openpay todavía está confirmando tu pago.";
               if (attempt < maxAttempts) {
-                await sleep(attempt <= 2 ? 1200 : 2200);
+                await sleep(attempt <= 2 ? 800 : 1400);
                 continue;
               }
             } else {
@@ -287,7 +346,7 @@ const CheckoutPageV2 = () => {
               "El pago fue enviado y estamos esperando la confirmación final de Openpay.";
 
             if (attempt < maxAttempts) {
-              await sleep(attempt <= 2 ? 1200 : 2200);
+              await sleep(attempt <= 2 ? 800 : 1400);
               continue;
             }
           }
@@ -319,6 +378,7 @@ const CheckoutPageV2 = () => {
     const email = form.email.trim();
     const phone = form.phone.trim();
     const postalCode = form.postal_code.trim();
+    const colony = form.colony.trim();
     const address = form.address.trim();
 
     if (!name || !/^[\p{L}]+(?:[\s'-][\p{L}]+)*$/u.test(name)) {
@@ -327,14 +387,17 @@ const CheckoutPageV2 = () => {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return "Ingresa un correo electrónico válido.";
     }
-    if (!/^\d{7,20}$/.test(phone)) {
-      return "El teléfono debe contener entre 7 y 20 números.";
+    if (!/^\+[0-9]{8,20}$/.test(phone)) {
+      return "Ingresa un teléfono internacional válido.";
     }
     if (!form.country || !form.state || !form.municipality || !form.city) {
       return "Selecciona país, estado, municipio y ciudad.";
     }
-    if (!/^\d{4,20}$/.test(postalCode)) {
-      return "Ingresa un código postal válido.";
+    if (!isValidMexicoPostalCode(postalCode)) {
+      return "Ingresa un código postal mexicano válido de 5 dígitos.";
+    }
+    if (!isValidColony(colony)) {
+      return "Ingresa una colonia válida.";
     }
     if (address.length < 5 || address.length > 255) {
       return "Ingresa una dirección válida.";
@@ -377,6 +440,16 @@ const CheckoutPageV2 = () => {
       return;
     }
 
+    if (deliveryLoading) {
+      setError("Estamos calculando el costo de delivery. Espera un momento.");
+      return;
+    }
+
+    if (deliveryError) {
+      setError(deliveryError);
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -416,6 +489,7 @@ const CheckoutPageV2 = () => {
         shipping_state: form.state.trim(),
         shipping_municipality: form.municipality.trim(),
         shipping_postal_code: form.postal_code.trim(),
+        shipping_colony: form.colony.trim(),
         payment_method: "openpay",
         notes: form.reference.trim() || null,
       });
@@ -432,15 +506,25 @@ const CheckoutPageV2 = () => {
       storeCheckoutSession(orderId, checkoutToken);
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify(form));
 
+      const serverDeliveryCost = Math.max(0, Number(data.shipping_cost ?? 0));
+      setDeliveryCost(serverDeliveryCost);
       setOrderData({
         orderId,
-        total: Number(data.total ?? cartTotal),
+        subtotal: Number(data.subtotal ?? cartTotal),
+        shippingCost: serverDeliveryCost,
+        total: Number(data.total ?? (cartTotal + serverDeliveryCost)),
         customerName: form.full_name.trim(),
         checkoutToken,
       });
       setShowPayment(true);
     } catch (err: any) {
       const data = err.response?.data;
+
+      if (err.response?.status === 429) {
+        const retryAfter = Math.max(1, Number(data?.retry_after || err.response?.headers?.['retry-after'] || 30));
+        setError(`Has realizado varios intentos seguidos. Espera aproximadamente ${retryAfter} segundos y vuelve a intentar.`);
+        return;
+      }
 
       if (err.response?.status === 409 && data?.requires_login) {
         sessionStorage.setItem(DRAFT_KEY, JSON.stringify(form));
@@ -545,7 +629,14 @@ const CheckoutPageV2 = () => {
               </label>
               <label style={labelStyle}>
                 Teléfono *
-                <input required type="tel" inputMode="numeric" maxLength={20} value={form.phone} onChange={(event) => updateField("phone", onlyDigits(event.target.value))} style={inputStyle} />
+                <PhoneField
+                  required
+                  value={form.phone}
+                  onChange={(phone) => updateField("phone", phone)}
+                  defaultDialCode="+52"
+                  selectClassName="checkout-phone-prefix"
+                  inputClassName="checkout-phone-number"
+                />
               </label>
               <label style={labelStyle}>
                 Correo electrónico *
@@ -559,32 +650,62 @@ const CheckoutPageV2 = () => {
               </label>
               <label style={labelStyle}>
                 Estado *
-                <select required value={form.state} disabled={ubigeoLoading} onChange={(event) => setForm((current) => ({ ...current, state: event.target.value, municipality: "", city: "" }))} style={inputStyle}>
+                <select required value={form.state} disabled={ubigeoLoading} onChange={(event) => setForm((current) => ({ ...current, state: event.target.value, municipality: "", city: "", postal_code: "", colony: "" }))} style={inputStyle}>
                   <option value="">Seleccionar</option>
                   {states.map((state) => <option key={state}>{state}</option>)}
                 </select>
               </label>
               <label style={labelStyle}>
                 Municipio *
-                <select required value={form.municipality} disabled={!form.state || ubigeoLoading} onChange={(event) => setForm((current) => ({ ...current, municipality: event.target.value, city: "" }))} style={inputStyle}>
+                <select required value={form.municipality} disabled={!form.state || ubigeoLoading} onChange={(event) => setForm((current) => ({ ...current, municipality: event.target.value, city: "", postal_code: "", colony: "" }))} style={inputStyle}>
                   <option value="">Seleccionar</option>
                   {municipalities.map((municipality) => <option key={municipality}>{municipality}</option>)}
                 </select>
               </label>
               <label style={labelStyle}>
-                Ciudad *
-                <select required value={form.city} disabled={!form.municipality || ubigeoLoading} onChange={(event) => updateField("city", event.target.value)} style={inputStyle}>
-                  <option value="">Seleccionar</option>
-                  {cities.map((city) => <option key={city}>{city}</option>)}
-                </select>
+                Ciudad / Localidad *
+                <input
+                  required
+                  list="checkout-city-suggestions"
+                  value={form.city}
+                  disabled={!form.municipality || ubigeoLoading}
+                  onChange={(event) => updateField("city", event.target.value)}
+                  placeholder="Escribe tu ciudad o localidad"
+                  maxLength={100}
+                  style={inputStyle}
+                />
+                <datalist id="checkout-city-suggestions">
+                  {cities.map((city) => <option key={city} value={city} />)}
+                </datalist>
               </label>
               <label style={labelStyle}>
                 Código postal *
-                <input required inputMode="numeric" maxLength={20} value={form.postal_code} onChange={(event) => updateField("postal_code", onlyDigits(event.target.value))} style={inputStyle} />
+                <input
+                  required
+                  inputMode="numeric"
+                  pattern="[0-9]{5}"
+                  maxLength={5}
+                  value={form.postal_code}
+                  onChange={(event) => updateField("postal_code", onlyDigits(event.target.value))}
+                  placeholder="00000"
+                  style={inputStyle}
+                />
+              </label>
+              <label style={labelStyle}>
+                Colonia *
+                <input
+                  required
+                  maxLength={120}
+                  value={form.colony}
+                  onChange={(event) => updateField("colony", event.target.value)}
+                  placeholder="Ej. Centro"
+                  autoComplete="address-level3"
+                  style={inputStyle}
+                />
               </label>
               <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>
                 Dirección *
-                <input required maxLength={255} value={form.address} onChange={(event) => updateField("address", event.target.value)} placeholder="Calle, número y colonia" style={inputStyle} />
+                <input required maxLength={255} value={form.address} onChange={(event) => updateField("address", event.target.value)} placeholder="Calle y número" autoComplete="street-address" style={inputStyle} />
               </label>
               <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>
                 Referencia (opcional)
@@ -608,7 +729,11 @@ const CheckoutPageV2 = () => {
                 cursor: submitting ? "wait" : "pointer",
               }}
             >
-              {submitting ? "Preparando pago..." : `Comprar · ${money.format(cartTotal)}`}
+              {submitting
+                ? "Preparando pago..."
+                : deliveryLoading
+                  ? "Calculando delivery..."
+                  : `Comprar · ${money.format(cartTotal + deliveryCost)}`}
             </button>
 
             <p style={{ margin: "14px 0 0", color: "#666", fontSize: "12px", textAlign: "center" }}>
@@ -617,6 +742,8 @@ const CheckoutPageV2 = () => {
           </form>
 
           <EditableOrderSummary
+  deliveryCost={deliveryCost}
+  deliveryLoading={deliveryLoading}
   onVariantChanged={() => {
     // Cualquier cambio de cantidad/talla/color invalida sesiones de pago previas.
     clearCheckoutSession();
@@ -632,18 +759,23 @@ const CheckoutPageV2 = () => {
         <PaymentModal
           isOpen={showPayment}
           total={orderData.total}
+          shippingCost={orderData.shippingCost}
           cart={cart}
           customerName={orderData.customerName}
           customerEmail={form.email}
           onClose={() => setShowPayment(false)}
           onBack={() => setShowPayment(false)}
           onPay={async ({ tokenId, deviceSessionId }) => {
-            const { data } = await apiClient.post("/checkout/payments/openpay/charge", {
-              order_id: orderData.orderId,
-              checkout_token: orderData.checkoutToken,
-              token_id: tokenId,
-              device_session_id: deviceSessionId,
-            });
+            const { data } = await apiClient.post(
+              "/checkout/payments/openpay/charge",
+              {
+                order_id: orderData.orderId,
+                checkout_token: orderData.checkoutToken,
+                token_id: tokenId,
+                device_session_id: deviceSessionId,
+              },
+              { timeout: 18000 },
+            );
             return data;
           }}
           onSuccess={handlePaymentSuccess}

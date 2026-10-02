@@ -40,33 +40,34 @@ const loadGoogleScript = () => {
 
   googleScriptPromise = new Promise<void>((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>('script[data-angelita-google-identity="true"]');
-    if (existing) {
-      if (window.google?.accounts?.id) {
-        resolve();
-        return;
-      }
-
-      existing.addEventListener('load', () => resolve(), { once: true });
-      existing.addEventListener('error', () => {
-        existing.remove();
-        googleScriptPromise = null;
-        reject(new Error('No se pudo cargar Google Identity Services.'));
-      }, { once: true });
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.dataset.angelitaGoogleIdentity = 'true';
-    script.onload = () => resolve();
-    script.onerror = () => {
+    const script = existing || document.createElement('script');
+    const cleanup = () => {
+      window.clearTimeout(timer);
+      script.removeEventListener('load', onLoad);
+      script.removeEventListener('error', onError);
+    };
+    const fail = () => {
+      cleanup();
       script.remove();
       googleScriptPromise = null;
       reject(new Error('No se pudo cargar Google Identity Services.'));
     };
-    document.head.appendChild(script);
+    const onLoad = () => {
+      if (!window.google?.accounts?.id) { fail(); return; }
+      cleanup();
+      resolve();
+    };
+    const onError = () => fail();
+    const timer = window.setTimeout(fail, 10000);
+    script.addEventListener('load', onLoad, { once: true });
+    script.addEventListener('error', onError, { once: true });
+    if (!existing) {
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.dataset.angelitaGoogleIdentity = 'true';
+      document.head.appendChild(script);
+    }
   });
 
   return googleScriptPromise;
@@ -85,6 +86,7 @@ const wait = (ms: number) => new Promise(resolve => window.setTimeout(resolve, m
 const GoogleIdentityButton = ({ mode, onCredential, disabled = false }: Props) => {
   const buttonRef = useRef<HTMLDivElement | null>(null);
   const callbackRef = useRef(onCredential);
+  const disabledRef = useRef(disabled);
   const mountedRef = useRef(true);
   const [state, setState] = useState<GoogleButtonState>('loading');
   const [statusText, setStatusText] = useState('Preparando acceso con Google...');
@@ -92,6 +94,10 @@ const GoogleIdentityButton = ({ mode, onCredential, disabled = false }: Props) =
   useEffect(() => {
     callbackRef.current = onCredential;
   }, [onCredential]);
+
+  useEffect(() => {
+    disabledRef.current = disabled;
+  }, [disabled]);
 
   const renderGoogleButton = useCallback(async (clientId: string) => {
     await loadGoogleScript();
@@ -106,7 +112,7 @@ const GoogleIdentityButton = ({ mode, onCredential, disabled = false }: Props) =
       cancel_on_tap_outside: true,
       ux_mode: 'popup',
       callback: async ({ credential }) => {
-        if (!credential || disabled) return;
+        if (!credential || disabledRef.current) return;
         await callbackRef.current(credential);
       },
     });
@@ -126,7 +132,7 @@ const GoogleIdentityButton = ({ mode, onCredential, disabled = false }: Props) =
 
     setStatusText('Google listo');
     setState('ready');
-  }, [disabled, mode]);
+  }, [mode]);
 
   const boot = useCallback(async (manualRetry = false) => {
     if (!mountedRef.current) return;
@@ -161,11 +167,24 @@ const GoogleIdentityButton = ({ mode, onCredential, disabled = false }: Props) =
           ? 'La configuración de Google necesita corrección.'
           : 'Google todavía no está activado en el servidor.'
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error('Google Identity Services:', error);
       if (!mountedRef.current) return;
+
+      const httpStatus = Number(error?.response?.status || 0);
+      const retryAfter = Math.max(
+        1,
+        Math.ceil(Number(error?.response?.data?.retry_after || error?.response?.headers?.['retry-after'] || 5))
+      );
+
       setState('error');
-      setStatusText('No pudimos conectar con Google. Intenta nuevamente.');
+      if (httpStatus === 429) {
+        setStatusText(`Google recibió varios intentos. Espera ${retryAfter}s y vuelve a intentar.`);
+      } else if (httpStatus === 503) {
+        setStatusText('Google está temporalmente no disponible. Intenta nuevamente en unos segundos.');
+      } else {
+        setStatusText('No pudimos conectar con Google. Intenta nuevamente.');
+      }
     }
   }, [renderGoogleButton]);
 
@@ -221,3 +240,4 @@ const GoogleIdentityButton = ({ mode, onCredential, disabled = false }: Props) =
 };
 
 export default GoogleIdentityButton;
+

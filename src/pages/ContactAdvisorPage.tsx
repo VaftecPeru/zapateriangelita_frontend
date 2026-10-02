@@ -12,15 +12,13 @@ import {
     ArrowRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { leadService } from '../services/crudService';
+import { analyticsService } from '../services/crudService';
 import { useSettings } from '../hooks/useSettings';
 
 const ContactAdvisorPage = () => {
     const { settings } = useSettings();
 
     const handleWhatsAppContact = (topic: string) => {
-       
-        leadService.trackLead('service', 0).catch(console.error);
 
         const phoneNumber = settings.whatsapp_number;
         if (!phoneNumber) {
@@ -28,6 +26,7 @@ const ContactAdvisorPage = () => {
             return;
         }
         const message = encodeURIComponent(`Hola, me gustaría recibir asesoría sobre: ${topic}`);
+        void analyticsService.track('whatsapp_click', undefined, { source: 'contact_advisor', topic }).catch(() => undefined);
         window.open(`https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}?text=${message}`, '_blank');
     };
 

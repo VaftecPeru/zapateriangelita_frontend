@@ -1,0 +1,27 @@
+name: Audit Mexico ubigeo against INEGI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "public/data/mexico-ubigeo.json"
+      - "src/hooks/useUbigeo.ts"
+      - "scripts/audit-mexico-ubigeo.mjs"
+      - "tests/ubigeo.test.tsx"
+      - ".github/workflows/audit-mexico-ubigeo.yml"
+  schedule:
+    - cron: "0 12 * * 1"
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Compare local catalog with INEGI
+        run: node scripts/audit-mexico-ubigeo.mjs
