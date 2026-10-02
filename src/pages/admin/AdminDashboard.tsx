@@ -20,6 +20,7 @@ import ProfileManager from './ProfileManager';
 import { useAuth } from '../../hooks/useAuth';
 import { statsService, DashboardStats } from '../../services/crudService';
 import * as XLSX from 'xlsx';
+import InventoryManager from './InventoryManager';
 
 
 
@@ -173,7 +174,7 @@ const AdminDashboard = () => {
     const location = useLocation();
     const state = location.state as { activeTab?: string; selectedLeadId?: number };
 
-    const [activeTab, setActiveTab] = useState<'stats' | 'products' | 'services' | 'settings' | 'messages' | 'funnelLeads' | 'users' | 'profile'>(
+    const [activeTab, setActiveTab] = useState< 'stats' | 'products' | 'inventory' | 'services' | 'settings' | 'messages' | 'funnelLeads' | 'users' | 'profile'>(
         (state?.activeTab as any) || 'stats'
     );
     const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -309,6 +310,7 @@ const AdminDashboard = () => {
                     {[
                         { id: 'stats', label: 'Estadísticas' },
                         { id: 'products', label: 'Productos' },
+                        { id: 'inventory', label: 'Inventario' },
                         { id: 'services', label: 'Servicios' },
                         { id: 'settings', label: 'Ajustes' },
                         { id: 'funnelLeads', label: 'Interesados en Calzado' },
@@ -458,10 +460,15 @@ const AdminDashboard = () => {
                 ) : (
                     <div className="space-y-6">
                         {activeTab === 'products' && <PropertyManager />}
+                        {activeTab === 'inventory' && <InventoryManager />}
                         {activeTab === 'services' && <ServiceManager />}
                         {activeTab === 'settings' && <SettingsManager />}
-                        {activeTab === 'funnelLeads' && <FunnelLeadsManager initialData={(stats as any)?.all_leads} />}
-                        {activeTab === 'users' && <UsersManager initialData={(stats as any)?.all_users} />}
+                        {activeTab === 'funnelLeads' && (
+                            <FunnelLeadsManager initialData={(stats as any)?.all_leads} />
+                        )}
+                        {activeTab === 'users' && (
+                            <UsersManager initialData={(stats as any)?.all_users} />
+                        )}
                         {activeTab === 'messages' && <MessagesManager />}
                         {activeTab === 'profile' && <ProfileManager />}
                     </div>

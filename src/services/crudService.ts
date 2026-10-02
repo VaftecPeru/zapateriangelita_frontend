@@ -284,3 +284,17 @@ export const orderService = {
     getMyOrders: () => apiClient.get<Order[]>('/my-orders'),
     updateStatus: (id: number, status: string) => apiClient.put<Order>(`/orders/${id}/status`, { status }),
 };
+
+export const inventoryService = {
+    getInventory: () => apiClient.get('/admin/inventory'),
+    getMovements: (productId?: number) => apiClient.get('/admin/inventory/movements', { params: productId ? { product_id: productId } : {}}),
+    adjustStock: (data: {
+        product_id: number;
+        color?: string | null;
+        size?: string | null;
+        type: 'entrada' | 'salida' | 'ajuste';
+        quantity: number;
+        reason?: string;
+    }) =>
+        apiClient.post('/admin/inventory/adjust', data),
+};
