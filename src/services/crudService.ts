@@ -411,3 +411,42 @@ export const orderService = {
         errors: string[];
     }>('/mail/health'),
 };
+
+export const inventoryService = {
+    getInventory: () => apiClient.get<{
+        summary: {
+            total_stock: number;
+            available: number;
+            low_stock: number;
+            out_of_stock: number;
+        };
+        items: Array<{
+            product_id: number;
+            variant_id: number | null;
+            product_code: string | null;
+            name: string;
+            image: string | null;
+            brand: string | null;
+            category: string | null;
+            color: string | null;
+            size: string | null;
+            stock: number;
+            stock_minimum: number;
+            status: 'disponible' | 'stock_bajo' | 'agotado';
+            source: 'variant' | 'size' | 'product';
+        }>;
+    }>('/admin/inventory'),
+    getMovements: (productId?: number) =>
+        apiClient.get('/admin/inventory/movements', {
+            params: productId ? { product_id: productId } : {},
+        }),
+    adjustStock: (data: {
+        product_id: number;
+        variant_id?: number | null;
+        color?: string | null;
+        size?: string | null;
+        type: 'entrada' | 'salida' | 'ajuste';
+        quantity: number;
+        reason?: string;
+    }) => apiClient.post('/admin/inventory/adjust', data),
+};
