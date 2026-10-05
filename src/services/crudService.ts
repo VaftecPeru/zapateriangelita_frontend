@@ -151,6 +151,46 @@ export interface Lead {
     is_read?: boolean;
 }
 
+export interface InventoryItem {
+    product_id: number;
+    variant_id: number | null;
+    product_code: string | null;
+    name: string;
+    image: string | null;
+    brand: string | null;
+    category: string | null;
+    color: string | null;
+    size: string | null;
+    stock: number;
+    stock_minimum: number;
+    status: 'disponible' | 'stock_bajo' | 'agotado';
+    source: 'variant' | 'size' | 'product';
+}
+
+export interface InventorySummary {
+    total_stock: number;
+    available: number;
+    low_stock: number;
+    out_of_stock: number;
+}
+
+export interface InventoryMovement {
+    id: number;
+    product_id: number;
+    variant_id?: number | null;
+    user_id?: number | null;
+    color?: string | null;
+    size?: string | null;
+    type: 'entrada' | 'salida' | 'ajuste';
+    quantity_change: number;
+    previous_stock: number;
+    new_stock: number;
+    reason?: string | null;
+    created_at?: string;
+    product?: { id: number; name: string; product_code?: string | null; img?: string | null };
+    user?: { id: number; name: string; email: string } | null;
+}
+
 export interface Order {
     id: number;
     code: string;
@@ -410,4 +450,27 @@ export const orderService = {
         pending: { order_notifications: number | null; welcome_emails: number | null };
         errors: string[];
     }>('/mail/health'),
+};
+
+export const inventoryService = {
+    getInventory: () => apiClient.get<{ summary: InventorySummary; items: InventoryItem[] }>('/admin/inventory'),
+    getMovements: (productId?: number, limit = 100) =>
+        apiClient.get<InventoryMovement[]>('/admin/inventory/movements', {
+            params: {
+                product_id: productId || undefined,
+                limit,
+            },
+        }),
+    adjustStock: (data: {
+        product_id: number;
+        variant_id?: number | null;
+        color?: string | null;
+        size?: string | null;
+        type: 'entrada' | 'salida' | 'ajuste';
+        quantity: number;
+        reason?: string;
+    }) => apiClient.post<{ success: boolean; message: string; movement: InventoryMovement }>(
+        '/admin/inventory/adjust',
+        data,
+    ),
 };
