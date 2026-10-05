@@ -17,6 +17,7 @@ import MessagesManager from './MessagesManager';
 import FunnelLeadsManager from './FunnelLeadsManager';
 import UsersManager from './UsersManager';
 import ProfileManager from './ProfileManager';
+import InventoryManager from './InventoryManager';
 import { useAuth } from '../../hooks/useAuth';
 import { statsService, DashboardStats } from '../../services/crudService';
 
@@ -172,7 +173,7 @@ const AdminDashboard = () => {
     const location = useLocation();
     const state = location.state as { activeTab?: string; selectedLeadId?: number };
 
-    const [activeTab, setActiveTab] = useState<'stats' | 'products' | 'services' | 'settings' | 'messages' | 'funnelLeads' | 'users' | 'profile'>(
+    const [activeTab, setActiveTab] = useState<'stats' | 'products' | 'inventory' | 'services' | 'settings' | 'messages' | 'funnelLeads' | 'users' | 'profile'>(
         (state?.activeTab as any) || 'stats'
     );
     const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -342,6 +343,7 @@ const AdminDashboard = () => {
                         { id: 'stats', label: 'Estadísticas' },
                         { id: 'messages', label: 'Pedido' },
                         { id: 'products', label: 'Productos' },
+                        { id: 'inventory', label: 'Inventario' },
                         { id: 'services', label: 'Servicios' },
                         { id: 'settings', label: 'Ajustes' },
                         { id: 'funnelLeads', label: 'Interesados en Calzado' },
@@ -499,6 +501,7 @@ const AdminDashboard = () => {
                 ) : (
                     <div className="space-y-6">
                         {activeTab === 'products' && <PropertyManager />}
+                        {activeTab === 'inventory' && <InventoryManager />}
                         {activeTab === 'services' && <ServiceManager />}
                         {activeTab === 'settings' && <SettingsManager />}
                         {activeTab === 'funnelLeads' && <FunnelLeadsManager initialData={(stats as any)?.all_leads} />}
