@@ -94,6 +94,11 @@ const InventoryManager = () => {
             );
             return;
         }
+        if (movementType === 'ajuste' && reason.trim() === '') {
+            setMovementError('Indica el motivo del ajuste manual para mantener la trazabilidad.');
+            return;
+        }
+
         setMovementError('');
         setShowConfirmation(true);
     };
@@ -113,6 +118,11 @@ const InventoryManager = () => {
             setMovementError(
                 movementType === 'ajuste' ? 'Ingresa un stock final válido.' : 'La cantidad debe ser mayor a cero.'
             );
+            return;
+        }
+
+        if (movementType === 'ajuste' && reason.trim() === '') {
+            setMovementError('Indica el motivo del ajuste manual para mantener la trazabilidad.');
             return;
         }
 
