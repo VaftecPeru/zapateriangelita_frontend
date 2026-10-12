@@ -57,6 +57,7 @@ export interface Product {
     reviews: number;
     discount?: string;
     status?: 'normal' | 'oferta' | 'nuevo';
+    is_active?: boolean;
     sizes?: Array<{ id?: number; size: string; stock: number }>;
     color_sizes?: Record<string, string[]>;
     colors?: Array<{ id?: number; color: string; hex?: string | null }>;
@@ -219,6 +220,8 @@ export const brandService = {
 export const productService = {
     getAll: (params: Record<string, string | number | undefined> = {}) =>
         apiClient.get<Product[]>('/products', { params: { per_page: 200, ...params } }),
+    getAllAdmin: (params: Record<string, string | number | undefined> = {}) =>
+        apiClient.get<Product[]>('/admin/products', { params: { per_page: 200, ...params } }),
     getById: async (id: number) => {
         const response = await apiClient.get<Product>(`/products/${id}`);
         const data = response.data as Product & { subcategory?: unknown };
@@ -248,6 +251,24 @@ export const productService = {
     ) => apiClient.get<Blob>(`/inventory/export/${format}`, {
         params,
         responseType: 'blob',
+    }),
+    previewInventoryImport: (file: File) => {
+        const data = new FormData();
+        data.append('file', file);
+        return apiClient.post('/admin/products/import/preview', data, {
+            timeout: 60000,
+        });
+    },
+    commitInventoryImport: (file: File) => {
+        const data = new FormData();
+        data.append('file', file);
+        return apiClient.post('/admin/products/import/commit', data, {
+            timeout: 120000,
+        });
+    },
+    downloadInventoryImportTemplate: () => apiClient.get<Blob>('/admin/products/import/template', {
+        responseType: 'blob',
+        timeout: 30000,
     }),
 };
 
