@@ -288,7 +288,7 @@ const ProductManagerV2 = () => {
       </div>
 
       <ProductEditorModal open={editorOpen} product={editingProduct} products={products} categories={categories} subcategories={subcategories} brands={brands} onClose={() => setEditorOpen(false)} onSaved={loadData} />
-      <ProductImportModal open={importOpen} onClose={() => setImportOpen(false)} categories={categories} subcategories={subcategories} brands={brands} products={products} onImported={loadData} />
+      <ProductImportModal open={importOpen} onClose={() => setImportOpen(false)} onImported={loadData} />
 
       {viewProduct && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
