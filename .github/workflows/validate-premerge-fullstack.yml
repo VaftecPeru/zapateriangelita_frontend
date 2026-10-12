@@ -4,9 +4,12 @@ on:
   pull_request:
     branches:
       - main
+      - develop
   push:
     branches:
       - main
+      - develop
+      - 'feature/**'
   workflow_dispatch:
 
 jobs:
