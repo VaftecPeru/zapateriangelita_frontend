@@ -28,7 +28,7 @@ const ProductManagerV2 = () => {
     try {
       setLoading(true);
       const [productsRes, categoriesRes, subcategoriesRes, brandsRes] = await Promise.all([
-        productService.getAll(),
+        productService.getAllAdmin(),
         categoryService.getAll(),
         subcategoryService.getAll(),
         brandService.getAll(),
