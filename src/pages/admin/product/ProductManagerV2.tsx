@@ -22,13 +22,14 @@ const ProductManagerV2 = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
   const [stockFilter, setStockFilter] = useState<'all' | 'available' | 'low' | 'out'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [exporting, setExporting] = useState<'excel' | 'pdf' | null>(null);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [productsRes, categoriesRes, subcategoriesRes, brandsRes] = await Promise.all([
-        productService.getAll(),
+        productService.getAllAdmin(),
         categoryService.getAll(),
         subcategoryService.getAll(),
         brandService.getAll(),
@@ -74,9 +75,13 @@ const ProductManagerV2 = () => {
       if (stockFilter === 'low' && (stock < 1 || stock > 5)) return false;
       if (stockFilter === 'out' && stock > 0) return false;
 
+      const isActive = product.is_active !== false;
+      if (activeFilter === 'active' && !isActive) return false;
+      if (activeFilter === 'inactive' && isActive) return false;
+
       return true;
     });
-  }, [products, search, categoryFilter, brandFilter, stockFilter]);
+  }, [products, search, categoryFilter, brandFilter, stockFilter, activeFilter]);
 
   const getCategoryName = (product: Product) => {
     if (typeof product.category === 'string') return product.category || 'Sin categoría';
@@ -125,6 +130,7 @@ const ProductManagerV2 = () => {
         category_id: categoryFilter || undefined,
         brand_id: brandFilter || undefined,
         stock_state: stockFilter === 'all' ? undefined : stockFilter,
+        active_state: activeFilter === 'all' ? undefined : activeFilter,
       });
 
       const blob = response.data instanceof Blob
@@ -205,7 +211,7 @@ const ProductManagerV2 = () => {
           <InventoryCard label="Agotados" value={outOfStock} helper="Requieren reposición" danger={outOfStock > 0} />
         </div>
 
-        <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(260px,1.6fr)_1fr_1fr_1fr]">
+        <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(260px,1.6fr)_1fr_1fr_1fr_1fr]">
           <label className="relative">
             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -229,6 +235,11 @@ const ProductManagerV2 = () => {
             <option value="low">Stock bajo (1 a 5)</option>
             <option value="out">Agotados</option>
           </select>
+          <select value={activeFilter} onChange={(event) => setActiveFilter(event.target.value as typeof activeFilter)} className="h-12 rounded-xl border border-gray-200 bg-white px-3 text-xs font-bold">
+            <option value="all">Todos los estados</option>
+            <option value="active">Visibles en tienda</option>
+            <option value="inactive">Ocultos / inactivos</option>
+          </select>
         </div>
       </div>
 
@@ -243,12 +254,13 @@ const ProductManagerV2 = () => {
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Marca</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Stock</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Precio</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Visibilidad</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredProducts.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-12 text-center font-medium text-gray-400">No hay productos registrados.</td></tr>
+                <tr><td colSpan={8} className="px-6 py-12 text-center font-medium text-gray-400">No hay productos registrados.</td></tr>
               ) : filteredProducts.map((product, index) => (
                 <tr key={product.id} className="group transition-colors hover:bg-store-red/[0.02]">
                   <td className="w-16 px-4 py-4 text-center">
@@ -274,6 +286,11 @@ const ProductManagerV2 = () => {
                     ) : `$${Number(product.price || 0).toFixed(2)}`}
                   </td>
                   <td className="px-6 py-4">
+                    <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${product.is_active === false ? 'bg-gray-200 text-gray-600' : 'bg-emerald-50 text-emerald-700'}`}>
+                      {product.is_active === false ? 'Inactivo' : 'Visible'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <button onClick={() => setViewProduct(product)} title="Ver producto" className="rounded-xl border border-gray-200 bg-white p-3 text-gray-500 shadow-sm transition hover:bg-gray-100 hover:text-black"><Eye size={14} /></button>
                       <button onClick={() => openEdit(product)} title="Editar producto" className="rounded-xl bg-store-red p-3 text-white shadow-md transition hover:bg-store-redDark"><Edit size={14} /></button>
@@ -288,7 +305,7 @@ const ProductManagerV2 = () => {
       </div>
 
       <ProductEditorModal open={editorOpen} product={editingProduct} products={products} categories={categories} subcategories={subcategories} brands={brands} onClose={() => setEditorOpen(false)} onSaved={loadData} />
-      <ProductImportModal open={importOpen} onClose={() => setImportOpen(false)} categories={categories} subcategories={subcategories} brands={brands} products={products} onImported={loadData} />
+      <ProductImportModal open={importOpen} onClose={() => setImportOpen(false)} onImported={loadData} />
 
       {viewProduct && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
@@ -318,6 +335,7 @@ const ProductManagerV2 = () => {
               />
               <Detail label="Material" value={viewProduct.material || 'Sin información'} />
               <Detail label="Precio" value={`$${Number(viewProduct.price || 0).toFixed(2)}`} />
+              <Detail label="Visibilidad" value={viewProduct.is_active === false ? 'Inactivo / oculto en tienda' : 'Visible en tienda'} />
               <div className="sm:col-span-2"><Detail label="Descripción" value={viewProduct.description || 'Sin descripción'} /></div>
             </div>
           </div>
