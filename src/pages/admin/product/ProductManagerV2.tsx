@@ -283,7 +283,7 @@ const ProductManagerV2 = () => {
                   <td className="px-6 py-4 text-sm font-black text-black">
                     {product.discounted_price && Number(product.discounted_price) > 0 ? (
                       <div className="flex items-center gap-2"><span className="text-[10px] text-gray-400 line-through">${Number(product.price || 0).toFixed(2)}</span><span>${Number(product.discounted_price).toFixed(2)}</span></div>
-                    ) : `${Number(product.price || 0).toFixed(2)}`}
+                    ) : `$${Number(product.price || 0).toFixed(2)}`}
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${product.is_active === false ? 'bg-gray-200 text-gray-600' : 'bg-emerald-50 text-emerald-700'}`}>
@@ -334,7 +334,7 @@ const ProductManagerV2 = () => {
                 }
               />
               <Detail label="Material" value={viewProduct.material || 'Sin información'} />
-              <Detail label="Precio" value={`${Number(viewProduct.price || 0).toFixed(2)}`} />
+              <Detail label="Precio" value={`$${Number(viewProduct.price || 0).toFixed(2)}`} />
               <Detail label="Visibilidad" value={viewProduct.is_active === false ? 'Inactivo / oculto en tienda' : 'Visible en tienda'} />
               <div className="sm:col-span-2"><Detail label="Descripción" value={viewProduct.description || 'Sin descripción'} /></div>
             </div>
