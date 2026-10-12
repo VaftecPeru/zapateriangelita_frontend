@@ -273,7 +273,7 @@ export const getFriendlyPaymentError = (code?: number | string, message?: string
   if (errorCode === "1002" || errorCode === "401") {
     return {
       title: "Pasarela no disponible",
-      message: "No pudimos iniciar el pago en este momento. Intenta nuevamente en unos minutos.",
+      message: "No pudimos autenticar la conexión con Openpay. No se realizó ningún cargo. Intenta nuevamente en unos minutos.",
     };
   }
 
@@ -366,6 +366,8 @@ const PaymentModal = ({
   const [deviceSessionId, setDeviceSessionId] = useState("");
   const [openpayReady, setOpenpayReady] = useState(false);
   const [sandboxMode, setSandboxMode] = useState<boolean | null>(null);
+  const [gatewayDiagnosticCode, setGatewayDiagnosticCode] = useState<string | null>(null);
+  const [openpayInitAttempt, setOpenpayInitAttempt] = useState(0);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -378,6 +380,7 @@ const PaymentModal = ({
         setError(null);
         setErrorTitle(null);
         setPaymentNotice(null);
+        setGatewayDiagnosticCode(null);
 
         if (!window.OpenPay) {
           throw new Error("La librería de Openpay no está disponible.");
@@ -386,8 +389,18 @@ const PaymentModal = ({
         const { data } = await apiClient.get("/openpay/config");
         if (!active) return;
 
-        if (data.configured === false || !data.merchant_id || !data.public_key) {
-          throw new Error("La configuración de Openpay está incompleta.");
+        const credentialCheck = data.credential_check;
+        if (
+          data.configured === false ||
+          !data.merchant_id ||
+          !data.public_key ||
+          credentialCheck?.ok === false
+        ) {
+          const diagnosticCode = String(
+            credentialCheck?.code || "OPENPAY_CONFIG_INVALID"
+          );
+          setGatewayDiagnosticCode(diagnosticCode);
+          throw new Error(`Openpay preflight failed: ${diagnosticCode}`);
         }
 
         const sandbox = Boolean(data.sandbox);
@@ -407,7 +420,7 @@ const PaymentModal = ({
       } catch (err) {
         console.error("Error configurando Openpay:", err);
         setErrorTitle("Pasarela no disponible");
-        setError("No fue posible iniciar Openpay. Verifica la configuración e intenta nuevamente.");
+        setError("No pudimos conectar con Openpay en este momento. No se realizó ningún cargo. Puedes reintentar la conexión.");
       }
     };
 
@@ -416,7 +429,7 @@ const PaymentModal = ({
     return () => {
       active = false;
     };
-  }, [isOpen]);
+  }, [isOpen, openpayInitAttempt]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -602,6 +615,9 @@ const PaymentModal = ({
           cleanCardNumber,
           sandboxMode === true
         );
+        if (String(errorCode ?? "") === "401" || String(errorCode ?? "") === "1002") {
+          setGatewayDiagnosticCode("OPENPAY_TOKEN_AUTH_FAILED");
+        }
         setProcessing(false);
         setPaymentNotice(null);
         setErrorTitle(friendly.title);
@@ -1035,6 +1051,38 @@ const PaymentModal = ({
               <strong style={{ display: "block", marginBottom: "3px" }}>{errorTitle}</strong>
             )}
             {error}
+            {gatewayDiagnosticCode && (
+              <span
+                style={{
+                  display: "block",
+                  marginTop: "5px",
+                  color: "#a86b6b",
+                  fontSize: "8px",
+                  letterSpacing: ".04em",
+                }}
+              >
+                Código de soporte: {gatewayDiagnosticCode}
+              </span>
+            )}
+            {!openpayReady && !processing && (
+              <button
+                type="button"
+                onClick={() => setOpenpayInitAttempt((attempt) => attempt + 1)}
+                style={{
+                  marginTop: "8px",
+                  padding: "7px 10px",
+                  border: "1px solid #dbaaaa",
+                  background: "#fff",
+                  color: "#8f1717",
+                  borderRadius: "7px",
+                  fontSize: "9px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Reintentar conexión
+              </button>
+            )}
           </div>
         )}
 
