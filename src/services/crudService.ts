@@ -256,7 +256,6 @@ export const productService = {
         const data = new FormData();
         data.append('file', file);
         return apiClient.post('/admin/products/import/preview', data, {
-            headers: { 'Content-Type': 'multipart/form-data' },
             timeout: 60000,
         });
     },
@@ -264,7 +263,6 @@ export const productService = {
         const data = new FormData();
         data.append('file', file);
         return apiClient.post('/admin/products/import/commit', data, {
-            headers: { 'Content-Type': 'multipart/form-data' },
             timeout: 120000,
         });
     },
