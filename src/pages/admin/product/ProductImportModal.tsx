@@ -100,7 +100,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
   };
 
   const getApiMessage = (error: any, fallback: string) =>
-    error?.response?.data?.message || error?.message || fallback;
+    error?.response?.data?.message || error?.response?.data?.error || error?.message || fallback;
 
   const previewFile = async (selected: File) => {
     setFile(selected);
@@ -203,9 +203,9 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
         <div className="mb-6 flex items-start justify-between gap-4 border-b border-gray-100 pb-5">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-store-red">Inventario masivo · V1</p>
-            <h2 className="mt-1 text-2xl font-black text-black">Importar productos desde Excel</h2>
+            <h2 className="mt-1 text-2xl font-black text-black">Importar productos desde Excel o CSV</h2>
             <p className="mt-1 max-w-3xl text-sm text-gray-500">
-              Compatible con la plantilla de Zapatería Angelita: una fila representa una variante
+              Compatible con XLSX y CSV. El servidor detecta automáticamente coma o punto y coma como delimitador. Una fila representa una variante
               <strong> color + talla</strong>. Las filas con el mismo código se consolidan en un solo producto.
             </p>
           </div>
