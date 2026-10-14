@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion } from 'motion/react';
 
 type Props = {
   page: number;
@@ -35,7 +36,13 @@ const Pagination = ({
   ).sort((a, b) => a - b);
 
   return (
-    <div className="ui-pagination flex flex-col gap-3 border-t border-gray-100 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      className="ui-pagination flex flex-col gap-3 border-t border-gray-100 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+    >
       <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold text-gray-500">
         <span>
           Mostrando <strong className="text-gray-900">{start}-{end}</strong> de{' '}
@@ -103,7 +110,7 @@ const Pagination = ({
           <ChevronRight size={15} />
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
