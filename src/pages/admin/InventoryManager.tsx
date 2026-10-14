@@ -1,6 +1,8 @@
 import { Package, AlertTriangle, PackageX, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { inventoryService } from '../../services/crudService';
+import Pagination from '../../components/Pagination';
+import { usePagination } from '../../hooks/usePagination';
 
 interface InventoryItem {
     product_id: number;
@@ -135,6 +137,12 @@ const InventoryManager = () => {
             });
         });
     }, [filteredItems]);
+
+    const inventoryPagination = usePagination(groupedInventory, 25);
+
+    useEffect(() => {
+        inventoryPagination.resetPage();
+    }, [search]);
 
     const groupedInventory = useMemo(() => {
         const groups: Record<string, InventoryGroup> = {};
@@ -467,7 +475,7 @@ const InventoryManager = () => {
                             </tr>
                         </thead>
 
-                        <tbody>
+                        <tbody key={inventoryPagination.page} className="ui-motion-rows">
                             {loading ? (
                                 <tr>
                                     <td
@@ -496,7 +504,7 @@ const InventoryManager = () => {
                                     </td>
                                 </tr>
                             ) : (
-                                groupedInventory.map((group) => (
+                                inventoryPagination.paginatedItems.map((group) => (
                                     <tr
                                         key={`${group.product_id}-${group.color ?? 'sin-color'}`}
                                         className="border-t border-gray-100 hover:bg-gray-50/60 transition-colors"
@@ -607,6 +615,13 @@ const InventoryManager = () => {
                         </tbody>
                     </table>
                 </div>
+                <Pagination
+                    page={inventoryPagination.page}
+                    pageSize={inventoryPagination.pageSize}
+                    totalItems={inventoryPagination.totalItems}
+                    onPageChange={inventoryPagination.setPage}
+                    onPageSizeChange={inventoryPagination.setPageSize}
+                />
             </div>
 
             {selectedItem && (
