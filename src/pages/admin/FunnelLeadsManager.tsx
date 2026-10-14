@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Target, Phone, X, RefreshCw, User, MessageCircle, Info, Trash2 } from 'lucide-react';
 import { leadService, Lead } from '../../services/crudService';
+import Pagination from '../../components/Pagination';
+import { usePagination } from '../../hooks/usePagination';
 
 interface FunnelLeadsManagerProps {
     initialData?: Lead[];
@@ -12,6 +14,8 @@ const FunnelLeadsManager = ({ initialData }: FunnelLeadsManagerProps) => {
     const [error, setError] = useState<string | null>(null);
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
     const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+
+    const leadPagination = usePagination(leads, 25);
 
     const fetchLeads = async (force = false) => {
         if (!force && initialData && leads.length > 0) return; // Skip only for initial mount if data exists
@@ -141,8 +145,8 @@ const FunnelLeadsManager = ({ initialData }: FunnelLeadsManagerProps) => {
                                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-minimal-olive/60">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-minimal-olive/5">
-                                {leads.map((lead) => {
+                            <tbody key={leadPagination.page} className="ui-motion-rows divide-y divide-minimal-olive/5">
+                                {leadPagination.paginatedItems.map((lead) => {
                                     return (
                                         <tr 
                                             key={lead.id} 
@@ -199,6 +203,13 @@ const FunnelLeadsManager = ({ initialData }: FunnelLeadsManagerProps) => {
                             </tbody>
                         </table>
                     </div>
+                    <Pagination
+                        page={leadPagination.page}
+                        pageSize={leadPagination.pageSize}
+                        totalItems={leadPagination.totalItems}
+                        onPageChange={leadPagination.setPage}
+                        onPageSizeChange={leadPagination.setPageSize}
+                    />
                 </div>
             )}
 
