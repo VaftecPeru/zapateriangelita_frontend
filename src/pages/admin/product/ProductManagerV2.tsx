@@ -4,6 +4,8 @@ import { Brand, Category, Product, Subcategory, brandService, categoryService, p
 import { getImageUrl } from '../../../config/api';
 import ProductEditorModal from './ProductEditorModal';
 import ProductImportModal from './ProductImportModal';
+import Pagination from '../../../components/Pagination';
+import { usePagination } from '../../../hooks/usePagination';
 import './product-editor.css';
 
 const ProductManagerV2 = () => {
@@ -82,6 +84,12 @@ const ProductManagerV2 = () => {
       return true;
     });
   }, [products, search, categoryFilter, brandFilter, stockFilter, activeFilter]);
+
+  const productPagination = usePagination(filteredProducts, 25);
+
+  useEffect(() => {
+    productPagination.resetPage();
+  }, [search, categoryFilter, brandFilter, stockFilter, activeFilter]);
 
   const getCategoryName = (product: Product) => {
     if (typeof product.category === 'string') return product.category || 'Sin categoría';
@@ -258,13 +266,13 @@ const ProductManagerV2 = () => {
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody key={productPagination.page} className="ui-motion-rows divide-y divide-gray-100">
               {filteredProducts.length === 0 ? (
                 <tr><td colSpan={8} className="px-6 py-12 text-center font-medium text-gray-400">No hay productos registrados.</td></tr>
-              ) : filteredProducts.map((product, index) => (
+              ) : productPagination.paginatedItems.map((product, index) => (
                 <tr key={product.id} className="group transition-colors hover:bg-store-red/[0.02]">
                   <td className="w-16 px-4 py-4 text-center">
-                    <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-gray-100 px-2 text-xs font-black text-gray-600">{index + 1}</span>
+                    <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-gray-100 px-2 text-xs font-black text-gray-600">{((productPagination.page - 1) * productPagination.pageSize) + index + 1}</span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
@@ -302,6 +310,13 @@ const ProductManagerV2 = () => {
             </tbody>
           </table>
         </div>
+        <Pagination
+          page={productPagination.page}
+          pageSize={productPagination.pageSize}
+          totalItems={productPagination.totalItems}
+          onPageChange={productPagination.setPage}
+          onPageSizeChange={productPagination.setPageSize}
+        />
       </div>
 
       <ProductEditorModal open={editorOpen} product={editingProduct} products={products} categories={categories} subcategories={subcategories} brands={brands} onClose={() => setEditorOpen(false)} onSaved={loadData} />
