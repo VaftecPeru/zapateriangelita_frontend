@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -10,6 +10,8 @@ import {
   X,
 } from 'lucide-react';
 import { productService } from '../../../services/crudService';
+import Pagination from '../../../components/Pagination';
+import { usePagination } from '../../../hooks/usePagination';
 
 type Props = {
   open: boolean;
@@ -81,6 +83,16 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
   const [downloading, setDownloading] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [message, setMessage] = useState('');
+  const [previewFilter, setPreviewFilter] = useState<'all' | 'errors' | 'valid'>('all');
+
+  const filteredPreviewRows = useMemo(() => {
+    const rows = preview?.rows ?? [];
+    if (previewFilter === 'errors') return rows.filter((row) => !row.valid);
+    if (previewFilter === 'valid') return rows.filter((row) => row.valid);
+    return rows;
+  }, [preview, previewFilter]);
+
+  const previewPagination = usePagination(filteredPreviewRows, 25);
 
   if (!open) return null;
 
@@ -111,12 +123,20 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
 
     try {
       const response = await productService.previewInventoryImport(selected);
-      setPreview(response.data as Preview);
+      const nextPreview = response.data as Preview;
+      setPreview(nextPreview);
+      setPreviewFilter(nextPreview.valid ? 'all' : 'errors');
+      previewPagination.resetPage();
     } catch (error: any) {
       console.error('Error previewing inventory import', error);
       setMessage(getApiMessage(error, 'No se pudo validar el archivo.'));
       const serverPreview = error?.response?.data?.preview;
-      if (serverPreview) setPreview(serverPreview as Preview);
+      if (serverPreview) {
+        const nextPreview = serverPreview as Preview;
+        setPreview(nextPreview);
+        setPreviewFilter(nextPreview.valid ? 'all' : 'errors');
+        previewPagination.resetPage();
+      }
     } finally {
       setPreviewing(false);
     }
@@ -300,7 +320,41 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-2xl border border-gray-200">
+            <div className="rounded-2xl border border-gray-200 bg-white">
+              <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest text-gray-700">Vista previa de filas</p>
+                  <p className="mt-1 text-[11px] text-gray-400">
+                    Revisa por páginas para localizar errores sin recorrer todo el archivo.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2" aria-label="Filtrar vista previa">
+                  {([
+                    ['all', 'Todas'],
+                    ['errors', 'Con error'],
+                    ['valid', 'Válidas'],
+                  ] as const).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => {
+                        setPreviewFilter(value);
+                        previewPagination.resetPage();
+                      }}
+                      className={
+                        'rounded-lg border px-3 py-2 text-[10px] font-black uppercase tracking-wider transition ' +
+                        (previewFilter === value
+                          ? 'border-store-red bg-store-red text-white'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-store-red hover:text-store-red')
+                      }
+                    >
+                      {label}
+                      {value === 'errors' && preview.summary.error_rows > 0 ? ` (${preview.summary.error_rows})` : ''}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="overflow-x-auto">
               <table className="min-w-[1280px] w-full text-left text-xs">
                 <thead className="bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-500">
                   <tr>
@@ -319,8 +373,8 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
                     <th className="px-3 py-3">Validación</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {preview.rows.map((row) => (
+                <tbody key={previewPagination.page + '-' + previewFilter} className="ui-motion-rows divide-y divide-gray-100">
+                  {previewPagination.paginatedItems.map((row) => (
                     <tr key={[row.row, row.code, row.color, row.size].join('-')} className={row.valid ? 'bg-white' : 'bg-red-50/50'}>
                       <td className="px-3 py-3 font-bold text-gray-400">{row.row}</td>
                       <td className="px-3 py-3">
@@ -369,6 +423,15 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
                   ))}
                 </tbody>
               </table>
+              </div>
+              <Pagination
+                page={previewPagination.page}
+                pageSize={previewPagination.pageSize}
+                totalItems={previewPagination.totalItems}
+                onPageChange={previewPagination.setPage}
+                onPageSizeChange={previewPagination.setPageSize}
+                pageSizeOptions={[10, 25, 50, 100]}
+              />
             </div>
           </div>
         )}
@@ -412,10 +475,19 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
               type="button"
               onClick={executeImport}
               disabled={!file || !preview?.valid || importing || previewing}
+              title={
+                preview && !preview.valid
+                  ? `Corrige las ${preview.summary.error_rows} filas con error para habilitar la importación.`
+                  : 'Importar productos validados'
+              }
               className="inline-flex items-center gap-2 rounded-xl bg-store-red px-6 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg hover:bg-store-redDark disabled:cursor-not-allowed disabled:opacity-50"
             >
               {importing ? <Loader2 size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />}
-              {importing ? 'Importando...' : 'Importar ' + (preview?.summary.valid_products || 0) + ' productos'}
+              {importing
+                ? 'Importando...'
+                : preview && !preview.valid
+                  ? 'Corregir ' + preview.summary.error_rows + ' filas para importar'
+                  : 'Importar ' + (preview?.summary.valid_products || 0) + ' productos'}
             </button>
           )}
         </div>
