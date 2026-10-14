@@ -232,6 +232,7 @@ const ClientPurchasesPage = () => {
           )}
 
           {orders.length > 0 ? (
+            <>
             <div key={purchasePagination.page} className="ui-motion-page grid grid-cols-1 gap-4">
               {purchasePagination.paginatedItems.map((order) => (
                 <article key={order.id} className="bg-[#f7f7f7] border border-black/5 rounded-2xl p-5 hover:border-[#e30613]/30 transition-colors">
@@ -317,6 +318,7 @@ const ClientPurchasesPage = () => {
                 pageSizeOptions={[5, 10, 25]}
               />
             </div>
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 bg-[#f7f7f7] rounded-3xl border border-black/5 text-center">
               <div className="w-20 h-20 bg-white text-[#e30613] rounded-full flex items-center justify-center mb-5 border border-black/5">
