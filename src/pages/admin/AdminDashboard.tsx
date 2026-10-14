@@ -499,7 +499,7 @@ const AdminDashboard = () => {
                     </div>
                     )
                 ) : (
-                    <div className="space-y-6">
+                    <div key={activeTab} className="ui-motion-page space-y-6">
                         {activeTab === 'products' && <PropertyManager />}
                         {activeTab === 'inventory' && <InventoryManager />}
                         {activeTab === 'services' && <ServiceManager />}
