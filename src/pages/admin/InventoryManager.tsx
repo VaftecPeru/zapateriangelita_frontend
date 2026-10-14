@@ -138,12 +138,6 @@ const InventoryManager = () => {
         });
     }, [filteredItems]);
 
-    const inventoryPagination = usePagination(groupedInventory, 25);
-
-    useEffect(() => {
-        inventoryPagination.resetPage();
-    }, [search]);
-
     const groupedInventory = useMemo(() => {
         const groups: Record<string, InventoryGroup> = {};
 
@@ -173,6 +167,13 @@ const InventoryManager = () => {
 
         return Object.values(groups);
     }, [filteredItems]);
+
+    const inventoryPagination = usePagination(groupedInventory, 25);
+
+    useEffect(() => {
+        inventoryPagination.resetPage();
+    }, [search]);
+
 
     const openAdjustmentModal = (
         item: InventoryItem,
