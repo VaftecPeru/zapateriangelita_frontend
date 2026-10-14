@@ -6,6 +6,8 @@ import OrderVoucherModal from "./admin/OrderVoucherModal";
 import { useAuth } from "../hooks/useAuth";
 import { authService } from "../services/authService";
 import { analyticsService, Order, orderService, settingsService } from "../services/crudService";
+import Pagination from "../components/Pagination";
+import { usePagination } from "../hooks/usePagination";
 
 const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
@@ -42,6 +44,7 @@ const ClientPurchasesPage = () => {
   const [googleError, setGoogleError] = useState<string | null>(null);
   const [receiptOrder, setReceiptOrder] = useState<Order | null>(null);
   const [supportNumber, setSupportNumber] = useState('');
+  const purchasePagination = usePagination(orders, 10);
   const purchaseConfirmed = (location.state as any)?.purchaseConfirmed as
     | {
         orderCode?: string | null;
@@ -229,8 +232,8 @@ const ClientPurchasesPage = () => {
           )}
 
           {orders.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4">
-              {orders.map((order) => (
+            <div key={purchasePagination.page} className="ui-motion-page grid grid-cols-1 gap-4">
+              {purchasePagination.paginatedItems.map((order) => (
                 <article key={order.id} className="bg-[#f7f7f7] border border-black/5 rounded-2xl p-5 hover:border-[#e30613]/30 transition-colors">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-start gap-4">
@@ -303,6 +306,16 @@ const ClientPurchasesPage = () => {
                   </div>
                 </article>
               ))}
+            </div>
+            <div className="mt-4 overflow-hidden rounded-2xl border border-black/5">
+              <Pagination
+                page={purchasePagination.page}
+                pageSize={purchasePagination.pageSize}
+                totalItems={purchasePagination.totalItems}
+                onPageChange={purchasePagination.setPage}
+                onPageSizeChange={purchasePagination.setPageSize}
+                pageSizeOptions={[5, 10, 25]}
+              />
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 bg-[#f7f7f7] rounded-3xl border border-black/5 text-center">
