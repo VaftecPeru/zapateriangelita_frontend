@@ -10,6 +10,7 @@ on:
       - main
       - develop
       - 'feature/**'
+      - 'ci/export-develop-dist-20261015'
   workflow_dispatch:
 
 jobs:
@@ -37,3 +38,17 @@ jobs:
 
       - name: Audit production dependencies
         run: npm audit --omit=dev
+
+      - name: Package develop dist
+        if: success()
+        run: |
+          cd dist
+          zip -r ../Angelita_FRONTEND_dist_develop_cc16189_20261015.zip .
+
+      - name: Upload develop dist artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Angelita_FRONTEND_dist_develop_cc16189_20261015
+          path: Angelita_FRONTEND_dist_develop_cc16189_20261015.zip
+          retention-days: 7
