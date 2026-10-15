@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -81,6 +81,34 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
   const [downloading, setDownloading] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [message, setMessage] = useState('');
+  const [previewFilter, setPreviewFilter] = useState<'all' | 'errors' | 'valid'>('all');
+  const [previewPage, setPreviewPage] = useState(1);
+  const [previewPageSize, setPreviewPageSize] = useState(25);
+
+  const filteredPreviewRows = useMemo(() => {
+    const rows = preview?.rows ?? [];
+
+    if (previewFilter === 'errors') {
+      return rows.filter((row) => !row.valid);
+    }
+
+    if (previewFilter === 'valid') {
+      return rows.filter((row) => row.valid);
+    }
+
+    return rows;
+  }, [preview, previewFilter]);
+
+  const previewTotalPages = Math.max(
+    1,
+    Math.ceil(filteredPreviewRows.length / Math.max(1, previewPageSize)),
+  );
+  const safePreviewPage = Math.min(Math.max(1, previewPage), previewTotalPages);
+  const previewStartIndex = (safePreviewPage - 1) * previewPageSize;
+  const paginatedPreviewRows = useMemo(
+    () => filteredPreviewRows.slice(previewStartIndex, previewStartIndex + previewPageSize),
+    [filteredPreviewRows, previewStartIndex, previewPageSize],
+  );
 
   if (!open) return null;
 
@@ -90,6 +118,9 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
     setPreview(null);
     setResult(null);
     setMessage('');
+    setPreviewFilter('all');
+    setPreviewPage(1);
+    setPreviewPageSize(25);
     if (fileRef.current) fileRef.current.value = '';
   };
 
@@ -111,12 +142,20 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
 
     try {
       const response = await productService.previewInventoryImport(selected);
-      setPreview(response.data as Preview);
+      const nextPreview = response.data as Preview;
+      setPreview(nextPreview);
+      setPreviewFilter(nextPreview.valid ? 'all' : 'errors');
+      setPreviewPage(1);
     } catch (error: any) {
       console.error('Error previewing inventory import', error);
       setMessage(getApiMessage(error, 'No se pudo validar el archivo.'));
       const serverPreview = error?.response?.data?.preview;
-      if (serverPreview) setPreview(serverPreview as Preview);
+      if (serverPreview) {
+        const nextPreview = serverPreview as Preview;
+        setPreview(nextPreview);
+        setPreviewFilter(nextPreview.valid ? 'all' : 'errors');
+        setPreviewPage(1);
+      }
     } finally {
       setPreviewing(false);
     }
@@ -160,7 +199,12 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
       console.error('Error committing inventory import', error);
       setMessage(getApiMessage(error, 'No se pudo completar la importación. No se aplicaron cambios.'));
       const serverPreview = error?.response?.data?.preview;
-      if (serverPreview) setPreview(serverPreview as Preview);
+      if (serverPreview) {
+        const nextPreview = serverPreview as Preview;
+        setPreview(nextPreview);
+        setPreviewFilter(nextPreview.valid ? 'all' : 'errors');
+        setPreviewPage(1);
+      }
     } finally {
       setImporting(false);
     }
@@ -300,7 +344,44 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-2xl border border-gray-200">
+            <div className="rounded-2xl border border-gray-200 bg-white">
+              <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest text-gray-700">Vista previa de filas</p>
+                  <p className="mt-1 text-[11px] text-gray-400">
+                    Revisa el archivo por páginas y filtra las filas con error antes de importar.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2" aria-label="Filtrar vista previa">
+                  {([
+                    ['all', 'Todas'],
+                    ['errors', 'Con error'],
+                    ['valid', 'Válidas'],
+                  ] as const).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => {
+                        setPreviewFilter(value);
+                        setPreviewPage(1);
+                      }}
+                      className={
+                        'rounded-lg border px-3 py-2 text-[10px] font-black uppercase tracking-wider transition ' +
+                        (previewFilter === value
+                          ? 'border-store-red bg-store-red text-white'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-store-red hover:text-store-red')
+                      }
+                    >
+                      {label}
+                      {value === 'errors' && preview.summary.error_rows > 0
+                        ? ` (${preview.summary.error_rows})`
+                        : ''}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
               <table className="min-w-[1280px] w-full text-left text-xs">
                 <thead className="bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-500">
                   <tr>
@@ -320,7 +401,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {preview.rows.map((row) => (
+                  {paginatedPreviewRows.map((row) => (
                     <tr key={[row.row, row.code, row.color, row.size].join('-')} className={row.valid ? 'bg-white' : 'bg-red-50/50'}>
                       <td className="px-3 py-3 font-bold text-gray-400">{row.row}</td>
                       <td className="px-3 py-3">
@@ -369,6 +450,58 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
                   ))}
                 </tbody>
               </table>
+              </div>
+
+              <div className="flex flex-col gap-3 border-t border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold text-gray-500">
+                  <span>
+                    Mostrando{' '}
+                    <strong className="text-gray-900">
+                      {filteredPreviewRows.length === 0 ? 0 : previewStartIndex + 1}-
+                      {Math.min(filteredPreviewRows.length, previewStartIndex + previewPageSize)}
+                    </strong>{' '}
+                    de <strong className="text-gray-900">{filteredPreviewRows.length}</strong> filas
+                  </span>
+                  <label className="inline-flex items-center gap-2">
+                    Filas por página
+                    <select
+                      value={previewPageSize}
+                      onChange={(event) => {
+                        setPreviewPageSize(Number(event.target.value));
+                        setPreviewPage(1);
+                      }}
+                      className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-[11px] font-black text-gray-700 outline-none transition focus:border-store-red"
+                      aria-label="Filas por página"
+                    >
+                      {[10, 25, 50, 100].map((size) => (
+                        <option key={size} value={size}>{size}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewPage(Math.max(1, safePreviewPage - 1))}
+                    disabled={safePreviewPage <= 1}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-gray-600 transition hover:border-store-red hover:text-store-red disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    Anterior
+                  </button>
+                  <span className="min-w-24 text-center text-[11px] font-black text-gray-700">
+                    Página {safePreviewPage} de {previewTotalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewPage(Math.min(previewTotalPages, safePreviewPage + 1))}
+                    disabled={safePreviewPage >= previewTotalPages}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-gray-600 transition hover:border-store-red hover:text-store-red disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
