@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 
 type Props = {
   page: number;
@@ -20,6 +20,7 @@ const Pagination = ({
   pageSizeOptions = [10, 25, 50, 100],
   compact = false,
 }: Props) => {
+  const reduceMotion = useReducedMotion();
   const totalPages = Math.max(1, Math.ceil(totalItems / Math.max(1, pageSize)));
   const safePage = Math.min(Math.max(1, page), totalPages);
   const start = totalItems === 0 ? 0 : ((safePage - 1) * pageSize) + 1;
@@ -37,10 +38,10 @@ const Pagination = ({
 
   return (
     <motion.div
-      layout
-      initial={{ opacity: 0, y: 6 }}
+      layout={!reduceMotion}
+      initial={reduceMotion ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
       className="ui-pagination flex flex-col gap-3 border-t border-gray-100 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
     >
       <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold text-gray-500">
