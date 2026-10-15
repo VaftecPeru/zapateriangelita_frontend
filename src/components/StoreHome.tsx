@@ -605,6 +605,7 @@ export default function StoreHome() {
 
   const catalogPagination = usePagination(catalogProducts, 12);
   const categoryPagination = usePagination(filteredProducts, 12);
+  const categoryCatalogPagination = usePagination(categoryProducts, 12);
 
   useEffect(() => {
     catalogPagination.resetPage();
@@ -612,6 +613,10 @@ export default function StoreHome() {
 
   useEffect(() => {
     categoryPagination.resetPage();
+  }, [categoryName, location.search]);
+
+  useEffect(() => {
+    categoryCatalogPagination.resetPage();
   }, [categoryName, categorySubcategory, location.search]);
 
   useEffect(() => {
@@ -1053,7 +1058,7 @@ export default function StoreHome() {
                       </select>
                     </label>
                   </div>
-                  <div key={catalogPagination.page} className="ui-motion-page offers-results__grid">
+                  <div key={offerPage} className="ui-motion-page offers-results__grid">
                     {visibleOfferProducts.length > 0 ? visibleOfferProducts.map((product: any) => (
                       <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />
                     )) : (
@@ -1091,13 +1096,25 @@ export default function StoreHome() {
                     <span>{categoryProducts.length} resultados</span>
                     <span>{categorySubcategory === 'Todas' ? 'Toda la categoría' : categorySubcategories.find((item: any) => String(item.id) === String(categorySubcategory))?.name}</span>
                   </div>
-                  <div key={categoryPagination.page} className="ui-motion-page product-grid">
-                    {categoryProducts.length > 0 ? categoryProducts.map((product: any) => (
+                  <div key={categoryCatalogPagination.page} className="ui-motion-page product-grid">
+                    {categoryProducts.length > 0 ? categoryCatalogPagination.paginatedItems.map((product: any) => (
                       <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />
                     )) : (
                       <p className="offers-results__empty">No hay productos en esta subcategoría.</p>
                     )}
                   </div>
+                  {categoryProducts.length > 0 && (
+                    <div className="mt-6 overflow-hidden rounded-2xl border border-black/5 bg-white">
+                      <Pagination
+                        page={categoryCatalogPagination.page}
+                        pageSize={categoryCatalogPagination.pageSize}
+                        totalItems={categoryCatalogPagination.totalItems}
+                        onPageChange={categoryCatalogPagination.setPage}
+                        onPageSizeChange={categoryCatalogPagination.setPageSize}
+                        pageSizeOptions={[12, 24, 48]}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <aside className="category-catalog__sidebar" aria-label={`Subcategorías de ${activeCategory}`}>
