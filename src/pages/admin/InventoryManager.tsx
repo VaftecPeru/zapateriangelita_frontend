@@ -441,9 +441,9 @@ const InventoryManager = () => {
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full min-w-max text-[10px]">
-                        <thead className="bg-gray-50">
+                <div className="inventory-scroll-shell inventory-scrollbar overflow-x-auto scroll-smooth">
+                    <table className="inventory-table-motion w-full min-w-max text-[10px]">
+                        <thead className="sticky top-0 z-20 bg-gray-50/95 backdrop-blur-sm">
                             <tr className="text-left uppercase tracking-wide text-gray-500">
                                 <th className="px-2 py-2.5 min-w-[75px]">
                                     Código
@@ -508,7 +508,7 @@ const InventoryManager = () => {
                                 inventoryPagination.paginatedItems.map((group) => (
                                     <tr
                                         key={`${group.product_id}-${group.color ?? 'sin-color'}`}
-                                        className="border-t border-gray-100 hover:bg-gray-50/60 transition-colors"
+                                        className="inventory-row-motion border-t border-gray-100 hover:bg-gray-50/80 transition-all duration-200"
                                     >
                                         <td className="px-2 py-2.5">
                                             <span className="font-black text-gray-700 whitespace-nowrap">
