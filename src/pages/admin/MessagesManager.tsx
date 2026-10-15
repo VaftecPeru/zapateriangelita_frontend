@@ -4,6 +4,8 @@ import { analyticsService, orderService, Order } from '../../services/crudServic
 import { useAuth } from '../../hooks/useAuth';
 import { canInspectOrderVoucher, isOrderPaid } from '../../utils/orderVoucher';
 import OrderVoucherModal from './OrderVoucherModal';
+import Pagination from '../../components/Pagination';
+import { usePagination } from '../../hooks/usePagination';
 
 const money = new Intl.NumberFormat('es-MX', {
     style: 'currency',
@@ -36,6 +38,8 @@ const MessagesManager = () => {
         pending: { order_notifications: number | null; welcome_emails: number | null };
         errors: string[];
     } | null>(null);
+
+    const orderPagination = usePagination(orders, 20);
 
     const hydrateOrders = (ordersData: Order[]) => ordersData.map((order) => order.customer_email
         ? {
@@ -186,8 +190,8 @@ const MessagesManager = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse min-w-[1320px]">
                             <thead><tr className="border-b border-gray-100 bg-store-red/5"><th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Pedido</th><th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Cliente</th><th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Movimiento / envío</th><th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Estado del pago</th><th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Estado de preparación</th><th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Artículos</th><th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">Voucher</th><th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-store-red/80">WhatsApp</th></tr></thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {orders.map((order) => {
+                            <tbody key={orderPagination.page} className="ui-motion-rows divide-y divide-gray-100">
+                                {orderPagination.paginatedItems.map((order) => {
                                     const phone = getPhone(order);
                                     return <tr key={order.id} onClick={() => setSelectedOrder(order)} className="hover:bg-store-red/[0.02] transition-colors cursor-pointer">
                                         <td className="px-6 py-4">
@@ -234,6 +238,13 @@ const MessagesManager = () => {
                             </tbody>
                         </table>
                     </div>
+                    <Pagination
+                        page={orderPagination.page}
+                        pageSize={orderPagination.pageSize}
+                        totalItems={orderPagination.totalItems}
+                        onPageChange={orderPagination.setPage}
+                        onPageSizeChange={orderPagination.setPageSize}
+                    />
                 </div>
             )}
 
