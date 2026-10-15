@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { additionalServiceService, AdditionalService } from '../../services/crudService';
 import { useAuth } from '../../hooks/useAuth';
 import { Plus, Edit, Trash2, Loader2, Sparkles, X, AlertTriangle, Star, Percent, XCircle } from 'lucide-react';
+import Pagination from '../../components/Pagination';
+import { usePagination } from '../../hooks/usePagination';
 
 const ServiceManager = () => {
     const { user: currentUser } = useAuth();
@@ -85,6 +87,7 @@ const ServiceManager = () => {
 
     const deliveryService = services.find((service) => service.code === 'delivery') || null;
     const regularServices = services.filter((service) => service.code !== 'delivery');
+    const servicePagination = usePagination(regularServices, 10);
     const canManageDelivery = ['admin', 'superadmin'].includes(String(currentUser?.role || ''));
 
     const handleOpenDeliveryModal = () => {
@@ -270,7 +273,7 @@ const ServiceManager = () => {
                                     <td colSpan={5} className="px-6 py-12 text-center text-gray-400 font-medium italic">No hay servicios registrados.</td>
                                 </tr>
                             ) : (
-                                regularServices.map((s) => (
+                                servicePagination.paginatedItems.map((s) => (
                                     <tr key={s.id} className="hover:bg-gray-50/80 transition-colors group">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
@@ -322,6 +325,14 @@ const ServiceManager = () => {
                         </tbody>
                     </table>
                 </div>
+                <Pagination
+                    page={servicePagination.page}
+                    pageSize={servicePagination.pageSize}
+                    totalItems={servicePagination.totalItems}
+                    onPageChange={servicePagination.setPage}
+                    onPageSizeChange={servicePagination.setPageSize}
+                    pageSizeOptions={[10, 25, 50]}
+                />
             </div>
 
            

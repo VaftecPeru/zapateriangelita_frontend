@@ -32,6 +32,8 @@ import {
 import {
   categories as staticCategories,
 } from "../data/catalog";
+import Pagination from "./Pagination";
+import { usePagination } from "../hooks/usePagination";
 
 const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
@@ -601,6 +603,22 @@ export default function StoreHome() {
     return String(product.subcategory_id) === String(catalogSubcategory);
   });
 
+  const catalogPagination = usePagination(catalogProducts, 12);
+  const categoryPagination = usePagination(filteredProducts, 12);
+  const categoryCatalogPagination = usePagination(categoryProducts, 12);
+
+  useEffect(() => {
+    catalogPagination.resetPage();
+  }, [catalogCategory, catalogSubcategory, location.search]);
+
+  useEffect(() => {
+    categoryPagination.resetPage();
+  }, [categoryName, location.search]);
+
+  useEffect(() => {
+    categoryCatalogPagination.resetPage();
+  }, [categoryName, categorySubcategory, location.search]);
+
   useEffect(() => {
     setOfferPage(1);
   }, [offerCategory, offerSort]);
@@ -938,12 +956,24 @@ export default function StoreHome() {
                     Reintentar catálogo
                   </button>
                 </div>
-              ) : catalogProducts.length > 0 ? catalogProducts.map((product: any) => (
+              ) : catalogProducts.length > 0 ? catalogPagination.paginatedItems.map((product: any) => (
                 <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />
               )) : (
                 <p className="offers-results__empty">No hay productos con estos filtros.</p>
               )}
             </div>
+            {catalogProducts.length > 0 && (
+              <div className="mt-6 overflow-hidden rounded-2xl border border-black/5 bg-white">
+                <Pagination
+                  page={catalogPagination.page}
+                  pageSize={catalogPagination.pageSize}
+                  totalItems={catalogPagination.totalItems}
+                  onPageChange={catalogPagination.setPage}
+                  onPageSizeChange={catalogPagination.setPageSize}
+                  pageSizeOptions={[12, 24, 48]}
+                />
+              </div>
+            )}
           </section>
         ) : isHomePage ? (
           <ReferenceLanding
@@ -1028,7 +1058,7 @@ export default function StoreHome() {
                       </select>
                     </label>
                   </div>
-                  <div className="offers-results__grid">
+                  <div key={offerPage} className="ui-motion-page offers-results__grid">
                     {visibleOfferProducts.length > 0 ? visibleOfferProducts.map((product: any) => (
                       <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />
                     )) : (
@@ -1066,13 +1096,25 @@ export default function StoreHome() {
                     <span>{categoryProducts.length} resultados</span>
                     <span>{categorySubcategory === 'Todas' ? 'Toda la categoría' : categorySubcategories.find((item: any) => String(item.id) === String(categorySubcategory))?.name}</span>
                   </div>
-                  <div className="product-grid">
-                    {categoryProducts.length > 0 ? categoryProducts.map((product: any) => (
+                  <div key={categoryCatalogPagination.page} className="ui-motion-page product-grid">
+                    {categoryProducts.length > 0 ? categoryCatalogPagination.paginatedItems.map((product: any) => (
                       <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />
                     )) : (
                       <p className="offers-results__empty">No hay productos en esta subcategoría.</p>
                     )}
                   </div>
+                  {categoryProducts.length > 0 && (
+                    <div className="mt-6 overflow-hidden rounded-2xl border border-black/5 bg-white">
+                      <Pagination
+                        page={categoryCatalogPagination.page}
+                        pageSize={categoryCatalogPagination.pageSize}
+                        totalItems={categoryCatalogPagination.totalItems}
+                        onPageChange={categoryCatalogPagination.setPage}
+                        onPageSizeChange={categoryCatalogPagination.setPageSize}
+                        pageSizeOptions={[12, 24, 48]}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <aside className="category-catalog__sidebar" aria-label={`Subcategorías de ${activeCategory}`}>
@@ -1105,7 +1147,7 @@ export default function StoreHome() {
               />
               <div className="product-grid">
                 {filteredProducts.length > 0 ? (
-                  filteredProducts.map((product: any) => (
+                  categoryPagination.paginatedItems.map((product: any) => (
                     <ProductCard key={product.id} product={product} onFavorite={toggleFavorite} isFavorite={favorites.includes(product.id)} onAddToCart={handleAddToCart} />
                   ))
                 ) : (
@@ -1114,6 +1156,18 @@ export default function StoreHome() {
                   </p>
                 )}
               </div>
+              {filteredProducts.length > 0 && (
+                <div className="mt-6 overflow-hidden rounded-2xl border border-black/5 bg-white">
+                  <Pagination
+                    page={categoryPagination.page}
+                    pageSize={categoryPagination.pageSize}
+                    totalItems={categoryPagination.totalItems}
+                    onPageChange={categoryPagination.setPage}
+                    onPageSizeChange={categoryPagination.setPageSize}
+                    pageSizeOptions={[12, 24, 48]}
+                  />
+                </div>
+              )}
             </section>
           )
         )}

@@ -10,6 +10,7 @@ import {
 
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import PropertyManager from './ProductManager';
 import ServiceManager from './ServiceManager';
 import SettingsManager from './SettingsManager';
@@ -170,6 +171,7 @@ const SimpleBarChart = ({ stats }: { stats: DashboardStats | null }) => {
 
 const AdminDashboard = () => {
     const { user, logout } = useAuth();
+    const reduceMotion = useReducedMotion();
     const location = useLocation();
     const state = location.state as { activeTab?: string; selectedLeadId?: number };
 
@@ -499,16 +501,25 @@ const AdminDashboard = () => {
                     </div>
                     )
                 ) : (
-                    <div className="space-y-6">
-                        {activeTab === 'products' && <PropertyManager />}
-                        {activeTab === 'inventory' && <InventoryManager />}
-                        {activeTab === 'services' && <ServiceManager />}
-                        {activeTab === 'settings' && <SettingsManager />}
-                        {activeTab === 'funnelLeads' && <FunnelLeadsManager initialData={(stats as any)?.all_leads} />}
-                        {activeTab === 'users' && <UsersManager initialData={(stats as any)?.all_users} />}
-                        {activeTab === 'messages' && <MessagesManager />}
-                        {activeTab === 'profile' && <ProfileManager />}
-                    </div>
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeTab}
+                            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
+                            transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                            className="space-y-6"
+                        >
+                            {activeTab === 'products' && <PropertyManager />}
+                            {activeTab === 'inventory' && <InventoryManager />}
+                            {activeTab === 'services' && <ServiceManager />}
+                            {activeTab === 'settings' && <SettingsManager />}
+                            {activeTab === 'funnelLeads' && <FunnelLeadsManager initialData={(stats as any)?.all_leads} />}
+                            {activeTab === 'users' && <UsersManager initialData={(stats as any)?.all_users} />}
+                            {activeTab === 'messages' && <MessagesManager />}
+                            {activeTab === 'profile' && <ProfileManager />}
+                        </motion.div>
+                    </AnimatePresence>
 
 
                 )}
