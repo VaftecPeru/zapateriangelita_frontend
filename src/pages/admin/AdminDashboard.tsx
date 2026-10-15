@@ -10,7 +10,7 @@ import {
 
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import PropertyManager from './ProductManager';
 import ServiceManager from './ServiceManager';
 import SettingsManager from './SettingsManager';
@@ -171,6 +171,7 @@ const SimpleBarChart = ({ stats }: { stats: DashboardStats | null }) => {
 
 const AdminDashboard = () => {
     const { user, logout } = useAuth();
+    const reduceMotion = useReducedMotion();
     const location = useLocation();
     const state = location.state as { activeTab?: string; selectedLeadId?: number };
 
@@ -503,10 +504,10 @@ const AdminDashboard = () => {
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={activeTab}
-                            initial={{ opacity: 0, y: 8 }}
+                            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -6 }}
-                            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                            exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
+                            transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                             className="space-y-6"
                         >
                             {activeTab === 'products' && <PropertyManager />}
