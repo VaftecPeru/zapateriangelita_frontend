@@ -251,14 +251,18 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
           </button>
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-600">
             <strong className="block text-black">CREAR</strong>
-            El código debe ser nuevo. Si ya existe, la fila se bloquea.
+            El código debe ser nuevo. También se reconocen valores equivalentes como CREATE, ALTA o NUEVO.
           </div>
           <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-600">
-            <strong className="block text-black">ACTUALIZAR</strong>
-            El código debe existir. Las variantes incluidas reemplazan el inventario anterior de ese producto.
+            <strong className="block text-black">Variantes del mismo producto</strong>
+            Si repites el mismo código, puedes dejar vacíos los datos generales: acción, nombre, marca, categoría, precio y estado se heredan automáticamente.
+          </div>
+          <div className="rounded-2xl border border-green-100 bg-green-50 px-4 py-3 text-xs text-green-800">
+            <strong className="block">Catálogo inteligente</strong>
+            CATEGORÍA es opcional. Las categorías nuevas se registran al importar y alias conocidos de marca, como FLEXI DAMA, se normalizan sin bloquear la fila.
           </div>
           <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">
             <strong className="block">Imágenes</strong>
