@@ -1,0 +1,123 @@
+name: Production smoke test
+
+on:
+  push:
+    branches:
+      - 'test/production-smoke-*'
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Frontend homepage
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="$(curl -sS -L -o /tmp/front.html -w '%{http_code}' --max-time 30 https://zapateriangelita.com/)"
+          test "$code" = "200"
+          test -s /tmp/front.html
+          grep -Eqi '<html|<!doctype' /tmp/front.html
+          echo "Frontend OK: HTTP $code"
+
+      - name: SPA routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          for route_path in /login /admin/dashboard; do
+            code="$(curl -sS -L -o /tmp/route.html -w '%{http_code}' --max-time 30 "https://zapateriangelita.com${route_path}")"
+            test "$code" = "200"
+            grep -Eqi '<html|<!doctype' /tmp/route.html
+            echo "$route_path OK: HTTP $code"
+          done
+
+      - name: API health
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="$(curl -sS -L -o /tmp/health.json -w '%{http_code}' --max-time 30 https://api.zapateriangelita.com/api/health)"
+          test "$code" = "200"
+          python3 - <<'PY'
+          import json
+          with open('/tmp/health.json',encoding='utf-8') as f:
+              data=json.load(f)
+          print('Health payload keys:', sorted(data.keys()) if isinstance(data,dict) else type(data).__name__)
+          PY
+          echo "API health OK: HTTP $code"
+
+      - name: Products API
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="$(curl -sS -L -o /tmp/products.json -w '%{http_code}' --max-time 30 'https://api.zapateriangelita.com/api/products?per_page=20')"
+          test "$code" = "200"
+          python3 - <<'PY'
+          import json
+          with open('/tmp/products.json',encoding='utf-8') as f:
+              data=json.load(f)
+          if isinstance(data, dict):
+              items = data.get('data', data.get('products', []))
+          elif isinstance(data, list):
+              items = data
+          else:
+              raise SystemExit('Unexpected products payload type')
+          if not isinstance(items, list):
+              raise SystemExit('Products payload has no list')
+          print('Products returned:', len(items))
+          PY
+          echo "Products API OK: HTTP $code"
+
+      - name: Google auth config
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="$(curl -sS -L -o /tmp/google.json -w '%{http_code}' --max-time 30 https://api.zapateriangelita.com/api/auth/google/config)"
+          test "$code" = "200"
+          python3 - <<'PY'
+          import json
+          with open('/tmp/google.json',encoding='utf-8') as f:
+              data=json.load(f)
+          text=json.dumps(data).lower()
+          forbidden=['client_secret','private_key','openpay_private_key','password']
+          leaked=[x for x in forbidden if x in text]
+          if leaked:
+              raise SystemExit('Sensitive keys exposed: '+','.join(leaked))
+          print('Google config safe keys:', sorted(data.keys()) if isinstance(data,dict) else type(data).__name__)
+          PY
+          echo "Google auth config OK: HTTP $code"
+
+      - name: CORS from production frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sS -D /tmp/headers.txt -o /dev/null --max-time 30 \
+            -H 'Origin: https://zapateriangelita.com' \
+            'https://api.zapateriangelita.com/api/products?per_page=1'
+          tr -d '\r' < /tmp/headers.txt > /tmp/headers.clean
+          grep -Eqi '^access-control-allow-origin: https://zapateriangelita\.com$|^access-control-allow-origin: \*$' /tmp/headers.clean
+          echo "CORS production origin OK"
+
+      - name: Openpay public config safety
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="$(curl -sS -L -o /tmp/openpay.json -w '%{http_code}' --max-time 30 https://api.zapateriangelita.com/api/openpay/config)"
+          test "$code" = "200"
+          python3 - <<'PY'
+          import json
+          with open('/tmp/openpay.json',encoding='utf-8') as f:
+              data=json.load(f)
+          text=json.dumps(data).lower()
+          forbidden=['private_key','sk_live','sk_test','secret_key']
+          leaked=[x for x in forbidden if x in text]
+          if leaked:
+              raise SystemExit('Sensitive Openpay material exposed: '+','.join(leaked))
+          print('Openpay configured:', data.get('configured') if isinstance(data,dict) else 'unknown')
+          print('Openpay environment:', data.get('environment') if isinstance(data,dict) else 'unknown')
+          print('Openpay diagnostic:', data.get('credential_check') if isinstance(data,dict) else 'unknown')
+          PY
+          echo "Openpay config endpoint OK: HTTP $code"
+
+      - name: Production smoke summary
+        run: echo "Production smoke test completed successfully."
