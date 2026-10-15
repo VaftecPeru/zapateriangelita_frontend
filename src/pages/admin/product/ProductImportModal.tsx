@@ -113,8 +113,19 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
     onClose();
   };
 
-  const getApiMessage = (error: any, fallback: string) =>
-    error?.response?.data?.message || error?.response?.data?.error || error?.message || fallback;
+  const getApiMessage = (error: any, fallback: string) => {
+    const raw = error?.response?.data?.message
+      || error?.response?.data?.error
+      || error?.message
+      || fallback;
+    const message = typeof raw === 'string' ? raw : fallback;
+
+    if (/SQLSTATE|General error|insert into|Connection:|Database:/i.test(message)) {
+      return 'La base de datos rechazó el registro por una incompatibilidad interna. No se aplicaron cambios. Intenta nuevamente después de actualizar el backend.';
+    }
+
+    return message;
+  };
 
   const previewFile = async (selected: File) => {
     setFile(selected);
@@ -456,6 +467,12 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
                 <p className="mt-1">
                   {result.summary.created} creados · {result.summary.updated} actualizados · {result.summary.variants} variantes · {result.summary.units} unidades.
                 </p>
+                {preview?.groups?.length ? (
+                  <p className="mt-2 text-xs font-semibold text-green-700">
+                    Registros disponibles en Productos: {preview.groups.slice(0, 5).map((group) => `${group.code} · ${group.name}`).join(' | ')}
+                    {preview.groups.length > 5 ? ` · +${preview.groups.length - 5} más` : ''}
+                  </p>
+                ) : null}
               </div>
             </div>
           </div>
@@ -479,7 +496,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
             disabled={previewing || importing}
             className="rounded-xl bg-gray-100 px-5 py-3 text-xs font-black uppercase tracking-widest text-gray-600 hover:bg-gray-200 disabled:opacity-50"
           >
-            {result ? 'Finalizar' : 'Cerrar'}
+            {result ? 'Ver productos importados' : 'Cerrar'}
           </button>
           {!result && (
             <button
