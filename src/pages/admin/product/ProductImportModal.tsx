@@ -220,7 +220,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'Plantilla_Importacion_Productos_Inventario_Zapateria_Angelita_V1.xlsx';
+      link.download = 'Plantilla_Importacion_Productos_Inventario_Zapateria_Angelita_V2.xlsx';
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -240,11 +240,11 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
       <div className="max-h-[94vh] w-full max-w-7xl overflow-y-auto rounded-[2.2rem] border border-gray-200 bg-white p-6 shadow-2xl sm:p-8">
         <div className="mb-6 flex items-start justify-between gap-4 border-b border-gray-100 pb-5">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-store-red">Inventario masivo · V1</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-store-red">Inventario masivo · V2</p>
             <h2 className="mt-1 text-2xl font-black text-black">Importar productos desde Excel o CSV</h2>
             <p className="mt-1 max-w-3xl text-sm text-gray-500">
-              Compatible con XLSX y CSV. El servidor detecta automáticamente coma o punto y coma como delimitador. Una fila representa una variante
-              <strong> color + talla</strong>. Las filas con el mismo código se consolidan en un solo producto.
+              Compatible con XLSX y CSV. Puedes registrar varias tallas en una sola fila por color, siempre que indiques
+              <strong> el stock exacto de cada talla</strong>. Las filas del mismo código se consolidan en un producto.
             </p>
           </div>
           <button
@@ -285,10 +285,21 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
             className="inline-flex min-h-28 items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-6 text-xs font-black uppercase tracking-widest text-gray-600 transition hover:border-store-red hover:text-store-red disabled:opacity-50"
           >
             {downloading ? <Loader2 size={17} className="animate-spin" /> : <Download size={17} />}
-            Plantilla XLSX V1
+            Plantilla XLSX V2
           </button>
         </div>
 
+        <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-gray-800">
+          <p className="font-black text-store-red">Inventario por talla · Una fila por producto y color</p>
+          <p className="mt-1">
+            Ejemplo: TALLA <code>2,3,4,5,6</code> · STOCK_POR_TALLA <code>2:3;3:4;4:2;5:5;6:1</code> · STOCK <strong>15</strong>.
+            El sistema registra cinco variantes independientes y comprueba que el total coincida.
+          </p>
+          <p className="mt-1 font-semibold">
+            Si indicas varias tallas sin desglose, la importación se bloqueará para evitar inventario incorrecto.
+            Una talla individual puede continuar usando únicamente STOCK.
+          </p>
+        </div>
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-600">
             <strong className="block text-black">CREAR</strong>
