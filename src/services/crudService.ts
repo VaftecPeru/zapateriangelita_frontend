@@ -58,6 +58,7 @@ export interface Product {
     discount?: string;
     status?: 'normal' | 'oferta' | 'nuevo';
     is_active?: boolean;
+    auto_publish?: boolean;
     sizes?: Array<{ id?: number; size: string; stock: number }>;
     color_sizes?: Record<string, string[]>;
     colors?: Array<{ id?: number; color: string; hex?: string | null }>;
@@ -260,14 +261,27 @@ export const productService = {
             timeout: 60000,
         });
     },
-    commitInventoryImport: (file: File, mappings?: Record<string, Record<string, string>>) => {
+    commitInventoryImport: (
+        file: File,
+        mappings?: Record<string, Record<string, string>>,
+        validOnly = false,
+    ) => {
         const data = new FormData();
         data.append('file', file);
         data.append('catalog_mappings', JSON.stringify(mappings ?? {}));
+        if (validOnly) data.append('import_valid_only', '1');
         return apiClient.post('/admin/products/import/commit', data, {
             timeout: 120000,
         });
     },
+    assignModelPrice: (payload: {
+        brand_id: number;
+        category_id: number;
+        model: string;
+        price: number;
+    }) => apiClient.put<{ success: boolean; summary: { updated: number; published: number; drafts: number } }>(
+        '/admin/products/model-price', payload
+    ),
     downloadInventoryImportTemplate: () => apiClient.get<Blob>('/admin/products/import/template', {
         responseType: 'blob',
         timeout: 30000,

@@ -16,6 +16,12 @@ const ProductManagerV2 = () => {
   const [loading, setLoading] = useState(true);
   const [editorOpen, setEditorOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [modelPriceOpen, setModelPriceOpen] = useState(false);
+  const [modelPriceSaving, setModelPriceSaving] = useState(false);
+  const [modelPriceError, setModelPriceError] = useState('');
+  const [modelPrice, setModelPrice] = useState({
+    brand_id: '', category_id: '', model: '', price: '',
+  });
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewProduct, setViewProduct] = useState<Product | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
@@ -27,6 +33,44 @@ const ProductManagerV2 = () => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [exporting, setExporting] = useState<'excel' | 'pdf' | null>(null);
 
+  const priceModels = useMemo(() => Array.from(new Set(
+    products
+      .filter((p) => String(p.brand_id ?? '') === modelPrice.brand_id
+        && String(p.category_id ?? '') === modelPrice.category_id
+        && p.auto_publish && Number(p.price) <= 0 && String(p.model ?? '').trim() !== '')
+      .map((p) => String(p.model).trim()),
+  )).sort(), [products, modelPrice.brand_id, modelPrice.category_id]);
+
+  const saveModelPrice = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const amount = Number(modelPrice.price);
+    if (!modelPrice.brand_id || !modelPrice.category_id || !modelPrice.model || !Number.isFinite(amount) || amount <= 0) {
+      setModelPriceError('Selecciona marca, categoría y modelo; indica un precio válido mayor que cero.');
+      return;
+    }
+    setModelPriceSaving(true);
+    setModelPriceError('');
+    try {
+      const response = await productService.assignModelPrice({
+        brand_id: Number(modelPrice.brand_id),
+        category_id: Number(modelPrice.category_id),
+        model: modelPrice.model,
+        price: amount,
+      });
+      setModelPriceOpen(false);
+      setModelPrice({ brand_id: '', category_id: '', model: '', price: '' });
+      await loadData();
+      window.alert(
+        `Precios asignados a ${response.data.summary.updated} productos. `
+        + `${response.data.summary.published} publicados; ${response.data.summary.drafts} siguen en borrador por campos pendientes.`,
+      );
+    } catch (error: any) {
+      setModelPriceError(error?.response?.data?.message || 'No se pudo asignar el precio del modelo.');
+    } finally {
+      setModelPriceSaving(false);
+    }
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -37,7 +81,15 @@ const ProductManagerV2 = () => {
         brandService.getAll(),
       ]);
 
-      setProducts(Array.isArray(productsRes.data) ? productsRes.data : ((productsRes.data as any)?.data || []));
+      const firstPage = Array.isArray(productsRes.data) ? productsRes.data : ((productsRes.data as any)?.data || []);
+      const pageCount = Number((productsRes.data as any)?.last_page || 1);
+      let allProducts: Product[] = [...firstPage];
+      for (let page = 2; page <= pageCount && page <= 30; page++) {
+        const response = await productService.getAllAdmin({ page, per_page: 200 });
+        const items = Array.isArray(response.data) ? response.data : ((response.data as any)?.data || []);
+        allProducts = allProducts.concat(items);
+      }
+      setProducts(allProducts);
       setCategories(Array.isArray(categoriesRes.data) ? categoriesRes.data : ((categoriesRes.data as any)?.data || []));
       setSubcategories(Array.isArray(subcategoriesRes.data) ? subcategoriesRes.data : ((subcategoriesRes.data as any)?.data || []));
       setBrands(Array.isArray(brandsRes.data) ? brandsRes.data : ((brandsRes.data as any)?.data || []));
@@ -204,6 +256,9 @@ const ProductManagerV2 = () => {
               {exporting === 'pdf' ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
               PDF
             </button>
+            <button onClick={() => { setModelPriceError(''); setModelPriceOpen(true); }} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-xs font-black uppercase tracking-widest text-gray-600 shadow-sm transition hover:border-store-red hover:text-store-red">
+              Precio por modelo
+            </button>
             <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-xs font-black uppercase tracking-widest text-gray-600 shadow-sm transition hover:border-store-red hover:text-store-red">
               <FileSpreadsheet size={16} /> Importar
             </button>
@@ -295,7 +350,7 @@ const ProductManagerV2 = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${product.is_active === false ? 'bg-gray-200 text-gray-600' : 'bg-emerald-50 text-emerald-700'}`}>
-                      {product.is_active === false ? 'Inactivo' : 'Visible'}
+                      {product.is_active === false ? (product.auto_publish ? 'Borrador' : 'Oculto') : 'Visible'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -321,6 +376,57 @@ const ProductManagerV2 = () => {
 
       <ProductEditorModal open={editorOpen} product={editingProduct} products={products} categories={categories} subcategories={subcategories} brands={brands} onClose={() => setEditorOpen(false)} onSaved={loadData} />
       <ProductImportModal open={importOpen} onClose={() => setImportOpen(false)} onImported={loadData} />
+
+      {modelPriceOpen && (
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="Asignar precio por modelo">
+          <form onSubmit={saveModelPrice} className="w-full max-w-xl space-y-4 rounded-3xl bg-white p-7 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-black">Precio MXN por modelo</h3>
+                <p className="mt-1 text-sm text-gray-500">Aplica el mismo precio a todos los colores del modelo que aún están a 0. Nunca reemplaza precios ya confirmados.</p>
+              </div>
+              <button type="button" aria-label="Cerrar" onClick={() => setModelPriceOpen(false)} disabled={modelPriceSaving}><X size={21} /></button>
+            </div>
+            <label className="block text-xs font-bold">Marca
+              <select required value={modelPrice.brand_id}
+                onChange={(e) => setModelPrice((v) => ({ ...v, brand_id: e.target.value, model: '' }))}
+                className="mt-1 w-full rounded-xl border border-gray-200 p-3 text-sm">
+                <option value="">Seleccionar marca</option>
+                {brands.filter((brand) => brand.id).map((brand) =>
+                  <option key={brand.id} value={brand.id}>{brand.name}</option>)}
+              </select>
+            </label>
+            <label className="block text-xs font-bold">Categoría
+              <select required value={modelPrice.category_id}
+                onChange={(e) => setModelPrice((v) => ({ ...v, category_id: e.target.value, model: '' }))}
+                className="mt-1 w-full rounded-xl border border-gray-200 p-3 text-sm">
+                <option value="">Seleccionar categoría</option>
+                {categories.filter((category) => category.id).map((category) =>
+                  <option key={category.id} value={category.id}>{category.name}</option>)}
+              </select>
+            </label>
+            <label className="block text-xs font-bold">Modelo con precio pendiente
+              <select required value={modelPrice.model}
+                onChange={(e) => setModelPrice((v) => ({ ...v, model: e.target.value }))}
+                className="mt-1 w-full rounded-xl border border-gray-200 p-3 text-sm">
+                <option value="">Seleccionar modelo</option>
+                {priceModels.map((model) => <option key={model} value={model}>{model}</option>)}
+              </select>
+            </label>
+            <label className="block text-xs font-bold">Precio común (MXN)
+              <input required type="number" min="0.01" step="0.01" value={modelPrice.price}
+                onChange={(e) => setModelPrice((v) => ({ ...v, price: e.target.value }))}
+                className="mt-1 w-full rounded-xl border border-gray-200 p-3 text-sm" placeholder="0.00" />
+            </label>
+            <p className="text-xs text-gray-500">Los productos sin fotografías comerciales o con stock pendiente permanecerán ocultos después de guardar el precio.</p>
+            {modelPriceError && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert">{modelPriceError}</p>}
+            <button type="submit" disabled={modelPriceSaving || !priceModels.length}
+              className="w-full rounded-xl bg-store-red px-5 py-3 text-sm font-bold text-white disabled:opacity-50">
+              {modelPriceSaving ? 'Guardando precio…' : 'Aplicar a colores pendientes'}
+            </button>
+          </form>
+        </div>
+      )}
 
       {viewProduct && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
@@ -350,7 +456,7 @@ const ProductManagerV2 = () => {
               />
               <Detail label="Material" value={viewProduct.material || 'Sin información'} />
               <Detail label="Precio" value={`$${Number(viewProduct.price || 0).toFixed(2)}`} />
-              <Detail label="Visibilidad" value={viewProduct.is_active === false ? 'Inactivo / oculto en tienda' : 'Visible en tienda'} />
+              <Detail label="Visibilidad" value={viewProduct.is_active === false ? (viewProduct.auto_publish ? 'Borrador · pendiente de datos comerciales' : 'Oculto en tienda') : 'Visible en tienda'} />
               <div className="sm:col-span-2"><Detail label="Descripción" value={viewProduct.description || 'Sin descripción'} /></div>
             </div>
           </div>
