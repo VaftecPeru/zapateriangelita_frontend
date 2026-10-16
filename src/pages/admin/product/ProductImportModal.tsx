@@ -52,6 +52,8 @@ type Preview = {
     products: number;
     variants: number;
     valid_products: number;
+    ready_products?: number;
+    draft_products?: number;
     error_rows: number;
     warnings: number;
   };
@@ -76,6 +78,10 @@ type ImportResult = {
     updated: number;
     variants: number;
     units: number;
+    published?: number;
+    drafts?: number;
+    skipped?: number;
+    skipped_codes?: string[];
   };
 };
 
@@ -85,6 +91,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [validOnly, setValidOnly] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [message, setMessage] = useState('');
@@ -116,6 +123,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
     setMessage('');
     setPreviewFilter('all');
     setStage('catalog');
+    setValidOnly(false);
     setCatalogMappings(emptyCatalogMappings());
     setCatalogs({ brands: [], categories: [], subcategories: [] });
     previewPagination.resetPage();
@@ -207,6 +215,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
     const initialMappings = emptyCatalogMappings();
     setCatalogMappings(initialMappings);
     setStage('catalog');
+    setValidOnly(false);
     try {
       await loadCatalogs();
       await previewFile(selected, initialMappings);
@@ -261,14 +270,15 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
   };
 
   const executeImport = async () => {
-    if (!file || !preview?.valid || importing || stage !== 'review' || !catalogReady) return;
+    if (!file || importing || stage !== 'review' || !catalogReady
+      || (!preview?.valid && !(validOnly && (preview?.summary.valid_products ?? 0) > 0))) return;
 
     setImporting(true);
     setMessage('');
     setResult(null);
 
     try {
-      const response = await productService.commitInventoryImport(file, catalogMappings);
+      const response = await productService.commitInventoryImport(file, catalogMappings, validOnly);
       setResult(response.data as ImportResult);
       await onImported();
     } catch (error: any) {
@@ -326,7 +336,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
             <h2 className="mt-1 text-2xl font-black text-black">Importar productos desde Excel o CSV</h2>
             <p className="mt-1 max-w-3xl text-sm text-gray-500">
               Compatible con XLSX y CSV. Puedes registrar varias tallas en una sola fila por color, siempre que indiques
-              <strong> el stock exacto de cada talla</strong>. Las filas del mismo código se consolidan en un producto.
+              <strong> el stock exacto de cada talla</strong>. Las filas del mismo código se consolidan en un producto. Los productos sin precio o imagen se guardan como borradores, sin aparecer en la tienda.
             </p>
           </div>
           <button
@@ -381,6 +391,12 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
             Si indicas varias tallas sin desglose, la importación se bloqueará para evitar inventario incorrecto.
             Una talla individual puede continuar usando únicamente STOCK.
           </p>
+          <p className="mt-2">
+            PRECIO vacío o 0 = <strong>borrador, no publicable</strong>. Un precio positivo único para una misma marca,
+            categoría y modelo se aplica a sus colores sin precio; los precios distintos se respetan.
+            Para publicar automáticamente también se necesita imagen comercial, categoría y marca activas,
+            modelo, talla, color y stock disponible.
+          </p>
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-600">
@@ -427,11 +443,13 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
               className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-xs font-bold text-gray-700 hover:text-store-red">
               ← Revisar catálogos (Paso 0)
             </button>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Metric label="Formato" value={preview.format.toUpperCase()} />
               <Metric label="Productos" value={preview.summary.products} />
               <Metric label="Variantes" value={preview.summary.variants} />
-              <Metric label="Listos" value={preview.summary.valid_products} success />
+              <Metric label="Válidos para inventario" value={preview.summary.valid_products} success />
+              <Metric label="Publicables" value={preview.summary.ready_products ?? 0} success />
+              <Metric label="Borradores" value={preview.summary.draft_products ?? 0} warning />
               <Metric label="Filas con error" value={preview.summary.error_rows} danger={preview.summary.error_rows > 0} />
               <Metric label="Advertencias" value={preview.summary.warnings} warning={preview.summary.warnings > 0} />
             </div>
@@ -446,12 +464,30 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
                 <p>
                   {preview.valid
                     ? 'Archivo validado. ' + preview.summary.products + ' productos y ' + preview.summary.variants + ' variantes están listos para importar.'
-                    : 'La importación permanece bloqueada hasta corregir todas las filas marcadas con error.'}
+                    : validOnly && preview.summary.valid_products > 0
+                      ? 'Hay filas con error: solo se importarán los productos válidos. Los demás se omitirán y se reportarán.'
+                      : 'Hay filas con error. Puedes corregirlas o habilitar la importación parcial de grupos válidos.'}
                   {' '}Encabezado detectado en la fila {preview.header_row}.
                 </p>
               </div>
             </div>
 
+            {!preview.valid && preview.summary.valid_products > 0 && (
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+                <input
+                  type="checkbox"
+                  checked={validOnly}
+                  onChange={(event) => setValidOnly(event.target.checked)}
+                  disabled={importing || previewing}
+                  className="mt-0.5 accent-red-600"
+                />
+                <span>
+                  <strong>Importar solo grupos válidos ({preview.summary.valid_products}).</strong>
+                  {' '}Los grupos con errores de talla, códigos duplicados o referencias sin aprobar
+                  NO se guardarán. Revisa las filas omitidas posteriormente.
+                </span>
+              </label>
+            )}
             <div className="rounded-2xl border border-gray-200 bg-white">
               <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -576,7 +612,13 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
                 <p className="font-black">{result.message}</p>
                 <p className="mt-1">
                   {result.summary.created} creados · {result.summary.updated} actualizados · {result.summary.variants} variantes · {result.summary.units} unidades.
+                  {' '}Publicados: {result.summary.published ?? 0} · En borrador: {result.summary.drafts ?? 0} · Omitidos: {result.summary.skipped ?? 0}.
                 </p>
+                {!!result.summary.skipped_codes?.length && (
+                  <p className="mt-2 text-xs text-amber-700">
+                    Códigos no importados: {result.summary.skipped_codes.join(', ')}.
+                  </p>
+                )}
                 {preview?.groups?.length ? (
                   <p className="mt-2 text-xs font-semibold text-green-700">
                     Registros disponibles en Productos: {preview.groups.slice(0, 5).map((group) => `${group.code} · ${group.name}`).join(' | ')}
@@ -612,10 +654,11 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
             <button
               type="button"
               onClick={executeImport}
-              disabled={!file || !preview?.valid || importing || previewing || !catalogReady || stage !== 'review'}
+              disabled={!file || (!preview?.valid && !(validOnly && (preview?.summary.valid_products ?? 0) > 0))
+                || importing || previewing || !catalogReady || stage !== 'review'}
               title={
-                preview && !preview.valid
-                  ? `Corrige las ${preview.summary.error_rows} filas con error para habilitar la importación.`
+                preview && !preview.valid && !validOnly
+                  ? `Corrige las ${preview.summary.error_rows} filas con error o habilita importar solo válidos.`
                   : 'Importar productos validados'
               }
               className="inline-flex items-center gap-2 rounded-xl bg-store-red px-6 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg hover:bg-store-redDark disabled:cursor-not-allowed disabled:opacity-50"
@@ -624,7 +667,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
               {importing
                 ? 'Importando...'
                 : preview && !preview.valid
-                  ? 'Corregir ' + preview.summary.error_rows + ' filas para importar'
+                  ? validOnly ? 'Importar solo ' + preview.summary.valid_products + ' válidos' : 'Corregir ' + preview.summary.error_rows + ' filas para importar'
                   : 'Importar ' + (preview?.summary.valid_products || 0) + ' productos'}
             </button>
           )}
