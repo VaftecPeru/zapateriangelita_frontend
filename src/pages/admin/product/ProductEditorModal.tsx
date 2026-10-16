@@ -416,7 +416,7 @@ const ProductEditorModal = ({
     if (!form.category_id) return 'Selecciona una categoría.';
     if (!Number.isFinite(Number(form.price)) || Number(form.price) < 0) return 'El precio debe ser cero (borrador) o mayor.';
     if (Number(form.stock) < 0) return 'El stock no puede ser negativo.';
-    if (!form.material.trim()) return 'Ingresa el material del producto.';
+
 
     const cleaned = variants
       .map((variant) => ({
@@ -1033,7 +1033,7 @@ const ProductEditorModal = ({
               </p>
             </div>
 
-            <Field label="Material *">
+            <Field label="Material (opcional)">
               <input
                 value={form.material}
                 onChange={(e) => setForm({ ...form, material: e.target.value })}
