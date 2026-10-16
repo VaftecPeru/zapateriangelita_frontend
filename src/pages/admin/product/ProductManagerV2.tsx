@@ -342,7 +342,7 @@ const ProductManagerV2 = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${product.is_active === false ? 'bg-gray-200 text-gray-600' : 'bg-emerald-50 text-emerald-700'}`}>
-                      {product.is_active === false ? 'Inactivo' : 'Visible'}
+                      {product.is_active === false ? (product.auto_publish ? 'Borrador' : 'Oculto') : 'Visible'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -448,7 +448,7 @@ const ProductManagerV2 = () => {
               />
               <Detail label="Material" value={viewProduct.material || 'Sin información'} />
               <Detail label="Precio" value={`$${Number(viewProduct.price || 0).toFixed(2)}`} />
-              <Detail label="Visibilidad" value={viewProduct.is_active === false ? 'Inactivo / oculto en tienda' : 'Visible en tienda'} />
+              <Detail label="Visibilidad" value={viewProduct.is_active === false ? (viewProduct.auto_publish ? 'Borrador · pendiente de datos comerciales' : 'Oculto en tienda') : 'Visible en tienda'} />
               <div className="sm:col-span-2"><Detail label="Descripción" value={viewProduct.description || 'Sin descripción'} /></div>
             </div>
           </div>
