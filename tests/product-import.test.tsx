@@ -78,6 +78,22 @@ async function run() {
   assert.equal(unresolvedCatalogs(rows, catalogs).length, 0);
   console.log('PASS Paso 0: los catálogos pendientes no se consideran aprobados');
 
+  await productService.commitInventoryImport(file, mappings, true);
+  assert.equal(
+    (requests.at(-1)?.data as FormData).get('import_valid_only'), '1',
+  );
+  console.log('PASS Importación parcial: la selección explícita se envía al backend');
+
+  await productService.assignModelPrice({
+    brand_id: 1,
+    category_id: 2,
+    model: '0248',
+    price: 799,
+  });
+  assert.equal(requests.at(-1)?.url, '/admin/products/model-price');
+  assert.equal(requests.at(-1)?.method, 'put');
+  console.log('PASS Precio por modelo: actualización administrativa de colores pendientes');
+
   await productService.downloadInventoryImportTemplate();
   assert.equal(requests.at(-1)?.url, '/admin/products/import/template');
   assert.equal(requests.at(-1)?.responseType, 'blob');
