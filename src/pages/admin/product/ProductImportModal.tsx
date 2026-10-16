@@ -9,7 +9,12 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { productService } from '../../../services/crudService';
+import { brandService, categoryService, productService, subcategoryService } from '../../../services/crudService';
+import type { Brand, Category, Subcategory } from '../../../services/crudService';
+import ImportCatalogPreflight, {
+  emptyCatalogMappings, unresolvedCatalogs,
+} from './ImportCatalogPreflight';
+import type { CatalogData, CatalogMappings, CatalogType } from './ImportCatalogPreflight';
 import Pagination from '../../../components/Pagination';
 import { usePagination } from '../../../hooks/usePagination';
 
@@ -84,6 +89,11 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
   const [result, setResult] = useState<ImportResult | null>(null);
   const [message, setMessage] = useState('');
   const [previewFilter, setPreviewFilter] = useState<'all' | 'errors' | 'valid'>('all');
+  const [catalogs, setCatalogs] = useState<CatalogData>({ brands: [], categories: [], subcategories: [] });
+  const [catalogMappings, setCatalogMappings] = useState<CatalogMappings>(emptyCatalogMappings);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogBusy, setCatalogBusy] = useState(false);
+  const [stage, setStage] = useState<'catalog' | 'review'>('catalog');
 
   const filteredPreviewRows = useMemo(() => {
     const rows = preview?.rows ?? [];
@@ -93,6 +103,8 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
   }, [preview, previewFilter]);
 
   const previewPagination = usePagination(filteredPreviewRows, 25);
+  const catalogReady = !catalogLoading && !!preview
+    && unresolvedCatalogs(preview.rows, catalogs).length === 0;
 
   if (!open) return null;
 
@@ -103,6 +115,9 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
     setResult(null);
     setMessage('');
     setPreviewFilter('all');
+    setStage('catalog');
+    setCatalogMappings(emptyCatalogMappings());
+    setCatalogs({ brands: [], categories: [], subcategories: [] });
     previewPagination.resetPage();
     if (fileRef.current) fileRef.current.value = '';
   };
@@ -127,7 +142,21 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
     return message;
   };
 
-  const previewFile = async (selected: File) => {
+  const loadCatalogs = async (): Promise<void> => {
+    setCatalogLoading(true);
+    try {
+      const [brands, categories, subcategories] = await Promise.all([
+        brandService.getAll(), categoryService.getAll(), subcategoryService.getAll(),
+      ]);
+      setCatalogs({
+        brands: brands.data, categories: categories.data, subcategories: subcategories.data,
+      });
+    } finally {
+      setCatalogLoading(false);
+    }
+  };
+
+  const previewFile = async (selected: File, mappings: CatalogMappings = catalogMappings) => {
     setFile(selected);
     setPreview(null);
     setResult(null);
@@ -135,7 +164,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
     setPreviewing(true);
 
     try {
-      const response = await productService.previewInventoryImport(selected);
+      const response = await productService.previewInventoryImport(selected, mappings);
       const nextPreview = response.data as Preview;
       setPreview(nextPreview);
       setPreviewFilter(nextPreview.valid ? 'all' : 'errors');
@@ -175,18 +204,71 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
       return;
     }
 
-    await previewFile(selected);
+    const initialMappings = emptyCatalogMappings();
+    setCatalogMappings(initialMappings);
+    setStage('catalog');
+    try {
+      await loadCatalogs();
+      await previewFile(selected, initialMappings);
+    } catch (error: any) {
+      setMessage(getApiMessage(error, 'No se pudieron consultar los catálogos. Reintenta la validación.'));
+    }
+  };
+
+  const applyCatalogMapping = async (kind: CatalogType, key: string, target: string) => {
+    if (!file || catalogBusy) return;
+    const next = {
+      ...catalogMappings,
+      [kind]: { ...catalogMappings[kind], [key]: target },
+    };
+    setCatalogBusy(true);
+    setCatalogMappings(next);
+    try {
+      await previewFile(file, next);
+    } finally {
+      setCatalogBusy(false);
+    }
+  };
+
+  const createCatalog = async (kind: CatalogType, name: string, parent?: Category) => {
+    if (catalogBusy) return;
+    setCatalogBusy(true);
+    try {
+      if (kind === 'brands') await brandService.create({ name, is_active: false });
+      else if (kind === 'categories') await categoryService.create({ name, is_active: false });
+      else {
+        if (!parent?.id) throw new Error('Primero debes registrar o aprobar la categoría principal.');
+        await subcategoryService.create({ name, category_id: parent.id, is_active: false });
+      }
+      await loadCatalogs();
+    } finally {
+      setCatalogBusy(false);
+    }
+  };
+
+  const activateCatalog = async (kind: CatalogType, item: Brand | Category | Subcategory) => {
+    if (catalogBusy || !item.id) return;
+    setCatalogBusy(true);
+    try {
+      if (kind === 'brands') await brandService.update(item.id, { is_active: true });
+      else if (kind === 'categories') await categoryService.update(item.id, { is_active: true });
+      else await subcategoryService.update(item.id, { is_active: true });
+      await loadCatalogs();
+      if (file) await previewFile(file);
+    } finally {
+      setCatalogBusy(false);
+    }
   };
 
   const executeImport = async () => {
-    if (!file || !preview?.valid || importing) return;
+    if (!file || !preview?.valid || importing || stage !== 'review' || !catalogReady) return;
 
     setImporting(true);
     setMessage('');
     setResult(null);
 
     try {
-      const response = await productService.commitInventoryImport(file);
+      const response = await productService.commitInventoryImport(file, catalogMappings);
       setResult(response.data as ImportResult);
       await onImported();
     } catch (error: any) {
@@ -250,7 +332,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
           <button
             type="button"
             onClick={close}
-            disabled={previewing || importing}
+            disabled={previewing || importing || catalogBusy}
             className="rounded-full bg-gray-50 p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 disabled:opacity-40"
           >
             <X size={20} />
@@ -273,7 +355,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
               type="file"
               accept=".xlsx,.csv"
               className="hidden"
-              disabled={previewing || importing}
+              disabled={previewing || importing || catalogBusy}
               onChange={(event) => handleFile(event.target.files?.[0])}
             />
           </label>
@@ -311,7 +393,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
           </div>
           <div className="rounded-2xl border border-green-100 bg-green-50 px-4 py-3 text-xs text-green-800">
             <strong className="block">Catálogo inteligente</strong>
-            CATEGORÍA es opcional. Las categorías nuevas se registran al importar y alias conocidos de marca, como FLEXI DAMA, se normalizan sin bloquear la fila.
+            CATEGORÍA puede omitirse; los catálogos nuevos requieren registro y aprobación en el Paso 0. Los alias conocidos, como FLEXI DAMA, se reconocen automáticamente.
           </div>
           <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">
             <strong className="block">Imágenes</strong>
@@ -326,8 +408,25 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
           </div>
         )}
 
-        {preview && (
+        {file && preview && stage === 'catalog' && (
+          <ImportCatalogPreflight
+            rows={preview.rows}
+            catalogs={catalogs}
+            loading={catalogLoading}
+            busy={catalogBusy || previewing || importing}
+            onCreate={createCatalog}
+            onActivate={activateCatalog}
+            onMap={applyCatalogMapping}
+            onContinue={() => setStage('review')}
+          />
+        )}
+
+        {preview && stage === 'review' && (
           <div className="mt-6 space-y-5">
+            <button type="button" onClick={() => setStage('catalog')}
+              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-xs font-bold text-gray-700 hover:text-store-red">
+              ← Revisar catálogos (Paso 0)
+            </button>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
               <Metric label="Formato" value={preview.format.toUpperCase()} />
               <Metric label="Productos" value={preview.summary.products} />
@@ -513,7 +612,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
             <button
               type="button"
               onClick={executeImport}
-              disabled={!file || !preview?.valid || importing || previewing}
+              disabled={!file || !preview?.valid || importing || previewing || !catalogReady || stage !== 'review'}
               title={
                 preview && !preview.valid
                   ? `Corrige las ${preview.summary.error_rows} filas con error para habilitar la importación.`

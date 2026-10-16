@@ -252,16 +252,18 @@ export const productService = {
         params,
         responseType: 'blob',
     }),
-    previewInventoryImport: (file: File) => {
+    previewInventoryImport: (file: File, mappings?: Record<string, Record<string, string>>) => {
         const data = new FormData();
         data.append('file', file);
+        data.append('catalog_mappings', JSON.stringify(mappings ?? {}));
         return apiClient.post('/admin/products/import/preview', data, {
             timeout: 60000,
         });
     },
-    commitInventoryImport: (file: File) => {
+    commitInventoryImport: (file: File, mappings?: Record<string, Record<string, string>>) => {
         const data = new FormData();
         data.append('file', file);
+        data.append('catalog_mappings', JSON.stringify(mappings ?? {}));
         return apiClient.post('/admin/products/import/commit', data, {
             timeout: 120000,
         });
