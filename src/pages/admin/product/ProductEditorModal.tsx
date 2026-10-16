@@ -414,7 +414,7 @@ const ProductEditorModal = ({
   const validate = () => {
     if (!form.name.trim()) return 'Ingresa el nombre del producto.';
     if (!form.category_id) return 'Selecciona una categoría.';
-    if (!(Number(form.price) > 0)) return 'El precio debe ser mayor que 0.';
+    if (!Number.isFinite(Number(form.price)) || Number(form.price) < 0) return 'El precio debe ser cero (borrador) o mayor.';
     if (Number(form.stock) < 0) return 'El stock no puede ser negativo.';
     if (!form.material.trim()) return 'Ingresa el material del producto.';
 
@@ -757,7 +757,7 @@ const ProductEditorModal = ({
               </p>
             </div>
 
-            <Field label="Precio (USD) *">
+            <Field label="Precio de venta (MXN) · 0 = borrador">
               <input
                 type="number"
                 min="0"
@@ -767,6 +767,13 @@ const ProductEditorModal = ({
                 className="field-input"
               />
             </Field>
+
+            {Number(form.price) === 0 && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 md:col-span-2 xl:col-span-3">
+                Sin precio comercial: se guardará el producto para controlar su inventario,
+                pero permanecerá oculto hasta completar precio, fotografía, modelo y demás datos.
+              </div>
+            )}
 
             <Field label="Descuento (%)">
               <input
