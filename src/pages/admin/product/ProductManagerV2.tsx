@@ -81,7 +81,15 @@ const ProductManagerV2 = () => {
         brandService.getAll(),
       ]);
 
-      setProducts(Array.isArray(productsRes.data) ? productsRes.data : ((productsRes.data as any)?.data || []));
+      const firstPage = Array.isArray(productsRes.data) ? productsRes.data : ((productsRes.data as any)?.data || []);
+      const pageCount = Number((productsRes.data as any)?.last_page || 1);
+      let allProducts: Product[] = [...firstPage];
+      for (let page = 2; page <= pageCount && page <= 30; page++) {
+        const response = await productService.getAllAdmin({ page, per_page: 200 });
+        const items = Array.isArray(response.data) ? response.data : ((response.data as any)?.data || []);
+        allProducts = allProducts.concat(items);
+      }
+      setProducts(allProducts);
       setCategories(Array.isArray(categoriesRes.data) ? categoriesRes.data : ((categoriesRes.data as any)?.data || []));
       setSubcategories(Array.isArray(subcategoriesRes.data) ? subcategoriesRes.data : ((subcategoriesRes.data as any)?.data || []));
       setBrands(Array.isArray(brandsRes.data) ? brandsRes.data : ((brandsRes.data as any)?.data || []));
