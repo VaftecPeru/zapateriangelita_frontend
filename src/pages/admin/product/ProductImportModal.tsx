@@ -336,7 +336,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
             <h2 className="mt-1 text-2xl font-black text-black">Importar productos desde Excel o CSV</h2>
             <p className="mt-1 max-w-3xl text-sm text-gray-500">
               Compatible con XLSX y CSV. Puedes registrar varias tallas en una sola fila por color, siempre que indiques
-              <strong> el stock exacto de cada talla</strong>. Las filas del mismo código se consolidan en un producto. Los productos sin precio o imagen se guardan como borradores, sin aparecer en la tienda.
+              <strong> el stock exacto de cada talla</strong>. Las filas del mismo código se consolidan en un producto. Los productos sin precio se guardan como borradores. Las fotografías son opcionales y pueden cargarse después.
             </p>
           </div>
           <button
@@ -394,7 +394,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
           <p className="mt-2">
             PRECIO vacío o 0 = <strong>borrador, no publicable</strong>. Un precio positivo único para una misma marca,
             categoría y modelo se aplica a sus colores sin precio; los precios distintos se respetan.
-            Para publicar automáticamente también se necesita imagen comercial, categoría y marca activas,
+            Para publicar automáticamente se necesitan categoría y marca activas,
             modelo, talla, color y stock disponible.
           </p>
         </div>
@@ -413,7 +413,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
           </div>
           <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">
             <strong className="block">Imágenes</strong>
-            Se aceptan URL https:// o rutas /uploads/. Los nombres de archivo sueltos se muestran como advertencia y no se importan.
+            Son opcionales para importar y publicar. Se aceptan URL https:// o rutas /uploads/. Los nombres de archivo sueltos se muestran como advertencia y no se importan.
           </div>
         </div>
 
