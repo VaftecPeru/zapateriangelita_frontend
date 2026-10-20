@@ -49,6 +49,7 @@ type Preview = {
   header_row: number;
   summary: {
     rows: number;
+    excluded_rows?: number;
     products: number;
     variants: number;
     valid_products: number;
@@ -454,6 +455,9 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
               <Metric label="Borradores" value={preview.summary.draft_products ?? 0} warning />
               <Metric label="Filas con error" value={preview.summary.error_rows} danger={preview.summary.error_rows > 0} />
               <Metric label="Advertencias" value={preview.summary.warnings} warning={preview.summary.warnings > 0} />
+              {(preview.summary.excluded_rows ?? 0) > 0 && (
+                <Metric label="Omitidas por VALIDACIÓN" value={preview.summary.excluded_rows ?? 0} warning />
+              )}
             </div>
 
             <div className={'rounded-2xl border px-4 py-3 text-sm ' + (
