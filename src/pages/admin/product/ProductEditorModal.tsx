@@ -695,6 +695,7 @@ const ProductEditorModal = ({
   const displayedStock = simpleProduct
     ? Math.max(0, Math.trunc(Number(form.stock) || 0))
     : variants.reduce((total, v) => total + v.stocks.reduce((sum, qty) => sum + Number(qty || 0), 0), 0);
+  const displayedStatus = !product?.is_active ? 'Borrador' : displayedStock === 0 ? 'Agotado' : 'Activo';
   return (
     <div className="product-editor-workspace fixed inset-0 z-[110] flex overflow-hidden bg-[#f7f8fa] text-[#171923]">
       <aside className="hidden w-[226px] shrink-0 flex-col border-r border-[#e7e9ee] bg-white lg:flex">
@@ -907,9 +908,9 @@ const ProductEditorModal = ({
                   <h2 className="mb-3 border-l-[3px] border-store-red pl-3 text-[14px] font-bold">Estado del producto</h2>
                   <div className="space-y-1.5">
                     {[
-                      { label: 'Borrador', helper: 'Solo visible para administradores', checked: !product?.is_active && displayedStock > 0 },
-                      { label: 'Activo', helper: 'Visible en la tienda online', checked: Boolean(product?.is_active) },
-                      { label: 'Agotado', helper: 'Sin existencias disponibles', checked: displayedStock===0 },
+                      { label: 'Borrador', helper: 'Solo visible para administradores', checked: displayedStatus === 'Borrador' },
+                      { label: 'Activo', helper: 'Visible en la tienda online', checked: displayedStatus === 'Activo' },
+                      { label: 'Agotado', helper: 'Sin existencias disponibles', checked: displayedStatus === 'Agotado' },
                       { label: 'Archivado', helper: 'Guardar sin publicar', checked: false },
                     ].map((status)=><div key={status.label}
                         className={'flex items-center gap-2.5 rounded-lg px-1.5 py-2 '+(status.checked?'bg-[#ffeaec]':'')}>
