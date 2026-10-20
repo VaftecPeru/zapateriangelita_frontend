@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronDown, Image as ImageIcon, Plus, Settings2, Trash2, X } from 'lucide-react';
 import {
   Brand,
@@ -64,6 +64,8 @@ const emptyForm = (): EditorForm => ({
 
 const emptyVariant = (): ProductVariantDraft => ({
   color: '',
+  articleModel: '',
+  skus: [''],
   sizes: [''],
   stocks: [0],
   files: [],
@@ -95,10 +97,12 @@ const ProductEditorModal = ({
 }: Props) => {
   const [form, setForm] = useState<EditorForm>(emptyForm());
   const [variants, setVariants] = useState<ProductVariantDraft[]>([emptyVariant()]);
+  const [simpleProduct, setSimpleProduct] = useState(false);
   const [generalFiles, setGeneralFiles] = useState<(File | null)[]>(Array(5).fill(null));
   const [generalPreviews, setGeneralPreviews] = useState<(string | null)[]>(Array(5).fill(null));
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   const [catalogManager, setCatalogManager] = useState<CatalogKind | null>(null);
   const [catalogName, setCatalogName] = useState('');
@@ -110,12 +114,14 @@ const ProductEditorModal = ({
 
     setError('');
     setSaving(false);
+    savingRef.current = false;
     setCatalogManager(null);
     setCatalogName('');
     setCatalogError('');
 
     if (!product) {
       setForm(emptyForm());
+      setSimpleProduct(false);
       setVariants([emptyVariant()]);
       setGeneralFiles(Array(5).fill(null));
       setGeneralPreviews(Array(5).fill(null));
@@ -145,6 +151,7 @@ const ProductEditorModal = ({
     });
 
     const colors = parseColors(product.color);
+    setSimpleProduct(colors.length === 0 && !product.variant_stocks?.length);
     const globalSizes = parseList(product.size);
     const legacyGallery = product.images?.length
       ? product.images
@@ -161,8 +168,18 @@ const ProductEditorModal = ({
               ? legacyGallery
               : [];
 
+          const sizesForColor = product.color_sizes?.[color]?.length
+            ? product.color_sizes[color]
+            : globalSizes.length ? globalSizes : [''];
+          const stocksForColor = product.variant_stocks?.filter(
+            (item) => item.color.toLocaleLowerCase() === color.toLocaleLowerCase(),
+          ) ?? [];
           return {
             color,
+            articleModel: stocksForColor.find((item) => item.article_model)?.article_model || '',
+            skus: sizesForColor.map((size) =>
+              stocksForColor.find((item) => item.size === size)?.sku || '',
+            ),
             sizes: product.color_sizes?.[color]?.length
               ? product.color_sizes[color]
               : globalSizes.length
@@ -239,6 +256,12 @@ const ProductEditorModal = ({
     setVariant(variantIndex, { sizes });
   };
 
+  const updateSku = (variantIndex: number, sizeIndex: number, value: string) => {
+    const skus = [...variants[variantIndex].skus];
+    skus[sizeIndex] = value;
+    setVariant(variantIndex, { skus });
+  };
+
   const updateStock = (variantIndex: number, sizeIndex: number, value: number) => {
     const stocks = [...variants[variantIndex].stocks];
     stocks[sizeIndex] = Math.max(0, Math.trunc(value || 0));
@@ -248,6 +271,7 @@ const ProductEditorModal = ({
   const addSize = (variantIndex: number) => {
     setVariant(variantIndex, {
       sizes: [...variants[variantIndex].sizes, ''],
+      skus: [...variants[variantIndex].skus, ''],
       stocks: [...variants[variantIndex].stocks, 0],
     });
   };
@@ -255,7 +279,9 @@ const ProductEditorModal = ({
   const removeSize = (variantIndex: number, sizeIndex: number) => {
     const sizes = variants[variantIndex].sizes.filter((_, i) => i !== sizeIndex);
     const stocks = variants[variantIndex].stocks.filter((_, i) => i !== sizeIndex);
+    const skus = variants[variantIndex].skus.filter((_, i) => i !== sizeIndex);
     setVariant(variantIndex, {
+      skus: skus.length ? skus : [''],
       sizes: sizes.length ? sizes : [''],
       stocks: stocks.length ? stocks : [0],
     });
@@ -416,6 +442,7 @@ const ProductEditorModal = ({
     if (!form.category_id) return 'Selecciona una categoría.';
     if (!Number.isFinite(Number(form.price)) || Number(form.price) < 0) return 'El precio debe ser cero (borrador) o mayor.';
     if (Number(form.stock) < 0) return 'El stock no puede ser negativo.';
+    if (simpleProduct) return '';
 
 
     const cleaned = variants
@@ -427,6 +454,36 @@ const ProductEditorModal = ({
 
     if (!cleaned.length || cleaned.some((variant) => !variant.color)) {
       return 'Cada variante debe tener un color.';
+    }
+
+    if (variants.some((variant) => variant.color.trim() && !variant.articleModel.trim())) {
+      return 'Cada color debe tener su propio modelo del artículo.';
+    }
+
+    if (variants.some((variant) => variant.articleModel.trim().length > 120)) {
+      return 'El modelo por color no debe superar 120 caracteres.';
+    }
+
+    for (const variant of variants) {
+      if (!variant.color.trim()) continue;
+      const sizes = variant.sizes.map((value) => value.trim());
+      if (sizes.some((value) => !value)) {
+        return 'Completa todas las tallas del color ' + variant.color + '.';
+      }
+      if (new Set(sizes.map((size) => size.toLocaleLowerCase())).size !== sizes.length) {
+        return 'No se puede repetir una talla del mismo color.';
+      }
+      if (variant.skus.some((sku) => sku.trim().length > 120)) {
+        return 'El SKU no puede superar 120 caracteres.';
+      }
+      if (variant.stocks.some((stock) => !Number.isSafeInteger(stock) || stock < 0)) {
+        return 'Cada talla debe tener un stock entero no negativo.';
+      }
+    }
+
+    const skus = variants.flatMap((variant) => variant.skus.map((sku) => sku.trim().toLowerCase()).filter(Boolean));
+    if (new Set(skus).size !== skus.length) {
+      return 'Cada combinación de color y talla requiere un SKU diferente.';
     }
 
     if (cleaned.some((variant) => !variant.sizes.length)) {
@@ -443,6 +500,7 @@ const ProductEditorModal = ({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (savingRef.current) return;
     const validation = validate();
 
     if (validation) {
@@ -450,11 +508,12 @@ const ProductEditorModal = ({
       return;
     }
 
+    savingRef.current = true;
     setSaving(true);
     setError('');
 
     try {
-      const activeVariants = variants.filter((variant) => variant.color.trim());
+      const activeVariants = simpleProduct ? [] : variants.filter((variant) => variant.color.trim());
       const colors = activeVariants.map((variant) => variant.color.trim());
       const uniqueSizes = Array.from(
         new Set(
@@ -491,6 +550,8 @@ const ProductEditorModal = ({
             color: variant.color.trim(),
             size: size.trim(),
             stock: Math.max(0, Math.trunc(Number(variant.stocks[sizeIndex] || 0))),
+            article_model: variant.articleModel.trim(),
+            sku: (variant.skus[sizeIndex] || '').trim() || null,
           }))
           .filter((item) => item.size),
       );
@@ -504,7 +565,7 @@ const ProductEditorModal = ({
       if (form.subcategory_id) data.append('subcategory_id', String(form.subcategory_id));
       if (brandId) data.append('brand_id', String(brandId));
       data.append('price', String(form.price));
-      data.append('stock', String(totalVariantStock));
+      data.append('stock', String(simpleProduct ? Math.max(0, Math.trunc(form.stock)) : totalVariantStock));
       data.append('size', uniqueSizes.join(','));
       data.append('color', colors.join(','));
       data.append('material', form.material.trim());
@@ -559,6 +620,7 @@ const ProductEditorModal = ({
         );
       }
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
@@ -735,8 +797,9 @@ const ProductEditorModal = ({
 
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                Modelo
+                Modelo general (opcional)
               </label>
+              <p className="text-[10px] text-gray-500">No reemplaza el modelo editable de cada color.</p>
               <input
                 list="model-suggestions"
                 value={form.model}
@@ -841,19 +904,43 @@ const ProductEditorModal = ({
                   Variantes del producto
                 </p>
                 <p className="mt-1 text-xs text-gray-400">
-                  Cada color agrupa su imagen principal, galería y tallas.
+                  Cada color tiene su propio modelo editable; cada talla conserva SKU y stock independientes.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={addVariant}
-                className="inline-flex items-center gap-2 rounded-xl border border-store-red/20 bg-red-50 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-store-red hover:bg-store-red hover:text-white"
+                disabled={simpleProduct}
+                className="inline-flex items-center gap-2 rounded-xl border border-store-red/20 disabled:opacity-40 disabled:cursor-not-allowed bg-red-50 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-store-red hover:bg-store-red hover:text-white"
               >
                 <Plus size={15} /> Agregar color
               </button>
             </div>
 
-            <div className="space-y-4">
+            <label className="flex items-center gap-3 rounded-xl bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700">
+              <input
+                type="checkbox"
+                checked={simpleProduct}
+                onChange={(event) => {
+                  if (event.target.checked && product?.variant_stocks?.length &&
+                    !window.confirm('Cambiar a producto simple quitará las variantes y su desglose de stock al guardar. ¿Continuar?')) {
+                    return;
+                  }
+                  setSimpleProduct(event.target.checked);
+                }}
+                className="accent-red-600"
+              />
+              Producto simple (sin variaciones de color ni talla)
+            </label>
+            {simpleProduct && (
+              <label className="block space-y-2 rounded-xl border border-gray-200 bg-white p-4 text-xs font-semibold">
+                Stock del producto simple
+                <input type="number" min="0" step="1" value={form.stock}
+                  onChange={(e) => setForm((current) => ({...current, stock: Math.max(0, Math.trunc(Number(e.target.value) || 0))}))}
+                  className="field-input w-48" aria-label="Stock del producto simple" />
+              </label>
+            )}
+            {!simpleProduct && <div className="space-y-4">
               {variants.map((variant, index) => (
                 <div
                   key={`variant-${index}`}
@@ -880,7 +967,7 @@ const ProductEditorModal = ({
                     )}
                   </div>
 
-                  <div className="grid gap-5 lg:grid-cols-[220px_1fr]">
+                  <div className="grid gap-5 lg:grid-cols-[180px_240px_1fr]">
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
                         Color *
@@ -895,13 +982,28 @@ const ProductEditorModal = ({
 
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                        Modelo del artículo por color *
+                      </label>
+                      <input
+                        value={variant.articleModel}
+                        maxLength={120}
+                        onChange={(e) => setVariant(index, { articleModel: e.target.value })}
+                        className="field-input bg-white"
+                        aria-label={'Modelo para color ' + (variant.color || index + 1)}
+                        placeholder="Ej: 2001-N"
+                      />
+                      <p className="text-[10px] text-gray-500">Editable e independiente del código general y del SKU.</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
                         Tallas disponibles *
                       </label>
                       <div className="flex flex-wrap items-center gap-2">
                         {variant.sizes.map((size, sizeIndex) => (
                           <div
                             key={`size-${index}-${sizeIndex}`}
-                            className="flex items-center gap-1"
+                            className="flex items-center gap-1 rounded-lg border border-gray-100 p-1"
                           >
                             <input
                               value={size}
@@ -920,6 +1022,14 @@ const ProductEditorModal = ({
                               onChange={(e) => updateStock(index, sizeIndex, Number(e.target.value))}
                               className="w-24 rounded-lg border border-gray-200 bg-white px-2 py-2 text-center text-xs font-semibold outline-none focus:border-store-red"
                               placeholder="Stock"
+                            />
+                            <input
+                              value={variant.skus[sizeIndex] ?? ''}
+                              maxLength={120}
+                              onChange={(e) => updateSku(index, sizeIndex, e.target.value)}
+                              aria-label={`SKU color ${variant.color || index + 1} talla ${size || sizeIndex + 1}`}
+                              className="w-32 rounded-lg border border-gray-200 bg-white px-2 py-2 text-xs font-semibold outline-none focus:border-store-red"
+                              placeholder="SKU (opcional)"
                             />
                             {variant.sizes.length > 1 && (
                               <button
@@ -1023,7 +1133,7 @@ const ProductEditorModal = ({
                   </div>
                 </div>
               ))}
-            </div>
+            </div>}
           </section>
 
           <section className="grid grid-cols-1 gap-5 md:grid-cols-2">

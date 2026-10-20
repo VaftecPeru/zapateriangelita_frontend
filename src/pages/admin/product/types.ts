@@ -1,5 +1,7 @@
 export type ProductVariantDraft = {
   color: string;
+  articleModel: string;
+  skus: string[];
   sizes: string[];
   stocks: number[];
   files: File[];

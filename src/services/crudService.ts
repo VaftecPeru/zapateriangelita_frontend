@@ -62,7 +62,7 @@ export interface Product {
     sizes?: Array<{ id?: number; size: string; stock: number }>;
     color_sizes?: Record<string, string[]>;
     colors?: Array<{ id?: number; color: string; hex?: string | null }>;
-    variant_stocks?: Array<{ id?: number; color: string; size: string; stock: number }>;
+    variant_stocks?: Array<{ id?: number; color: string; size: string; stock: number; article_model?: string | null; sku?: string | null }>;
 }
 
 export interface AdditionalService {
