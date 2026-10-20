@@ -38,6 +38,12 @@ export interface Product {
     product_code?: string;
     name: string;
     model?: string;
+    product_type?: 'simple' | 'variable' | null;
+    gender?: '' | 'mujer' | 'hombre' | 'ninos' | 'unisex';
+    barcode?: string | null;
+    collection_name?: string | null;
+    seo_title?: string | null;
+    seo_description?: string | null;
     category?: string | { id?: number; name: string; slug?: string };
     category_id?: number;
     subcategory_id?: number;
