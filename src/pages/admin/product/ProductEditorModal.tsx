@@ -29,6 +29,11 @@ type EditorForm = {
   product_code: string;
   name: string;
   model: string;
+  gender: '' | 'mujer' | 'hombre' | 'ninos' | 'unisex';
+  barcode: string;
+  collection_name: string;
+  seo_title: string;
+  seo_description: string;
   brand_name: string;
   category_name: string;
   subcategory_name: string;
@@ -49,6 +54,11 @@ const emptyForm = (): EditorForm => ({
   product_code: '',
   name: '',
   model: '',
+  gender: '',
+  barcode: '',
+  collection_name: '',
+  seo_title: '',
+  seo_description: '',
   brand_name: '',
   category_name: '',
   subcategory_name: '',
@@ -115,7 +125,7 @@ const ProductEditorModal = ({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [skuEditor, setSkuEditor] = useState<number | null>(null);
   const [mainImageIndex, setMainImageIndex] = useState(0);
-  const [variantTab, setVariantTab] = useState<'color' | 'talla' | 'material'>('color');
+  const [variantTab, setVariantTab] = useState<'color' | 'talla' | 'material' | 'coleccion'>('color');
   const saveIntent = useRef<'save' | 'draft' | 'publish'>('save');
   const savingRef = useRef(false);
 
@@ -151,6 +161,11 @@ const ProductEditorModal = ({
       product_code: product.product_code || '',
       name: product.name || '',
       model: product.model || '',
+      gender: product.gender || '',
+      barcode: product.barcode || '',
+      collection_name: product.collection_name || '',
+      seo_title: product.seo_title || '',
+      seo_description: product.seo_description || '',
       brand_name: typeof product.brand === 'object' ? product.brand.name : String(product.brand || ''),
       category_name:
         (typeof product.category === 'object' ? product.category.name : String(product.category || '')) ||
@@ -538,12 +553,17 @@ const ProductEditorModal = ({
     const intent = saveIntent.current;
     saveIntent.current = 'save';
     const validation = validate();
-    if (intent === 'draft' && !product?.id && Number(form.price) > 0) {
-      setError('Para crear un borrador, el precio debe estar en 0. El backend publicaría automáticamente una ficha comercial completa.');
+    if (intent === 'publish' && (
+      Number(form.price) <= 0 || !form.product_code.trim() || !form.model.trim()
+      || !form.brand_id && !form.brand_name.trim()
+      || !form.category_id || displayedStock <= 0
+      || (!simpleProduct && variants.some(variant => !variant.color.trim() || !variant.sizes.every(size => size.trim())))
+    )) {
+      setError('Para publicar, se requiere código general, modelo, marca, categoría, precio y stock verificable.');
       return;
     }
-    if (intent === 'publish' && (!form.price || !form.brand_id && !form.brand_name.trim() || displayedStock <= 0 || !generalPreviews.some(Boolean) && !variants.some(v => v.previews.length || v.existingImages.length))) {
-      setError('Para publicar, registra un precio mayor a 0, marca, fotografías y stock disponible.');
+    if (form.barcode.trim().length > 120 || form.collection_name.trim().length > 120 || form.seo_title.trim().length > 255 || form.seo_description.trim().length > 500) {
+      setError('Comprueba la longitud de código de barras, colección y metadatos SEO.');
       return;
     }
 
@@ -617,8 +637,14 @@ const ProductEditorModal = ({
       data.append('reviews', String(product?.reviews ?? 0));
       data.append('discount', form.discount ? String(form.discount) : '');
       data.append('status', form.status);
-      if (product?.id && intent === 'draft') data.append('is_active', '0');
-      if (product?.id && intent === 'publish') data.append('is_active', '1');
+      data.append('product_type', simpleProduct ? 'simple' : 'variable');
+      if (intent === 'draft') data.append('is_active', '0');
+      if (intent === 'publish') data.append('is_active', '1');
+      data.append('gender', form.gender);
+      data.append('barcode', form.barcode.trim());
+      data.append('collection_name', form.collection_name.trim());
+      data.append('seo_title', form.seo_title.trim());
+      data.append('seo_description', form.seo_description.trim());
       data.append('description', form.description || '');
       data.append('color_sizes', JSON.stringify(colorSizes));
       data.append('variant_stocks', JSON.stringify(variantStocks));
@@ -755,8 +781,8 @@ const ProductEditorModal = ({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <button type="button" onClick={() => setPreviewOpen(true)} className="flex items-center gap-2 rounded-lg border border-[#dce0e7] bg-white px-4 py-2.5 text-[12px] font-semibold text-[#374151] shadow-sm hover:border-store-red"><Eye size={16}/> Vista previa</button>
-                <button type="submit" disabled={saving || (!product?.id && Number(form.price)>0)}
-                  title={!product?.id && Number(form.price)>0 ? 'Para crear borrador, el precio debe ser 0 según el backend actual' : 'Conservar oculto hasta aprobación'}
+                <button type="submit" disabled={saving}
+                  title="Guardar como borrador sin publicación automática"
                   onClick={() => {saveIntent.current='draft';}}
                   className="flex items-center gap-2 rounded-lg border border-[#dce0e7] bg-white px-4 py-2.5 text-[12px] font-semibold text-[#374151] shadow-sm hover:border-store-red disabled:cursor-not-allowed disabled:opacity-50">
                   <Save size={15}/> Guardar borrador</button>
@@ -790,7 +816,12 @@ const ProductEditorModal = ({
                       <label className="space-y-1"><span className="text-xs font-semibold">Nombre del producto <em className="not-italic text-store-red">*</em></span><input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Nombre visible en la tienda" className="angelita-reference-input"/></label>
                       <div className="space-y-1"><div className="flex items-center justify-between"><span className="text-xs font-semibold">Categoría <em className="not-italic text-store-red">*</em></span><button type="button" onClick={()=>openCatalogManager('category')} className="text-[10px] font-semibold text-store-red hover:underline">Gestionar</button></div><CatalogSearchSelect value={form.category_name} options={categories} placeholder="Selecciona una categoría" onChange={(id,name)=>setForm(f=>({...f,category_id:id,category_name:name,subcategory_id:undefined,subcategory_name:''}))}/></div>
                       <div className="space-y-1"><div className="flex items-center justify-between"><span className="text-xs font-semibold">Marca</span><button type="button" onClick={()=>openCatalogManager('brand')} className="text-[10px] font-semibold text-store-red hover:underline">Gestionar</button></div><input list="angelita-brand-options" value={form.brand_name} onChange={e=>{const name=e.target.value; const b=brands.find(x=>x.name.toLowerCase()===name.trim().toLowerCase());setForm({...form,brand_name:name,brand_id:b?.id});}} placeholder="Selecciona una marca" className="angelita-reference-input"/><datalist id="angelita-brand-options">{brands.map(b=><option key={b.id} value={b.name}/>)}</datalist></div>
-                      <div className="space-y-1 sm:col-span-2"><span className="text-xs font-semibold" title="Pendiente de integración con la API: no se guarda género">Género (visual)</span><div className="grid grid-cols-4 gap-2">{['Mujer','Hombre','Niños','Unisex'].map(g=><div key={g} className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-[#fbfbfc] px-2 py-2 text-[11px] text-gray-400" title="El backend aún no almacena género a nivel de producto"><span className="h-3 w-3 rounded-full border border-gray-300"/>{g}</div>)}</div></div>
+                      <fieldset className="space-y-1 sm:col-span-2"><legend className="text-xs font-semibold">Género</legend><div className="grid grid-cols-4 gap-2">
+                      {([{value:'mujer',label:'Mujer'},{value:'hombre',label:'Hombre'},{value:'ninos',label:'Niños'},{value:'unisex',label:'Unisex'}] as const).map(g=>
+                        <label key={g.value} className={'flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-[11px] '+(form.gender===g.value?'border-store-red bg-red-50 font-bold text-store-red':'border-gray-200 bg-[#fbfbfc] text-gray-600')}>
+                          <input type="radio" name="product_gender" value={g.value} checked={form.gender===g.value} onChange={()=>setForm({...form,gender:g.value})} className="accent-red-600"/>{g.label}
+                        </label>)}
+                      </div></fieldset>
                     </div>
                   </div>
                 </section>
@@ -804,15 +835,16 @@ const ProductEditorModal = ({
                   </div>
                   <div className="my-3 flex flex-wrap items-center justify-between gap-2 border-b border-gray-100">
                     <div className="flex gap-1.5">
-                      {[{id:'color', label:'Color'},{id:'talla',label:'Talla'},{id:'material',label:'Material'}].map(tab=>
+                      {[{id:'color', label:'Color'},{id:'talla',label:'Talla'},{id:'material',label:'Material'},{id:'coleccion',label:'Colección'}].map(tab=>
                         <button type="button" key={tab.id} onClick={()=>setVariantTab(tab.id as typeof variantTab)}
                           className={'border-b-2 px-3 py-2.5 text-[11px] font-bold '+(variantTab===tab.id?'border-store-red bg-[#fff1f2] text-store-red':'border-transparent text-gray-500 hover:text-store-red')}>
                           {tab.label}
                         </button>)}
-                      <span className="px-3 py-2.5 text-[11px] text-gray-300" title="Colecciones: pendiente de integración con el catálogo">Colección</span>
+
                     </div>
                     <label className="flex items-center gap-2 text-[11px] text-gray-500"><input type="checkbox" checked={simpleProduct} onChange={e=>{if(e.target.checked && product?.variant_stocks?.length && !window.confirm('Convertir en producto simple eliminará el desglose de variantes al guardar. ¿Continuar?')) return;setSimpleProduct(e.target.checked);}} className="accent-red-600"/> Sin variaciones</label>
                   </div>
+                  {variantTab==='coleccion' && <div className="mb-3 rounded-lg border border-gray-100 bg-gray-50 p-3"><label className="text-xs font-semibold">Nombre de colección (opcional)<input aria-label="Colección del producto" value={form.collection_name} maxLength={120} onChange={e=>setForm({...form,collection_name:e.target.value})} placeholder="Ej.: Colección Otoño" className="angelita-reference-input mt-1"/></label><p className="mt-1 text-[10px] text-gray-500">Nombre libre guardado por producto. El catálogo de colecciones se implementará por separado.</p></div>}
                   {variantTab==='material' && <div className="mb-3 rounded-lg border border-gray-100 bg-gray-50 p-3"><label className="text-xs font-semibold">Material principal<input value={form.material} onChange={e=>setForm({...form,material:e.target.value})} placeholder="Cuero, tela, sintético..." className="angelita-reference-input mt-1"/></label></div>}
                   {simpleProduct ? <div className="grid gap-3 rounded-lg bg-[#f8f9fb] p-4 sm:grid-cols-[1fr_180px]">
                     <div><h3 className="text-sm font-bold">Producto simple</h3><p className="mt-1 text-xs text-gray-500">Sin colores ni tallas: inventario único de artículo.</p></div>
@@ -940,15 +972,14 @@ const ProductEditorModal = ({
                   <h2 className="mb-4 border-l-[3px] border-store-red pl-3 text-[14px] font-bold">Inventario general</h2>
                   <div className="flex items-center justify-between text-[11px]"><span className="font-semibold text-gray-600">Gestionar inventario</span><span className="relative h-[18px] w-[35px] rounded-full bg-store-red"><span className="absolute right-[3px] top-[3px] h-[12px] w-[12px] rounded-full bg-white"/></span></div>
                   <label className="mt-3 block space-y-1 text-[11px] font-semibold text-gray-600">Código general / SKU base<input aria-label="Código general del producto" value={form.product_code} onChange={e=>setForm({...form,product_code:e.target.value})} className="angelita-reference-input" placeholder="ANG-2001"/></label>
-                  <label className="mt-3 block space-y-1 text-[11px] font-semibold text-gray-400" title="Pendiente de soporte de código de barras en Laravel">Código de barras (opcional)<input readOnly disabled placeholder="Pendiente de integrar con Laravel" className="angelita-reference-input cursor-not-allowed bg-gray-50"/></label>
+                  <label className="mt-3 block space-y-1 text-[11px] font-semibold text-gray-600">Código de barras (opcional)<input aria-label="Código de barras" maxLength={120} value={form.barcode} onChange={e=>setForm({...form,barcode:e.target.value})} placeholder="Ej.: 7501234567890" className="angelita-reference-input"/></label>
                   <div className="mt-3 flex justify-between border-t border-gray-100 pt-3 text-[12px]"><span className="font-semibold text-gray-600">Stock total</span><strong className="text-lg text-store-red">{displayedStock}</strong></div>
                   <p className="mt-1 text-[10px] leading-relaxed text-gray-400">Suma automática de las cantidades por talla y color, sin duplicar existencias.</p>
                 </section>
                 <section className="rounded-xl border border-[#e6e8ed] bg-white p-4 shadow-sm">
                   <h2 className="mb-3 border-l-[3px] border-store-red pl-3 text-[14px] font-bold">SEO (opcional)</h2>
-                  <p className="mb-3 text-[10px] text-amber-700">Referencia visual: la API actual no guarda metadatos SEO específicos.</p>
-                  <label className="block space-y-1 text-[11px] font-semibold text-gray-500">Título SEO sugerido<input readOnly value={(form.name||'Producto')+' | Zapatería Angelita'} className="angelita-reference-input bg-[#f9fafb]" title="Se genera únicamente como vista previa"/></label>
-                  <label className="mt-3 block space-y-1 text-[11px] font-semibold text-gray-500">Descripción sugerida<textarea readOnly rows={3} value={form.description.slice(0,160)} className="angelita-reference-input resize-none bg-[#f9fafb]" placeholder="Se mostrará un resumen del producto"/></label>
+                  <label className="block space-y-1 text-[11px] font-semibold text-gray-600">Título SEO <input aria-label="Título SEO" maxLength={255} value={form.seo_title} onChange={e=>setForm({...form,seo_title:e.target.value})} className="angelita-reference-input" placeholder={(form.name||'Producto')+' | Zapatería Angelita'}/></label>
+                  <label className="mt-3 block space-y-1 text-[11px] font-semibold text-gray-600">Descripción SEO<textarea aria-label="Descripción SEO" maxLength={500} rows={3} value={form.seo_description} onChange={e=>setForm({...form,seo_description:e.target.value})} className="angelita-reference-input resize-none" placeholder={form.description.slice(0,160) || 'Descripción para buscadores'}/></label>
                 </section>
                 <button type="button" onClick={onClose} className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-[12px] font-semibold text-gray-600 hover:text-store-red">Volver al catálogo</button>
               </aside>
