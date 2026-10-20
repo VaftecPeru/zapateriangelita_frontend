@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronDown, Image as ImageIcon, Plus, Settings2, Trash2, X } from 'lucide-react';
 import {
   Brand,
@@ -102,6 +102,7 @@ const ProductEditorModal = ({
   const [generalPreviews, setGeneralPreviews] = useState<(string | null)[]>(Array(5).fill(null));
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   const [catalogManager, setCatalogManager] = useState<CatalogKind | null>(null);
   const [catalogName, setCatalogName] = useState('');
@@ -113,6 +114,7 @@ const ProductEditorModal = ({
 
     setError('');
     setSaving(false);
+    savingRef.current = false;
     setCatalogManager(null);
     setCatalogName('');
     setCatalogError('');
@@ -462,6 +464,23 @@ const ProductEditorModal = ({
       return 'El modelo por color no debe superar 120 caracteres.';
     }
 
+    for (const variant of variants) {
+      if (!variant.color.trim()) continue;
+      const sizes = variant.sizes.map((value) => value.trim());
+      if (sizes.some((value) => !value)) {
+        return 'Completa todas las tallas del color ' + variant.color + '.';
+      }
+      if (new Set(sizes.map((size) => size.toLocaleLowerCase())).size !== sizes.length) {
+        return 'No se puede repetir una talla del mismo color.';
+      }
+      if (variant.skus.some((sku) => sku.trim().length > 120)) {
+        return 'El SKU no puede superar 120 caracteres.';
+      }
+      if (variant.stocks.some((stock) => !Number.isSafeInteger(stock) || stock < 0)) {
+        return 'Cada talla debe tener un stock entero no negativo.';
+      }
+    }
+
     const skus = variants.flatMap((variant) => variant.skus.map((sku) => sku.trim().toLowerCase()).filter(Boolean));
     if (new Set(skus).size !== skus.length) {
       return 'Cada combinación de color y talla requiere un SKU diferente.';
@@ -481,6 +500,7 @@ const ProductEditorModal = ({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (savingRef.current) return;
     const validation = validate();
 
     if (validation) {
@@ -488,6 +508,7 @@ const ProductEditorModal = ({
       return;
     }
 
+    savingRef.current = true;
     setSaving(true);
     setError('');
 
@@ -599,6 +620,7 @@ const ProductEditorModal = ({
         );
       }
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
