@@ -103,7 +103,7 @@ export default function ImportCatalogPreflight({
           <h3 className="font-black text-black">Paso 0 · Preparar marcas, categorías y subcategorías</h3>
           <p className="mt-1 text-xs leading-5 text-gray-600">
             Se reutilizan los registros existentes. Los nuevos se crean inactivos y necesitan aprobación explícita.
-            No se crearán catálogos de forma automática al importar productos.
+            No se crearán catálogos de forma automática al importar productos. También puedes continuar con campos vacíos o catálogos pendientes.
           </p>
         </div>
       </div>
@@ -178,6 +178,18 @@ export default function ImportCatalogPreflight({
             })}
           </div>
         </>
+      )}
+      {issues.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="max-w-2xl text-xs font-semibold text-amber-900">
+            Puedes continuar sin registrar estos catálogos. Los productos se guardarán como borradores
+            y las referencias sin asociar quedarán en los pendientes de importación.
+          </p>
+          <button type="button" disabled={busy} onClick={onContinue}
+            className="rounded-xl bg-store-red px-5 py-3 text-xs font-black uppercase tracking-wide text-white disabled:opacity-50">
+            Continuar con pendientes
+          </button>
+        </div>
       )}
       {localError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{localError}</p>}
     </section>

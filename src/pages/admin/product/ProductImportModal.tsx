@@ -12,7 +12,7 @@ import {
 import { brandService, categoryService, productService, subcategoryService } from '../../../services/crudService';
 import type { Brand, Category, Subcategory } from '../../../services/crudService';
 import ImportCatalogPreflight, {
-  emptyCatalogMappings, unresolvedCatalogs,
+  emptyCatalogMappings,
 } from './ImportCatalogPreflight';
 import type { CatalogData, CatalogMappings, CatalogType } from './ImportCatalogPreflight';
 import Pagination from '../../../components/Pagination';
@@ -49,6 +49,7 @@ type Preview = {
   header_row: number;
   summary: {
     rows: number;
+    excluded_rows?: number;
     products: number;
     variants: number;
     valid_products: number;
@@ -110,8 +111,8 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
   }, [preview, previewFilter]);
 
   const previewPagination = usePagination(filteredPreviewRows, 25);
-  const catalogReady = !catalogLoading && !!preview
-    && unresolvedCatalogs(preview.rows, catalogs).length === 0;
+  // Catálogos faltantes ya no bloquean el registro: quedan pendientes en borrador.
+  const catalogReady = !catalogLoading && !!preview;
 
   if (!open) return null;
 
@@ -332,11 +333,11 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
       <div className="max-h-[94vh] w-full max-w-7xl overflow-y-auto rounded-[2.2rem] border border-gray-200 bg-white p-6 shadow-2xl sm:p-8">
         <div className="mb-6 flex items-start justify-between gap-4 border-b border-gray-100 pb-5">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-store-red">Inventario masivo · V2</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-store-red">Inventario masivo · V3</p>
             <h2 className="mt-1 text-2xl font-black text-black">Importar productos desde Excel o CSV</h2>
             <p className="mt-1 max-w-3xl text-sm text-gray-500">
               Compatible con XLSX y CSV. Puedes registrar varias tallas en una sola fila por color, siempre que indiques
-              <strong> el stock exacto de cada talla</strong>. Las filas del mismo código se consolidan en un producto. Los productos sin precio o imagen se guardan como borradores, sin aparecer en la tienda.
+              <strong> el stock exacto de cada talla</strong>. Las filas del mismo código se consolidan en un producto. Todos los campos del producto son opcionales. Los datos incompletos se guardan como borradores; ninguna talla ni código se inventa.
             </p>
           </div>
           <button
@@ -377,7 +378,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
             className="inline-flex min-h-28 items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-6 text-xs font-black uppercase tracking-widest text-gray-600 transition hover:border-store-red hover:text-store-red disabled:opacity-50"
           >
             {downloading ? <Loader2 size={17} className="animate-spin" /> : <Download size={17} />}
-            Plantilla XLSX V2
+            Plantilla XLSX V3
           </button>
         </div>
 
@@ -388,20 +389,21 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
             El sistema registra cinco variantes independientes y comprueba que el total coincida.
           </p>
           <p className="mt-1 font-semibold">
-            Si indicas varias tallas sin desglose, la importación se bloqueará para evitar inventario incorrecto.
-            Una talla individual puede continuar usando únicamente STOCK.
+            Si indicas varias tallas sin desglose, se conservará el stock total SIN asignarlo a ninguna talla y el producto seguirá como borrador.
+            Si falta stock, se guardará 0 hasta conocer las cantidades.
           </p>
           <p className="mt-2">
             PRECIO vacío o 0 = <strong>borrador, no publicable</strong>. Un precio positivo único para una misma marca,
             categoría y modelo se aplica a sus colores sin precio; los precios distintos se respetan.
-            Para publicar automáticamente también se necesita imagen comercial, categoría y marca activas,
-            modelo, talla, color y stock disponible.
+            Para publicar automáticamente se necesitan código original, nombre comercial, precio positivo,
+            marca y categoría activas, modelo, talla, color y existencias asignadas a variantes.
+            Las fotografías son opcionales y pueden cargarse después.
           </p>
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-600">
             <strong className="block text-black">CREAR</strong>
-            El código debe ser nuevo. También se reconocen valores equivalentes como CREATE, ALTA o NUEVO.
+            ACCIÓN puede quedar vacía: el sistema elige CREAR para códigos nuevos o ACTUALIZAR para los existentes. No se fabrica un código cuando falta.
           </div>
           <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-600">
             <strong className="block text-black">Variantes del mismo producto</strong>
@@ -409,11 +411,12 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
           </div>
           <div className="rounded-2xl border border-green-100 bg-green-50 px-4 py-3 text-xs text-green-800">
             <strong className="block">Catálogo inteligente</strong>
-            CATEGORÍA puede omitirse; los catálogos nuevos requieren registro y aprobación en el Paso 0. Los alias conocidos, como FLEXI DAMA, se reconocen automáticamente.
+            MARCA, CATEGORÍA y SUBCATEGORÍA pueden quedar pendientes. El Paso 0 permite registrarlas o asociarlas sin impedir guardar el borrador.
           </div>
           <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">
             <strong className="block">Imágenes</strong>
-            Se aceptan URL https:// o rutas /uploads/. Los nombres de archivo sueltos se muestran como advertencia y no se importan.
+            Las fotografías no son obligatorias para importar ni publicar. Se aceptan URL https:// o rutas /uploads/.
+            Los nombres de archivo sueltos se muestran como advertencia y no se importan.
           </div>
         </div>
 
@@ -452,6 +455,9 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
               <Metric label="Borradores" value={preview.summary.draft_products ?? 0} warning />
               <Metric label="Filas con error" value={preview.summary.error_rows} danger={preview.summary.error_rows > 0} />
               <Metric label="Advertencias" value={preview.summary.warnings} warning={preview.summary.warnings > 0} />
+              {(preview.summary.excluded_rows ?? 0) > 0 && (
+                <Metric label="Omitidas por VALIDACIÓN" value={preview.summary.excluded_rows ?? 0} warning />
+              )}
             </div>
 
             <div className={'rounded-2xl border px-4 py-3 text-sm ' + (
@@ -665,7 +671,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
             >
               {importing ? <Loader2 size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />}
               {importing
-                ? 'Importando...'
+                ? 'Guardando borradores y productos...'
                 : preview && !preview.valid
                   ? validOnly ? 'Importar solo ' + preview.summary.valid_products + ' válidos' : 'Corregir ' + preview.summary.error_rows + ' filas para importar'
                   : 'Importar ' + (preview?.summary.valid_products || 0) + ' productos'}
