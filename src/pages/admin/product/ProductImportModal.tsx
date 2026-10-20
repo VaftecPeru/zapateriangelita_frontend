@@ -332,7 +332,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
       <div className="max-h-[94vh] w-full max-w-7xl overflow-y-auto rounded-[2.2rem] border border-gray-200 bg-white p-6 shadow-2xl sm:p-8">
         <div className="mb-6 flex items-start justify-between gap-4 border-b border-gray-100 pb-5">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-store-red">Inventario masivo · V2</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-store-red">Inventario masivo · V3</p>
             <h2 className="mt-1 text-2xl font-black text-black">Importar productos desde Excel o CSV</h2>
             <p className="mt-1 max-w-3xl text-sm text-gray-500">
               Compatible con XLSX y CSV. Puedes registrar varias tallas en una sola fila por color, siempre que indiques
@@ -377,7 +377,7 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
             className="inline-flex min-h-28 items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-6 text-xs font-black uppercase tracking-widest text-gray-600 transition hover:border-store-red hover:text-store-red disabled:opacity-50"
           >
             {downloading ? <Loader2 size={17} className="animate-spin" /> : <Download size={17} />}
-            Plantilla XLSX V2
+            Plantilla XLSX V3
           </button>
         </div>
 
@@ -394,8 +394,9 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
           <p className="mt-2">
             PRECIO vacío o 0 = <strong>borrador, no publicable</strong>. Un precio positivo único para una misma marca,
             categoría y modelo se aplica a sus colores sin precio; los precios distintos se respetan.
-            Para publicar automáticamente también se necesita imagen comercial, categoría y marca activas,
-            modelo, talla, color y stock disponible.
+            Para publicar automáticamente se necesitan código original, nombre comercial, precio positivo,
+            marca y categoría activas, modelo, talla, color y existencias asignadas a variantes.
+            Las fotografías son opcionales y pueden cargarse después.
           </p>
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -413,7 +414,8 @@ const ProductImportModal = ({ open, onClose, onImported }: Props) => {
           </div>
           <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">
             <strong className="block">Imágenes</strong>
-            Se aceptan URL https:// o rutas /uploads/. Los nombres de archivo sueltos se muestran como advertencia y no se importan.
+            Las fotografías no son obligatorias para importar ni publicar. Se aceptan URL https:// o rutas /uploads/.
+            Los nombres de archivo sueltos se muestran como advertencia y no se importan.
           </div>
         </div>
 
