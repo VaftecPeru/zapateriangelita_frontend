@@ -57,6 +57,17 @@ async function run() {
     assert.equal(modelB?.value, '2001-B');
     assert.equal(skuN?.value, '2001-N-38');
     assert.equal(skuB?.value, '2001-B-39');
+    assert.ok(mount.querySelector('.product-editor-workspace'), 'Debe mostrar vista de trabajo amplia');
+    assert.ok(mount.querySelector('aside[aria-label="Opciones y resumen del producto"]'), 'Falta panel lateral de precios e inventario');
+    assert.equal(mount.querySelector<HTMLInputElement>('input[aria-label="Código general del producto"]')?.value, '2001');
+    assert.match(mount.textContent || '', /Total de este color: 5 unidades/);
+    const previewButton = [...mount.querySelectorAll('button')].find((button) => button.textContent?.includes('Vista previa'));
+    assert.ok(previewButton, 'Falta acción de vista previa');
+    await act(async () => previewButton!.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })));
+    assert.ok(mount.querySelector('[role="dialog"][aria-label="Vista previa del producto"]'), 'Vista previa no se abrió');
+    const closePreview = mount.querySelector<HTMLButtonElement>('button[aria-label="Cerrar vista previa"]');
+    await act(async () => closePreview!.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })));
+    assert.equal(mount.querySelector('[role="dialog"]'), null);
 
     const form = mount.querySelector('form')!;
     await act(async () => { form.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true })); });
