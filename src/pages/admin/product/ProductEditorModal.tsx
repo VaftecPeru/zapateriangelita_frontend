@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, Image as ImageIcon, Plus, Settings2, Trash2, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Check, ChevronDown, Eye, Image as ImageIcon, PackageCheck, Plus, Save, Settings2, Trash2, X } from 'lucide-react';
 import {
   Brand,
   Category,
@@ -102,6 +102,7 @@ const ProductEditorModal = ({
   const [generalPreviews, setGeneralPreviews] = useState<(string | null)[]>(Array(5).fill(null));
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const savingRef = useRef(false);
 
   const [catalogManager, setCatalogManager] = useState<CatalogKind | null>(null);
@@ -114,6 +115,7 @@ const ProductEditorModal = ({
 
     setError('');
     setSaving(false);
+    setPreviewOpen(false);
     savingRef.current = false;
     setCatalogManager(null);
     setCatalogName('');
@@ -646,39 +648,37 @@ const ProductEditorModal = ({
         ? 'Nueva subcategoría'
         : 'Nueva marca';
 
+  const displayedStock = simpleProduct
+    ? Math.max(0, Math.trunc(Number(form.stock) || 0))
+    : variants.reduce((total, v) => total + v.stocks.reduce((sum, qty) => sum + Number(qty || 0), 0), 0);
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-5">
-      <div className="product-editor-scroll max-h-[96vh] w-full max-w-7xl overflow-y-auto rounded-[2.4rem] border border-gray-200 bg-white p-4 shadow-2xl sm:p-6 lg:p-8">
-        <div className="mb-7 grid grid-cols-[1fr_auto] items-start gap-4 border-b border-gray-100 pb-5 sm:grid-cols-[1fr_180px_auto]">
-          <div>
-            <h2 className="text-2xl font-black tracking-tight text-black">
-              {product ? 'Editar Producto' : 'Nuevo Producto'}
-            </h2>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-store-red">
-              Catálogo e inventario · Zapatería Angelita
-            </p>
+    <div className="product-editor-workspace fixed inset-0 z-[110] overflow-y-auto bg-[#f6f7f9] text-[#161922]">
+      <div className="min-h-screen">
+        <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur">
+          <div className="mx-auto flex w-full max-w-[1560px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-7">
+            <div className="flex min-w-0 items-center gap-3">
+              <button type="button" onClick={onClose} aria-label="Volver al catálogo de productos"
+                className="rounded-xl border border-gray-200 bg-white p-2.5 text-gray-700 transition hover:border-store-red hover:text-store-red">
+                <ArrowLeft size={18} />
+              </button>
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-[.18em] text-store-red">ANGELITA · Gestión de catálogo</p>
+                <h2 className="truncate text-xl font-bold tracking-tight sm:text-2xl">{product ? 'Editar producto' : 'Agregar producto'}</h2>
+                <p className="text-xs text-gray-500">Código general, modelos editables por color y SKU por talla.</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="button" onClick={() => setPreviewOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs font-bold text-gray-700 hover:border-store-red">
+                <Eye size={15} /> Vista previa
+              </button>
+              <button type="submit" form="angelita-product-editor-form" disabled={saving}
+                className="inline-flex items-center gap-2 rounded-xl bg-store-red px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-store-redDark disabled:opacity-50">
+                <Save size={15} /> {saving ? 'Guardando...' : product ? 'Guardar cambios' : 'Guardar producto'}
+              </button>
+            </div>
           </div>
-
-          <div className="hidden space-y-1 sm:block">
-            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-              Código de producto
-            </label>
-            <input
-              value={form.product_code}
-              onChange={(e) => setForm({ ...form, product_code: e.target.value })}
-              className="w-full rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5 text-sm font-semibold outline-none focus:border-store-red focus:ring-2 focus:ring-store-red/20"
-              placeholder="ZAP-001"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full bg-gray-50 p-2 text-gray-500 hover:bg-red-50 hover:text-red-500"
-          >
-            <X size={20} />
-          </button>
-        </div>
+        </header>
 
         {error && (
           <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
@@ -687,15 +687,26 @@ const ProductEditorModal = ({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-7">
-          <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-            <div className="border-b border-gray-100 pb-2 md:col-span-2 xl:col-span-4">
+        <form id="angelita-product-editor-form" onSubmit={handleSubmit} className="mx-auto w-full max-w-[1560px] px-4 py-6 sm:px-7">
+          <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+            <main className="min-w-0 space-y-5">
+          <section className="grid grid-cols-1 gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:grid-cols-2">
+            <div className="border-b border-gray-100 pb-2 md:col-span-2">
               <p className="text-[11px] font-black uppercase tracking-[0.2em] text-store-red">
-                Información del catálogo
+                Información principal
               </p>
             </div>
 
-            <div className="space-y-2 md:col-span-2 xl:col-span-4">
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                Código general del producto
+              </label>
+              <input value={form.product_code} maxLength={120} aria-label="Código general del producto"
+                onChange={(e) => setForm({ ...form, product_code: e.target.value })}
+                className="field-input" placeholder="Ej.: 2001" />
+              <p className="text-[11px] text-gray-500">Compartido por todos los colores; no sustituye el modelo individual.</p>
+            </div>
+            <div className="space-y-2 md:col-span-2">
               <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
                 Nombre del producto *
               </label>
@@ -707,7 +718,7 @@ const ProductEditorModal = ({
               />
             </div>
 
-            <div className="space-y-2 xl:col-span-2">
+            <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
                   Categoría *
@@ -813,91 +824,7 @@ const ProductEditorModal = ({
             </div>
           </section>
 
-          <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-5">
-            <div className="border-b border-gray-100 pb-2 md:col-span-2 xl:col-span-5">
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-store-red">
-                Precio e inventario
-              </p>
-            </div>
-
-            <Field label="Precio de venta (MXN) · 0 = borrador">
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.price}
-                onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-                className="field-input"
-              />
-            </Field>
-
-            {Number(form.price) === 0 && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 md:col-span-2 xl:col-span-3">
-                Sin precio comercial: se guardará el producto para controlar su inventario,
-                pero permanecerá oculto hasta completar precio, fotografía, modelo y demás datos.
-              </div>
-            )}
-
-            <Field label="Descuento (%)">
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={form.discount}
-                onChange={(e) => setForm({ ...form, discount: e.target.value })}
-                className="field-input"
-                placeholder="0"
-              />
-            </Field>
-
-            <Field label="Precio final">
-              <input
-                value={discountedPrice ? discountedPrice.toFixed(2) : ''}
-                readOnly
-                className="field-input bg-gray-100 text-gray-500"
-                placeholder="Automático"
-              />
-            </Field>
-
-            <Field label="Stock total">
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={variants.reduce((total, variant) => total + variant.stocks.reduce((sum, stock) => sum + Number(stock || 0), 0), 0)}
-                readOnly
-                className="field-input bg-gray-100 text-gray-600"
-              />
-            </Field>
-
-            <Field label="Estado *">
-              <div className="relative">
-                <select
-                  value={form.status}
-                  onChange={(e) =>
-                    setForm({ ...form, status: e.target.value as EditorForm['status'] })
-                  }
-                  className="field-input appearance-none"
-                >
-                  <option value="normal">Normal</option>
-                  <option value="oferta">Oferta</option>
-                  <option value="nuevo">Nuevo</option>
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-              </div>
-            </Field>
-
-            <div className="rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-xs text-blue-800 md:col-span-2 xl:col-span-5">
-              <strong>Stock maestro:</strong> esta cantidad representa las unidades totales
-              disponibles del artículo y es la referencia para inventario, dashboard y portada.
-              Las tallas y colores describen las variantes sin duplicar este total.
-            </div>
-          </section>
-
-          <section className="space-y-4">
+          <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-2">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.2em] text-store-red">
@@ -944,7 +871,7 @@ const ProductEditorModal = ({
               {variants.map((variant, index) => (
                 <div
                   key={`variant-${index}`}
-                  className="rounded-2xl border border-gray-200 bg-gray-50/50 p-4 sm:p-5"
+                  className="rounded-2xl border border-gray-200 bg-[#fcfcfd] p-4 sm:p-5"
                 >
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
@@ -953,6 +880,9 @@ const ProductEditorModal = ({
                       </p>
                       <p className="text-sm font-black text-black">
                         {variant.color || 'Nuevo color'}
+                      </p>
+                      <p className="mt-1 text-[11px] font-semibold text-gray-500">
+                        Total de este color: {variant.stocks.reduce((sum, value) => sum + Number(value || 0), 0)} unidades
                       </p>
                     </div>
 
@@ -1136,10 +1066,10 @@ const ProductEditorModal = ({
             </div>}
           </section>
 
-          <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <section className="grid grid-cols-1 gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:grid-cols-2">
             <div className="border-b border-gray-100 pb-2 md:col-span-2">
               <p className="text-[11px] font-black uppercase tracking-[0.2em] text-store-red">
-                Ficha técnica
+                Descripción y ficha técnica
               </p>
             </div>
 
@@ -1168,7 +1098,110 @@ const ProductEditorModal = ({
 
 
 
-          <div className="flex justify-end gap-3 border-t border-gray-100 pt-6">
+            </main>
+            <aside aria-label="Opciones y resumen del producto" className="min-w-0 space-y-5 xl:sticky xl:top-28">
+              <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <h3 className="flex items-center gap-2 text-sm font-black"><PackageCheck size={17} className="text-store-red" /> Estado de publicación</h3>
+                <p className="mt-2 text-xs font-semibold text-gray-700">{product?.is_active ? 'Visible en la tienda' : 'Borrador / pendiente de publicación'}</p>
+                <p className="mt-2 text-xs leading-relaxed text-gray-500">
+                  La visibilidad se determina por los requisitos de catálogo del backend: precio, imágenes y datos completos.
+                </p>
+              </div>
+          <section className="grid grid-cols-1 gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:grid-cols-2">
+            <div className="border-b border-gray-100 pb-2 md:col-span-2">
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-store-red">
+                Precios, etiqueta e inventario
+              </p>
+            </div>
+
+            <Field label="Precio de venta (MXN) · 0 = borrador">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.price}
+                onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
+                className="field-input"
+              />
+            </Field>
+
+            {Number(form.price) === 0 && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 md:col-span-2">
+                Sin precio comercial: se guardará el producto para controlar su inventario,
+                pero permanecerá oculto hasta completar precio, fotografía, modelo y demás datos.
+              </div>
+            )}
+
+            <Field label="Descuento (%)">
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={form.discount}
+                onChange={(e) => setForm({ ...form, discount: e.target.value })}
+                className="field-input"
+                placeholder="0"
+              />
+            </Field>
+
+            <Field label="Precio final">
+              <input
+                value={discountedPrice ? discountedPrice.toFixed(2) : ''}
+                readOnly
+                className="field-input bg-gray-100 text-gray-500"
+                placeholder="Automático"
+              />
+            </Field>
+
+            <Field label="Stock total">
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={displayedStock}
+                readOnly
+                className="field-input bg-gray-100 text-gray-600"
+              />
+            </Field>
+
+            <Field label="Etiqueta comercial">
+              <div className="relative">
+                <select
+                  value={form.status}
+                  onChange={(e) =>
+                    setForm({ ...form, status: e.target.value as EditorForm['status'] })
+                  }
+                  className="field-input appearance-none"
+                >
+                  <option value="normal">Normal</option>
+                  <option value="oferta">Oferta</option>
+                  <option value="nuevo">Nuevo</option>
+                </select>
+                <ChevronDown
+                  size={16}
+                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+              </div>
+            </Field>
+
+            <div className="rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-xs text-blue-800 md:col-span-2">
+              <strong>Stock maestro:</strong> esta cantidad representa las unidades totales
+              disponibles del artículo y es la referencia para inventario, dashboard y portada.
+              Las tallas y colores describen las variantes sin duplicar este total.
+            </div>
+          </section>
+
+              <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <h3 className="text-sm font-black">Resumen del inventario</h3>
+                <div className="mt-3 flex items-end justify-between">
+                  <span className="text-xs text-gray-500">Unidades disponibles</span>
+                  <strong className="text-2xl font-black tabular-nums text-store-red">{displayedStock}</strong>
+                </div>
+                <p className="mt-2 text-xs text-gray-500">{simpleProduct ? 'Producto simple' : variants.filter((v) => v.color.trim()).length + ' colores con inventario por talla'}</p>
+              </div>
+            </aside>
+          </div>
+          <div className="flex flex-wrap justify-end gap-3 border-t border-gray-200 bg-white px-4 py-5 sm:px-7">
             <button
               type="button"
               onClick={onClose}
@@ -1187,6 +1220,29 @@ const ProductEditorModal = ({
           </div>
         </form>
       </div>
+
+      {previewOpen && (
+        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label="Vista previa del producto">
+          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-lg font-black">Vista previa administrativa</h3>
+              <button type="button" onClick={() => setPreviewOpen(false)} aria-label="Cerrar vista previa" className="rounded-xl p-2 hover:bg-gray-100"><X size={18}/></button>
+            </div>
+            <p className="mt-1 text-xs text-gray-500">Esta vista no publica ni guarda el producto.</p>
+            <div className="mt-5 space-y-3 rounded-xl border border-gray-200 p-4">
+              <h4 className="text-lg font-bold">{form.name || 'Producto sin nombre'}</h4>
+              <p className="text-sm text-gray-600">Código: {form.product_code || 'Pendiente'} · Modelo general: {form.model || 'Opcional'}</p>
+              <p className="text-sm font-semibold text-store-red">MXN {Number(form.price || 0).toFixed(2)} · {displayedStock} unidades</p>
+              {simpleProduct ? <p className="text-xs text-gray-600">Producto simple</p> : variants.map((variant, index) => (
+                <div key={index} className="rounded-lg bg-gray-50 px-3 py-2 text-xs">
+                  <strong>{variant.color || 'Color por definir'} — {variant.articleModel || 'Modelo pendiente'}</strong>
+                  <p className="mt-1 text-gray-600">{variant.sizes.map((size, i) => (size || 'Talla') + ': ' + String(variant.stocks[i] || 0) + ' uds. · SKU ' + (variant.skus[i] || 'opcional')).join(' | ')}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {catalogManager && (
         <div className="fixed inset-0 z-[170] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm">
