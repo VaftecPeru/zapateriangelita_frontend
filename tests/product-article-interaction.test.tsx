@@ -21,6 +21,8 @@ const product = {
   category_id: 1, category: {id: 1, name: 'Zapatillas'}, brand_id: 2,
   brand: {id: 2, name: 'Angelita'}, price: 129.9, stock: 14,
   size: '38,39', color: 'Negro,Beige', material: 'Cuero', description: '',
+  gender: 'mujer' as const, barcode: '7501234567890', collection_name: 'Primavera',
+  seo_title: 'Zapatilla Casual Angelita', seo_description: 'Cómoda y elegante',
   img: '', rating: 0, reviews: 0, status: 'normal' as const,
   color_sizes: {Negro: ['38', '39'], Beige: ['38', '39']},
   variant_stocks: [
@@ -49,17 +51,48 @@ async function run() {
       subcategories: [], brands: [{id: 2,name: 'Angelita'}],
       onClose: () => undefined, onSaved: () => {saved++;},
     })));
+    assert.equal(mount.querySelector<HTMLInputElement>('input[aria-label="Código de barras"]')?.value, '7501234567890');
+    assert.equal(mount.querySelector<HTMLInputElement>('input[aria-label="Título SEO"]')?.value, 'Zapatilla Casual Angelita');
+    assert.equal(mount.querySelector<HTMLTextAreaElement>('textarea[aria-label="Descripción SEO"]')?.value, 'Cómoda y elegante');
+    assert.equal(mount.querySelector<HTMLInputElement>('input[name="product_gender"]:checked')?.value, 'mujer');
+    const collectionButton = [...mount.querySelectorAll('button')].find(button => button.textContent === 'Colección');
+    assert.ok(collectionButton);
+    await act(async () => collectionButton!.dispatchEvent(new dom.window.MouseEvent('click', {bubbles:true})));
+    assert.equal(mount.querySelector<HTMLInputElement>('input[aria-label="Colección del producto"]')?.value, 'Primavera');
     const modelN = mount.querySelector<HTMLInputElement>('input[aria-label="Modelo para color Negro"]');
     const modelB = mount.querySelector<HTMLInputElement>('input[aria-label="Modelo para color Beige"]');
-    const skuN = mount.querySelector<HTMLInputElement>('input[aria-label="SKU color Negro talla 38"]');
-    const skuB = mount.querySelector<HTMLInputElement>('input[aria-label="SKU color Beige talla 39"]');
     assert.equal(modelN?.value, '2001-N');
     assert.equal(modelB?.value, '2001-B');
-    assert.equal(skuN?.value, '2001-N-38');
-    assert.equal(skuB?.value, '2001-B-39');
+    const toggles = Array.from(mount.querySelectorAll('button')).filter(b => b.textContent?.includes('SKU por talla'));
+    assert.equal(toggles.length, 2);
+    await act(async () => toggles[0].dispatchEvent(new dom.window.MouseEvent('click',{bubbles:true})));
+    assert.equal(mount.querySelector<HTMLInputElement>('input[aria-label="SKU color Negro talla 38"]')?.value, '2001-N-38');
+    await act(async () => toggles[1].dispatchEvent(new dom.window.MouseEvent('click',{bubbles:true})));
+    assert.equal(mount.querySelector<HTMLInputElement>('input[aria-label="SKU color Beige talla 39"]')?.value, '2001-B-39');
+    assert.ok(mount.querySelector('.product-editor-workspace'), 'Debe mostrar vista de trabajo amplia');
+    assert.ok(mount.querySelector('aside[aria-label="Opciones y resumen del producto"]'), 'Falta panel lateral de precios e inventario');
+    assert.equal(mount.querySelector<HTMLInputElement>('input[aria-label="Código general del producto"]')?.value, '2001');
+    assert.ok(mount.textContent?.includes('Inventario general'));
+    const firstRow = mount.querySelector('tbody tr');
+    assert.equal(firstRow?.querySelector('output')?.textContent, '5');
+    const rows = mount.querySelectorAll('tbody tr');
+    assert.ok(rows.length >= 2);
+    const previewButton = [...mount.querySelectorAll('button')].find((button) => button.textContent?.includes('Vista previa'));
+    assert.ok(previewButton, 'Falta acción de vista previa');
+    await act(async () => previewButton!.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })));
+    assert.ok(mount.querySelector('[role="dialog"][aria-label="Vista previa del producto"]'), 'Vista previa no se abrió');
+    const closePreview = mount.querySelector<HTMLButtonElement>('button[aria-label="Cerrar vista previa"]');
+    await act(async () => closePreview!.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })));
+    assert.equal(mount.querySelector('[role="dialog"]'), null);
 
-    const form = mount.querySelector('form')!;
-    await act(async () => { form.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true })); });
+    const draftButton = [...mount.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Guardar borrador'));
+    assert.ok(draftButton, 'Debe existir acción de borrador con precio positivo');
+    assert.equal(draftButton?.disabled, false);
+    await act(async () => {
+      draftButton!.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
+      // jsdom no activa implícitamente el envío de un form con click simulado.
+      mount.querySelector('form')!.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+    });
     assert.ok(captured, 'Formulario no envió cambios a la API simulada');
     const payload = JSON.parse(String(captured!.get('variant_stocks')));
     assert.equal(payload.length, 4);
@@ -67,6 +100,13 @@ async function run() {
     assert.equal(payload[2].article_model, '2001-B');
     assert.equal(payload[3].sku, '2001-B-39');
     assert.equal(captured!.get('stock'), '14');
+    assert.equal(captured!.get('gender'), 'mujer');
+    assert.equal(captured!.get('barcode'), '7501234567890');
+    assert.equal(captured!.get('collection_name'), 'Primavera');
+    assert.equal(captured!.get('seo_title'), 'Zapatilla Casual Angelita');
+    assert.equal(captured!.get('seo_description'), 'Cómoda y elegante');
+    assert.equal(captured!.get('is_active'), '0', 'Guardar borrador debe desactivar la publicación incluso con precio');
+
     assert.equal(saved, 1);
     console.log('PASS Formulario interactivo: carga, SKU, modelos por color y payload de edición conciliados.');
   } finally {
