@@ -12,7 +12,7 @@ import {
 import { brandService, categoryService, productService, subcategoryService } from '../../../services/crudService';
 import type { Brand, Category, Subcategory } from '../../../services/crudService';
 import ImportCatalogPreflight, {
-  emptyCatalogMappings, unresolvedCatalogs,
+  emptyCatalogMappings,
 } from './ImportCatalogPreflight';
 import type { CatalogData, CatalogMappings, CatalogType } from './ImportCatalogPreflight';
 import Pagination from '../../../components/Pagination';
