@@ -1,6 +1,7 @@
 export type ProductVariantDraft = {
   color: string;
   articleModel: string;
+  priceOverride: number | null;
   skus: string[];
   sizes: string[];
   stocks: number[];

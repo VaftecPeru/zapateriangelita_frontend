@@ -67,7 +67,7 @@ export interface Product {
     auto_publish?: boolean;
     sizes?: Array<{ id?: number; size: string; stock: number }>;
     color_sizes?: Record<string, string[]>;
-    colors?: Array<{ id?: number; color: string; hex?: string | null }>;
+    colors?: Array<{ id?: number; color: string; hex?: string | null; price?: number | string | null }>;
     variant_stocks?: Array<{ id?: number; color: string; size: string; stock: number; article_model?: string | null; sku?: string | null }>;
 }
 
