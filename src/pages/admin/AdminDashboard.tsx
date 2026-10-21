@@ -12,8 +12,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import PropertyManager from './ProductManager';
-import ServiceManager from './ServiceManager';
-import SettingsManager from './SettingsManager';
+import AdminSettingsWorkspace from './AdminSettingsWorkspace';
 import MessagesManager from './MessagesManager';
 import FunnelLeadsManager from './FunnelLeadsManager';
 import UsersManager from './UsersManager';
@@ -177,8 +176,12 @@ const AdminDashboard = () => {
     const location = useLocation();
     const state = location.state as { activeTab?: string; selectedLeadId?: number };
 
-    const [activeTab, setActiveTab] = useState<'stats' | 'products' | 'inventory' | 'services' | 'settings' | 'messages' | 'funnelLeads' | 'users' | 'profile' | 'customers' | 'sales' | 'reports'>(
-        (state?.activeTab as any) || 'stats'
+    const [activeTab, setActiveTab] = useState<'stats' | 'products' | 'inventory' | 'settings' | 'messages' | 'funnelLeads' | 'users' | 'profile' | 'customers' | 'sales' | 'reports'>(
+        state?.activeTab === 'services' ? 'settings' : (state?.activeTab as any) || 'stats'
+    );
+    // Alias legado: enlaces antiguos a Servicios ahora abren Ajustes > Costo delivery.
+    const [initialSettingsSection, setInitialSettingsSection] = useState<'general' | 'delivery'>(
+        state?.activeTab === 'services' ? 'delivery' : 'general'
     );
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const dashboardRef = useRef<HTMLDivElement>(null);
@@ -190,9 +193,24 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         if (state?.activeTab) {
-            setActiveTab(state.activeTab as any);
+            if (state.activeTab === 'services') {
+                setInitialSettingsSection('delivery');
+                setActiveTab('settings');
+            } else {
+                setActiveTab(state.activeTab as any);
+            }
         }
     }, [state]);
+
+    const selectMainTab = (tab: string) => {
+        if (tab === 'services') {
+            setInitialSettingsSection('delivery');
+            setActiveTab('settings');
+        } else {
+            if (tab === 'settings') setInitialSettingsSection('general');
+            setActiveTab(tab as typeof activeTab);
+        }
+    };
 
     const fetchStats = async () => {
         setStatsLoading(true);
@@ -342,32 +360,38 @@ const AdminDashboard = () => {
                 </header>
 
 
-                <div className="flex gap-4 border-b border-gray-200 pb-1 overflow-x-auto no-scrollbar">
-                    {[
-                        { id: 'stats', label: 'Estadísticas' },
-                        { id: 'messages', label: 'Pedido' },
-                        { id: 'products', label: 'Productos' },
-                        { id: 'inventory', label: 'Inventario' },
-                        { id: 'customers', label: 'Clientes' },
-                        { id: 'sales', label: 'Ventas' },
-                        { id: 'reports', label: 'Reportes' },
-                        { id: 'services', label: 'Servicios' },
-                        { id: 'settings', label: 'Ajustes' },
-                        { id: 'funnelLeads', label: 'Interesados en Calzado' },
-                        { id: 'users', label: 'Usuarios' }
-                    ].map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
-                            className={`px-6 py-3 text-sm font-black uppercase tracking-widest transition-all border-b-2 whitespace-nowrap ${activeTab === tab.id
-                                ? 'border-store-red text-store-red font-bold'
-                                : 'border-transparent text-gray-400 hover:text-gray-600'
+                <nav aria-label="Módulos administrativos" className="overflow-x-auto rounded-2xl border border-gray-200/80 bg-white p-1.5 shadow-sm no-scrollbar">
+                    <div role="tablist" aria-label="Secciones del intranet" className="flex min-w-max items-center gap-1">
+                        {[
+                            { id: 'stats', label: 'Estadísticas' },
+                            { id: 'messages', label: 'Pedido' },
+                            { id: 'products', label: 'Productos' },
+                            { id: 'inventory', label: 'Inventario' },
+                            { id: 'customers', label: 'Clientes' },
+                            { id: 'sales', label: 'Ventas' },
+                            { id: 'reports', label: 'Reportes' },
+                            { id: 'users', label: 'Usuarios' },
+                            { id: 'funnelLeads', label: 'Interesados' },
+                            { id: 'settings', label: 'Ajustes' },
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                type="button"
+                                role="tab"
+                                aria-selected={activeTab === tab.id}
+                                aria-controls="admin-module-panel"
+                                onClick={() => selectMainTab(tab.id)}
+                                className={`min-h-[40px] whitespace-nowrap rounded-xl px-3 py-2.5 text-[13px] font-semibold uppercase tracking-[0.035em] transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-store-red ${
+                                    activeTab === tab.id
+                                        ? 'bg-red-50 text-store-red ring-1 ring-red-100'
+                                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                                 }`}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                </nav>
 
                 {activeTab === 'stats' ? (
                     statsLoading ? (
@@ -515,13 +539,12 @@ const AdminDashboard = () => {
                             transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                             className="space-y-6"
                         >
-                            {activeTab === 'products' && <PropertyManager onNavigate={(tab) => setActiveTab(tab)} />}
+                            {activeTab === 'products' && <PropertyManager onNavigate={selectMainTab} />}
                             {activeTab === 'customers' && <CustomerManager />}
                             {activeTab === 'sales' && <CommerceManager mode="sales" />}
                             {activeTab === 'reports' && <CommerceManager mode="reports" />}
                             {activeTab === 'inventory' && <InventoryManager />}
-                            {activeTab === 'services' && <ServiceManager />}
-                            {activeTab === 'settings' && <SettingsManager />}
+                            {activeTab === 'settings' && <AdminSettingsWorkspace key={initialSettingsSection} initialSection={initialSettingsSection} />}
                             {activeTab === 'funnelLeads' && <FunnelLeadsManager initialData={(stats as any)?.all_leads} />}
                             {activeTab === 'users' && <UsersManager initialData={(stats as any)?.all_users} />}
                             {activeTab === 'messages' && <MessagesManager />}
