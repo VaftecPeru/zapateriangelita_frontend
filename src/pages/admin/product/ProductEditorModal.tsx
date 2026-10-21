@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowLeft, BarChart3, Bell, Check, ChevronDown, Eye, FileText, Image as ImageIcon, LayoutDashboard, Package, PenLine, Plus, Save, Search, Settings, ShoppingBag, Tag, Trash2, Upload, UserRound, Users, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BarChart3, Bell, Check, ChevronDown, Eye, Image as ImageIcon, LayoutDashboard, Package, PenLine, Plus, Save, Search, ShoppingBag, Trash2, Upload, UserRound, Users, X } from 'lucide-react';
 import {
   Brand,
   Category,
@@ -22,6 +22,7 @@ type Props = {
   subcategories: Subcategory[];
   brands: Brand[];
   onClose: () => void;
+  onNavigate?: (tab: 'stats' | 'messages' | 'inventory' | 'customers' | 'sales' | 'reports') => void;
   onSaved: () => Promise<void> | void;
 };
 
@@ -113,6 +114,7 @@ const ProductEditorModal = ({
   subcategories,
   brands,
   onClose,
+  onNavigate,
   onSaved,
 }: Props) => {
   const [form, setForm] = useState<EditorForm>(emptyForm());
@@ -730,10 +732,10 @@ const ProductEditorModal = ({
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5 text-[13px]">
           {[
-            { icon: LayoutDashboard, label: 'Dashboard' },
-            { icon: ShoppingBag, label: 'Pedidos' },
-          ].map(({ icon: Icon, label }) => (
-            <button key={label} type="button" onClick={onClose} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[#52576a] transition hover:bg-red-50 hover:text-store-red">
+            { icon: LayoutDashboard, label: 'Dashboard', tab: 'stats' },
+            { icon: ShoppingBag, label: 'Pedidos', tab: 'messages' },
+          ].map(({ icon: Icon, label, tab }) => (
+            <button key={label} type="button" onClick={() => { onNavigate?.(tab as 'stats' | 'messages'); onClose(); }} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[#52576a] transition hover:bg-red-50 hover:text-store-red">
               <Icon size={18} strokeWidth={1.8} /> {label}
             </button>
           ))}
@@ -743,14 +745,14 @@ const ProductEditorModal = ({
             <p className="relative py-2 font-bold text-store-red before:absolute before:-left-3 before:top-[15px] before:h-1.5 before:w-1.5 before:rounded-full before:bg-store-red">Agregar producto</p>
             <button type="button" onClick={() => openCatalogManager('category')} className="block py-2 text-gray-600 hover:text-store-red">Categorías</button>
             <button type="button" onClick={() => openCatalogManager('brand')} className="block py-2 text-gray-600 hover:text-store-red">Marcas</button>
-            <button type="button" onClick={onClose} className="block py-2 text-gray-600 hover:text-store-red">Inventario</button>
+            <button type="button" onClick={() => { onNavigate?.('inventory'); onClose(); }} className="block py-2 text-gray-600 hover:text-store-red">Inventario</button>
           </div>
           {[
-            { icon: Users, label: 'Clientes' }, { icon: Tag, label: 'Promociones' },
-            { icon: FileText, label: 'Contenido' }, { icon: BarChart3, label: 'Reportes' },
-            { icon: Settings, label: 'Configuración' },
-          ].map(({icon: Icon,label}) => (
-            <button type="button" key={label} onClick={onClose} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[#52576a] transition hover:bg-red-50 hover:text-store-red">
+            { icon: Users, label: 'Clientes', tab: 'customers' },
+            { icon: ShoppingBag, label: 'Ventas', tab: 'sales' },
+            { icon: BarChart3, label: 'Reportes', tab: 'reports' },
+          ].map(({icon: Icon,label,tab}) => (
+            <button type="button" key={label} onClick={() => { onNavigate?.(tab as 'customers' | 'sales' | 'reports'); onClose(); }} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[#52576a] transition hover:bg-red-50 hover:text-store-red">
               <Icon size={18} strokeWidth={1.8}/> {label}
             </button>
           ))}
