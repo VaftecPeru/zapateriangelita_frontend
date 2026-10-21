@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ReferenceLanding from "./ReferenceLanding";
+import { getCatalogName } from '../utils/catalogName';
 import PhoneField from "./PhoneField";
 import brandLogo from "../assets/brand/logo-angelita-horizontal.png";
 import fallbackImage from "../assets/foto1.jpg";
@@ -420,9 +421,7 @@ export default function StoreHome() {
         setProducts(productsData.map((product: Product) => ({
           ...product,
           image: getImageUrl(product.img || product.images?.[0]) || staticCategories[0]?.image,
-          category: typeof product.category === "object"
-            ? product.category.name
-            : product.category || categoriesData.find((category: Category) => category.id === product.category_id)?.name || "Sin categoría",
+          category: getCatalogName(product.category) || categoriesData.find((category: Category) => category.id === product.category_id)?.name || "Sin categoría",
           price: Number(product.discounted_price || product.price),
           oldPrice: product.discounted_price ? Number(product.price) : null,
           rating: Math.round(Number(product.rating || 0)),

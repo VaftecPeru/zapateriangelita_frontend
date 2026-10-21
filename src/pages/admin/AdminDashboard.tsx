@@ -12,11 +12,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import PropertyManager from './ProductManager';
-import ServiceManager from './ServiceManager';
-import SettingsManager from './SettingsManager';
+import AdminSettingsWorkspace from './AdminSettingsWorkspace';
+import AdminModuleTabs from './AdminModuleTabs';
 import MessagesManager from './MessagesManager';
 import FunnelLeadsManager from './FunnelLeadsManager';
-import UsersManager from './UsersManager';
 import ProfileManager from './ProfileManager';
 import InventoryManager from './InventoryManager';
 import CustomerManager from './CustomerManager';
@@ -177,8 +176,14 @@ const AdminDashboard = () => {
     const location = useLocation();
     const state = location.state as { activeTab?: string; selectedLeadId?: number };
 
-    const [activeTab, setActiveTab] = useState<'stats' | 'products' | 'inventory' | 'services' | 'settings' | 'messages' | 'funnelLeads' | 'users' | 'profile' | 'customers' | 'sales' | 'reports'>(
-        (state?.activeTab as any) || 'stats'
+    const [activeTab, setActiveTab] = useState<'stats' | 'products' | 'inventory' | 'settings' | 'messages' | 'funnelLeads' | 'profile' | 'customers' | 'sales' | 'reports'>(
+        state?.activeTab === 'services' || state?.activeTab === 'users'
+            ? 'settings'
+            : (state?.activeTab as any) || 'stats'
+    );
+    // Alias legado: enlaces antiguos a Servicios ahora abren Ajustes > Costo delivery.
+    const [initialSettingsSection, setInitialSettingsSection] = useState<'general' | 'delivery' | 'users'>(
+        state?.activeTab === 'services' ? 'delivery' : state?.activeTab === 'users' ? 'users' : 'general'
     );
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const dashboardRef = useRef<HTMLDivElement>(null);
@@ -190,9 +195,24 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         if (state?.activeTab) {
-            setActiveTab(state.activeTab as any);
+            if (state.activeTab === 'services' || state.activeTab === 'users') {
+                setInitialSettingsSection(state.activeTab === 'services' ? 'delivery' : 'users');
+                setActiveTab('settings');
+            } else {
+                setActiveTab(state.activeTab as any);
+            }
         }
     }, [state]);
+
+    const selectMainTab = (tab: string) => {
+        if (tab === 'services' || tab === 'users') {
+            setInitialSettingsSection(tab === 'services' ? 'delivery' : 'users');
+            setActiveTab('settings');
+        } else {
+            if (tab === 'settings') setInitialSettingsSection('general');
+            setActiveTab(tab as typeof activeTab);
+        }
+    };
 
     const fetchStats = async () => {
         setStatsLoading(true);
@@ -342,32 +362,7 @@ const AdminDashboard = () => {
                 </header>
 
 
-                <div className="flex gap-4 border-b border-gray-200 pb-1 overflow-x-auto no-scrollbar">
-                    {[
-                        { id: 'stats', label: 'Estadísticas' },
-                        { id: 'messages', label: 'Pedido' },
-                        { id: 'products', label: 'Productos' },
-                        { id: 'inventory', label: 'Inventario' },
-                        { id: 'customers', label: 'Clientes' },
-                        { id: 'sales', label: 'Ventas' },
-                        { id: 'reports', label: 'Reportes' },
-                        { id: 'services', label: 'Servicios' },
-                        { id: 'settings', label: 'Ajustes' },
-                        { id: 'funnelLeads', label: 'Interesados en Calzado' },
-                        { id: 'users', label: 'Usuarios' }
-                    ].map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
-                            className={`px-6 py-3 text-sm font-black uppercase tracking-widest transition-all border-b-2 whitespace-nowrap ${activeTab === tab.id
-                                ? 'border-store-red text-store-red font-bold'
-                                : 'border-transparent text-gray-400 hover:text-gray-600'
-                                }`}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
+                <AdminModuleTabs activeTab={activeTab} onSelect={selectMainTab} />
 
                 {activeTab === 'stats' ? (
                     statsLoading ? (
@@ -515,15 +510,13 @@ const AdminDashboard = () => {
                             transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                             className="space-y-6"
                         >
-                            {activeTab === 'products' && <PropertyManager onNavigate={(tab) => setActiveTab(tab)} />}
+                            {activeTab === 'products' && <PropertyManager onNavigate={selectMainTab} />}
                             {activeTab === 'customers' && <CustomerManager />}
                             {activeTab === 'sales' && <CommerceManager mode="sales" />}
                             {activeTab === 'reports' && <CommerceManager mode="reports" />}
                             {activeTab === 'inventory' && <InventoryManager />}
-                            {activeTab === 'services' && <ServiceManager />}
-                            {activeTab === 'settings' && <SettingsManager />}
+                            {activeTab === 'settings' && <AdminSettingsWorkspace key={initialSettingsSection} initialSection={initialSettingsSection} initialUsers={(stats as any)?.all_users} />}
                             {activeTab === 'funnelLeads' && <FunnelLeadsManager initialData={(stats as any)?.all_leads} />}
-                            {activeTab === 'users' && <UsersManager initialData={(stats as any)?.all_users} />}
                             {activeTab === 'messages' && <MessagesManager />}
                             {activeTab === 'profile' && <ProfileManager />}
                         </motion.div>

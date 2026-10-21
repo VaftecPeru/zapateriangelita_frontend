@@ -25,6 +25,7 @@ const product = {
   seo_title: 'Zapatilla Casual Angelita', seo_description: 'Cómoda y elegante',
   img: '', rating: 0, reviews: 0, status: 'normal' as const,
   color_sizes: {Negro: ['38', '39'], Beige: ['38', '39']},
+  colors: [{color: 'Negro', hex: '#111111', price: 149.90}, {color: 'Beige', hex: '#d6c2a1', price: null}],
   variant_stocks: [
     {id: 1,color: 'Negro',size: '38',stock: 2,article_model: '2001-N',sku: '2001-N-38'},
     {id: 2,color: 'Negro',size: '39',stock: 3,article_model: '2001-N',sku: '2001-N-39'},
@@ -63,6 +64,13 @@ async function run() {
     const modelB = mount.querySelector<HTMLInputElement>('input[aria-label="Modelo para color Beige"]');
     assert.equal(modelN?.value, '2001-N');
     assert.equal(modelB?.value, '2001-B');
+    const negroPrice = mount.querySelector<HTMLInputElement>('input[aria-label="Precio variante Negro"]');
+    const beigePrice = mount.querySelector<HTMLInputElement>('input[aria-label="Precio variante Beige"]');
+    assert.equal(negroPrice?.disabled, false, 'El precio del color debe ser editable');
+    assert.equal(negroPrice?.value, '149.9', 'Debe recuperar el precio personalizado persistido');
+    assert.equal(beigePrice?.value, '129.9', 'Sin override se sincroniza con el precio general');
+    assert.ok(mount.textContent?.includes('Sincronizado con precio general'));
+    assert.ok(mount.textContent?.includes('Personalizado · Usar precio general'));
     const toggles = Array.from(mount.querySelectorAll('button')).filter(b => b.textContent?.includes('SKU por talla'));
     assert.equal(toggles.length, 2);
     await act(async () => toggles[0].dispatchEvent(new dom.window.MouseEvent('click',{bubbles:true})));
@@ -100,6 +108,8 @@ async function run() {
     assert.equal(payload[2].article_model, '2001-B');
     assert.equal(payload[3].sku, '2001-B-39');
     assert.equal(captured!.get('stock'), '14');
+    assert.deepEqual(JSON.parse(String(captured!.get('color_prices'))), {Negro: 149.9},
+      'Solo se envían precios personalizados, sin duplicar los precios generales');
     assert.equal(captured!.get('gender'), 'mujer');
     assert.equal(captured!.get('barcode'), '7501234567890');
     assert.equal(captured!.get('collection_name'), 'Primavera');

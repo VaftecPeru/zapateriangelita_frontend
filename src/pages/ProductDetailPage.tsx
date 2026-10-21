@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { analyticsService, productService, settingsService, Product } from "../services/crudService";
 import { getImageUrl } from "../config/api";
+import { getCatalogName } from '../utils/catalogName';
 import { useCart } from "../hooks/useCart";
 import brandLogo from "../assets/brand/logo-angelita-horizontal.png";
 import fallbackImage from "../assets/foto1.jpg";
@@ -84,6 +85,7 @@ function normalizeProduct(product: Product): any {
       const name = String(typeof color === "object" ? color.name || color.color : color).trim();
       return {
         name,
+        price: typeof color === 'object' && color.price != null ? Number(color.price) : null,
         hex: (() => {
           const storedHex = typeof color === "object" ? String(color.hex || color.color_hex || "").trim() : "";
           return !storedHex || storedHex.toLocaleLowerCase() === "#888888"
@@ -129,11 +131,9 @@ function normalizeProduct(product: Product): any {
   return {
     ...product,
     imageList,
-    categoryName: typeof product.category === "object" ? product.category.name : product.category || "Calzado",
-    subcategoryName: typeof (product as any).subcategory === "object"
-      ? (product as any).subcategory.name
-      : (product as any).subcategory || "Sin subcategoría",
-    brandName: typeof product.brand === "object" ? product.brand.name : product.brand || "Sin marca",
+    categoryName: getCatalogName(product.category) || "Calzado",
+    subcategoryName: getCatalogName((product as any).subcategory) || "Sin subcategoría",
+    brandName: getCatalogName(product.brand) || "Sin marca",
     salePrice: Number(product.discounted_price || product.price),
     ratingValue: Number(product.rating || 0),
     colorOptions,
@@ -231,10 +231,19 @@ export default function ProductDetailPage() {
     );
   }
 
-  const hasDiscount = Number(product.discounted_price) > 0 && Number(product.discounted_price) < Number(product.price);
+  const chosenColor = product.colorOptions?.find(
+    (item: {name: string; price?: number | null}) => item.name.toLocaleLowerCase() === selectedColor?.toLocaleLowerCase(),
+  );
+  // Sin precio personalizado se mantiene el precio general.
+  const selectedBasePrice = chosenColor?.price != null ? chosenColor.price : Number(product.price || 0);
+  const discountRate = Math.min(100, Math.max(0, Number(product.discount || 0)));
+  const selectedSalePrice = chosenColor?.price != null
+    ? Number((selectedBasePrice * (1 - discountRate / 100)).toFixed(2))
+    : Number(product.salePrice);
+  const hasDiscount = selectedSalePrice > 0 && selectedSalePrice < selectedBasePrice;
   const stock = Number(product.stock || 0);
   const discountPercentage = hasDiscount
-    ? Math.round(((Number(product.price) - Number(product.discounted_price)) / Number(product.price)) * 100)
+    ? Math.round(((selectedBasePrice - selectedSalePrice) / selectedBasePrice) * 100)
     : 0;
 
   const selectedColorImages = selectedColor ? product.colorImages?.[selectedColor] : null;
@@ -276,7 +285,7 @@ export default function ProductDetailPage() {
       addToCart({
         ...product,
         image: activeImageList[0],
-        price: product.salePrice,
+        price: selectedSalePrice,
         size: selectedSize,
         color: selectedColor,
       });
@@ -510,10 +519,10 @@ export default function ProductDetailPage() {
               {hasDiscount && <span className="promotion-label">Promoción</span>}
               <div className="product-price-line">
                 {hasDiscount && <span className="discount-percentage">-{discountPercentage}%</span>}
-                <strong>{money.format(product.salePrice)}</strong>
+                <strong>{money.format(selectedSalePrice)}</strong>
               </div>
               {hasDiscount && (
-                <p className="list-price">Precio de lista: <del>{money.format(Number(product.price))}</del></p>
+                <p className="list-price">Precio de lista: <del>{money.format(selectedBasePrice)}</del></p>
               )}
             </div>
 
@@ -587,8 +596,8 @@ export default function ProductDetailPage() {
 
           <aside className="buy-box">
             <div className="buy-box-price">
-              <strong>{money.format(product.salePrice)}</strong>
-              {hasDiscount && <del>{money.format(Number(product.price))}</del>}
+              <strong>{money.format(selectedSalePrice)}</strong>
+              {hasDiscount && <del>{money.format(selectedBasePrice)}</del>}
             </div>
 
             <p className="buy-box-availability">
@@ -656,7 +665,7 @@ export default function ProductDetailPage() {
         </section>
       </div>
       <div className="pd-mobile-bar">
-        <div><small>Precio en MXN</small><strong>{money.format(product.salePrice)}</strong></div>
+        <div><small>Precio en MXN</small><strong>{money.format(selectedSalePrice)}</strong></div>
         <button type="button" disabled={selectedStock < 1} onClick={addProductToCart}><ShoppingBag size={18} />{selectedStock > 0 ? 'Agregar al carrito' : 'Agotado'}</button>
       </div>
       <dialog ref={zoomDialog} className="pd-zoom-dialog" aria-label="Imagen ampliada del producto">

@@ -44,11 +44,11 @@ export interface Product {
     collection_name?: string | null;
     seo_title?: string | null;
     seo_description?: string | null;
-    category?: string | { id?: number; name: string; slug?: string };
+    category?: string | { id?: number; name: string; slug?: string } | null;
     category_id?: number;
     subcategory_id?: number;
     brand_id?: number;
-    brand?: string | { id?: number; name: string; slug?: string };
+    brand?: string | { id?: number; name: string; slug?: string } | null;
     price: number;
     discounted_price?: number;
     stock: number;
@@ -67,7 +67,7 @@ export interface Product {
     auto_publish?: boolean;
     sizes?: Array<{ id?: number; size: string; stock: number }>;
     color_sizes?: Record<string, string[]>;
-    colors?: Array<{ id?: number; color: string; hex?: string | null }>;
+    colors?: Array<{ id?: number; color: string; hex?: string | null; price?: number | string | null }>;
     variant_stocks?: Array<{ id?: number; color: string; size: string; stock: number; article_model?: string | null; sku?: string | null }>;
 }
 

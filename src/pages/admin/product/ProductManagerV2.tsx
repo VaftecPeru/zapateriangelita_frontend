@@ -7,6 +7,7 @@ import ProductImportModal from './ProductImportModal';
 import Pagination from '../../../components/Pagination';
 import { usePagination } from '../../../hooks/usePagination';
 import './product-editor.css';
+import { getCatalogName } from '../../../utils/catalogName';
 
 type Props = { onNavigate?: (tab: 'stats' | 'messages' | 'inventory' | 'customers' | 'sales' | 'reports') => void };
 
@@ -16,6 +17,7 @@ const ProductManagerV2 = ({ onNavigate }: Props) => {
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [editorOpen, setEditorOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [modelPriceOpen, setModelPriceOpen] = useState(false);
@@ -77,6 +79,7 @@ const ProductManagerV2 = ({ onNavigate }: Props) => {
   const loadData = async () => {
     try {
       setLoading(true);
+      setLoadError('');
       const [productsRes, categoriesRes, subcategoriesRes, brandsRes] = await Promise.all([
         productService.getAllAdmin(),
         categoryService.getAll(),
@@ -87,7 +90,7 @@ const ProductManagerV2 = ({ onNavigate }: Props) => {
       const firstPage = Array.isArray(productsRes.data) ? productsRes.data : ((productsRes.data as any)?.data || []);
       const pageCount = Number((productsRes.data as any)?.last_page || 1);
       let allProducts: Product[] = [...firstPage];
-      for (let page = 2; page <= pageCount && page <= 30; page++) {
+      for (let page = 2; page <= pageCount; page++) {
         const response = await productService.getAllAdmin({ page, per_page: 200 });
         const items = Array.isArray(response.data) ? response.data : ((response.data as any)?.data || []);
         allProducts = allProducts.concat(items);
@@ -98,6 +101,7 @@ const ProductManagerV2 = ({ onNavigate }: Props) => {
       setBrands(Array.isArray(brandsRes.data) ? brandsRes.data : ((brandsRes.data as any)?.data || []));
     } catch (error) {
       console.error('Error loading products', error);
+      setLoadError('No se pudo cargar el catálogo completo. Reintenta la conexión antes de administrar los productos.');
     } finally {
       setLoading(false);
     }
@@ -113,8 +117,8 @@ const ProductManagerV2 = ({ onNavigate }: Props) => {
     const query = search.trim().toLocaleLowerCase();
 
     return products.filter((product) => {
-      const brandName = typeof product.brand === 'object' ? product.brand.name : String(product.brand || '');
-      const categoryName = typeof product.category === 'object' ? product.category.name : String(product.category || '');
+      const brandName = getCatalogName(product.brand);
+      const categoryName = getCatalogName(product.category);
       const searchable = [
         product.product_code,
         product.name,
@@ -147,15 +151,11 @@ const ProductManagerV2 = ({ onNavigate }: Props) => {
   }, [search, categoryFilter, brandFilter, stockFilter, activeFilter]);
 
   const getCategoryName = (product: Product) => {
-    if (typeof product.category === 'string') return product.category || 'Sin categoría';
-    if (product.category && typeof product.category === 'object') return product.category.name || 'Sin categoría';
-    return categories.find((item) => item.id === product.category_id)?.name || 'Sin categoría';
+    return getCatalogName(product.category) || categories.find((item) => item.id === product.category_id)?.name || 'Sin categoría';
   };
 
   const getBrandName = (product: Product) => {
-    if (typeof product.brand === 'string') return product.brand || 'Sin marca';
-    if (product.brand && typeof product.brand === 'object') return product.brand.name || 'Sin marca';
-    return brands.find((item) => item.id === product.brand_id)?.name || 'Sin marca';
+    return getCatalogName(product.brand) || brands.find((item) => item.id === product.brand_id)?.name || 'Sin marca';
   };
 
   const openNew = () => {
@@ -231,6 +231,13 @@ const ProductManagerV2 = ({ onNavigate }: Props) => {
     );
   }
 
+  if (loadError) {
+    return <div className="space-y-4 rounded-2xl border border-red-200 bg-white p-6">
+      <p role="alert" className="text-sm text-red-700">{loadError}</p>
+      <button type="button" onClick={() => void loadData()} className="rounded-xl bg-store-red px-5 py-3 text-sm font-bold text-white">Reintentar carga</button>
+    </div>;
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded-[2rem] border border-gray-200 bg-white/80 p-6 shadow-sm backdrop-blur-sm">
@@ -301,6 +308,13 @@ const ProductManagerV2 = ({ onNavigate }: Props) => {
       </div>
 
       <div className="overflow-hidden rounded-[2rem] border border-gray-200 bg-white/50 shadow-sm backdrop-blur-sm">
+        <Pagination
+          page={productPagination.page}
+          pageSize={productPagination.pageSize}
+          totalItems={productPagination.totalItems}
+          onPageChange={productPagination.setPage}
+          onPageSizeChange={productPagination.setPageSize}
+        />
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>

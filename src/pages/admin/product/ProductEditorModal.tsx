@@ -13,6 +13,7 @@ import {
 import { getImageUrl } from '../../../config/api';
 import { ProductVariantDraft } from './types';
 import angelitaLogo from '../../../assets/brand/logo-angelita-horizontal.png';
+import { getCatalogName } from '../../../utils/catalogName';
 
 type Props = {
   open: boolean;
@@ -75,6 +76,7 @@ const emptyForm = (): EditorForm => ({
 });
 
 const emptyVariant = (): ProductVariantDraft => ({
+  priceOverride: null,
   color: '',
   articleModel: '',
   skus: [''],
@@ -168,9 +170,9 @@ const ProductEditorModal = ({
       collection_name: product.collection_name || '',
       seo_title: product.seo_title || '',
       seo_description: product.seo_description || '',
-      brand_name: typeof product.brand === 'object' ? product.brand.name : String(product.brand || ''),
+      brand_name: getCatalogName(product.brand) || brands.find((item) => item.id === product.brand_id)?.name || '',
       category_name:
-        (typeof product.category === 'object' ? product.category.name : String(product.category || '')) ||
+        getCatalogName(product.category) ||
         categories.find((item) => item.id === product.category_id)?.name ||
         '',
       subcategory_name:
@@ -212,6 +214,10 @@ const ProductEditorModal = ({
           ) ?? [];
           return {
             color,
+            priceOverride: (() => {
+              const saved = product.colors?.find((item) => item.color.toLocaleLowerCase() === color.toLocaleLowerCase())?.price;
+              return saved === null || saved === undefined ? null : Number(saved);
+            })(),
             articleModel: stocksForColor.find((item) => item.article_model)?.article_model || '',
             skus: sizesForColor.map((size) =>
               stocksForColor.find((item) => item.size === size)?.sku || '',
@@ -493,6 +499,9 @@ const ProductEditorModal = ({
     if (!form.category_id) return 'Selecciona una categoría.';
     if (!Number.isFinite(Number(form.price)) || Number(form.price) < 0) return 'El precio debe ser cero (borrador) o mayor.';
     if (Number(form.stock) < 0) return 'El stock no puede ser negativo.';
+    if (!simpleProduct && variants.some(v => v.priceOverride !== null && (!Number.isFinite(v.priceOverride) || v.priceOverride <= 0 || v.priceOverride > 99999999.99))) {
+      return 'El precio personalizado por color debe ser mayor que cero y tener hasta dos decimales.';
+    }
     if (simpleProduct) return '';
 
 
@@ -650,6 +659,10 @@ const ProductEditorModal = ({
       data.append('description', form.description || '');
       data.append('color_sizes', JSON.stringify(colorSizes));
       data.append('variant_stocks', JSON.stringify(variantStocks));
+      // Solo los precios personalizados se envían; el resto hereda el precio general.
+      data.append('color_prices', JSON.stringify(Object.fromEntries(activeVariants
+        .filter(v => v.priceOverride !== null && v.priceOverride > 0)
+        .map(v => [v.color.trim(), Number(v.priceOverride!.toFixed(2))]))));
 
       activeVariants.forEach((variant, index) => {
         variant.files
@@ -887,7 +900,23 @@ const ProductEditorModal = ({
                                   <input maxLength={120} aria-label={'Modelo para color '+(variant.color || index+1)} value={variant.articleModel} onChange={e=>setVariant(index,{articleModel:e.target.value})} placeholder="Ej.: 2001-N" className="w-full rounded-lg border border-[#e0e5ec] bg-white px-2 py-2 text-[11px] outline-none focus:border-store-red"/>
                                   <p className="mt-1 text-[9px] text-gray-400">Editable</p>
                                 </td>
-                                <td className="px-2 py-3"><div className="rounded-lg border border-gray-200 bg-[#f8f9fa] px-2 py-2 text-[11px] font-semibold">MXN {Number(form.price||0).toFixed(2)}</div><p className="mt-1 text-[9px] text-gray-400">Precio general</p></td>
+                                <td className="px-2 py-3">
+                                  <label className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 focus-within:border-store-red">
+                                    <span className="text-[9px] font-bold text-gray-500">MXN</span>
+                                    <input type="number" min="0.01" max="99999999.99" step="0.01"
+                                      aria-label={'Precio variante '+(variant.color || index+1)}
+                                      value={variant.priceOverride ?? form.price}
+                                      onChange={e=>setVariant(index,{priceOverride: e.target.value === '' ? null : Number(e.target.value)})}
+                                      className="min-w-0 w-full bg-transparent text-[11px] font-semibold outline-none"
+                                      title="Edita para definir un precio especial de este color" />
+                                  </label>
+                                  {variant.priceOverride === null
+                                    ? <p className="mt-1 text-[9px] text-gray-400">Sincronizado con precio general</p>
+                                    : <button type="button" onClick={()=>setVariant(index,{priceOverride:null})}
+                                        className="mt-1 text-left text-[9px] font-semibold text-store-red hover:underline">
+                                        Personalizado · Usar precio general
+                                      </button>}
+                                </td>
                                 <td className="px-2 py-3"><output className="block rounded-lg border border-gray-100 bg-[#f5f6f8] p-2 text-center text-[12px] font-bold">{sum}</output></td>
                                 <td className="px-2 py-3">
                                   <div className="flex items-center gap-1">
@@ -964,7 +993,7 @@ const ProductEditorModal = ({
                   </div>
                   <div className="mt-3 rounded-lg border border-gray-100 bg-[#f7f8fa] p-3">
                     <div className="flex justify-between gap-2 text-xs"><span className="text-gray-500">Precio final</span><strong>MXN {(discountedPrice || Number(form.price||0)).toFixed(2)}</strong></div>
-                    <p className="mt-1 text-[10px] text-gray-400">Precio común para todos los colores. El backend calcula el descuento.</p>
+                    <p className="mt-1 text-[10px] text-gray-400">Precio predeterminado: sincroniza los colores sin precio personalizado. El descuento también se aplica a los precios de variante.</p>
                   </div>
                   {Number(form.price)===0 && <p className="mt-2 text-[11px] font-medium text-amber-600">Precio 0: el producto permanecerá oculto.</p>}
                   <label className="mt-3 flex items-center justify-between gap-2 text-[11px] text-gray-600"><span>Etiqueta comercial</span>
