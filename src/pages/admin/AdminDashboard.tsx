@@ -16,7 +16,6 @@ import AdminSettingsWorkspace from './AdminSettingsWorkspace';
 import AdminModuleTabs from './AdminModuleTabs';
 import MessagesManager from './MessagesManager';
 import FunnelLeadsManager from './FunnelLeadsManager';
-import UsersManager from './UsersManager';
 import ProfileManager from './ProfileManager';
 import InventoryManager from './InventoryManager';
 import CustomerManager from './CustomerManager';
@@ -177,12 +176,14 @@ const AdminDashboard = () => {
     const location = useLocation();
     const state = location.state as { activeTab?: string; selectedLeadId?: number };
 
-    const [activeTab, setActiveTab] = useState<'stats' | 'products' | 'inventory' | 'settings' | 'messages' | 'funnelLeads' | 'users' | 'profile' | 'customers' | 'sales' | 'reports'>(
-        state?.activeTab === 'services' ? 'settings' : (state?.activeTab as any) || 'stats'
+    const [activeTab, setActiveTab] = useState<'stats' | 'products' | 'inventory' | 'settings' | 'messages' | 'funnelLeads' | 'profile' | 'customers' | 'sales' | 'reports'>(
+        state?.activeTab === 'services' || state?.activeTab === 'users'
+            ? 'settings'
+            : (state?.activeTab as any) || 'stats'
     );
     // Alias legado: enlaces antiguos a Servicios ahora abren Ajustes > Costo delivery.
-    const [initialSettingsSection, setInitialSettingsSection] = useState<'general' | 'delivery'>(
-        state?.activeTab === 'services' ? 'delivery' : 'general'
+    const [initialSettingsSection, setInitialSettingsSection] = useState<'general' | 'delivery' | 'users'>(
+        state?.activeTab === 'services' ? 'delivery' : state?.activeTab === 'users' ? 'users' : 'general'
     );
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const dashboardRef = useRef<HTMLDivElement>(null);
@@ -194,8 +195,8 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         if (state?.activeTab) {
-            if (state.activeTab === 'services') {
-                setInitialSettingsSection('delivery');
+            if (state.activeTab === 'services' || state.activeTab === 'users') {
+                setInitialSettingsSection(state.activeTab === 'services' ? 'delivery' : 'users');
                 setActiveTab('settings');
             } else {
                 setActiveTab(state.activeTab as any);
@@ -204,8 +205,8 @@ const AdminDashboard = () => {
     }, [state]);
 
     const selectMainTab = (tab: string) => {
-        if (tab === 'services') {
-            setInitialSettingsSection('delivery');
+        if (tab === 'services' || tab === 'users') {
+            setInitialSettingsSection(tab === 'services' ? 'delivery' : 'users');
             setActiveTab('settings');
         } else {
             if (tab === 'settings') setInitialSettingsSection('general');
@@ -514,9 +515,8 @@ const AdminDashboard = () => {
                             {activeTab === 'sales' && <CommerceManager mode="sales" />}
                             {activeTab === 'reports' && <CommerceManager mode="reports" />}
                             {activeTab === 'inventory' && <InventoryManager />}
-                            {activeTab === 'settings' && <AdminSettingsWorkspace key={initialSettingsSection} initialSection={initialSettingsSection} />}
+                            {activeTab === 'settings' && <AdminSettingsWorkspace key={initialSettingsSection} initialSection={initialSettingsSection} initialUsers={(stats as any)?.all_users} />}
                             {activeTab === 'funnelLeads' && <FunnelLeadsManager initialData={(stats as any)?.all_leads} />}
-                            {activeTab === 'users' && <UsersManager initialData={(stats as any)?.all_users} />}
                             {activeTab === 'messages' && <MessagesManager />}
                             {activeTab === 'profile' && <ProfileManager />}
                         </motion.div>
