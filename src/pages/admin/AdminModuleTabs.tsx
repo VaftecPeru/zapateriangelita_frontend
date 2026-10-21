@@ -6,7 +6,6 @@ export const ADMIN_MODULE_TABS = [
     { id: 'customers', label: 'Clientes' },
     { id: 'sales', label: 'Ventas' },
     { id: 'reports', label: 'Reportes' },
-    { id: 'users', label: 'Usuarios' },
     { id: 'funnelLeads', label: 'Interesados' },
     { id: 'settings', label: 'Ajustes' },
 ] as const;
