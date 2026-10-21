@@ -1,6 +1,7 @@
 import { Package, AlertTriangle, PackageX, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { inventoryService } from '../../services/crudService';
+import { getImageUrl } from '../../config/api';
 import Pagination from '../../components/Pagination';
 import { usePagination } from '../../hooks/usePagination';
 
@@ -38,6 +39,16 @@ interface InventorySummary {
     low_stock: number;
     out_of_stock: number;
 }
+
+const InventoryThumbnail = ({ image, name }: { image: string | null; name: string }) => {
+    const [failed, setFailed] = useState(false);
+    useEffect(() => { setFailed(false); }, [image]);
+    if (!image || failed) {
+        return <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-100 bg-gray-50 text-gray-400" aria-label="Sin imagen de producto"><Package size={17} /></span>;
+    }
+    return <img src={getImageUrl(image)} alt={name} loading="lazy" onError={() => setFailed(true)}
+        className="h-10 w-10 shrink-0 rounded-lg border border-gray-100 bg-white object-cover" />;
+};
 
 const InventoryManager = () => {
     const [search, setSearch] = useState('');
@@ -159,6 +170,7 @@ const InventoryManager = () => {
                 };
             }
 
+            if (!groups[key].image && item.image) groups[key].image = item.image;
             const size = getSizeLabel(item);
 
             groups[key].sizes[size] = item;
@@ -518,17 +530,7 @@ const InventoryManager = () => {
 
                                         <td className="px-2 py-2.5">
                                             <div className="flex items-center gap-2 max-w-[180px]">
-                                                {group.image ? (
-                                                    <img
-                                                        src={group.image}
-                                                        alt={group.name}
-                                                        className="w-7 h-7 rounded-md object-cover border border-gray-100 flex-shrink-0"
-                                                    />
-                                                ) : (
-                                                    <div className="w-7 h-7 rounded-md bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                                        <Package size={13} />
-                                                    </div>
-                                                )}
+                                                <InventoryThumbnail image={group.image} name={group.name} />
 
                                                 <div className="min-w-0">
                                                     <p
