@@ -32,13 +32,14 @@ async function run() {
     try {
         assert.deepEqual(
             ADMIN_MODULE_TABS.map(item => item.label),
-            ['Estadísticas', 'Pedido', 'Productos', 'Inventario', 'Clientes', 'Ventas', 'Reportes', 'Usuarios', 'Interesados', 'Ajustes'],
+            ['Estadísticas', 'Pedido', 'Productos', 'Inventario', 'Clientes', 'Ventas', 'Reportes', 'Interesados', 'Ajustes'],
         );
         let clicked = '';
-        await render(<AdminModuleTabs activeTab="users" onSelect={tab => { clicked = tab; }} />);
+        await render(<AdminModuleTabs activeTab="settings" onSelect={tab => { clicked = tab; }} />);
         const tabs = [...mount.querySelectorAll<HTMLElement>('[role="tab"]')];
-        assert.equal(tabs.length, 10);
-        assert.ok(tabs.find(x => x.textContent?.trim() === 'Usuarios')?.getAttribute('aria-selected') === 'true');
+        assert.equal(tabs.length, 9);
+        assert.ok(!tabs.some(x => x.textContent?.trim() === 'Usuarios'), 'Usuarios solo estará dentro de Ajustes');
+        assert.ok(tabs.find(x => x.textContent?.trim() === 'Ajustes')?.getAttribute('aria-selected') === 'true');
         assert.ok(!mount.textContent?.includes('Interesados en Calzado'));
         assert.ok(!mount.textContent?.includes('Servicios'));
         assert.ok(mount.querySelector('nav')?.className.includes('overflow-x-auto'));
@@ -46,7 +47,7 @@ async function run() {
         assert.ok(interested);
         await click(interested!);
         assert.equal(clicked, 'funnelLeads');
-        console.log('PASS intranet: menú moderno, Usuarios restaurado, Servicios retirado, Interesados renombrado');
+        console.log('PASS intranet: 9 pestañas compactas, Usuarios trasladado a Ajustes, Servicios retirado, Interesados renombrado');
 
         (authService as any).getProfile = async () => ({ data: {
             id: 1, name: 'Administrador', email: 'admin@angelita.test', role: 'admin',
@@ -56,7 +57,25 @@ async function run() {
             { id: 10, name: 'Costo de delivery', code: 'delivery', description: 'Envío', price: 75, is_active: true },
             { id: 20, name: 'Regalo', code: 'gift', description: 'Envoltura', price: 25, is_active: true },
         ] });
-        await render(<AuthProvider><AdminSettingsWorkspace initialSection="delivery" /></AuthProvider>);
+        await render(
+            <AuthProvider>
+                <AdminSettingsWorkspace initialSection="users" initialUsers={[
+                    { id: 1, name: 'Administrador', email: 'admin@angelita.test', role: 'admin' },
+                    { id: 2, name: 'Cliente Demo', email: 'cliente@angelita.test', role: 'user' },
+                ]} />
+            </AuthProvider>
+        );
+        assert.ok(mount.textContent?.includes('Usuarios Registrados'), 'Gestión de usuarios accesible desde Ajustes');
+        assert.ok(mount.textContent?.includes('Cliente Demo'), 'Conserva el listado real de usuarios');
+        assert.ok(mount.textContent?.includes('Costo delivery'), 'Ajustes incluye Costo delivery');
+        const usersSettingsTab = [...mount.querySelectorAll<HTMLElement>('[role="tab"]')]
+            .find(el => el.textContent?.trim() === 'Usuarios');
+        assert.equal(usersSettingsTab?.getAttribute('aria-selected'), 'true', 'Subpestaña Usuarios activa');
+        const deliverySettingsTab = [...mount.querySelectorAll<HTMLElement>('[role="tab"]')]
+            .find(el => el.textContent?.trim() === 'Costo delivery');
+        assert.ok(deliverySettingsTab, 'Subpestaña Costo delivery disponible');
+        await click(deliverySettingsTab!);
+        assert.equal(deliverySettingsTab!.getAttribute('aria-selected'), 'true');
         assert.ok(mount.textContent?.includes('Costo de delivery'));
         assert.ok(mount.textContent?.includes('75.00'), 'Se reutiliza el precio de delivery guardado');
         assert.ok(!mount.textContent?.includes('Regalo'), 'Los otros servicios no se muestran en la vista de delivery');
@@ -69,7 +88,7 @@ async function run() {
         assert.ok(mount.textContent?.includes('Configurar costo de delivery'));
         const price = mount.querySelector<HTMLInputElement>('input[name="price"]');
         assert.equal(price?.value, '75');
-        console.log('PASS ajustes: Costo delivery anidado con tarifa real, edición habilitada, sin servicios adicionales');
+        console.log('PASS ajustes: Usuarios operativo, Costo delivery reutiliza tarifa real y edición del administrador');
     } finally {
         (authService as any).getProfile = initialProfile;
         (additionalServiceService as any).getAll = initialGetAll;
