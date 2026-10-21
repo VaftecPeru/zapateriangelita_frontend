@@ -44,11 +44,11 @@ export interface Product {
     collection_name?: string | null;
     seo_title?: string | null;
     seo_description?: string | null;
-    category?: string | { id?: number; name: string; slug?: string };
+    category?: string | { id?: number; name: string; slug?: string } | null;
     category_id?: number;
     subcategory_id?: number;
     brand_id?: number;
-    brand?: string | { id?: number; name: string; slug?: string };
+    brand?: string | { id?: number; name: string; slug?: string } | null;
     price: number;
     discounted_price?: number;
     stock: number;

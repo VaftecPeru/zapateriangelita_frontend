@@ -140,6 +140,11 @@ async function run() {
     assert.ok(storeHome.includes('Catálogo no disponible'));
   });
 
+  await render(detail({ ...fixture, brand: null, category: null, subcategory: null }));
+  check('Detalle: relaciones de catálogo nulas no bloquean la ficha', () => {
+    assert.equal(document.querySelector('h1')?.textContent, fixture.name);
+    assert.ok(document.body.textContent?.includes('Sin marca'));
+  });
   await render(detail());
   check('Detalle: datos y precio reales', () => { assert.equal(document.querySelector('h1')?.textContent, fixture.name); assert.match(document.querySelector('.product-price-line')!.textContent!, /240/); });
   await click('.buy-box-cart');
