@@ -19,6 +19,8 @@ import FunnelLeadsManager from './FunnelLeadsManager';
 import UsersManager from './UsersManager';
 import ProfileManager from './ProfileManager';
 import InventoryManager from './InventoryManager';
+import CustomerManager from './CustomerManager';
+import CommerceManager from './CommerceManager';
 import { useAuth } from '../../hooks/useAuth';
 import { statsService, DashboardStats } from '../../services/crudService';
 
@@ -175,7 +177,7 @@ const AdminDashboard = () => {
     const location = useLocation();
     const state = location.state as { activeTab?: string; selectedLeadId?: number };
 
-    const [activeTab, setActiveTab] = useState<'stats' | 'products' | 'inventory' | 'services' | 'settings' | 'messages' | 'funnelLeads' | 'users' | 'profile'>(
+    const [activeTab, setActiveTab] = useState<'stats' | 'products' | 'inventory' | 'services' | 'settings' | 'messages' | 'funnelLeads' | 'users' | 'profile' | 'customers' | 'sales' | 'reports'>(
         (state?.activeTab as any) || 'stats'
     );
     const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -346,6 +348,9 @@ const AdminDashboard = () => {
                         { id: 'messages', label: 'Pedido' },
                         { id: 'products', label: 'Productos' },
                         { id: 'inventory', label: 'Inventario' },
+                        { id: 'customers', label: 'Clientes' },
+                        { id: 'sales', label: 'Ventas' },
+                        { id: 'reports', label: 'Reportes' },
                         { id: 'services', label: 'Servicios' },
                         { id: 'settings', label: 'Ajustes' },
                         { id: 'funnelLeads', label: 'Interesados en Calzado' },
@@ -510,7 +515,10 @@ const AdminDashboard = () => {
                             transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                             className="space-y-6"
                         >
-                            {activeTab === 'products' && <PropertyManager />}
+                            {activeTab === 'products' && <PropertyManager onNavigate={(tab) => setActiveTab(tab)} />}
+                            {activeTab === 'customers' && <CustomerManager />}
+                            {activeTab === 'sales' && <CommerceManager mode="sales" />}
+                            {activeTab === 'reports' && <CommerceManager mode="reports" />}
                             {activeTab === 'inventory' && <InventoryManager />}
                             {activeTab === 'services' && <ServiceManager />}
                             {activeTab === 'settings' && <SettingsManager />}

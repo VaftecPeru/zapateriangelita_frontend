@@ -8,7 +8,9 @@ import Pagination from '../../../components/Pagination';
 import { usePagination } from '../../../hooks/usePagination';
 import './product-editor.css';
 
-const ProductManagerV2 = () => {
+type Props = { onNavigate?: (tab: 'stats' | 'messages' | 'inventory' | 'customers' | 'sales' | 'reports') => void };
+
+const ProductManagerV2 = ({ onNavigate }: Props) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
@@ -32,6 +34,7 @@ const ProductManagerV2 = () => {
   const [stockFilter, setStockFilter] = useState<'all' | 'available' | 'low' | 'out'>('all');
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [exporting, setExporting] = useState<'excel' | 'pdf' | null>(null);
+  const [exportOptionsOpen, setExportOptionsOpen] = useState(false);
 
   const priceModels = useMemo(() => Array.from(new Set(
     products
@@ -183,6 +186,7 @@ const ProductManagerV2 = () => {
   const downloadInventory = async (format: 'excel' | 'pdf') => {
     if (exporting) return;
 
+    setExportOptionsOpen(false);
     setExporting(format);
     try {
       const response = await productService.exportInventory(format, {
@@ -236,29 +240,19 @@ const ProductManagerV2 = () => {
             <p className="text-xs font-medium text-gray-400">Administra catálogo, variantes e inventario de Zapatería Angelita.</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => downloadInventory('excel')}
-              disabled={exporting !== null}
-              title="Descargar inventario actual en Excel"
-              className="inline-flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs font-black uppercase tracking-widest text-emerald-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {exporting === 'excel' ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-              Excel
-            </button>
-            <button
-              type="button"
-              onClick={() => downloadInventory('pdf')}
-              disabled={exporting !== null}
-              title="Descargar inventario actual en PDF"
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs font-black uppercase tracking-widest text-gray-700 shadow-sm transition hover:border-gray-400 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {exporting === 'pdf' ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
-              PDF
-            </button>
-            <button onClick={() => { setModelPriceError(''); setModelPriceOpen(true); }} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-xs font-black uppercase tracking-widest text-gray-600 shadow-sm transition hover:border-store-red hover:text-store-red">
-              Precio por modelo
-            </button>
+            <div className="relative">
+              <button type="button" onClick={() => setExportOptionsOpen(open => !open)} disabled={exporting !== null}
+                aria-haspopup="menu" aria-expanded={exportOptionsOpen} aria-label="Exportar productos"
+                className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-xs font-black uppercase tracking-widest text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-100 disabled:opacity-50">
+                {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />} Exportar
+              </button>
+              {exportOptionsOpen && <div role="menu" className="absolute right-0 top-full z-40 mt-2 min-w-[190px] rounded-xl border border-gray-200 bg-white p-2 shadow-xl">
+                <button type="button" role="menuitem" onClick={() => void downloadInventory('excel')}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700"><FileSpreadsheet size={16}/> Exportar Excel</button>
+                <button type="button" role="menuitem" onClick={() => void downloadInventory('pdf')}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-bold text-gray-700 hover:bg-gray-100"><FileText size={16}/> Exportar PDF</button>
+              </div>}
+            </div>
             <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-xs font-black uppercase tracking-widest text-gray-600 shadow-sm transition hover:border-store-red hover:text-store-red">
               <FileSpreadsheet size={16} /> Importar
             </button>
@@ -374,7 +368,7 @@ const ProductManagerV2 = () => {
         />
       </div>
 
-      <ProductEditorModal open={editorOpen} product={editingProduct} products={products} categories={categories} subcategories={subcategories} brands={brands} onClose={() => setEditorOpen(false)} onSaved={loadData} />
+      <ProductEditorModal open={editorOpen} product={editingProduct} products={products} categories={categories} subcategories={subcategories} brands={brands} onClose={() => setEditorOpen(false)} onNavigate={(tab) => { setEditorOpen(false); onNavigate?.(tab); }} onSaved={loadData} />
       <ProductImportModal open={importOpen} onClose={() => setImportOpen(false)} onImported={loadData} />
 
       {modelPriceOpen && (
