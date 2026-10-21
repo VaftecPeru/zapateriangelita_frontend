@@ -5,7 +5,7 @@ import { Plus, Edit, Trash2, Loader2, Sparkles, X, AlertTriangle, Star, Percent,
 import Pagination from '../../components/Pagination';
 import { usePagination } from '../../hooks/usePagination';
 
-const ServiceManager = () => {
+const ServiceManager = ({ deliveryOnly = false }: { deliveryOnly?: boolean }) => {
     const { user: currentUser } = useAuth();
     const [services, setServices] = useState<AdditionalService[]>([]);
     const [loading, setLoading] = useState(true);
@@ -198,7 +198,7 @@ const ServiceManager = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm transition-all hover:shadow-md">
+            {!deliveryOnly && <div className="flex justify-between items-center bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm transition-all hover:shadow-md">
                 <div>
                     <h2 className="text-xl font-black text-black">Gestión de Servicios</h2>
                     <p className="text-gray-400 text-xs font-medium">Administra los servicios adicionales que ofreces.</p>
@@ -210,7 +210,7 @@ const ServiceManager = () => {
                     <Plus size={16} />
                     Nuevo Servicio
                 </button>
-            </div>
+            </div>}
 
             <div className="rounded-[2rem] border border-store-red/15 bg-red-50/40 p-6 shadow-sm">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -255,7 +255,7 @@ const ServiceManager = () => {
                 </div>
             )}
 
-            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden text-black font-medium">
+            {!deliveryOnly && <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden text-black font-medium">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -333,9 +333,8 @@ const ServiceManager = () => {
                     onPageSizeChange={servicePagination.setPageSize}
                     pageSizeOptions={[10, 25, 50]}
                 />
-            </div>
+            </div>}
 
-           
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
                     <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300">
