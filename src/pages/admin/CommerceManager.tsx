@@ -28,14 +28,23 @@ const CommerceManager = ({ mode }: Props) => {
   const [filter, setFilter] = useState<'all' | 'paid' | 'pending'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [truncated, setTruncated] = useState(false);
 
   const loadOrders = async () => {
     setLoading(true);
     setError('');
     try {
-      const response = await orderService.getAll();
-      const data = response.data as unknown as Order[] | { data?: Order[] };
-      setOrders(Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []));
+      const response = await orderService.getAll(1);
+      const data = response.data as Order[] | { data?: Order[]; last_page?: number };
+      let records: Order[] = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+      const pages = Array.isArray(data) ? 1 : Math.max(1, Number(data?.last_page || 1));
+      const limit = 100;
+      for (let page = 2; page <= pages && page <= limit; page++) {
+        const next = (await orderService.getAll(page)).data;
+        records = records.concat(Array.isArray(next) ? next : (Array.isArray(next?.data) ? next.data : []));
+      }
+      setTruncated(pages > limit);
+      setOrders(records);
     } catch (exception: any) {
       setError(exception?.response?.data?.message || 'No se pudieron cargar las ventas.');
     } finally {
@@ -86,6 +95,7 @@ const CommerceManager = ({ mode }: Props) => {
           </button>
         </div>
       </div>
+      {truncated && <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-800">La API devuelve más de 100 páginas de pedidos. Los indicadores y la exportación muestran únicamente los primeros 1500 registros. Solicita exportación total al backend.</p>}
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><ShoppingBag size={21} className="text-store-red"/><p className="mt-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Pedidos registrados</p><p className="text-3xl font-black">{orders.length}</p></div>
         <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><BarChart3 size={21} className="text-store-red"/><p className="mt-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Pagos confirmados</p><p className="text-3xl font-black">{paid.length}</p></div>
