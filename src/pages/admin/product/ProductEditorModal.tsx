@@ -13,6 +13,7 @@ import {
 import { getImageUrl } from '../../../config/api';
 import { ProductVariantDraft } from './types';
 import angelitaLogo from '../../../assets/brand/logo-angelita-horizontal.png';
+import { getCatalogName } from '../../../utils/catalogName';
 
 type Props = {
   open: boolean;
@@ -169,9 +170,9 @@ const ProductEditorModal = ({
       collection_name: product.collection_name || '',
       seo_title: product.seo_title || '',
       seo_description: product.seo_description || '',
-      brand_name: typeof product.brand === 'object' ? product.brand.name : String(product.brand || ''),
+      brand_name: getCatalogName(product.brand) || brands.find((item) => item.id === product.brand_id)?.name || '',
       category_name:
-        (typeof product.category === 'object' ? product.category.name : String(product.category || '')) ||
+        getCatalogName(product.category) ||
         categories.find((item) => item.id === product.category_id)?.name ||
         '',
       subcategory_name:

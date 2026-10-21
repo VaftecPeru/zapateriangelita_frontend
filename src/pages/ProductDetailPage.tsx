@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { analyticsService, productService, settingsService, Product } from "../services/crudService";
 import { getImageUrl } from "../config/api";
+import { getCatalogName } from '../utils/catalogName';
 import { useCart } from "../hooks/useCart";
 import brandLogo from "../assets/brand/logo-angelita-horizontal.png";
 import fallbackImage from "../assets/foto1.jpg";
@@ -130,11 +131,9 @@ function normalizeProduct(product: Product): any {
   return {
     ...product,
     imageList,
-    categoryName: typeof product.category === "object" ? product.category.name : product.category || "Calzado",
-    subcategoryName: typeof (product as any).subcategory === "object"
-      ? (product as any).subcategory.name
-      : (product as any).subcategory || "Sin subcategoría",
-    brandName: typeof product.brand === "object" ? product.brand.name : product.brand || "Sin marca",
+    categoryName: getCatalogName(product.category) || "Calzado",
+    subcategoryName: getCatalogName((product as any).subcategory) || "Sin subcategoría",
+    brandName: getCatalogName(product.brand) || "Sin marca",
     salePrice: Number(product.discounted_price || product.price),
     ratingValue: Number(product.rating || 0),
     colorOptions,
