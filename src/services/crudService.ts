@@ -412,7 +412,7 @@ export default {
 };
 
 export const orderService = {
-    getAll: () => apiClient.get<{ data: Order[] }>('/orders'),
+    getAll: (page = 1) => apiClient.get<{ data: Order[]; last_page?: number; total?: number }>('/orders', { params: { page } }),
     getMyOrders: () => apiClient.get<Order[]>('/my-orders'),
     updateStatus: (id: number, status: string) => apiClient.put<Order>(`/orders/${id}/status`, { status }),
     reconcilePayments: (limit = 10, orderId?: number) =>
