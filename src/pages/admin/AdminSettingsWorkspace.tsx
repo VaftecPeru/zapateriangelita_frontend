@@ -1,15 +1,23 @@
 import { useState } from 'react';
-import { Settings2, Truck } from 'lucide-react';
+import { Settings2, Truck, UsersRound } from 'lucide-react';
+import type { User } from '../../services/crudService';
 import SettingsManager from './SettingsManager';
 import ServiceManager from './ServiceManager';
+import UsersManager from './UsersManager';
 
-type Section = 'general' | 'delivery';
+type Section = 'general' | 'delivery' | 'users';
 
 /**
- * Ajustes agrupa la configuración del sitio y el costo delivery.
+ * Ajustes agrupa configuración del sitio, costo delivery y gestión de usuarios.
  * El CRUD existente de delivery se reutiliza sin exponer Servicios como pestaña principal.
  */
-const AdminSettingsWorkspace = ({ initialSection = 'general' }: { initialSection?: Section }) => {
+const AdminSettingsWorkspace = ({
+    initialSection = 'general',
+    initialUsers,
+}: {
+    initialSection?: Section;
+    initialUsers?: User[];
+}) => {
     const [section, setSection] = useState<Section>(initialSection);
 
     return (
@@ -19,6 +27,7 @@ const AdminSettingsWorkspace = ({ initialSection = 'general' }: { initialSection
                     {([
                         { id: 'general', label: 'General', icon: Settings2 },
                         { id: 'delivery', label: 'Costo delivery', icon: Truck },
+                        { id: 'users', label: 'Usuarios', icon: UsersRound },
                     ] as const).map(({ id, label, icon: Icon }) => (
                         <button
                             type="button"
@@ -41,7 +50,13 @@ const AdminSettingsWorkspace = ({ initialSection = 'general' }: { initialSection
                 </div>
             </div>
             <div role="tabpanel" id="settings-panel" aria-labelledby={`settings-tab-${section}`}>
-                {section === 'delivery' ? <ServiceManager deliveryOnly /> : <SettingsManager />}
+                {section === 'delivery' ? (
+                    <ServiceManager deliveryOnly />
+                ) : section === 'users' ? (
+                    <UsersManager initialData={initialUsers} />
+                ) : (
+                    <SettingsManager />
+                )}
             </div>
         </div>
     );
