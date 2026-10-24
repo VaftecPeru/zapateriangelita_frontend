@@ -17,6 +17,7 @@ import {
 import { analyticsService, productService, settingsService, Product } from "../services/crudService";
 import { getImageUrl } from "../config/api";
 import { getCatalogName } from '../utils/catalogName';
+import { getActiveColorImages, getColorVariantValue } from "../utils/colorVariantLookup";
 import { useCart } from "../hooks/useCart";
 import brandLogo from "../assets/brand/logo-angelita-horizontal.png";
 import fallbackImage from "../assets/foto1.jpg";
@@ -246,9 +247,14 @@ export default function ProductDetailPage() {
     ? Math.round(((selectedBasePrice - selectedSalePrice) / selectedBasePrice) * 100)
     : 0;
 
-  const selectedColorImages = selectedColor ? product.colorImages?.[selectedColor] : null;
-  const activeImageList = selectedColorImages?.length ? selectedColorImages : product.imageList;
-  const selectedColorSizes = selectedColor ? product.colorSizes?.[selectedColor] : null;
+  const activeImageList = getActiveColorImages<string>(
+    product.colorImages as Record<string, string[]> | null | undefined,
+    selectedColor,
+    product.imageList as string[],
+  );
+  const selectedColorSizes = selectedColor
+    ? getColorVariantValue<string[]>(product.colorSizes, selectedColor)
+    : null;
   const activeSizeOptions = selectedColorSizes?.length ? selectedColorSizes : product.sizeOptions;
 
   const stockForSize = (sizeOption: string) => {
@@ -265,8 +271,14 @@ export default function ProductDetailPage() {
 
   const selectedStock = selectedSize ? stockForSize(selectedSize) : stock;
 
-  const showPrevious = () => setSelectedImage((current) => (current - 1 + activeImageList.length) % activeImageList.length);
-  const showNext = () => setSelectedImage((current) => (current + 1) % activeImageList.length);
+  const showPrevious = () => {
+    if (activeImageList.length < 2) return;
+    setSelectedImage((current) => (current - 1 + activeImageList.length) % activeImageList.length);
+  };
+  const showNext = () => {
+    if (activeImageList.length < 2) return;
+    setSelectedImage((current) => (current + 1) % activeImageList.length);
+  };
 
   const addProductToCart = () => {
     const missingColor = Boolean(product.colorOptions && !selectedColor);
@@ -284,7 +296,7 @@ export default function ProductDetailPage() {
     for (let index = 0; index < quantity; index += 1) {
       addToCart({
         ...product,
-        image: activeImageList[0],
+        image: activeImageList[0] || fallbackImage,
         price: selectedSalePrice,
         size: selectedSize,
         color: selectedColor,
@@ -470,11 +482,20 @@ export default function ProductDetailPage() {
               <button type="button" className="icon-share-floating" onClick={shareProduct} aria-label="Compartir producto">
                 <Share2 size={16} />
               </button>
-              <button className="pd-zoom-trigger" aria-label="Ampliar imagen del producto" onClick={() => zoomDialog.current?.showModal()}>
-                <img src={activeImageList[selectedImage] || activeImageList[0] || fallbackImage} alt={product.name} decoding="async" onError={applyProductImageFallback} />
-                <span><ZoomIn size={16} /> Ampliar imagen</span>
-              </button>
-              <span className="pd-image-counter">{selectedImage + 1} / {activeImageList.length}</span>
+              {activeImageList.length > 0 ? (
+                <>
+                  <button className="pd-zoom-trigger" aria-label="Ampliar imagen del producto" onClick={() => zoomDialog.current?.showModal()}>
+                    <img src={activeImageList[selectedImage] || activeImageList[0]} alt={`${product.name} ${selectedColor || ''}`.trim()} decoding="async" onError={applyProductImageFallback} />
+                    <span><ZoomIn size={16} /> Ampliar imagen</span>
+                  </button>
+                  <span className="pd-image-counter">{selectedImage + 1} / {activeImageList.length}</span>
+                </>
+              ) : (
+                <div className="pd-color-image-missing" role="status">
+                  <strong>Fotografía pendiente</strong>
+                  <span>La imagen del color {selectedColor} aún no está asociada a este producto.</span>
+                </div>
+              )}
               {activeImageList.length > 1 && (
                 <>
                   <button type="button" className="gallery-arrow gallery-arrow-left" onClick={showPrevious} aria-label="Imagen anterior">
@@ -550,7 +571,8 @@ export default function ProductDetailPage() {
                         disabled={!product.colorOptions}
                         onClick={() => {
                           setSelectedColor(colorOption.name);
-                          const sizes = product.colorSizes?.[colorOption.name]?.length ? product.colorSizes[colorOption.name] : product.sizeOptions;
+                          const colorSizes = getColorVariantValue<string[]>(product.colorSizes, colorOption.name);
+                          const sizes = colorSizes?.length ? colorSizes : product.sizeOptions;
                           setSelectedSize(sizes?.length === 1 ? sizes[0] : null);
                           setVariantError(null);
                           setSelectedImage(0);
