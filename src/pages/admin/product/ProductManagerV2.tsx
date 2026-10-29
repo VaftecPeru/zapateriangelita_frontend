@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { isAxiosError } from 'axios';
 import { AlertTriangle, Download, Edit, Eye, FileSpreadsheet, FileText, Loader2, Plus, Search, Trash2, X } from 'lucide-react';
 import { Brand, Category, Product, Subcategory, brandService, categoryService, productService, subcategoryService } from '../../../services/crudService';
 import { getImageUrl } from '../../../config/api';
@@ -30,6 +31,7 @@ const ProductManagerV2 = ({ onNavigate }: Props) => {
   const [viewProduct, setViewProduct] = useState<Product | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
@@ -169,15 +171,19 @@ const ProductManagerV2 = ({ onNavigate }: Props) => {
   };
 
   const handleDelete = async () => {
-    if (!deleteProduct?.id) return;
+    if (!deleteProduct?.id || deleting) return;
+    setDeleteError('');
     setDeleting(true);
     try {
       await productService.delete(deleteProduct.id);
       setDeleteProduct(null);
       await loadData();
     } catch (error) {
-      console.error('Error deleting product', error);
-      alert('No se pudo eliminar el producto.');
+      const relatedRecords = isAxiosError(error) && error.response?.status === 409
+        && error.response.data?.error_code === 'PRODUCT_HAS_RELATED_RECORDS';
+      setDeleteError(relatedRecords
+        ? 'Este producto tiene registros relacionados. Puedes desactivarlo desde Editar para conservar su historial.'
+        : 'No se pudo confirmar la eliminación. Actualiza el listado antes de volver a intentarlo.');
     } finally {
       setDeleting(false);
     }
@@ -365,7 +371,7 @@ const ProductManagerV2 = ({ onNavigate }: Props) => {
                     <div className="flex items-center gap-2">
                       <button onClick={() => setViewProduct(product)} title="Ver producto" className="rounded-xl border border-gray-200 bg-white p-3 text-gray-500 shadow-sm transition hover:bg-gray-100 hover:text-black"><Eye size={14} /></button>
                       <button onClick={() => openEdit(product)} title="Editar producto" className="rounded-xl bg-store-red p-3 text-white shadow-md transition hover:bg-store-redDark"><Edit size={14} /></button>
-                      <button onClick={() => setDeleteProduct(product)} title="Eliminar producto" className="rounded-xl border border-red-50 bg-white p-3 text-gray-400 shadow-sm transition hover:border-red-100 hover:bg-red-50 hover:text-red-500"><Trash2 size={14} /></button>
+                      <button onClick={() => { setDeleteError(''); setDeleteProduct(product); }} title="Eliminar producto" className="rounded-xl border border-red-50 bg-white p-3 text-gray-400 shadow-sm transition hover:border-red-100 hover:bg-red-50 hover:text-red-500"><Trash2 size={14} /></button>
                     </div>
                   </td>
                 </tr>
@@ -477,6 +483,7 @@ const ProductManagerV2 = ({ onNavigate }: Props) => {
             <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-50 text-red-500"><AlertTriangle size={40} /></div>
             <h2 className="mb-2 text-2xl font-black text-black">¿Eliminar producto?</h2>
             <p className="mb-8 text-sm font-medium text-gray-400">Se eliminará <strong>{deleteProduct.name}</strong> de forma permanente.</p>
+            {deleteError && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{deleteError}</p>}
             <div className="flex gap-3"><button onClick={() => setDeleteProduct(null)} disabled={deleting} className="flex-1 rounded-2xl bg-gray-100 py-4 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-200">Cancelar</button><button onClick={handleDelete} disabled={deleting} className="flex-1 rounded-2xl bg-red-500 py-4 text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-red-200 hover:bg-red-600 disabled:opacity-50">{deleting ? 'Eliminando...' : 'Eliminar'}</button></div>
           </div>
         </div>
