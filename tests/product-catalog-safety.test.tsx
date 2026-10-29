@@ -34,7 +34,7 @@ async function search(value: string) {
   });
 }
 const original = {
-  products: productService.getAllAdmin, categories: categoryService.getAll,
+  delete: productService.delete, products: productService.getAllAdmin, categories: categoryService.getAll,
   brands: brandService.getAll, subcategories: subcategoryService.getAll,
 };
 const fixture = Array.from({ length: 26 }, (_, index) => ({
@@ -119,11 +119,22 @@ async function run() {
     assert.ok(target.textContent?.includes('31 productos registrados'));
     console.log('PASS Carga: incluye páginas posteriores a la 30 sin truncar el catálogo.');
 
+    (productService as any).delete = async () => {
+      throw { isAxiosError: true, response: { status: 409, data: { error_code: 'PRODUCT_HAS_RELATED_RECORDS' } } };
+    };
+    await click('[title="Eliminar producto"]');
+    const confirmDelete = [...target.querySelectorAll('button')].find(button => button.textContent === 'Eliminar')!;
+    await act(async () => { confirmDelete.click(); });
+    assert.ok(target.querySelector('[role="alert"]')?.textContent?.includes('desactivarlo'));
+    assert.ok(target.textContent?.includes('31 productos registrados'), 'Conflict preserves catalog');
+    console.log('PASS Eliminación: conflicto de historial informa cómo desactivar y conserva el producto.');
+
     await mount(<RenderErrorBoundary><BrokenView /></RenderErrorBoundary>);
     assert.ok(target.querySelector('[role="alert"]'));
     assert.ok(target.querySelector('a[href="/"]'));
     console.log('PASS Recuperación global: errores de render muestran opciones en lugar de pantalla en blanco.');
   } finally {
+    productService.delete = original.delete;
     productService.getAllAdmin = original.products;
     categoryService.getAll = original.categories;
     brandService.getAll = original.brands;
