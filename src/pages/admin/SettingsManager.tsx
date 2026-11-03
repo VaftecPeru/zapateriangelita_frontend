@@ -140,6 +140,9 @@ const SettingsManager = () => {
 
     const [whatsapp, setWhatsapp] = useState('');
     const [savingWhatsapp, setSavingWhatsapp] = useState(false);
+    const whatsappDigits = whatsapp.replace(/\D/g, '');
+    const mxLocalDigits = whatsappDigits.startsWith('52') ? whatsappDigits.slice(2) : null;
+    const mxWhatsappInvalid = mxLocalDigits !== null && mxLocalDigits.length !== 10;
 
     const [reservationPolicies, setReservationPolicies] = useState<ReservationPolicy[]>([]);
     const [privacyPolicies, setPrivacyPolicies] = useState<string[]>(defaultPrivacyPolicies);
@@ -231,8 +234,12 @@ const SettingsManager = () => {
 
     const saveWhatsapp = async () => {
         const cleanValue = whatsapp.replace(/[^0-9]/g, '');
-        if (!cleanValue) {
+        if (!cleanValue || cleanValue === '52') {
             notify('error', 'El número de WhatsApp no puede estar vacío.');
+            return;
+        }
+        if (mxWhatsappInvalid) {
+            notify('error', 'El número de WhatsApp de México (+52) debe tener exactamente 10 dígitos.');
             return;
         }
         try {
@@ -465,11 +472,22 @@ const SettingsManager = () => {
                             inputClassName="h-12 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 text-sm font-bold outline-none transition focus:border-store-red focus:bg-white"
                             placeholder="55 1234 5678"
                         />
+                        {mxLocalDigits !== null && (
+                            <p
+                                role={mxWhatsappInvalid ? 'alert' : 'status'}
+                                aria-live="polite"
+                                className={`mt-2 text-xs font-semibold ${mxWhatsappInvalid ? 'text-red-600' : 'text-emerald-700'}`}
+                            >
+                                {mxWhatsappInvalid
+                                    ? `El número mexicano debe tener 10 dígitos después de +52. Ingresados: ${mxLocalDigits.length}/10.`
+                                    : 'Número mexicano completo: 10 dígitos.'}
+                            </p>
+                        )}
                     </label>
                     <button
                         type="button"
                         onClick={saveWhatsapp}
-                        disabled={savingWhatsapp}
+                        disabled={savingWhatsapp || mxWhatsappInvalid}
                         className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-black px-6 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-store-red disabled:opacity-50"
                     >
                         {savingWhatsapp ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
