@@ -41,6 +41,22 @@
 .loading-screen--compact .loading-screen__brand { width: 116px; }
 .loading-screen--compact .loading-screen__shoe { width: 124px; }
 
+.loading-screen__caption {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.loading-screen__name {
+  color: #c90023;
+  font-size: clamp(16px, 4vw, 20px);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.loading-screen--compact .loading-screen__name { font-size: 14px; }
+
 .loading-screen__label {
   color: #746a65;
   font-size: 10px;

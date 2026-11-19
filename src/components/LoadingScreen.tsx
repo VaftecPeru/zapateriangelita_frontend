@@ -10,14 +10,16 @@ export default function LoadingScreen({ label = 'Cargando', compact = false }: L
   return (
     <div className={`loading-screen${compact ? " loading-screen--compact" : ""}`} role="status">
       <div className="loading-screen__brand">
-        <img src={brandLogo} alt="Zapatería Angelita" />
-
+        <img src={brandLogo} alt="" />
       </div>
       <picture>
         <source media="(prefers-reduced-motion: reduce)" srcSet="/images/angelita-shoe-loading.webp" />
         <img className="loading-screen__shoe" src="/images/angelita-shoe-loading.gif" width="320" height="320" alt="" />
       </picture>
-      <span className="loading-screen__label">{label}</span>
+      <div className="loading-screen__caption">
+        <span className="loading-screen__name">Zapatería Angelita</span>
+        <span className="loading-screen__label">{label}</span>
+      </div>
     </div>
   );
 }
