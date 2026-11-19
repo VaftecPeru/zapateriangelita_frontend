@@ -38,6 +38,13 @@ export const storeHelpTopics: Record<string, Topic> = {
       { title: 'Si el pago queda pendiente', text: 'Consulta el estado del pedido antes de intentar otro pago. Si el cargo aparece en tu banco y el pedido sigue pendiente, contáctanos con tu número de pedido.' },
     ],
   },
+  'libro-de-reclamaciones': {
+    title: 'Libro de reclamaciones',
+    sections: [
+      { title: 'Presenta tu reclamación', text: 'Escribe a nuestro equipo de atención con el asunto «Reclamación». Incluye tu nombre, una descripción de lo ocurrido y el número de pedido si lo tienes. Indica cómo podemos ayudarte.' },
+      { title: 'Da seguimiento', text: 'Conserva una copia del correo enviado. Si necesitas agregar información, responde en el mismo hilo. Si adjuntas un comprobante, oculta los datos de tu tarjeta.' },
+    ],
+  },
   'guia-de-tallas': {
     title: 'Guía de tallas',
     sections: [
