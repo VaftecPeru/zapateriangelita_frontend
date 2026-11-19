@@ -76,10 +76,12 @@ const ProductManagerV2 = ({ onNavigate }: Props) => {
     }
   };
 
-  const loadData = async () => {
+  const loadData = async ({ keepEditorOpen = false } = {}) => {
     try {
-      setLoading(true);
-      setLoadError('');
+      if (!keepEditorOpen) {
+        setLoading(true);
+        setLoadError('');
+      }
       const [productsRes, categoriesRes, subcategoriesRes, brandsRes] = await Promise.all([
         productService.getAllAdmin(),
         categoryService.getAll(),
@@ -101,9 +103,10 @@ const ProductManagerV2 = ({ onNavigate }: Props) => {
       setBrands(Array.isArray(brandsRes.data) ? brandsRes.data : ((brandsRes.data as any)?.data || []));
     } catch (error) {
       console.error('Error loading products', error);
+      if (keepEditorOpen) throw new Error('El cambio se guardó, pero no se pudo actualizar el catálogo.');
       setLoadError('No se pudo cargar el catálogo completo. Reintenta la conexión antes de administrar los productos.');
     } finally {
-      setLoading(false);
+      if (!keepEditorOpen) setLoading(false);
     }
   };
 
@@ -382,7 +385,7 @@ const ProductManagerV2 = ({ onNavigate }: Props) => {
         />
       </div>
 
-      <ProductEditorModal open={editorOpen} product={editingProduct} products={products} categories={categories} subcategories={subcategories} brands={brands} onClose={() => setEditorOpen(false)} onNavigate={(tab) => { setEditorOpen(false); onNavigate?.(tab); }} onSaved={loadData} />
+      <ProductEditorModal open={editorOpen} product={editingProduct} products={products} categories={categories} subcategories={subcategories} brands={brands} onClose={() => setEditorOpen(false)} onNavigate={(tab) => { setEditorOpen(false); onNavigate?.(tab); }} onSaved={() => loadData({ keepEditorOpen: true })} />
       <ProductImportModal open={importOpen} onClose={() => setImportOpen(false)} onImported={loadData} />
 
       {modelPriceOpen && (
