@@ -984,7 +984,7 @@ export default function StoreHome() {
           />
         ) : (
           statusFilter === 'oferta' || statusFilter === 'nuevo' ? (
-            <section className={`offers-catalog shell section-block${statusFilter === "nuevo" ? " offers-catalog--new" : ""}`}>
+            <section className="offers-catalog shell section-block">
               <div className="offers-catalog__heading">
                 <div>
                   <span className="offers-catalog__eyebrow">{catalogStatusEyebrow}</span>
