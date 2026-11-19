@@ -130,7 +130,8 @@ const ProductEditorModal = ({
   const [skuEditor, setSkuEditor] = useState<number | null>(null);
   const [mainImageIndex, setMainImageIndex] = useState(0);
   const [variantTab, setVariantTab] = useState<'color' | 'talla' | 'material' | 'coleccion'>('color');
-  const saveIntent = useRef<'save' | 'draft' | 'publish'>('save');
+  const saveIntent = useRef<'save' | 'draft'>('save');
+  const [publicationState, setPublicationState] = useState<Product['publication_state']>(null);
   const savingRef = useRef(false);
 
   const [catalogManager, setCatalogManager] = useState<CatalogKind | null>(null);
@@ -142,6 +143,7 @@ const ProductEditorModal = ({
     if (!open) return;
 
     setError('');
+    setPublicationState(product?.publication_state ?? null);
     setSaving(false);
     setPreviewOpen(false);
     setSkuEditor(null);
@@ -191,20 +193,10 @@ const ProductEditorModal = ({
     const colors = parseColors(product.color);
     setSimpleProduct(colors.length === 0 && !product.variant_stocks?.length);
     const globalSizes = parseList(product.size);
-    const legacyGallery = product.images?.length
-      ? product.images
-      : product.img
-        ? [product.img]
-        : [];
     const hasExplicitVariantStocks = Boolean(product.variant_stocks?.length);
     const productVariants = colors.length
       ? colors.map((color, colorIndex) => {
           const colorGallery = product.color_images?.[color] || [];
-          const gallery = colorGallery.length
-            ? colorGallery
-            : colorIndex === 0
-              ? legacyGallery
-              : [];
 
           const sizesForColor = product.color_sizes?.[color]?.length
             ? product.color_sizes[color]
@@ -247,7 +239,7 @@ const ProductEditorModal = ({
             }),
             files: [],
             previews: [],
-            existingImages: gallery.slice(0, 5).map((image) => getImageUrl(image)),
+            existingImages: colorGallery.slice(0, 5).map((image) => getImageUrl(image)),
           };
         })
       : [emptyVariant()];
@@ -329,38 +321,62 @@ const ProductEditorModal = ({
     });
   };
 
-  const handleVariantImages = (variantIndex: number, filesList: FileList | null) => {
-    const files = Array.from(filesList || []).slice(0, 5);
-    const previews = files.map((file) => URL.createObjectURL(file));
-    setVariant(variantIndex, { files, previews });
+  const imageObjectUrls = useRef(new Set<string>());
 
-    // La primera variante gobierna también la portada general del producto.
-    // Esto mantiene compatibilidad con las vistas que aún consumen products.img/images.
-    if (variantIndex === 0) {
-      const nextFiles: (File | null)[] = Array(5).fill(null);
-      const nextPreviews: (string | null)[] = Array(5).fill(null);
-      files.forEach((file, imageIndex) => {
-        nextFiles[imageIndex] = file;
-        nextPreviews[imageIndex] = previews[imageIndex];
-      });
-      setGeneralFiles(nextFiles);
-      setGeneralPreviews(nextPreviews);
+  useEffect(() => () => {
+    imageObjectUrls.current.forEach(url => URL.revokeObjectURL(url));
+    imageObjectUrls.current.clear();
+  }, [open, product]);
+
+  const readImageSelection = (input: HTMLInputElement, available: number) => {
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    if (!files.length) return [];
+    if (files.length > available) {
+      setError(available > 0 ? `Puedes agregar hasta ${available} fotos más.` : 'La galería ya tiene cinco fotos.');
+      return [];
     }
+    if (files.some(file => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 20 * 1024 * 1024)) {
+      setError('Selecciona imágenes JPEG, PNG o WebP de hasta 20 MB cada una.');
+      return [];
+    }
+    setError('');
+    return files;
   };
 
-  const handleGeneralImages = (filesList: FileList | null) => {
-    const files = Array.from(filesList || []).slice(0, 5);
+  const createImagePreview = (file: File) => {
+    const url = URL.createObjectURL(file);
+    imageObjectUrls.current.add(url);
+    return url;
+  };
+
+  const handleVariantImages = (variantIndex: number, input: HTMLInputElement) => {
+    const variant = variants[variantIndex];
+    const files = readImageSelection(input, 5 - variant.existingImages.length - variant.files.length);
     if (!files.length) return;
-    const previews = files.map(file => URL.createObjectURL(file));
-    const nextFiles: (File | null)[] = Array(5).fill(null);
-    const nextPreviews: (string | null)[] = Array(5).fill(null);
-    files.forEach((file, i) => { nextFiles[i] = file; nextPreviews[i] = previews[i]; });
+    setVariant(variantIndex, {
+      files: [...variant.files, ...files],
+      previews: [...variant.previews, ...files.map(createImagePreview)],
+    });
+  };
+
+  const handleGeneralImages = (input: HTMLInputElement, replaceIndex?: number) => {
+    const slots = replaceIndex === undefined
+      ? generalPreviews.flatMap((preview, index) => preview ? [] : [index])
+      : [replaceIndex];
+    const files = readImageSelection(input, slots.length);
+    if (!files.length) return;
+
+    const nextFiles = [...generalFiles];
+    const nextPreviews = [...generalPreviews];
+    files.forEach((file, index) => {
+      const slot = slots[index];
+      nextFiles[slot] = file;
+      nextPreviews[slot] = createImagePreview(file);
+    });
     setGeneralFiles(nextFiles);
     setGeneralPreviews(nextPreviews);
-    setMainImageIndex(0);
-    if (!simpleProduct && variants.length) {
-      setVariant(0, { files, previews });
-    }
+    setMainImageIndex(slots[0]);
   };
 
   const openCatalogManager = (kind: CatalogKind) => {
@@ -562,9 +578,10 @@ const ProductEditorModal = ({
     event.preventDefault();
     if (savingRef.current) return;
     const intent = saveIntent.current;
+    const requestedState = intent === 'draft' ? 'draft' : displayedStatus;
     saveIntent.current = 'save';
     const validation = validate();
-    if (intent === 'publish' && (
+    if (requestedState === 'active' && (
       Number(form.price) <= 0 || !form.product_code.trim() || !form.model.trim()
       || !form.brand_id && !form.brand_name.trim()
       || !form.category_id || displayedStock <= 0
@@ -649,8 +666,8 @@ const ProductEditorModal = ({
       data.append('discount', form.discount ? String(form.discount) : '');
       data.append('status', form.status);
       data.append('product_type', simpleProduct ? 'simple' : 'variable');
-      if (intent === 'draft') data.append('is_active', '0');
-      if (intent === 'publish') data.append('is_active', '1');
+      data.append('publication_state', requestedState);
+      data.append('is_active', requestedState === 'active' ? '1' : '0');
       data.append('gender', form.gender);
       data.append('barcode', form.barcode.trim());
       data.append('collection_name', form.collection_name.trim());
@@ -664,6 +681,7 @@ const ProductEditorModal = ({
         .filter(([, price]) => price > 0);
       data.append('color_prices', JSON.stringify(Object.fromEntries(colorPrices)));
 
+      data.append('append_color_images', '1');
       activeVariants.forEach((variant, index) => {
         variant.files
           .slice(0, 5)
@@ -736,7 +754,7 @@ const ProductEditorModal = ({
   const displayedStock = simpleProduct
     ? Math.max(0, Math.trunc(Number(form.stock) || 0))
     : variants.reduce((total, v) => total + v.stocks.reduce((sum, qty) => sum + Number(qty || 0), 0), 0);
-  const displayedStatus = !product?.is_active ? 'Borrador' : displayedStock === 0 ? 'Agotado' : 'Activo';
+  const displayedStatus = publicationState ?? (product?.is_active ? (displayedStock === 0 ? 'sold_out' : 'active') : 'draft');
   return (
     <div className="product-editor-workspace fixed inset-0 z-[110] flex overflow-hidden bg-[#f7f8fa] text-[#171923]">
       <aside className="hidden w-[226px] shrink-0 flex-col border-r border-[#e7e9ee] bg-white lg:flex">
@@ -801,9 +819,9 @@ const ProductEditorModal = ({
                   onClick={() => {saveIntent.current='draft';}}
                   className="flex items-center gap-2 rounded-lg border border-[#dce0e7] bg-white px-4 py-2.5 text-[12px] font-semibold text-[#374151] shadow-sm hover:border-store-red disabled:cursor-not-allowed disabled:opacity-50">
                   <Save size={15}/> Guardar borrador</button>
-                <button type="submit" disabled={saving} onClick={() => {saveIntent.current='publish';}}
+                <button type="submit" disabled={saving}
                   className="flex items-center gap-2 rounded-lg bg-store-red px-5 py-2.5 text-[12px] font-bold text-white shadow-sm transition hover:bg-store-redDark disabled:opacity-50">
-                  <Upload size={15}/> {saving ? 'Guardando...' : 'Publicar producto'}</button>
+                  <Upload size={15}/> {saving ? 'Guardando...' : 'Guardar producto'}</button>
               </div>
             </div>
             {error && <div role="alert" className="mb-5 flex gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700"><AlertTriangle size={18}/><p className="whitespace-pre-wrap">{error}</p></div>}
@@ -815,14 +833,14 @@ const ProductEditorModal = ({
                     <div className="min-w-0">
                       <div className="relative flex h-[159px] items-center justify-center overflow-hidden rounded-lg border border-[#e8ebf1] bg-[#f8f9fb]">
                         {generalPreviews[mainImageIndex] ? <img src={generalPreviews[mainImageIndex]!} alt="Imagen principal del producto" className="h-full w-full object-contain"/> : <div className="flex flex-col items-center gap-2 text-center text-xs text-gray-400"><ImageIcon size={37} strokeWidth={1.2}/> Imagen del producto</div>}
-                        <label title="Subir fotografías del producto" className="absolute right-2 top-2 cursor-pointer rounded-lg border border-gray-200 bg-white p-2 shadow-sm hover:text-store-red"><PenLine size={15}/><input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={e=>handleGeneralImages(e.target.files)}/></label>
+                        <label title="Reemplazar foto seleccionada" className="absolute right-2 top-2 cursor-pointer rounded-lg border border-gray-200 bg-white p-2 shadow-sm hover:text-store-red"><PenLine size={15}/><input type="file" accept="image/jpeg,image/png,image/webp" aria-label="Reemplazar foto seleccionada" className="hidden" onChange={e=>handleGeneralImages(e.currentTarget, mainImageIndex)}/></label>
                       </div>
-                      <div className="mt-2 grid grid-cols-5 gap-1.5">
-                        {[0,1,2,3].map((i)=><button key={i} type="button" onClick={()=>setMainImageIndex(i)}
+                      <div className="mt-2 grid grid-cols-6 gap-1.5">
+                        {[0,1,2,3,4].map((i)=><button key={i} type="button" onClick={()=>setMainImageIndex(i)}
                           className={'flex aspect-square items-center justify-center overflow-hidden rounded-md border bg-[#f7f8fa] '+(mainImageIndex===i?'border-store-red':'border-gray-200')}>
                           {generalPreviews[i] ? <img src={generalPreviews[i]!} alt={'Fotografía '+(i+1)} className="h-full w-full object-cover"/> : <ImageIcon size={16} className="text-gray-300"/>}
                         </button>)}
-                        <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-gray-300 text-store-red hover:bg-red-50"><Plus size={18}/><span className="text-[9px]">Agregar</span><input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={e=>handleGeneralImages(e.target.files)}/></label>
+                        <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-gray-300 text-store-red hover:bg-red-50"><Plus size={18}/><span className="text-[9px]">Agregar</span><input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" aria-label="Agregar fotos generales" onChange={e=>handleGeneralImages(e.currentTarget)}/></label>
                       </div>
 
                     </div>
@@ -876,7 +894,7 @@ const ProductEditorModal = ({
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {variants.map((variant, index) => {
-                          const photos=variant.previews.length ? variant.previews : variant.existingImages;
+                          const photos=[...variant.existingImages, ...variant.previews];
                           const sum=variant.stocks.reduce((acc,qty)=>acc+Number(qty||0),0);
                           return (
                             <Fragment key={'variant-row-'+index}>
@@ -919,7 +937,7 @@ const ProductEditorModal = ({
                                 <td className="px-2 py-3">
                                   <div className="flex items-center gap-1">
                                     <div className="flex h-10 w-11 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50">{photos[0] ? <img src={photos[0]} alt={'Foto '+variant.color} className="h-full w-full object-cover"/>:<ImageIcon size={17} className="text-gray-300"/>}</div>
-                                    <label className="flex h-9 w-8 cursor-pointer items-center justify-center rounded-md border border-dashed border-gray-300 text-gray-500 hover:text-store-red" title={'Agregar imágenes del color '+variant.color}><Plus size={17}/><input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={e=>handleVariantImages(index,e.target.files)}/></label>
+                                    <label className="flex h-9 w-8 cursor-pointer items-center justify-center rounded-md border border-dashed border-gray-300 text-gray-500 hover:text-store-red" title={'Agregar imágenes del color '+variant.color}><Plus size={17}/><input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" aria-label={'Agregar imágenes del color '+variant.color} onChange={e=>handleVariantImages(index,e.currentTarget)}/></label>
                                   </div>
                                 </td>
                                 <td className="px-1 py-3">{variants.length>1 && <button type="button" title={'Eliminar variante '+variant.color} onClick={()=>removeVariant(index)} className="rounded-md border border-red-100 bg-[#fff4f5] p-1.5 text-store-red hover:bg-red-100"><Trash2 size={14}/></button>}</td>
@@ -968,20 +986,22 @@ const ProductEditorModal = ({
                 <section className="rounded-xl border border-[#e6e8ed] bg-white p-4 shadow-sm">
                   <h2 className="mb-3 border-l-[3px] border-store-red pl-3 text-[14px] font-bold">Estado del producto</h2>
                   <div className="space-y-1.5">
-                    {[
-                      { label: 'Borrador', helper: 'Solo visible para administradores', checked: displayedStatus === 'Borrador' },
-                      { label: 'Activo', helper: 'Visible en la tienda online', checked: displayedStatus === 'Activo' },
-                      { label: 'Agotado', helper: 'Sin existencias disponibles', checked: displayedStatus === 'Agotado' },
-                      { label: 'Archivado', helper: 'Guardar sin publicar', checked: false },
-                    ].map((status)=><div key={status.label}
-                        className={'flex items-center gap-2.5 rounded-lg px-1.5 py-2 '+(status.checked?'bg-[#ffeaec]':'')}>
-                      <span className={'flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-full border '+(status.checked?'border-store-red bg-store-red':'border-[#96a0b2] bg-white')}>
-                        {status.checked && <span className="h-1.5 w-1.5 rounded-full bg-white"/>}
-                      </span>
-                      <div><p className={'text-[12px] font-bold '+(status.checked?'text-store-red':'text-[#242832]')}>{status.label}</p><p className="text-[10px] text-[#8b93a2]">{status.helper}</p></div>
-                    </div>)}
+                    {([
+                      { value: 'draft', label: 'Borrador', helper: 'Solo visible para administradores' },
+                      { value: 'active', label: 'Activo', helper: 'Visible en la tienda si cumple los requisitos de publicación' },
+                      { value: 'sold_out', label: 'Agotado', helper: 'Oculto en la tienda. Conserva el inventario registrado' },
+                      { value: 'archived', label: 'Archivado', helper: 'Oculto hasta que cambies su estado' },
+                    ] as const).map(({ value, label, helper }) => (
+                      <label key={value} className={`flex cursor-pointer items-center gap-2.5 rounded-lg px-1.5 py-2 ${displayedStatus === value ? 'bg-[#ffeaec]' : ''}`}>
+                        <input type="radio" name="publication_state" value={value} checked={displayedStatus === value}
+                          onChange={() => setPublicationState(value)} className="accent-red-600" />
+                        <span>
+                          <span className="block text-[12px] font-bold text-[#242832]">{label}</span>
+                          <span className="block text-[10px] text-[#8b93a2]">{helper}</span>
+                        </span>
+                      </label>
+                    ))}
                   </div>
-                  <p className="mt-2 text-[10px] leading-relaxed text-gray-400">Estado informativo. Usa los botones superiores para guardar o solicitar publicación.</p>
                 </section>
                 <section className="rounded-xl border border-[#e6e8ed] bg-white p-4 shadow-sm">
                   <h2 className="mb-4 border-l-[3px] border-store-red pl-3 text-[14px] font-bold">Precios</h2>

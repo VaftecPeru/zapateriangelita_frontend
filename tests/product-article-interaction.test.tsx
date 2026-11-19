@@ -6,6 +6,9 @@ import { JSDOM } from 'jsdom';
 import ProductEditorModal from '../src/pages/admin/product/ProductEditorModal';
 import { productService } from '../src/services/crudService';
 
+URL.createObjectURL = () => 'blob:test-image';
+URL.revokeObjectURL = () => {};
+
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
   url: 'http://localhost/',
 });
@@ -24,7 +27,8 @@ const product = {
   size: '38,39', color: 'Negro,Beige', material: 'Cuero', description: '',
   gender: 'mujer' as const, barcode: '7501234567890', collection_name: 'Primavera',
   seo_title: 'Zapatilla Casual Angelita', seo_description: 'Cómoda y elegante',
-  img: '', rating: 0, reviews: 0, status: 'normal' as const,
+  img: '/uploads/portada.png', images: ['/uploads/portada.png'],
+  color_images: {Negro: ['/uploads/negro.png']}, rating: 0, reviews: 0, status: 'normal' as const,
   color_sizes: {Negro: ['38', '39'], Beige: ['38', '39']},
   colors: [{color: 'Negro', hex: '#111111', price: 149.90}, {color: 'Beige', hex: '#d6c2a1', price: null}],
   variant_stocks: [
@@ -101,7 +105,24 @@ async function run() {
     await act(async () => closePreview!.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })));
     assert.equal(mount.querySelector('[role="dialog"]'), null);
 
-    const draftButton = [...mount.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Guardar borrador'));
+    const selectPhoto = async (label: string, name: string) => {
+      const input = mount.querySelector<HTMLInputElement>(`input[aria-label="${label}"]`)!;
+      Object.defineProperty(input, 'files', {
+        configurable: true,
+        value: [new File(['photo'], name, { type: 'image/png' })],
+      });
+      await act(async () => Simulate.change(input));
+    };
+    await selectPhoto('Agregar fotos generales', 'galeria.png');
+    await selectPhoto('Agregar imágenes del color Negro', 'negro-2.png');
+    await selectPhoto('Agregar imágenes del color Negro', 'negro-3.png');
+    assert.ok(mount.querySelector<HTMLImageElement>('img[alt="Fotografía 1"]')?.src.endsWith('/uploads/portada.png'));
+
+    const archive = mount.querySelector<HTMLInputElement>('input[name="publication_state"][value="archived"]')!;
+    await act(async () => archive.click());
+    assert.equal(archive.checked, true);
+
+    const draftButton = [...mount.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Guardar producto'));
     assert.ok(draftButton, 'Debe existir acción de borrador con precio positivo');
     assert.equal(draftButton?.disabled, false);
     await act(async () => {
@@ -115,6 +136,12 @@ async function run() {
     assert.equal(payload[0].article_model, '2001-N');
     assert.equal(payload[2].article_model, '2001-B');
     assert.equal(payload[3].sku, '2001-B-39');
+    assert.equal(captured!.get('append_color_images'), '1');
+    assert.deepEqual(captured!.getAll('new_images[]').map(file => (file as File).name), ['galeria.png']);
+    assert.deepEqual(captured!.getAll('color_images[0][]').map(file => (file as File).name), ['negro-2.png', 'negro-3.png']);
+    const imageSlots = JSON.parse(String(captured!.get('image_slots')));
+    assert.ok(imageSlots[0].endsWith('/uploads/portada.png'));
+    assert.equal(imageSlots[1], '__NEW__');
     assert.equal(captured!.get('stock'), '14');
     assert.equal(captured!.get('price'), '199.9');
     assert.deepEqual(JSON.parse(String(captured!.get('color_prices'))), {Negro: 149.9, Beige: 129.9},
@@ -124,7 +151,8 @@ async function run() {
     assert.equal(captured!.get('collection_name'), 'Primavera');
     assert.equal(captured!.get('seo_title'), 'Zapatilla Casual Angelita');
     assert.equal(captured!.get('seo_description'), 'Cómoda y elegante');
-    assert.equal(captured!.get('is_active'), '0', 'Guardar borrador debe desactivar la publicación incluso con precio');
+    assert.equal(captured!.get('publication_state'), 'archived');
+    assert.equal(captured!.get('is_active'), '0', 'Archivar desactiva la publicación');
 
     assert.equal(saved, 1);
     console.log('PASS Formulario interactivo: carga, SKU, modelos por color y payload de edición conciliados.');
