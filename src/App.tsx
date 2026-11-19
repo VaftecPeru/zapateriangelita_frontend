@@ -14,6 +14,7 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import CheckoutPageV2 from './pages/CheckoutPageV2';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import StoreHelpPage, { storeHelpTopics } from './pages/StoreHelpPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRoute from './components/AdminRoute';
 import LoadingScreen from './components/LoadingScreen';
@@ -75,6 +76,10 @@ const AppContent = () => {
 
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/privacidad" element={<PrivacyPage fromStore />} />
+          {Object.entries(storeHelpTopics).map(([slug, topic]) => (
+            <Route key={slug} path={`/${slug}`} element={<StoreHelpPage topic={topic} />} />
+          ))}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />

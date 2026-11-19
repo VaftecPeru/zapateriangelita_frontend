@@ -1185,16 +1185,16 @@ export default function StoreHome() {
           <div>
             <h2>Información</h2>
             <a href="#nosotros">Nosotros</a>
-            <a href="#tienda">Tienda</a>
-            <a href="#cambios">Cambios y devoluciones</a>
-            <a href="#privacidad">Privacidad</a>
+            <Link to="/catalogo">Catálogo</Link>
+            <Link to="/cambios-y-devoluciones">Cambios y devoluciones</Link>
+            <Link to="/privacidad">Privacidad</Link>
           </div>
           <div>
             <h2>Ayuda</h2>
-            <a href="#comprar">¿Cómo comprar?</a>
-            <a href="#pagos">Métodos de pago</a>
-            <a href="#tallas">Guía de tallas</a>
-            <a href="#preguntas">Preguntas frecuentes</a>
+            <Link to="/como-comprar">¿Cómo comprar?</Link>
+            <Link to="/metodos-de-pago">Métodos de pago</Link>
+            <Link to="/guia-de-tallas">Guía de tallas</Link>
+            <Link to="/preguntas-frecuentes">Preguntas frecuentes</Link>
           </div>
           <div className="footer__contact">
             <h2>Contacto</h2>

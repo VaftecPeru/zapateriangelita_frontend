@@ -4,17 +4,9 @@ import { Link } from 'react-router-dom';
 import { useSettings } from '../hooks/useSettings';
 import '../styles/legal-pages.css';
 
-function Logo({ light = false }: { light?: boolean }) {
-  return (
-    <a className={`logo ${light ? "logo--light" : ""}`} href="/" aria-label="Zapatería Angelita - inicio">
-      <span className="logo__small">Zapatería</span>
-      <strong>ANGELITA</strong>
-      <span className="logo__tagline">Calzando tus pies desde 1980</span>
-    </a>
-  );
-}
+import brandLogo from '../assets/brand/logo-angelita-horizontal.png';
 
-const PrivacyPage = () => {
+const PrivacyPage = ({ fromStore = false }: { fromStore?: boolean }) => {
     const { settings, loading } = useSettings();
 
     useEffect(() => {
@@ -40,22 +32,20 @@ const PrivacyPage = () => {
             <div className="legal-page__topbar">
                 <div className="legal-page__topbar-inner">
                     <span>Con nosotros desde 1980</span>
-                    <span>Tus datos, bien cuidados
-</span>
                 </div>
             </div>
 
             <div className="legal-page__brand">
-                <Logo />
+                <Link to="/catalogo"><img src={brandLogo} alt="Zapatería Angelita" className="h-auto w-48" /></Link>
             </div>
 
             <div className="legal-page__content">
                 <Link
-                    to="/checkout"
+                    to={fromStore ? "/catalogo" : "/checkout"}
                     className="legal-page__back"
                 >
                     <ArrowLeft size={20} />
-                    <span>Atrás</span>
+                    <span>{fromStore ? "Volver al catálogo" : "Volver a la compra"}</span>
                 </Link>
 
                 <section className="legal-page__panel">
@@ -78,7 +68,7 @@ const PrivacyPage = () => {
                                 ))}
                             </ol>
                         ) : (
-                            <p className="legal-page__empty">Actualmente no hay un aviso de privacidad publicado.</p>
+                            <p className="legal-page__empty">Actualmente no hay un aviso de privacidad publicado. Si tienes preguntas sobre tus datos, escribe a <a className="underline" href="mailto:soporte@zapateriangelita.com">soporte@zapateriangelita.com</a>.</p>
                         )}
                     </div>
                 </section>
