@@ -686,10 +686,10 @@ export default function StoreHome() {
       <header className="site-header" id="inicio">
         <div className="announcement-bar">
           <div className="shell announcement-bar__inner">
-            <p><Truck size={14} /> Envíos a todo México</p>
+            <p className="announcement-message"><Truck size={14} aria-hidden="true" /> Envíos a todo México</p>
             <div className="announcement-promises" aria-label="Compromisos de compra">
-              <span>Pagos seguros</span>
-              <span>La confianza de miles de familias</span>
+              <span className="announcement-message">Pagos seguros</span>
+              <span className="announcement-message">La confianza de miles de familias</span>
             </div>
             <div className="announcement-socials" aria-label="Redes sociales">
               <a href="#instagram" aria-label="Instagram"><InstagramIcon size={13} /></a>
