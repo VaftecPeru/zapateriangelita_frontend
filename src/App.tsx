@@ -1,3 +1,4 @@
+import CookieConsent from './components/CookieConsent';
 // src/App.tsx
 import { useEffect, useState } from 'react';
 import { normalizePreloaderMode, PreloaderContext, type PreloaderMode } from './hooks/usePreloader';
@@ -113,6 +114,7 @@ const AppContent = () => {
           <Route path="*" element={<Navigate to={fallbackPath} replace />} />
         </Routes>
       </div>
+      <CookieConsent />
     </div>
   );
 };
