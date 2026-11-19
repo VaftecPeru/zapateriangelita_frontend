@@ -5,24 +5,10 @@
   padding: 32px 20px;
   place-content: center;
   justify-items: center;
-  gap: 16px;
+  gap: 0;
   color: #746a65;
   background: #fff;
   font-family: "Montserrat", system-ui, sans-serif;
-}
-
-.loading-screen__brand {
-  position: relative;
-  display: grid;
-  width: min(68vw, 260px);
-  place-items: center;
-}
-
-.loading-screen__brand img {
-  display: block;
-  width: 100%;
-  height: auto;
-  animation: loading-logo-breathe 1.6s ease-in-out infinite;
 }
 
 .loading-screen__shoe {
@@ -35,24 +21,16 @@
 .loading-screen--compact {
   grid-column: 1 / -1;
   min-height: 230px;
-  gap: 8px;
 }
 
-.loading-screen--compact .loading-screen__brand { width: 116px; }
 .loading-screen--compact .loading-screen__shoe { width: 124px; }
-
-.loading-screen__caption {
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-  text-align: center;
-}
 
 .loading-screen__name {
   color: #c90023;
   font-size: clamp(16px, 4vw, 20px);
   font-weight: 700;
   line-height: 1.2;
+  white-space: pre;
 }
 
 .loading-screen--compact .loading-screen__name { font-size: 14px; }
@@ -65,13 +43,17 @@
   text-transform: uppercase;
 }
 
-@keyframes loading-logo-breathe {
-  0%, 100% { opacity: .68; transform: scale(.96); }
-  50% { opacity: 1; transform: scale(1); }
+.loading-screen__name > span {
+  animation: loading-letter-appear 1ms step-end var(--letter-delay) both;
+}
+
+@keyframes loading-letter-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .loading-screen__brand img {
+  .loading-screen__name > span {
     animation: none;
   }
 }
