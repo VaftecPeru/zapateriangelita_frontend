@@ -30,7 +30,6 @@
   width: min(48vw, 190px);
   height: auto;
   mix-blend-mode: multiply;
-  animation: loading-shoe-assembly 2.8s ease-in-out infinite;
 }
 
 .loading-screen--compact {
@@ -55,17 +54,8 @@
   50% { opacity: 1; transform: scale(1); }
 }
 
-@keyframes loading-shoe-assembly {
-  0% { clip-path: inset(100% 0 0); opacity: 0; }
-  20%, 30% { clip-path: inset(58% 0 0); opacity: 1; }
-  50%, 58% { clip-path: inset(43% 0 0); opacity: 1; }
-  78%, 92% { clip-path: inset(0); opacity: 1; }
-  100% { clip-path: inset(0); opacity: 0; }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .loading-screen__brand img,
-  .loading-screen__shoe {
+  .loading-screen__brand img {
     animation: none;
   }
 }

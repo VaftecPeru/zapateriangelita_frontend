@@ -13,7 +13,10 @@ export default function LoadingScreen({ label = 'Cargando', compact = false }: L
         <img src={brandLogo} alt="Zapatería Angelita" />
 
       </div>
-      <img className="loading-screen__shoe" src="/images/angelita-shoe-loading.webp" width="360" height="360" alt="" />
+      <picture>
+        <source media="(prefers-reduced-motion: reduce)" srcSet="/images/angelita-shoe-loading.webp" />
+        <img className="loading-screen__shoe" src="/images/angelita-shoe-loading.gif" width="320" height="320" alt="" />
+      </picture>
       <span className="loading-screen__label">{label}</span>
     </div>
   );
