@@ -2933,6 +2933,6 @@ body { background: #fffdf9; }
   }
 }
 
-.offers-catalog.section-block.offers-catalog--new {
+.offers-catalog.section-block {
   padding-top: clamp(20px, 3vw, 40px);
 }
