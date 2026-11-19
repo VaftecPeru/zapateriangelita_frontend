@@ -949,11 +949,10 @@ img {
 .offers-catalog__categories {
   display: flex;
   gap: 22px;
-  overflow-x: auto;
+  flex-wrap: wrap;
   margin-bottom: 34px;
   padding: 4px 3px 16px;
   border-bottom: 1px solid var(--line);
-  scrollbar-width: thin;
 }
 
 .offers-category {
@@ -973,7 +972,7 @@ img {
 .offers-category::after {
   position: absolute;
   right: 8px;
-  bottom: -17px;
+  bottom: 0;
   left: 8px;
   height: 3px;
   content: "";
@@ -2220,8 +2219,14 @@ img {
   }
 
   .offers-catalog__categories {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
     gap: 14px;
   }
+
+  .offers-catalog__categories::-webkit-scrollbar { display: none; }
 
   .offers-category {
     min-width: 82px;
@@ -2926,4 +2931,8 @@ body { background: #fffdf9; }
     border: 0;
     padding: 0;
   }
+}
+
+.offers-catalog.section-block {
+  padding-top: clamp(20px, 3vw, 40px);
 }
