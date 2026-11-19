@@ -1,3 +1,4 @@
+import LoadingScreen from '../components/LoadingScreen';
 import visaLogo from "../assets/payment/visa.png";
 import mastercardLogo from "../assets/payment/mastercard.png";
 import { useEffect, useRef, useState } from "react";
@@ -217,14 +218,7 @@ export default function ProductDetailPage() {
     return () => { active = false; };
   }, [productId]);
 
-  if (loading) {
-    return (
-      <div className="product-detail-state">
-        <div className="loading-spinner"></div>
-        <p>Cargando producto...</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingScreen label="Cargando producto" />;
 
   if (error || !product) {
     return (

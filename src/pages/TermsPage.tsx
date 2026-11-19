@@ -1,3 +1,4 @@
+import LoadingScreen from '../components/LoadingScreen';
 import { useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -69,7 +70,7 @@ const TermsPage = () => {
 
                     <div className="legal-page__body">
                         {loading ? (
-                            <p className="legal-page__loading">Cargando políticas de compra...</p>
+                            <LoadingScreen compact label="Cargando políticas de compra" />
                         ) : policies.length > 0 ? (
                             <div>
                                 <p className="legal-page__intro">

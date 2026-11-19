@@ -1,3 +1,4 @@
+import LoadingScreen from '../components/LoadingScreen';
 import { useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -58,7 +59,7 @@ const PrivacyPage = ({ fromStore = false }: { fromStore?: boolean }) => {
 
                     <div className="legal-page__body">
                         {loading ? (
-                            <p className="legal-page__loading">Cargando aviso de privacidad...</p>
+                            <LoadingScreen compact label="Cargando aviso de privacidad" />
                         ) : privacyPolicies.length > 0 ? (
                             <ol className="legal-page__list">
                                 {privacyPolicies.map((policy, index) => (

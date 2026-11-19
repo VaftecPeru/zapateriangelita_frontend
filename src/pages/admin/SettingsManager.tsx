@@ -1,3 +1,5 @@
+import LoadingScreen from '../../components/LoadingScreen';
+import { normalizePreloaderMode, usePreloader, type PreloaderMode } from '../../hooks/usePreloader';
 import { useEffect, useMemo, useState } from 'react';
 import { settingsService } from '../../services/crudService';
 import { getImageUrl } from '../../config/api';
@@ -36,7 +38,7 @@ type HomeBanner = {
     active: boolean;
 };
 
-type CollapsibleKey = 'branding' | 'contact' | 'legal' | 'banners';
+type CollapsibleKey = 'branding' | 'contact' | 'legal' | 'banners' | 'preloader';
 
 const defaultPrivacyPolicies = [
     'Usamos tus datos personales únicamente para gestionar tus pedidos, coordinar la entrega y brindarte atención relacionada con tu compra.',
@@ -135,6 +137,9 @@ const SettingsManager = () => {
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+    const { setMode } = usePreloader();
+    const [preloader, setPreloader] = useState<PreloaderMode>('branded');
+    const [savingPreloader, setSavingPreloader] = useState(false);
     const [logoUrl, setLogoUrl] = useState('');
     const [uploadingLogo, setUploadingLogo] = useState(false);
 
@@ -158,6 +163,7 @@ const SettingsManager = () => {
         contact: false,
         legal: false,
         banners: true,
+        preloader: false,
     });
 
     const activeBannerCount = useMemo(() => banners.filter((banner) => banner.active).length, [banners]);
@@ -177,6 +183,7 @@ const SettingsManager = () => {
             const response = await settingsService.getAll();
             const data = response.data.data || {};
             setSettings(data);
+            setPreloader(normalizePreloaderMode(data.store_preloader));
             setLogoUrl(data.logo_url || '/logo-angelita-horizontal.png');
             setWhatsapp(data.whatsapp_number || '');
 
@@ -196,6 +203,19 @@ const SettingsManager = () => {
             notify('error', 'No se pudo cargar la configuración del sitio.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const savePreloader = async () => {
+        setSavingPreloader(true);
+        try {
+            await settingsService.update('store_preloader', preloader);
+            setMode(preloader);
+            notify('success', 'Precarga actualizada.');
+        } catch {
+            notify('error', 'No se pudo guardar la precarga.');
+        } finally {
+            setSavingPreloader(false);
         }
     };
 
@@ -400,6 +420,42 @@ const SettingsManager = () => {
                     </div>
                 )}
             </div>
+
+            <CollapsibleCard
+                title="Precarga"
+                subtitle="Pantalla de carga de la tienda"
+                icon={<Loader2 size={17} />}
+                open={openSections.preloader}
+                onToggle={() => toggleSection('preloader')}
+            >
+                <div className="grid gap-5 sm:grid-cols-2 sm:items-center">
+                    <div className="space-y-3">
+                        <label className="block text-sm font-bold">
+                            Estilo de precarga
+                            <select
+                                className="mt-2 block w-full rounded-xl border border-gray-200 bg-white p-3"
+                                value={preloader}
+                                disabled={savingPreloader}
+                                onChange={(event) => setPreloader(normalizePreloaderMode(event.target.value))}
+                            >
+                                <option value="branded">Tenis animado y marca</option>
+                                <option value="simple">Solo mensaje de carga</option>
+                            </select>
+                        </label>
+                        <button
+                            type="button"
+                            disabled={savingPreloader}
+                            className="rounded-xl bg-store-red px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
+                            onClick={() => void savePreloader()}
+                        >
+                            {savingPreloader ? 'Guardando…' : 'Guardar precarga'}
+                        </button>
+                    </div>
+                    <div className="overflow-hidden rounded-xl border border-gray-200">
+                        <LoadingScreen compact previewMode={preloader} />
+                    </div>
+                </div>
+            </CollapsibleCard>
 
             <CollapsibleCard
                 title="Identidad visual"
