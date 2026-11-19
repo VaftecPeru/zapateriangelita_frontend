@@ -1,3 +1,4 @@
+import LoadingScreen from './LoadingScreen';
 import { useEffect, useState } from "react";
 import ReferenceLanding from "./ReferenceLanding";
 import { getCatalogName } from '../utils/catalogName';
@@ -943,7 +944,7 @@ export default function StoreHome() {
             </div>
             <div className="product-grid full-catalog__grid">
               {catalogLoading ? (
-                <p className="offers-results__empty" role="status">Cargando catálogo...</p>
+                <LoadingScreen compact label="Cargando catálogo" />
               ) : catalogError ? (
                 <div className="offers-results__empty" role="alert">
                   <p>No pudimos cargar los productos en este momento.</p>
