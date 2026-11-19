@@ -1,3 +1,4 @@
+import { defaultChildrenMenu, readChildrenMenu } from '../data/childrenMenu';
 import { useEffect, useState } from "react";
 import ReferenceLanding from "./ReferenceLanding";
 import { getCatalogName } from '../utils/catalogName';
@@ -22,6 +23,8 @@ import {
   MapPin,
   Menu,
   PackageCheck,
+  Pause,
+  Play,
   Search,
   ShoppingBag,
   Star,
@@ -126,16 +129,7 @@ const subcategoriasHombre = [
 ];
 
 
-const subcategoriasNiños = [
-  { talla: "Bebé (8-13)", items: ["Botas", "Casual", "Sandalias", "Tenis"] },
-  { talla: "Preescolar (14-17)", items: ["Balerinas", "Botas", "Botines", "Casual", "Tenis", "Sandalias"] },
-  { talla: "Niña (18-21)", items: ["Alpargatas", "Balerinas y flats", "Botas", "Casual", "Graduación", "Lluvia", "Pantufla", "Sandalia", "Tenis deportivos", "Tenis urbanos"] },
-  { talla: "Niño (18-21)", items: ["Botas", "Casual", "Sandalias", "Tacos de fútbol", "Tenis deportivos", "Tenis urbanos"] },
-];
-
-
-
-const menuItems = [
+const buildMenuItems = (childrenMenu: typeof defaultChildrenMenu) => [
   { name: "Inicio", href: "/" },
   {
     name: "Mujer",
@@ -156,11 +150,11 @@ const menuItems = [
   {
     name: "Niños",
     href: "/categoria/niños",
-    submenu: subcategoriasNiños.map(group => ({
+    submenu: childrenMenu.map(group => ({
       talla: group.talla,
       items: group.items.map(item => ({
         name: item,
-        href: `/categoria/niños?tipo=${item.toLowerCase().replace(/\s/g, '-')}&talla=${group.talla.split(' ')[0]}`
+        href: `/categoria/niños?tipo=${encodeURIComponent(item.toLowerCase().replace(/\s+/g, '-'))}&talla=${encodeURIComponent(group.talla.split(' ')[0])}`
       }))
     }))
   },
@@ -296,6 +290,9 @@ function ProductCard({ product, onFavorite, isFavorite, onAddToCart }: any) {
 
 export default function StoreHome() {
   const [products, setProducts] = useState<any[]>([]);
+  const [childrenMenu, setChildrenMenu] = useState(defaultChildrenMenu);
+  const [announcementPaused, setAnnouncementPaused] = useState(false);
+  const menuItems = buildMenuItems(childrenMenu);
   const [siteLogo, setSiteLogo] = useState<string>(brandLogo);
   const [categories, setCategories] = useState<any[]>([]);
   const [subcategories, setSubcategories] = useState<any[]>([]);
@@ -364,6 +361,7 @@ export default function StoreHome() {
       try {
         const response = await settingsService.getAll();
         const configuredLogo = response.data?.data?.logo_url;
+        if (active) setChildrenMenu(readChildrenMenu(response.data?.data?.children_menu));
         if (active && configuredLogo) {
           setSiteLogo(getImageUrl(configuredLogo) || brandLogo);
         }
@@ -684,13 +682,18 @@ export default function StoreHome() {
       <a className="skip-link" href="#contenido">Saltar al contenido</a>
 
       <header className="site-header" id="inicio">
-        <div className="announcement-bar">
+        <div className={`announcement-bar${announcementPaused ? " is-paused" : ""}`}>
           <div className="shell announcement-bar__inner">
             <p className="announcement-message"><Truck size={14} aria-hidden="true" /> Envíos a todo México</p>
             <div className="announcement-promises" aria-label="Compromisos de compra">
               <span className="announcement-message">Pagos seguros</span>
               <span className="announcement-message">La confianza de miles de familias</span>
             </div>
+            <button type="button" className="announcement-motion-toggle" aria-pressed={announcementPaused}
+              aria-label={announcementPaused ? "Reanudar mensajes del encabezado" : "Pausar mensajes del encabezado"}
+              onClick={() => setAnnouncementPaused(value => !value)}>
+              {announcementPaused ? <Play size={13} aria-hidden="true" /> : <Pause size={13} aria-hidden="true" />}
+            </button>
             <div className="announcement-socials" aria-label="Redes sociales">
               <a href="#instagram" aria-label="Instagram"><InstagramIcon size={13} /></a>
               <a href="#facebook" aria-label="Facebook"><FacebookIcon size={13} /></a>
@@ -727,7 +730,7 @@ export default function StoreHome() {
                         {item.name} <ChevronDown size={13} />
                       </button>
                       {openDropdown === item.name && (
-                        <div className="dropdown-menu">
+                        <div className={isChildrenMenu ? "dropdown-menu children-menu" : "dropdown-menu"}>
                           {isChildrenMenu ? (
                             item.submenu.map((group: any) => (
                               <div key={group.talla} className="dropdown-group">
