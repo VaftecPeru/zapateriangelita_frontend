@@ -1,3 +1,5 @@
+import visaLogo from "../assets/payment/visa.png";
+import mastercardLogo from "../assets/payment/mastercard.png";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -152,6 +154,7 @@ export default function ProductDetailPage() {
   const toastTimer = useRef<number>();
   const galleryTouch = useRef<{ x: number; y: number } | null>(null);
   const [shareMessage, setShareMessage] = useState("");
+  const [showDiscount, setShowDiscount] = useState(false);
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
   const [product, setProduct] = useState<any | null>(null);
   const [siteLogo, setSiteLogo] = useState<string>(brandLogo);
@@ -452,9 +455,7 @@ export default function ProductDetailPage() {
           <strong>{product.name}</strong>
         </nav>
 
-        {/* CONTENIDO: 3 columnas — galería / información / caja de compra */}
         <section className="product-detail-content">
-          {/* Columna 1: Galería */}
           <div className="product-gallery">
             <div className="product-thumbnails">
               {activeImageList.map((image: string, index: number) => (
@@ -476,9 +477,6 @@ export default function ProductDetailPage() {
               onTouchStart={event => { galleryTouch.current = { x: event.touches[0].clientX, y: event.touches[0].clientY }; }}
               onTouchCancel={() => { galleryTouch.current = null; }}
               onTouchEnd={event => { if (galleryTouch.current) { const dx = event.changedTouches[0].clientX - galleryTouch.current.x; const dy = event.changedTouches[0].clientY - galleryTouch.current.y; if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) { if (dx > 0) showPrevious(); else showNext(); } } galleryTouch.current = null; }}>
-              {hasDiscount && (
-                <span className="product-detail-discount">-{discountPercentage}%</span>
-              )}
               <button type="button" className="icon-share-floating" onClick={shareProduct} aria-label="Compartir producto">
                 <Share2 size={16} />
               </button>
@@ -517,18 +515,17 @@ export default function ProductDetailPage() {
             )}
             <h1>{product.name}</h1>
 
-            <div className="product-rating" aria-label={`${product.ratingValue} de 5 estrellas`}>
+            {Number(product.reviews) > 0 && <div className="product-rating">
               {Array.from({ length: 5 }).map((_, index) => (
                 <Star
                   key={index}
-                  size={17}
+                  size={15}
+                  aria-hidden="true"
                   fill={index < Math.round(product.ratingValue) ? "currentColor" : "none"}
                 />
               ))}
-              <span>{product.reviews || 0} reseñas</span>
-            </div>
-
-            <div className="product-detail-divider" />
+              <span>{Number(product.ratingValue).toLocaleString("es-MX")} de 5 · {product.reviews} reseñas</span>
+            </div>}
 
             {variantError && (
               <p role="alert" style={{ margin: "0 0 16px", padding: "10px 12px", color: "#a40000", background: "#fff0f0", borderRadius: "8px", fontSize: "13px", fontWeight: 600 }}>
@@ -537,14 +534,26 @@ export default function ProductDetailPage() {
             )}
 
             <div className="product-prices">
-              {hasDiscount && <span className="promotion-label">Promoción</span>}
               <div className="product-price-line">
-                {hasDiscount && <span className="discount-percentage">-{discountPercentage}%</span>}
+                {hasDiscount && <del className="list-price" aria-label="Precio de lista">{money.format(selectedBasePrice)}</del>}
                 <strong>{money.format(selectedSalePrice)}</strong>
+                {hasDiscount && (
+                  <button type="button" className="discount-percentage pd-discount-button"
+                    aria-expanded={showDiscount} aria-controls="pd-discount-detail"
+                    aria-label={`Descuento de ${discountPercentage}%. Ver ahorro`}
+                    onClick={() => setShowDiscount(value => !value)}>
+                    −{discountPercentage}%
+                  </button>
+                )}
               </div>
-              {hasDiscount && (
-                <p className="list-price">Precio de lista: <del>{money.format(selectedBasePrice)}</del></p>
-              )}
+              {hasDiscount && <p id="pd-discount-detail" className="pd-discount-detail" hidden={!showDiscount}>
+                Ahorras <strong>{money.format(selectedBasePrice - selectedSalePrice)}</strong> sobre el precio de lista.
+              </p>}
+              <div className="pd-payment-methods">
+                <span>Pago seguro con tarjeta</span>
+                <img src={visaLogo} alt="Visa" decoding="async" />
+                <img src={mastercardLogo} alt="Mastercard" decoding="async" />
+              </div>
             </div>
 
             {(product.colorOptions || product.color) && (
@@ -662,13 +671,13 @@ export default function ProductDetailPage() {
               <div><Truck size={20} /><span>Enviado por Angelita</span></div>
             </div>
 
-            <div className="product-description">
-              <h2>Descripción</h2>
-              <p>{product.description || "Este producto combina estilo, comodidad y calidad para acompañarte en cada paso."}</p>
-            </div>
+            <details className="product-description pd-disclosure">
+              <summary>Descripción</summary>
+              <p>{product.description || "Descripción no disponible."}</p>
+            </details>
 
-            <div className="product-specifications">
-              <h2>Detalles del producto</h2>
+            <details className="product-specifications pd-disclosure">
+              <summary>Detalles del producto</summary>
               <div className="product-specification-table">
                 <div><span>Nombre</span><strong>{product.name}</strong></div>
                 <div><span>Categoría</span><strong>{product.categoryName}</strong></div>
@@ -680,10 +689,8 @@ export default function ProductDetailPage() {
                 <div><span>Cantidad disponible</span><strong>{selectedStock} unidades</strong></div>
                 <div><span>Reseñas</span><strong>{product.reviews || 0}</strong></div>
               </div>
-            </div>
+            </details>
           </div>
-
-
         </section>
       </div>
       <div className="pd-mobile-bar">
