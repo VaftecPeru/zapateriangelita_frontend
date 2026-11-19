@@ -2892,17 +2892,38 @@ body { background: #fffdf9; }
 }
 
 
+.desktop-nav .dropdown-menu.children-menu {
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  width:min(680px, calc(100vw - 32px));
+  min-width:0;
+  max-height:min(65vh, 520px);
+  overflow:auto;
+  align-items:start;
+}
+
+.announcement-motion-toggle { display:none; }
+
 @media (prefers-reduced-motion: no-preference) {
-  .announcement-bar .announcement-message {
-    animation: announcement-enter 620ms cubic-bezier(.22, 1, .36, 1) both;
+  .announcement-motion-toggle {
+    display:inline-grid;
+    place-items:center;
+    padding:4px;
+    color:inherit;
+    border-radius:4px;
   }
 
+  .announcement-bar .announcement-message {
+    animation: announcement-sweep 12s ease-in-out infinite both;
+  }
   .announcement-promises .announcement-message:first-child { animation-delay: 110ms; }
   .announcement-promises .announcement-message:nth-child(2) { animation-delay: 220ms; }
+  .announcement-bar.is-paused .announcement-message { animation:none; }
 
-  @keyframes announcement-enter {
-    from { opacity: 0; transform: translateX(-12px); }
-    to { opacity: 1; transform: translateX(0); }
+  @keyframes announcement-sweep {
+    0% { opacity:0; transform:translateX(-10px); }
+    7%, 93% { opacity:1; transform:translateX(0); }
+    100% { opacity:0; transform:translateX(10px); }
   }
 }
 

@@ -1,3 +1,4 @@
+import { defaultChildrenMenu, readChildrenMenu } from '../../data/childrenMenu';
 import { useEffect, useMemo, useState } from 'react';
 import { settingsService } from '../../services/crudService';
 import { getImageUrl } from '../../config/api';
@@ -148,6 +149,9 @@ const SettingsManager = () => {
     const [privacyPolicies, setPrivacyPolicies] = useState<string[]>(defaultPrivacyPolicies);
     const [savingLegal, setSavingLegal] = useState(false);
 
+    const [childrenMenuLists, setChildrenMenuLists] = useState(() => defaultChildrenMenu.map(group => group.items.join("\n")));
+    const [savingChildrenMenu, setSavingChildrenMenu] = useState(false);
+
     const [banners, setBanners] = useState<HomeBanner[]>([]);
     const [savingBanners, setSavingBanners] = useState(false);
     const [uploadingBannerId, setUploadingBannerId] = useState<string | null>(null);
@@ -179,6 +183,7 @@ const SettingsManager = () => {
             setSettings(data);
             setLogoUrl(data.logo_url || '/logo-angelita-horizontal.png');
             setWhatsapp(data.whatsapp_number || '');
+            setChildrenMenuLists(readChildrenMenu(data.children_menu).map(group => group.items.join('\n')));
 
             const terms = normalizeStringList(data.reservation_policies);
             setReservationPolicies(terms.map((text) => ({ text })));
@@ -196,6 +201,24 @@ const SettingsManager = () => {
             notify('error', 'No se pudo cargar la configuración del sitio.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const saveChildrenMenu = async () => {
+        const lists = childrenMenuLists.map(text => [...new Set(text.split('\n').map(item => item.trim()).filter(Boolean))]);
+        if (lists.some(items => !items.length || items.length > 16 || items.some(item => item.length > 60))) {
+            notify('error', 'Cada grupo debe incluir entre 1 y 16 opciones de hasta 60 caracteres.');
+            return;
+        }
+        setSavingChildrenMenu(true);
+        try {
+            await settingsService.update('children_menu', JSON.stringify(lists));
+            setChildrenMenuLists(lists.map(items => items.join('\n')));
+            notify('success', 'Menú de Niños actualizado.');
+        } catch {
+            notify('error', 'No se pudo guardar el menú de Niños.');
+        } finally {
+            setSavingChildrenMenu(false);
         }
     };
 
@@ -400,6 +423,25 @@ const SettingsManager = () => {
                     </div>
                 )}
             </div>
+
+            <section className="space-y-3 rounded-2xl border border-gray-200 bg-white p-5">
+                <h3 className="text-sm font-black text-black">Menú de Niños</h3>
+                <p className="text-xs text-gray-600">Escribe una opción del catálogo por línea. El orden de las líneas es el orden del menú.</p>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {defaultChildrenMenu.map((group, index) => (
+                        <label key={group.talla} className="grid gap-1 text-xs font-semibold">
+                            {group.talla}
+                            <textarea rows={6} value={childrenMenuLists[index]} disabled={savingChildrenMenu}
+                                onChange={event => setChildrenMenuLists(current => current.map((text, position) => position === index ? event.target.value : text))}
+                                className="w-full rounded-lg border border-gray-200 p-2 font-normal" />
+                        </label>
+                    ))}
+                </div>
+                <button type="button" onClick={() => void saveChildrenMenu()} disabled={savingChildrenMenu}
+                    className="rounded-lg bg-store-red px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+                    {savingChildrenMenu ? 'Guardando…' : 'Guardar menú de Niños'}
+                </button>
+            </section>
 
             <CollapsibleCard
                 title="Identidad visual"
