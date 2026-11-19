@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, Eye, EyeOff } from 'lucide-react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 
 const ResetPasswordPage = () => {
@@ -19,20 +19,20 @@ const ResetPasswordPage = () => {
 
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [message, setMessage] = useState('');
+    const [linkRejected, setLinkRejected] = useState(false);
 
     useEffect(() => {
         const token = searchParams.get('token');
         const email = searchParams.get('email');
-        if (token && email) {
-            setFormData(prev => ({ ...prev, token, email }));
-        } else {
-            setStatus('error');
-            setMessage('Enlace inválido o expirado.');
-        }
+        setFormData({ token: token ?? '', email: email ?? '', password: '', password_confirmation: '' });
+        setLinkRejected(!token || !email);
+        setStatus('idle');
+        setMessage('');
     }, [searchParams]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (linkRejected || !formData.token || !formData.email || status === 'loading') return;
         
         if (formData.password !== formData.password_confirmation) {
             setStatus('error');
@@ -51,6 +51,15 @@ const ResetPasswordPage = () => {
                 navigate('/login');
             }, 3000);
         } catch (err: any) {
+            if (err.response?.status === 400) {
+                setLinkRejected(true);
+                setFormData(prev => ({ ...prev, password: '', password_confirmation: '' }));
+                setShowPassword(false);
+                setShowConfirmPassword(false);
+                setStatus('idle');
+                return;
+            }
+
             setStatus('error');
             setMessage(err.response?.data?.message || 'Error al restablecer la contraseña. Verifique que el enlace aún sea válido.');
         }
@@ -82,7 +91,16 @@ const ResetPasswordPage = () => {
                     </div>
                 )}
 
-                {status !== 'success' && formData.token && (
+                {linkRejected && (
+                    <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm text-center">
+                        <p role="alert">Este enlace ya no es válido. Solicita uno nuevo para restablecer tu contraseña.</p>
+                        <Link to="/forgot-password" className="inline-block mt-3 font-bold underline">
+                            Solicitar un nuevo enlace
+                        </Link>
+                    </div>
+                )}
+
+                {status !== 'success' && !linkRejected && formData.token && formData.email && (
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-2">
                             <label className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] pl-1">Nueva Contraseña</label>
@@ -92,6 +110,7 @@ const ResetPasswordPage = () => {
                                     type={showPassword ? 'text' : 'password'}
                                     name="password"
                                     required
+                                    autoComplete="new-password"
                                     value={formData.password}
                                     onChange={handleChange}
                                     className="w-full pl-14 pr-14 py-4 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all font-bold text-sm"
@@ -116,6 +135,7 @@ const ResetPasswordPage = () => {
                                     type={showConfirmPassword ? 'text' : 'password'}
                                     name="password_confirmation"
                                     required
+                                    autoComplete="new-password"
                                     value={formData.password_confirmation}
                                     onChange={handleChange}
                                     className="w-full pl-14 pr-14 py-4 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-black/5 focus:border-black outline-none transition-all font-bold text-sm"
