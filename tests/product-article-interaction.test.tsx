@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import React, { act } from 'react';
+import { Simulate } from 'react-dom/test-utils';
 import { createRoot } from 'react-dom/client';
 import { JSDOM } from 'jsdom';
 import ProductEditorModal from '../src/pages/admin/product/ProductEditorModal';
@@ -68,9 +69,16 @@ async function run() {
     const beigePrice = mount.querySelector<HTMLInputElement>('input[aria-label="Precio variante Beige"]');
     assert.equal(negroPrice?.disabled, false, 'El precio del color debe ser editable');
     assert.equal(negroPrice?.value, '149.9', 'Debe recuperar el precio personalizado persistido');
-    assert.equal(beigePrice?.value, '129.9', 'Sin override se sincroniza con el precio general');
-    assert.ok(mount.textContent?.includes('Sincronizado con precio general'));
-    assert.ok(mount.textContent?.includes('Personalizado · Usar precio general'));
+    assert.equal(beigePrice?.value, '129.9', 'El color anterior parte del precio general vigente');
+    const generalPrice = [...mount.querySelectorAll('label')]
+      .find(label => label.textContent?.includes('Precio de venta (MXN)'))?.querySelector('input');
+    assert.ok(generalPrice);
+    await act(async () => {
+      generalPrice.value = '199.90';
+      Simulate.change(generalPrice);
+    });
+    assert.equal(negroPrice?.value, '149.9');
+    assert.equal(beigePrice?.value, '129.9', 'Cambiar el precio general no modifica un color existente');
     const toggles = Array.from(mount.querySelectorAll('button')).filter(b => b.textContent?.includes('SKU por talla'));
     assert.equal(toggles.length, 2);
     await act(async () => toggles[0].dispatchEvent(new dom.window.MouseEvent('click',{bubbles:true})));
@@ -108,8 +116,9 @@ async function run() {
     assert.equal(payload[2].article_model, '2001-B');
     assert.equal(payload[3].sku, '2001-B-39');
     assert.equal(captured!.get('stock'), '14');
-    assert.deepEqual(JSON.parse(String(captured!.get('color_prices'))), {Negro: 149.9},
-      'Solo se envían precios personalizados, sin duplicar los precios generales');
+    assert.equal(captured!.get('price'), '199.9');
+    assert.deepEqual(JSON.parse(String(captured!.get('color_prices'))), {Negro: 149.9, Beige: 129.9},
+      'Se guardan los dos importes como precios independientes');
     assert.equal(captured!.get('gender'), 'mujer');
     assert.equal(captured!.get('barcode'), '7501234567890');
     assert.equal(captured!.get('collection_name'), 'Primavera');
