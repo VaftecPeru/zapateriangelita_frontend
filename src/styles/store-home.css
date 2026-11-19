@@ -1644,6 +1644,20 @@ img {
   line-height: 1.7;
 }
 
+.footer__help-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.footer__help-link svg {
+  flex: 0 0 15px;
+  width: 15px;
+  height: 15px;
+  margin-top: 2px;
+  color: #e2c9a2;
+}
+
 .footer a:hover {
   color: #fff;
 }

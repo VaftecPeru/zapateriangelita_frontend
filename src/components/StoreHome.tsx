@@ -13,6 +13,9 @@ import { useUbigeo } from "../hooks/useUbigeo";
 import { categoryService, productService, settingsService, subcategoryService, Category, Product } from "../services/crudService";
 import { getImageUrl } from "../config/api";
 import {
+  BookOpen,
+  HelpCircle,
+  CreditCard,
   ChevronLeft,
   ChevronDown,
   ChevronRight,
@@ -1192,10 +1195,10 @@ export default function StoreHome() {
           </div>
           <div>
             <h2>Ayuda</h2>
-            <Link to="/como-comprar">¿Cómo comprar?</Link>
-            <Link to="/metodos-de-pago">Métodos de pago</Link>
-            <Link to="/guia-de-tallas">Guía de tallas</Link>
-            <Link to="/preguntas-frecuentes">Preguntas frecuentes</Link>
+            <Link className="footer__help-link" to="/como-comprar"><ShoppingBag aria-hidden="true" /> ¿Cómo comprar?</Link>
+            <Link className="footer__help-link" to="/metodos-de-pago"><CreditCard aria-hidden="true" /> Métodos de pago</Link>
+            <Link className="footer__help-link" to="/libro-de-reclamaciones"><BookOpen aria-hidden="true" /> Libro de reclamaciones</Link>
+            <Link className="footer__help-link" to="/preguntas-frecuentes"><HelpCircle aria-hidden="true" /> Preguntas frecuentes</Link>
           </div>
           <div className="footer__contact">
             <h2>Contacto</h2>
