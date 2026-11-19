@@ -60,7 +60,7 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
 
   useEffect(() => {
     if (!rotating || slides.length < 2) return;
-    const timer = window.setInterval(() => setSlide(current => (current + 1) % slides.length), 6500);
+    const timer = window.setInterval(() => setSlide(current => (current + 1) % slides.length), 2000);
     return () => window.clearInterval(timer);
   }, [rotating, slides.length, slide]);
 
