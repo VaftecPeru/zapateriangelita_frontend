@@ -1,3 +1,4 @@
+import LoadingScreen from '../components/LoadingScreen';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -60,14 +61,7 @@ const ProfilePage = () => {
     }, [user]);
 
     if (loading || !user) {
-        return (
-            <div className="min-h-screen bg-[#f7f7f7] flex items-center justify-center p-6">
-                <div className="text-center">
-                    <div className="w-10 h-10 border-2 border-[#e30613] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.25em]">Cargando perfil...</p>
-                </div>
-            </div>
-        );
+        return <LoadingScreen label="Cargando perfil" />;
     }
 
     const handleEdit = () => {

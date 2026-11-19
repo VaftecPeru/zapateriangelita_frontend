@@ -1,4 +1,7 @@
 // src/App.tsx
+import { useEffect, useState } from 'react';
+import { normalizePreloaderMode, PreloaderContext, type PreloaderMode } from './hooks/usePreloader';
+import { settingsService } from './services/crudService';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -115,13 +118,31 @@ const AppContent = () => {
 };
 
 function App() {
+  const [mode, setMode] = useState<PreloaderMode | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    settingsService.getAll().then(
+      (response) => {
+        if (active) setMode((current) => current ?? normalizePreloaderMode(response.data.data?.store_preloader));
+      },
+      () => {
+        if (active) setMode((current) => current ?? 'branded');
+      },
+    );
+    return () => { active = false; };
+  }, []);
+
+
   return (
-    <AuthProvider>
-      <CartProvider>
-        <ScrollToTop />
-        <AppContent />
-      </CartProvider>
-    </AuthProvider>
+    <PreloaderContext.Provider value={{ mode: mode ?? 'simple', setMode }}>
+      <AuthProvider>
+        <CartProvider>
+          <ScrollToTop />
+          <AppContent />
+        </CartProvider>
+      </AuthProvider>
+    </PreloaderContext.Provider>
   );
 }
 
