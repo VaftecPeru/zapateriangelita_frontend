@@ -1,3 +1,5 @@
+import LoadingScreen from '../../components/LoadingScreen';
+import { normalizePreloaderMode, usePreloader, type PreloaderMode } from '../../hooks/usePreloader';
 import { useEffect, useMemo, useState } from 'react';
 import { settingsService } from '../../services/crudService';
 import { getImageUrl } from '../../config/api';
@@ -36,7 +38,7 @@ type HomeBanner = {
     active: boolean;
 };
 
-type CollapsibleKey = 'branding' | 'contact' | 'legal' | 'banners';
+type CollapsibleKey = 'branding' | 'contact' | 'legal' | 'banners' | 'preloader';
 
 const defaultPrivacyPolicies = [
     'Usamos tus datos personales únicamente para gestionar tus pedidos, coordinar la entrega y brindarte atención relacionada con tu compra.',
@@ -135,11 +137,17 @@ const SettingsManager = () => {
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+    const { setMode } = usePreloader();
+    const [preloader, setPreloader] = useState<PreloaderMode>('branded');
+    const [savingPreloader, setSavingPreloader] = useState(false);
     const [logoUrl, setLogoUrl] = useState('');
     const [uploadingLogo, setUploadingLogo] = useState(false);
 
     const [whatsapp, setWhatsapp] = useState('');
     const [savingWhatsapp, setSavingWhatsapp] = useState(false);
+    const whatsappDigits = whatsapp.replace(/\D/g, '');
+    const mxLocalDigits = whatsappDigits.startsWith('52') ? whatsappDigits.slice(2) : null;
+    const mxWhatsappInvalid = mxLocalDigits !== null && mxLocalDigits.length !== 10;
 
     const [reservationPolicies, setReservationPolicies] = useState<ReservationPolicy[]>([]);
     const [privacyPolicies, setPrivacyPolicies] = useState<string[]>(defaultPrivacyPolicies);
@@ -155,6 +163,7 @@ const SettingsManager = () => {
         contact: false,
         legal: false,
         banners: true,
+        preloader: false,
     });
 
     const activeBannerCount = useMemo(() => banners.filter((banner) => banner.active).length, [banners]);
@@ -174,6 +183,7 @@ const SettingsManager = () => {
             const response = await settingsService.getAll();
             const data = response.data.data || {};
             setSettings(data);
+            setPreloader(normalizePreloaderMode(data.store_preloader));
             setLogoUrl(data.logo_url || '/logo-angelita-horizontal.png');
             setWhatsapp(data.whatsapp_number || '');
 
@@ -193,6 +203,19 @@ const SettingsManager = () => {
             notify('error', 'No se pudo cargar la configuración del sitio.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const savePreloader = async () => {
+        setSavingPreloader(true);
+        try {
+            await settingsService.update('store_preloader', preloader);
+            setMode(preloader);
+            notify('success', 'Precarga actualizada.');
+        } catch {
+            notify('error', 'No se pudo guardar la precarga.');
+        } finally {
+            setSavingPreloader(false);
         }
     };
 
@@ -231,8 +254,12 @@ const SettingsManager = () => {
 
     const saveWhatsapp = async () => {
         const cleanValue = whatsapp.replace(/[^0-9]/g, '');
-        if (!cleanValue) {
+        if (!cleanValue || cleanValue === '52') {
             notify('error', 'El número de WhatsApp no puede estar vacío.');
+            return;
+        }
+        if (mxWhatsappInvalid) {
+            notify('error', 'El número de WhatsApp de México (+52) debe tener exactamente 10 dígitos.');
             return;
         }
         try {
@@ -395,6 +422,42 @@ const SettingsManager = () => {
             </div>
 
             <CollapsibleCard
+                title="Precarga"
+                subtitle="Pantalla de carga de la tienda"
+                icon={<Loader2 size={17} />}
+                open={openSections.preloader}
+                onToggle={() => toggleSection('preloader')}
+            >
+                <div className="grid gap-5 sm:grid-cols-2 sm:items-center">
+                    <div className="space-y-3">
+                        <label className="block text-sm font-bold">
+                            Estilo de precarga
+                            <select
+                                className="mt-2 block w-full rounded-xl border border-gray-200 bg-white p-3"
+                                value={preloader}
+                                disabled={savingPreloader}
+                                onChange={(event) => setPreloader(normalizePreloaderMode(event.target.value))}
+                            >
+                                <option value="branded">Tenis animado y marca</option>
+                                <option value="simple">Solo mensaje de carga</option>
+                            </select>
+                        </label>
+                        <button
+                            type="button"
+                            disabled={savingPreloader}
+                            className="rounded-xl bg-store-red px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
+                            onClick={() => void savePreloader()}
+                        >
+                            {savingPreloader ? 'Guardando…' : 'Guardar precarga'}
+                        </button>
+                    </div>
+                    <div className="overflow-hidden rounded-xl border border-gray-200">
+                        <LoadingScreen compact previewMode={preloader} />
+                    </div>
+                </div>
+            </CollapsibleCard>
+
+            <CollapsibleCard
                 title="Identidad visual"
                 subtitle="Logo principal visible en la tienda y vouchers"
                 icon={<FileImage size={17} />}
@@ -465,11 +528,22 @@ const SettingsManager = () => {
                             inputClassName="h-12 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 text-sm font-bold outline-none transition focus:border-store-red focus:bg-white"
                             placeholder="55 1234 5678"
                         />
+                        {mxLocalDigits !== null && (
+                            <p
+                                role={mxWhatsappInvalid ? 'alert' : 'status'}
+                                aria-live="polite"
+                                className={`mt-2 text-xs font-semibold ${mxWhatsappInvalid ? 'text-red-600' : 'text-emerald-700'}`}
+                            >
+                                {mxWhatsappInvalid
+                                    ? `El número mexicano debe tener 10 dígitos después de +52. Ingresados: ${mxLocalDigits.length}/10.`
+                                    : 'Número mexicano completo: 10 dígitos.'}
+                            </p>
+                        )}
                     </label>
                     <button
                         type="button"
                         onClick={saveWhatsapp}
-                        disabled={savingWhatsapp}
+                        disabled={savingWhatsapp || mxWhatsappInvalid}
                         className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-black px-6 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-store-red disabled:opacity-50"
                     >
                         {savingWhatsapp ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}

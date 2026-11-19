@@ -1,4 +1,7 @@
 // src/App.tsx
+import { useEffect, useState } from 'react';
+import { normalizePreloaderMode, PreloaderContext, type PreloaderMode } from './hooks/usePreloader';
+import { settingsService } from './services/crudService';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -14,6 +17,7 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import CheckoutPageV2 from './pages/CheckoutPageV2';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import StoreHelpPage, { storeHelpTopics } from './pages/StoreHelpPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRoute from './components/AdminRoute';
 import LoadingScreen from './components/LoadingScreen';
@@ -75,6 +79,10 @@ const AppContent = () => {
 
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/privacidad" element={<PrivacyPage fromStore />} />
+          {Object.entries(storeHelpTopics).map(([slug, topic]) => (
+            <Route key={slug} path={`/${slug}`} element={<StoreHelpPage topic={topic} />} />
+          ))}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -110,13 +118,31 @@ const AppContent = () => {
 };
 
 function App() {
+  const [mode, setMode] = useState<PreloaderMode | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    settingsService.getAll().then(
+      (response) => {
+        if (active) setMode((current) => current ?? normalizePreloaderMode(response.data.data?.store_preloader));
+      },
+      () => {
+        if (active) setMode((current) => current ?? 'branded');
+      },
+    );
+    return () => { active = false; };
+  }, []);
+
+
   return (
-    <AuthProvider>
-      <CartProvider>
-        <ScrollToTop />
-        <AppContent />
-      </CartProvider>
-    </AuthProvider>
+    <PreloaderContext.Provider value={{ mode: mode ?? 'simple', setMode }}>
+      <AuthProvider>
+        <CartProvider>
+          <ScrollToTop />
+          <AppContent />
+        </CartProvider>
+      </AuthProvider>
+    </PreloaderContext.Provider>
   );
 }
 

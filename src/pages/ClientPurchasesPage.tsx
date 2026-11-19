@@ -1,3 +1,4 @@
+import LoadingScreen from '../components/LoadingScreen';
 import { useEffect, useState } from "react";
 import { ArrowLeft, Calendar, CheckCircle2, MessageCircle, Package, ReceiptText, ShieldCheck, ShoppingBag } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -101,14 +102,7 @@ const ClientPurchasesPage = () => {
   };
 
   if (loading || (user && loadingOrders)) {
-    return (
-      <main className="min-h-screen bg-[#f7f7f7] grid place-items-center p-6">
-        <div className="text-center">
-          <div className="w-10 h-10 border-2 border-[#e30613] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-xs font-black text-gray-400 uppercase tracking-[0.25em]">Cargando tus compras...</p>
-        </div>
-      </main>
-    );
+      return <LoadingScreen label="Cargando tus compras" />;
   }
 
   if (!user) return null;

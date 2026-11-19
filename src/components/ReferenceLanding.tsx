@@ -1,3 +1,4 @@
+import LoadingScreen from './LoadingScreen';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Award, ChevronLeft, ChevronRight, Headphones, LockKeyhole, Mail, Pause, Play, RefreshCw, ShieldCheck, Star, Truck } from 'lucide-react';
@@ -60,7 +61,7 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
 
   useEffect(() => {
     if (!rotating || slides.length < 2) return;
-    const timer = window.setInterval(() => setSlide(current => (current + 1) % slides.length), 6500);
+    const timer = window.setInterval(() => setSlide(current => (current + 1) % slides.length), 5500);
     return () => window.clearInterval(timer);
   }, [rotating, slides.length, slide]);
 
@@ -188,7 +189,7 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
           <div className="ref-featured-viewport" aria-live={featuredPaused || reducedMotion ? 'polite' : 'off'}>
             <div className="ref-product-grid ref-product-grid--premium" key={`featured-${featuredPage}`}>
               {loading
-                ? Array.from({ length: 8 }, (_, i) => <div className="ref-skeleton" role="status" aria-label="Cargando producto" key={i} />)
+                ? <LoadingScreen compact label="Cargando productos destacados" />
                 : featuredProducts.map(renderProduct)}
             </div>
           </div>

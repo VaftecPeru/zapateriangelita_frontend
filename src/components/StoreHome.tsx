@@ -1,3 +1,4 @@
+import LoadingScreen from './LoadingScreen';
 import { useEffect, useState } from "react";
 import ReferenceLanding from "./ReferenceLanding";
 import { getCatalogName } from '../utils/catalogName';
@@ -686,10 +687,10 @@ export default function StoreHome() {
       <header className="site-header" id="inicio">
         <div className="announcement-bar">
           <div className="shell announcement-bar__inner">
-            <p><Truck size={14} /> Envíos a todo México</p>
+            <p className="announcement-message"><Truck size={14} aria-hidden="true" /> Envíos a todo México</p>
             <div className="announcement-promises" aria-label="Compromisos de compra">
-              <span>Pagos seguros</span>
-              <span>La confianza de miles de familias</span>
+              <span className="announcement-message">Pagos seguros</span>
+              <span className="announcement-message">La confianza de miles de familias</span>
             </div>
             <div className="announcement-socials" aria-label="Redes sociales">
               <a href="#instagram" aria-label="Instagram"><InstagramIcon size={13} /></a>
@@ -943,7 +944,7 @@ export default function StoreHome() {
             </div>
             <div className="product-grid full-catalog__grid">
               {catalogLoading ? (
-                <p className="offers-results__empty" role="status">Cargando catálogo...</p>
+                <LoadingScreen compact label="Cargando catálogo" />
               ) : catalogError ? (
                 <div className="offers-results__empty" role="alert">
                   <p>No pudimos cargar los productos en este momento.</p>
@@ -1184,17 +1185,17 @@ export default function StoreHome() {
           </div>
           <div>
             <h2>Información</h2>
-            <a href="#nosotros">Nosotros</a>
-            <a href="#tienda">Tienda</a>
-            <a href="#cambios">Cambios y devoluciones</a>
-            <a href="#privacidad">Privacidad</a>
+            <Link to="/nosotros">Nosotros</Link>
+            <Link to="/catalogo">Catálogo</Link>
+            <Link to="/cambios-y-devoluciones">Cambios y devoluciones</Link>
+            <Link to="/privacidad">Privacidad</Link>
           </div>
           <div>
             <h2>Ayuda</h2>
-            <a href="#comprar">¿Cómo comprar?</a>
-            <a href="#pagos">Métodos de pago</a>
-            <a href="#tallas">Guía de tallas</a>
-            <a href="#preguntas">Preguntas frecuentes</a>
+            <Link to="/como-comprar">¿Cómo comprar?</Link>
+            <Link to="/metodos-de-pago">Métodos de pago</Link>
+            <Link to="/guia-de-tallas">Guía de tallas</Link>
+            <Link to="/preguntas-frecuentes">Preguntas frecuentes</Link>
           </div>
           <div className="footer__contact">
             <h2>Contacto</h2>
