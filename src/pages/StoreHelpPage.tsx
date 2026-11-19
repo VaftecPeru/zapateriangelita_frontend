@@ -9,6 +9,13 @@ type Topic = {
 };
 
 export const storeHelpTopics: Record<string, Topic> = {
+  nosotros: {
+    title: 'Nosotros',
+    sections: [
+      { title: 'Calzado para toda la familia desde 1980', text: 'En Zapatería Angelita reunimos calzado para mujer, hombre y niños. Desde 1980 te acompañamos con opciones cómodas para el día a día y para ocasiones especiales.' },
+      { title: 'Encuentra tu próximo par', text: 'Explora el catálogo y compara los modelos, colores y tallas disponibles. Si tienes dudas sobre el ajuste o necesitas ayuda con un pedido, escríbenos.' },
+    ],
+  },
   'cambios-y-devoluciones': {
     title: 'Cambios y devoluciones',
     sections: [

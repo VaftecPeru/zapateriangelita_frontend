@@ -1185,7 +1185,7 @@ export default function StoreHome() {
           </div>
           <div>
             <h2>Información</h2>
-            <a href="#nosotros">Nosotros</a>
+            <Link to="/nosotros">Nosotros</Link>
             <Link to="/catalogo">Catálogo</Link>
             <Link to="/cambios-y-devoluciones">Cambios y devoluciones</Link>
             <Link to="/privacidad">Privacidad</Link>
