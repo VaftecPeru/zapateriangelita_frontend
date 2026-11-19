@@ -76,7 +76,7 @@ const emptyForm = (): EditorForm => ({
 });
 
 const emptyVariant = (): ProductVariantDraft => ({
-  priceOverride: null,
+  colorPrice: '',
   color: '',
   articleModel: '',
   skus: [''],
@@ -214,9 +214,9 @@ const ProductEditorModal = ({
           ) ?? [];
           return {
             color,
-            priceOverride: (() => {
+            colorPrice: (() => {
               const saved = product.colors?.find((item) => item.color.toLocaleLowerCase() === color.toLocaleLowerCase())?.price;
-              return saved === null || saved === undefined ? null : Number(saved);
+              return saved != null ? String(Number(saved)) : Number(product.price) > 0 ? String(Number(product.price)) : '';
             })(),
             articleModel: stocksForColor.find((item) => item.article_model)?.article_model || '',
             skus: sizesForColor.map((size) =>
@@ -499,7 +499,7 @@ const ProductEditorModal = ({
     if (!form.category_id) return 'Selecciona una categoría.';
     if (!Number.isFinite(Number(form.price)) || Number(form.price) < 0) return 'El precio debe ser cero (borrador) o mayor.';
     if (Number(form.stock) < 0) return 'El stock no puede ser negativo.';
-    if (!simpleProduct && variants.some(v => v.priceOverride !== null && (!Number.isFinite(v.priceOverride) || v.priceOverride <= 0 || v.priceOverride > 99999999.99))) {
+    if (!simpleProduct && variants.some(v => v.colorPrice !== '' && (!/^(?:\d+(?:\.\d{1,2})?|\.\d{1,2})$/.test(v.colorPrice) || Number(v.colorPrice) <= 0 || Number(v.colorPrice) > 99999999.99))) {
       return 'El precio personalizado por color debe ser mayor que cero y tener hasta dos decimales.';
     }
     if (simpleProduct) return '';
@@ -659,10 +659,10 @@ const ProductEditorModal = ({
       data.append('description', form.description || '');
       data.append('color_sizes', JSON.stringify(colorSizes));
       data.append('variant_stocks', JSON.stringify(variantStocks));
-      // Solo los precios personalizados se envían; el resto hereda el precio general.
-      data.append('color_prices', JSON.stringify(Object.fromEntries(activeVariants
-        .filter(v => v.priceOverride !== null && v.priceOverride > 0)
-        .map(v => [v.color.trim(), Number(v.priceOverride!.toFixed(2))]))));
+      const colorPrices = activeVariants
+        .map(v => [v.color.trim(), Number(v.colorPrice || form.price)] as const)
+        .filter(([, price]) => price > 0);
+      data.append('color_prices', JSON.stringify(Object.fromEntries(colorPrices)));
 
       activeVariants.forEach((variant, index) => {
         variant.files
@@ -905,17 +905,15 @@ const ProductEditorModal = ({
                                     <span className="text-[9px] font-bold text-gray-500">MXN</span>
                                     <input type="number" min="0.01" max="99999999.99" step="0.01"
                                       aria-label={'Precio variante '+(variant.color || index+1)}
-                                      value={variant.priceOverride ?? form.price}
-                                      onChange={e=>setVariant(index,{priceOverride: e.target.value === '' ? null : Number(e.target.value)})}
+                                      value={variant.colorPrice}
+                                      placeholder={form.price > 0 ? String(form.price) : undefined}
+                                      onChange={e=>setVariant(index,{colorPrice: e.target.value})}
                                       className="min-w-0 w-full bg-transparent text-[11px] font-semibold outline-none"
-                                      title="Edita para definir un precio especial de este color" />
+                                      title="Precio independiente de este color" />
                                   </label>
-                                  {variant.priceOverride === null
-                                    ? <p className="mt-1 text-[9px] text-gray-400">Sincronizado con precio general</p>
-                                    : <button type="button" onClick={()=>setVariant(index,{priceOverride:null})}
-                                        className="mt-1 text-left text-[9px] font-semibold text-store-red hover:underline">
-                                        Personalizado · Usar precio general
-                                      </button>}
+                                  <p className="mt-1 text-[9px] text-gray-500">
+                                    {variant.colorPrice === '' ? 'Vacío: toma el precio general al guardar' : 'Precio por color'}
+                                  </p>
                                 </td>
                                 <td className="px-2 py-3"><output className="block rounded-lg border border-gray-100 bg-[#f5f6f8] p-2 text-center text-[12px] font-bold">{sum}</output></td>
                                 <td className="px-2 py-3">
@@ -993,7 +991,7 @@ const ProductEditorModal = ({
                   </div>
                   <div className="mt-3 rounded-lg border border-gray-100 bg-[#f7f8fa] p-3">
                     <div className="flex justify-between gap-2 text-xs"><span className="text-gray-500">Precio final</span><strong>MXN {(discountedPrice || Number(form.price||0)).toFixed(2)}</strong></div>
-                    <p className="mt-1 text-[10px] text-gray-400">Precio predeterminado: sincroniza los colores sin precio personalizado. El descuento también se aplica a los precios de variante.</p>
+                    <p className="mt-1 text-[10px] text-gray-400">El precio general se usa al guardar colores sin importe. El descuento se aplica a cada precio por color.</p>
                   </div>
                   {Number(form.price)===0 && <p className="mt-2 text-[11px] font-medium text-amber-600">Precio 0: el producto permanecerá oculto.</p>}
                   <label className="mt-3 flex items-center justify-between gap-2 text-[11px] text-gray-600"><span>Etiqueta comercial</span>
