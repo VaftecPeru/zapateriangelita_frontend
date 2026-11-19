@@ -135,7 +135,7 @@ function App() {
 
 
   return (
-    <PreloaderContext.Provider value={{ mode: mode ?? 'simple', setMode }}>
+    <PreloaderContext.Provider value={{ mode: mode ?? 'simple', ready: mode !== null, setMode }}>
       <AuthProvider>
         <CartProvider>
           <ScrollToTop />
