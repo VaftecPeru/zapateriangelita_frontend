@@ -112,6 +112,16 @@ async function run() {
   check('Slider: navegación anterior', () => assert.match(document.querySelector('h1')!.textContent!, /Camina/));
   await click('[aria-label="Pausar banners"]');
   check('Slider: pausa explícita accesible', () => assert.ok(document.querySelector('[aria-label="Reanudar banners"][aria-pressed="true"]')));
+  const brandTrack = document.querySelector<HTMLDivElement>('.ref-brands__track')!;
+  brandTrack.firstElementChild!.getBoundingClientRect = () => ({ width: 100 } as DOMRect);
+  brandTrack.scrollTo = (({ left }: ScrollToOptions) => { brandTrack.scrollLeft = left ?? 0; }) as typeof brandTrack.scrollTo;
+  await click('[aria-label="Marcas anteriores"]');
+  check('Marcas: retrocede desde el inicio y vuelve al final', () => assert.equal(brandTrack.scrollLeft, 500));
+  await click('[aria-label="Marcas siguientes"]');
+  await click('[aria-label="Marcas siguientes"]');
+  check('Marcas: continúa desde el principio sin quedar bloqueado', () => assert.equal(brandTrack.scrollLeft, 100));
+  check('Marcas: no ofrece rotación automática con movimiento reducido', () => assert.equal(document.querySelector('[aria-label="Pausar marcas"]'), null));
+
   let retryCount = 0;
   await render(
     <MemoryRouter>

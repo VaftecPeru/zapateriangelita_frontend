@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Award, ChevronLeft, ChevronRight, Headphones, LockKeyhole, Mail, Pause, Play, RefreshCw, ShieldCheck, Star, Truck } from 'lucide-react';
 import { heroSlides, testimonials } from '../data/catalog';
@@ -10,6 +10,8 @@ const collections = [
   { name: 'Hombre', slug: 'hombre', subtitle: 'Estilo que te impulsa', image: 'man.webp' },
   { name: 'Niños', slug: 'niños', subtitle: 'Grandes aventuras comienzan aquí', image: 'kids.webp' },
 ];
+const favoriteBrands = ['Nike', 'adidas', 'PUMA', 'SKECHERS', 'CAT', 'flexi'];
+
 const defaultSlides = [
   { eyebrow: 'Nueva colección 2026', title: 'Camina con tu', emphasis: 'propio estilo', description: 'Calzado para cada historia, cada paso y cada día.', image: `${assets}hero-red.webp`, href: '/categoria/mujer', imagePosition: 'center' },
   { eyebrow: 'Comodidad en movimiento', title: 'Tu ritmo.', emphasis: 'Tu estilo.', description: 'Encuentra tu próximo par favorito.', image: `${assets}promo.webp`, href: '/catalogo', imagePosition: '66% center' },
@@ -40,8 +42,32 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
   const [newsletterLoading, setNewsletterLoading] = useState(false);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const brands = useRef<HTMLDivElement>(null);
+  const [brandsPaused, setBrandsPaused] = useState(false);
+  const [brandsHovered, setBrandsHovered] = useState(false);
+  const [brandsFocused, setBrandsFocused] = useState(false);
   const instagram = useRef<HTMLDivElement>(null);
   const active = slides[slide % slides.length];
+  const moveBrands = useCallback((direction: number, behavior: ScrollBehavior) => {
+    const track = brands.current;
+    const first = track?.firstElementChild;
+    if (!track || !first) return;
+
+    const step = first.getBoundingClientRect().width;
+    if (!step) return;
+    const cycle = step * favoriteBrands.length;
+    const current = Math.round(track.scrollLeft / step);
+    const index = current % favoriteBrands.length;
+    const start = direction < 0 && index === 0 ? cycle : index * step;
+    if (Math.abs(track.scrollLeft - start) > 1) track.scrollLeft = start;
+    track.scrollTo({ left: start + direction * step, behavior });
+  }, []);
+
+  useEffect(() => {
+    if (brandsPaused || brandsHovered || brandsFocused || reducedMotion || hidden) return;
+    const timer = window.setInterval(() => moveBrands(1, 'smooth'), 3500);
+    return () => window.clearInterval(timer);
+  }, [brandsPaused, brandsHovered, brandsFocused, reducedMotion, hidden, moveBrands]);
+
   const rotating = !hovered && !focused && !paused && !reducedMotion && !hidden;
   const featuredPageSize = 8;
   const featuredPageCount = Math.max(1, Math.ceil(products.length / featuredPageSize));
@@ -237,10 +263,27 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
         <p className="ref-promotion__note" aria-hidden="true">Tu<br />estilo<br />siempre<br />contigo<span /></p>
       </section>
 
-      <section className="ref-brands ref-shell" aria-label="Marcas favoritas">
-        <h2>Marcas favoritas</h2><button className="ref-round" aria-label="Marcas anteriores" onClick={() => brands.current?.scrollBy({ left: -250, behavior: reducedMotion ? 'auto' : 'smooth' })}><ChevronLeft size={18} /></button>
-        <div className="ref-brands__track" ref={brands}>{['Nike', 'adidas', 'PUMA', 'SKECHERS', 'CAT', 'flexi'].map(brand => <span className={`ref-brand ref-brand--${brand.toLowerCase()}`} key={brand}>{brand}</span>)}</div>
-        <button className="ref-round" aria-label="Marcas siguientes" onClick={() => brands.current?.scrollBy({ left: 250, behavior: reducedMotion ? 'auto' : 'smooth' })}><ChevronRight size={18} /></button>
+      <section className="ref-brands ref-shell" aria-label="Marcas favoritas" aria-roledescription="carrusel"
+        onMouseEnter={() => setBrandsHovered(true)} onMouseLeave={() => setBrandsHovered(false)}
+        onFocusCapture={() => setBrandsFocused(true)}
+        onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setBrandsFocused(false); }}>
+        <h2>Marcas favoritas</h2>
+        <button className="ref-round" type="button" aria-label="Marcas anteriores"
+          onClick={() => moveBrands(-1, reducedMotion ? 'auto' : 'smooth')}><ChevronLeft size={18} /></button>
+        <div className="ref-brands__track" ref={brands}>
+          {[0, 1].flatMap(copy => favoriteBrands.map(brand => (
+            <span className={`ref-brand ref-brand--${brand.toLowerCase()}`} key={`${copy}-${brand}`}
+              aria-hidden={copy === 1 ? true : undefined}>{brand}</span>
+          )))}
+        </div>
+        <button className="ref-round" type="button" aria-label="Marcas siguientes"
+          onClick={() => moveBrands(1, reducedMotion ? 'auto' : 'smooth')}><ChevronRight size={18} /></button>
+        {!reducedMotion && (
+          <button className="ref-round" type="button" aria-label={brandsPaused ? 'Reanudar marcas' : 'Pausar marcas'}
+            aria-pressed={brandsPaused} onClick={() => setBrandsPaused(value => !value)}>
+            {brandsPaused ? <Play size={14} /> : <Pause size={14} />}
+          </button>
+        )}
       </section>
 
       <section className="ref-testimonials ref-shell" id="opiniones">
