@@ -1,3 +1,5 @@
+import visaLogo from "../assets/payment/visa.png";
+import mastercardLogo from "../assets/payment/mastercard.png";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -152,6 +154,7 @@ export default function ProductDetailPage() {
   const toastTimer = useRef<number>();
   const galleryTouch = useRef<{ x: number; y: number } | null>(null);
   const [shareMessage, setShareMessage] = useState("");
+  const [showDiscount, setShowDiscount] = useState(false);
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
   const [product, setProduct] = useState<any | null>(null);
   const [siteLogo, setSiteLogo] = useState<string>(brandLogo);
@@ -534,7 +537,22 @@ export default function ProductDetailPage() {
               <div className="product-price-line">
                 {hasDiscount && <del className="list-price" aria-label="Precio de lista">{money.format(selectedBasePrice)}</del>}
                 <strong>{money.format(selectedSalePrice)}</strong>
-                {hasDiscount && <span className="discount-percentage">−{discountPercentage}%</span>}
+                {hasDiscount && (
+                  <button type="button" className="discount-percentage pd-discount-button"
+                    aria-expanded={showDiscount} aria-controls="pd-discount-detail"
+                    aria-label={`Descuento de ${discountPercentage}%. Ver ahorro`}
+                    onClick={() => setShowDiscount(value => !value)}>
+                    −{discountPercentage}%
+                  </button>
+                )}
+              </div>
+              {hasDiscount && <p id="pd-discount-detail" className="pd-discount-detail" hidden={!showDiscount}>
+                Ahorras <strong>{money.format(selectedBasePrice - selectedSalePrice)}</strong> sobre el precio de lista.
+              </p>}
+              <div className="pd-payment-methods">
+                <span>Pago seguro con tarjeta</span>
+                <img src={visaLogo} alt="Visa" decoding="async" />
+                <img src={mastercardLogo} alt="Mastercard" decoding="async" />
               </div>
             </div>
 
