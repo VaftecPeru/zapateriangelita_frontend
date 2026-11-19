@@ -1829,12 +1829,14 @@ img {
 
 /* ===== CONTENEDOR DE NIÑOS (con padding para que no se vea apretado) ===== */
 .dropdown-menu.children-menu {
-  display: flex !important;
-  flex-wrap: wrap;
-  gap: 12px 20px;
-  padding: 24px 28px;
-  max-width: 780px;
-  min-width: 460px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  padding: 16px 18px;
+  width: min(680px, calc(100vw - 32px));
+}
+
+.children-menu .dropdown-group {
+  min-width: 0;
 }
 
 @keyframes dropdownIn {

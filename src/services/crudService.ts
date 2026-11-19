@@ -1,3 +1,4 @@
+import { readCookieConsent } from '../utils/cookieConsent';
 import apiClient from './apiClient';
 
 export interface Category {
@@ -318,11 +319,11 @@ export const statsService = {
 
 export const analyticsService = {
     track: (type: 'product_view' | 'whatsapp_click' | 'newsletter_subscribe' | 'add_to_cart' | 'checkout_start', productId?: number, metadata?: Record<string, unknown>) =>
-        apiClient.post('/interactions', {
+        readCookieConsent() === true ? apiClient.post('/interactions', {
             type,
             product_id: productId || undefined,
             metadata: metadata || undefined,
-        }),
+        }) : Promise.resolve(undefined),
 };
 
 export const newsletterService = {

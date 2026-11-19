@@ -731,7 +731,7 @@ export default function StoreHome() {
                         {item.name} <ChevronDown size={13} />
                       </button>
                       {openDropdown === item.name && (
-                        <div className="dropdown-menu">
+                        <div className={isChildrenMenu ? "dropdown-menu children-menu" : "dropdown-menu"}>
                           {isChildrenMenu ? (
                             item.submenu.map((group: any) => (
                               <div key={group.talla} className="dropdown-group">
