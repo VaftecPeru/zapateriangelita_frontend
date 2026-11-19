@@ -63,6 +63,7 @@ export interface Product {
     reviews: number;
     discount?: string;
     status?: 'normal' | 'oferta' | 'nuevo';
+    publication_state?: 'draft' | 'active' | 'sold_out' | 'archived' | null;
     is_active?: boolean;
     auto_publish?: boolean;
     sizes?: Array<{ id?: number; size: string; stock: number }>;
