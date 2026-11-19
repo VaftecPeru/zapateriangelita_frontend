@@ -49,7 +49,14 @@ async function run() {
     for (const value of [null, undefined, {}, 0]) assert.equal(getCatalogName(value), '');
     assert.equal(getCatalogName({ name: ' Flexi ' }), 'Flexi');
     assert.equal(getCatalogName(' Pirma '), 'Pirma');
-    (categoryService as any).getAll = (brandService as any).getAll = (subcategoryService as any).getAll = async () => ({ data: [] });
+    let brands = [{ id: 100, name: 'Marca de prueba' }];
+    let categories = [{ id: 101, name: 'Categoría de prueba' }];
+    (categoryService as any).getAll = async () => ({ data: categories });
+    (brandService as any).getAll = async () => ({ data: brands });
+    (subcategoryService as any).getAll = async () => ({ data: [] });
+    (brandService as any).delete = async () => { brands = []; };
+    (categoryService as any).delete = async () => { categories = []; };
+    window.confirm = () => true;
     const pages: number[] = [];
     (productService as any).getAllAdmin = async (params: any = {}) => {
       const page = params.page || 1;
@@ -94,6 +101,16 @@ async function run() {
     await click('[title="Editar producto"]');
     assert.ok(target.querySelector('.product-editor-workspace'), 'Editor opens for imported product with null relations');
     console.log('PASS Catálogo: relaciones nulas, 26 productos, páginas, tamaño, filtros y edición.');
+    const editor = target.querySelector('.product-editor-workspace');
+    for (const label of ['Marcas', 'Categorías']) {
+      const manage = [...target.querySelectorAll('button')].find(button => button.textContent?.trim() === label)!;
+      await act(async () => { manage.click(); });
+      const remove = [...target.querySelectorAll('button')].find(button => button.textContent?.trim() === 'Eliminar')!;
+      await act(async () => { remove.click(); });
+      assert.equal(target.querySelector('.product-editor-workspace'), editor);
+      assert.ok(target.textContent?.includes('No hay registros.'));
+    }
+
 
     let fail = true;
     (productService as any).getAllAdmin = async (params: any = {}) => {
