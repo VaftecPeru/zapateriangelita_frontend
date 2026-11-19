@@ -1,3 +1,4 @@
+import { usePreloaderMinimum } from '../hooks/usePreloader';
 import LoadingScreen from '../components/LoadingScreen';
 import visaLogo from "../assets/payment/visa.png";
 import mastercardLogo from "../assets/payment/mastercard.png";
@@ -162,6 +163,7 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const showPreloader = usePreloaderMinimum(productId);
   const [error, setError] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
@@ -218,7 +220,7 @@ export default function ProductDetailPage() {
     return () => { active = false; };
   }, [productId]);
 
-  if (loading) return <LoadingScreen label="Cargando producto" />;
+  if (loading || showPreloader) return <LoadingScreen label="Cargando producto" />;
 
   if (error || !product) {
     return (
