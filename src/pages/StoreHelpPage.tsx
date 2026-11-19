@@ -9,6 +9,13 @@ type Topic = {
 };
 
 export const storeHelpTopics: Record<string, Topic> = {
+  nosotros: {
+    title: 'Nosotros',
+    sections: [
+      { title: 'Calzado para toda la familia desde 1980', text: 'En Zapatería Angelita reunimos opciones de calzado para el día a día y para ocasiones especiales. Nuestra tienda está en Hidalgo, Michoacán, y ofrecemos envíos a todo México.' },
+      { title: 'Estamos para ayudarte', text: 'Si tienes dudas sobre un modelo, su talla o tu pedido, escríbenos. También puedes visitar la tienda de lunes a sábado, de 9:00 a 19:00.' },
+    ],
+  },
   'cambios-y-devoluciones': {
     title: 'Cambios y devoluciones',
     sections: [
