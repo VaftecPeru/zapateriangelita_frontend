@@ -119,12 +119,16 @@ const AppContent = () => {
 
 function App() {
   const [mode, setMode] = useState<PreloaderMode | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     settingsService.getAll().then(
       (response) => {
-        if (active) setMode((current) => current ?? normalizePreloaderMode(response.data.data?.store_preloader));
+        if (active) {
+          setMode((current) => current ?? normalizePreloaderMode(response.data.data?.store_preloader));
+          setImageUrl(response.data.data?.store_preloader_image || null);
+        }
       },
       () => {
         if (active) setMode((current) => current ?? 'branded');
@@ -135,7 +139,7 @@ function App() {
 
 
   return (
-    <PreloaderContext.Provider value={{ mode: mode ?? 'simple', setMode }}>
+    <PreloaderContext.Provider value={{ mode: mode ?? 'simple', setMode, imageUrl, setImageUrl }}>
       <AuthProvider>
         <CartProvider>
           <ScrollToTop />
