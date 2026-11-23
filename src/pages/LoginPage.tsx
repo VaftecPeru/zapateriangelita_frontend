@@ -32,11 +32,14 @@ export const getRetryAfterSeconds = (error: any, fallback = 10): number => {
  */
 export const getLoginErrorMessage = (error: any, fallback = 'No fue posible iniciar sesión.'): string => {
     const status = Number(error?.response?.status || 0);
-    if (!status || error?.code === 'ERR_NETWORK') {
+    if (!status) {
         if (error?.code === 'ECONNABORTED' || error?.code === 'ETIMEDOUT') {
             return 'La conexión con el servidor tardó demasiado. Intenta nuevamente.';
         }
-        return 'No fue posible conectar con el servidor. Comprueba tu conexión e intenta nuevamente.';
+        if (error?.code === 'ERR_NETWORK' || error?.request || /^(Network Error|Failed to fetch)$/i.test(error?.message || '')) {
+            return 'No fue posible conectar con el servidor. Comprueba tu conexión e intenta nuevamente.';
+        }
+        return typeof error?.message === 'string' && error.message.trim() ? error.message : fallback;
     }
     if (status >= 500) {
         return 'El servicio no está disponible temporalmente. Intenta nuevamente más tarde.';
