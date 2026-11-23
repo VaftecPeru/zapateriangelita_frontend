@@ -137,9 +137,13 @@ const SettingsManager = () => {
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    const { setMode } = usePreloader();
+    const { setMode, setImageUrl } = usePreloader();
     const [preloader, setPreloader] = useState<PreloaderMode>('branded');
     const [savingPreloader, setSavingPreloader] = useState(false);
+    const [preloaderImageUrl, setPreloaderImageUrl] = useState('');
+    const [preloaderFile, setPreloaderFile] = useState<File | null>(null);
+    const [preloaderLocalPreview, setPreloaderLocalPreview] = useState('');
+    const [uploadingPreloader, setUploadingPreloader] = useState(false);
     const [logoUrl, setLogoUrl] = useState('');
     const [uploadingLogo, setUploadingLogo] = useState(false);
 
@@ -166,6 +170,16 @@ const SettingsManager = () => {
         preloader: false,
     });
 
+    useEffect(() => {
+        if (!preloaderFile) {
+            setPreloaderLocalPreview('');
+            return;
+        }
+        const objectUrl = URL.createObjectURL(preloaderFile);
+        setPreloaderLocalPreview(objectUrl);
+        return () => URL.revokeObjectURL(objectUrl);
+    }, [preloaderFile]);
+
     const activeBannerCount = useMemo(() => banners.filter((banner) => banner.active).length, [banners]);
 
     useEffect(() => {
@@ -184,6 +198,7 @@ const SettingsManager = () => {
             const data = response.data.data || {};
             setSettings(data);
             setPreloader(normalizePreloaderMode(data.store_preloader));
+            setPreloaderImageUrl(data.store_preloader_image || '');
             setLogoUrl(data.logo_url || '/logo-angelita-horizontal.png');
             setWhatsapp(data.whatsapp_number || '');
 
@@ -227,6 +242,29 @@ const SettingsManager = () => {
         error?.response?.data?.message ||
         error?.response?.data?.error ||
         fallback;
+
+    const uploadPreloader = async () => {
+        if (!preloaderFile) return;
+
+        try {
+            setUploadingPreloader(true);
+            const response = await settingsService.uploadPreloaderImage(preloaderFile);
+            const path = response.data?.data?.path;
+            if (!path) throw new Error('El servidor no devolvió la ruta de la precarga.');
+
+            setPreloaderImageUrl(path);
+            setSettings((current) => ({ ...current, store_preloader_image: path, store_preloader: 'branded' }));
+            setPreloader('branded');
+            setMode('branded');
+            setImageUrl(path);
+            setPreloaderFile(null);
+            notify('success', 'Animación publicada. La precarga de la tienda ya usa el nuevo archivo.');
+        } catch (error: any) {
+            notify('error', errorMessage(error, 'No se pudo publicar la precarga.'));
+        } finally {
+            setUploadingPreloader(false);
+        }
+    };
 
     const uploadLogo = async (file?: File) => {
         if (!file) return;
@@ -428,31 +466,77 @@ const SettingsManager = () => {
                 open={openSections.preloader}
                 onToggle={() => toggleSection('preloader')}
             >
-                <div className="grid gap-5 sm:grid-cols-2 sm:items-center">
-                    <div className="space-y-3">
+                <div className="grid gap-5 sm:grid-cols-2 sm:items-start">
+                    <div className="space-y-4">
                         <label className="block text-sm font-bold">
                             Estilo de precarga
                             <select
                                 className="mt-2 block w-full rounded-xl border border-gray-200 bg-white p-3"
                                 value={preloader}
-                                disabled={savingPreloader}
+                                disabled={savingPreloader || uploadingPreloader}
                                 onChange={(event) => setPreloader(normalizePreloaderMode(event.target.value))}
                             >
-                                <option value="branded">Tenis animado y marca</option>
+                                <option value="branded">Animación de precarga</option>
                                 <option value="simple">Solo mensaje de carga</option>
                             </select>
                         </label>
                         <button
                             type="button"
-                            disabled={savingPreloader}
-                            className="rounded-xl bg-store-red px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
+                            disabled={savingPreloader || uploadingPreloader}
+                            className="rounded-xl border border-store-red px-4 py-3 text-sm font-bold text-store-red disabled:opacity-50"
                             onClick={() => void savePreloader()}
                         >
-                            {savingPreloader ? 'Guardando…' : 'Guardar precarga'}
+                            {savingPreloader ? 'Guardando…' : 'Guardar estilo'}
                         </button>
+                        <div className="space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                            <label htmlFor="preloader-upload" className="block text-sm font-bold text-black">
+                                Imagen o animación de precarga
+                            </label>
+                            <p className="text-xs text-gray-500">
+                                GIF animado, PNG o WebP. Máximo 8 MB. Archivo independiente del logo principal.
+                            </p>
+                            <input
+                                id="preloader-upload"
+                                type="file"
+                                accept="image/gif,image/png,image/webp"
+                                disabled={uploadingPreloader}
+                                onChange={(event) => {
+                                    const file = event.target.files?.[0] || null;
+                                    if (file && (!['image/gif', 'image/png', 'image/webp'].includes(file.type) || file.size > 8 * 1024 * 1024)) {
+                                        notify('error', 'Selecciona GIF, PNG o WebP de hasta 8 MB.');
+                                        setPreloaderFile(null);
+                                        event.target.value = '';
+                                        return;
+                                    }
+                                    setPreloaderFile(file);
+                                }}
+                                className="block w-full rounded-lg border border-gray-200 bg-white p-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-red-50 file:px-3 file:py-2 file:font-bold file:text-store-red"
+                            />
+                            <button
+                                type="button"
+                                disabled={!preloaderFile || uploadingPreloader || savingPreloader}
+                                onClick={() => void uploadPreloader()}
+                                className="flex items-center gap-2 rounded-xl bg-store-red px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
+                            >
+                                {uploadingPreloader ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                                {uploadingPreloader ? 'Publicando…' : 'Subir y publicar precarga'}
+                            </button>
+                            <p className="text-xs text-gray-500">
+                                La publicación activa automáticamente el modo animado y actualiza la tienda.
+                            </p>
+                        </div>
                     </div>
-                    <div className="overflow-hidden rounded-xl border border-gray-200">
-                        <LoadingScreen compact previewMode={preloader} />
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold text-gray-600">
+                            {preloaderFile ? 'Vista previa antes de publicar' : 'Vista previa de precarga actual'}
+                        </p>
+                        <div className="overflow-hidden rounded-xl border border-gray-200">
+                            <LoadingScreen
+                                compact
+                                previewMode={preloaderFile ? 'branded' : preloader}
+                                previewImageUrl={preloaderLocalPreview || preloaderImageUrl || undefined}
+                            />
+                        </div>
                     </div>
                 </div>
             </CollapsibleCard>
