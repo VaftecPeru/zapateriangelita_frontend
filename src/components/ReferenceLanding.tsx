@@ -97,7 +97,7 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
       const response = await newsletterService.subscribe(email);
       setNewsletterNotice(response.data.already_subscribed
         ? 'Ya estás suscrito a nuestras novedades.'
-        : '¡Gracias! Tu suscripción está confirmada.');
+        : 'Suscripción registrada. Recibirás un correo de bienvenida.');
       setNewsletterEmail('');
     } catch (error: any) {
       setNewsletterError(true);
