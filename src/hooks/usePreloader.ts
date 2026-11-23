@@ -9,6 +9,8 @@ export function normalizePreloaderMode(value: unknown): PreloaderMode {
 export const PreloaderContext = createContext<{
   mode: PreloaderMode;
   setMode: (mode: PreloaderMode) => void;
-}>({ mode: 'branded', setMode: () => {} });
+  imageUrl: string | null;
+  setImageUrl: (imageUrl: string | null) => void;
+}>({ mode: 'branded', setMode: () => {}, imageUrl: null, setImageUrl: () => {} });
 
 export const usePreloader = () => useContext(PreloaderContext);
