@@ -37,6 +37,7 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
   const [reducedMotion, setReducedMotion] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [newsletterNotice, setNewsletterNotice] = useState('');
+  const [newsletterError, setNewsletterError] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterLoading, setNewsletterLoading] = useState(false);
   const touch = useRef<{ x: number; y: number } | null>(null);
@@ -80,21 +81,27 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
 
   const submitNewsletter = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (newsletterLoading) return;
     const email = newsletterEmail.trim().toLowerCase();
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setNewsletterError(true);
       setNewsletterNotice('Ingresa un correo electrónico válido.');
       return;
     }
 
     setNewsletterLoading(true);
+    setNewsletterError(false);
     setNewsletterNotice('');
 
     try {
       const response = await newsletterService.subscribe(email);
-      setNewsletterNotice(response.data.message || 'Suscripción registrada correctamente.');
+      setNewsletterNotice(response.data.already_subscribed
+        ? 'Ya estás suscrito a nuestras novedades.'
+        : 'Suscripción registrada. Recibirás un correo de bienvenida.');
       setNewsletterEmail('');
     } catch (error: any) {
+      setNewsletterError(true);
       const firstValidationError = error?.response?.data?.errors?.email?.[0];
       setNewsletterNotice(firstValidationError || error?.response?.data?.message || 'No fue posible registrar la suscripción. Intenta nuevamente.');
     } finally {
@@ -257,7 +264,7 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
 
       <section className="ref-newsletter ref-shell">
         <div><Mail /><p><strong>Suscríbete a nuestro newsletter</strong><span>Recibe ofertas exclusivas, novedades y mucho más.</span></p></div>
-        <form onSubmit={submitNewsletter}>
+        <form onSubmit={submitNewsletter} noValidate aria-busy={newsletterLoading}>
           <label className="sr-only" htmlFor="ref-email">Correo electrónico para novedades</label>
           <input
             id="ref-email"
@@ -266,15 +273,21 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
             placeholder="Ingresa tu correo electrónico"
             autoComplete="email"
             required
+            maxLength={255}
+            aria-describedby="ref-newsletter-notice"
             value={newsletterEmail}
-            onChange={(event) => setNewsletterEmail(event.target.value)}
+            onChange={(event) => {
+              setNewsletterEmail(event.target.value);
+              setNewsletterNotice('');
+              setNewsletterError(false);
+            }}
             disabled={newsletterLoading}
           />
           <button type="submit" disabled={newsletterLoading}>
             {newsletterLoading ? 'Suscribiendo...' : 'Suscribirme'}
           </button>
+          <p id="ref-newsletter-notice" className={`ref-newsletter__notice${newsletterError ? ' is-error' : ''}`} role="status" aria-live="polite">{newsletterNotice}</p>
         </form>
-        {newsletterNotice && <p className="ref-newsletter__notice" role="status" aria-live="polite">{newsletterNotice}</p>}
       </section>
     </div>
   );
