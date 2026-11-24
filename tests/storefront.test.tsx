@@ -12,6 +12,7 @@ import axios from 'axios';
 import apiClient from '../src/services/apiClient';
 import { getFriendlyPaymentError } from '../src/components/PaymentModal';
 import { canInspectOrderVoucher, isOrderPaid, voucherPaymentToken } from '../src/utils/orderVoucher';
+import { readSocialLinks } from '../src/utils/socialLinks';
 
 const denyNetwork = async () => { throw new Error('Unexpected network request in offline UI test'); };
 axios.defaults.adapter = denyNetwork;
@@ -89,6 +90,17 @@ async function run() {
   await render(<MemoryRouter><ReferenceLanding products={[{ id: 1, price: 60, oldPrice: 100 }]} loading={false} error={false} renderProduct={p => <article key={p.id}>Producto real {p.id}</article>} /></MemoryRouter>);
   check('Portada: tres categorías en el orden de la referencia', () => assert.deepEqual([...document.querySelectorAll('.ref-collection h2')].map(n => n.textContent), ['Mujer', 'Hombre', 'Niños']));
   check('Portada: fotografía roja y texto editable', () => { assert.match(document.querySelector('h1')!.textContent!, /Camina con tu/); assert.match(document.querySelector('.ref-hero__photo')!.getAttribute('src')!, /hero-red/); });
+  check('Portada: una red sin enlace queda oculta', () => assert.equal(document.querySelector('#instagram'), null));
+  const instagramUrl = 'https://www.instagram.com/perfil-nuevo/';
+  await render(<MemoryRouter><ReferenceLanding products={[]} loading={false} error={false} instagramUrl={instagramUrl} renderProduct={() => null} /></MemoryRouter>);
+  check('Portada: la galería y su botón usan el perfil configurado', () => {
+    const links = [...document.querySelectorAll<HTMLAnchorElement>('#instagram a')];
+    assert.ok(links.length > 1);
+    assert.ok(links.every(link => link.href === instagramUrl && link.rel.includes('noopener')));
+    assert.equal(readSocialLinks(JSON.stringify({ instagram: '', facebook: 'javascript:alert(1)' })).facebook, '');
+    assert.equal(readSocialLinks(JSON.stringify({ instagram: '', facebook: '' })).instagram, '');
+    assert.ok(readSocialLinks().instagram);
+  });
 
   const featuredProducts = Array.from({ length: 10 }, (_, index) => ({
     id: index + 1,
