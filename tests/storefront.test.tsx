@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import ReferenceLanding from '../src/components/ReferenceLanding';
+import { heroSlides } from '../src/data/catalog';
 import ProductDetailPage from '../src/pages/ProductDetailPage';
 import { CartProvider } from '../src/hooks/useCart';
 import { productService, settingsService } from '../src/services/crudService';
@@ -124,6 +125,22 @@ async function run() {
   check('Slider: navegación anterior', () => assert.match(document.querySelector('h1')!.textContent!, /Camina/));
   await click('[aria-label="Pausar banners"]');
   check('Slider: pausa explícita accesible', () => assert.ok(document.querySelector('[aria-label="Reanudar banners"][aria-pressed="true"]')));
+  const managedSlide = { managed: true, mode: 'image', title: '', eyebrow: '', description: '', image: '/banner-only.webp', imagePosition: 'center center', textColor: '#ffffff' };
+  const originalSlides = [...heroSlides];
+  try {
+    heroSlides.splice(0, heroSlides.length, managedSlide as any);
+    await render(<MemoryRouter><ReferenceLanding products={[]} loading={false} error={false} renderProduct={() => null} /></MemoryRouter>);
+    await click('[aria-label="Mostrar banner 4"]');
+    check('Banner gráfico: muestra imagen completa sin texto, sombra ni botones comerciales', () => {
+      assert.ok(document.querySelector('.ref-hero--image-only'));
+      assert.match(document.querySelector('.ref-hero__photo')!.getAttribute('src')!, /banner-only/);
+      assert.equal(document.querySelector('.ref-hero__content'), null);
+      assert.equal(document.querySelector('.ref-hero__shade'), null);
+      assert.equal(document.querySelector('.ref-handwriting'), null);
+      assert.ok(readFileSync('src/styles/home-reference.css', 'utf8').includes('object-fit: contain'));
+    });
+    await render(<MemoryRouter><ReferenceLanding products={[]} loading={false} error={false} renderProduct={() => null} /></MemoryRouter>);
+  } finally { heroSlides.splice(0, heroSlides.length, ...originalSlides); }
   let retryCount = 0;
   await render(
     <MemoryRouter>
