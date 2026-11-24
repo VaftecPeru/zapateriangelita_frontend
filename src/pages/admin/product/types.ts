@@ -1,3 +1,8 @@
+export type ProductPhotoDraft = {
+  source: string;
+  file?: File;
+};
+
 export type ProductVariantDraft = {
   color: string;
   articleModel: string;
@@ -5,9 +10,7 @@ export type ProductVariantDraft = {
   skus: string[];
   sizes: string[];
   stocks: number[];
-  files: File[];
-  previews: string[];
-  existingImages: string[];
+  photos: ProductPhotoDraft[];
 };
 
 export type ImportPreviewRow = {
