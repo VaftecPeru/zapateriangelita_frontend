@@ -27,8 +27,9 @@ type Props = {
 };
 
 export default function ReferenceLanding({ products, renderProduct, loading, error, onRetry, instagramUrl }: Props) {
-  // Managed banners remain available after the reference campaign.
-  const slides = [...defaultSlides, ...heroSlides.filter((item: any) => item.managed).map((item: any) => ({ ...item, emphasis: '', href: '/catalogo' }))];
+  // Published banners replace the reference campaign; defaults are fallback only.
+  const managedSlides = heroSlides.filter((item: any) => item.managed && item.active !== false && typeof item.image === 'string' && item.image.trim()).map((item: any) => ({ ...item, emphasis: '', href: '/catalogo' }));
+  const slides = managedSlides.length ? managedSlides : defaultSlides;
   const [slide, setSlide] = useState(0);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -44,7 +45,8 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
   const touch = useRef<{ x: number; y: number } | null>(null);
   const brands = useRef<HTMLDivElement>(null);
   const instagram = useRef<HTMLDivElement>(null);
-  const active = slides[slide % slides.length];
+  const activeIndex = slide % slides.length;
+  const active = slides[activeIndex];
   const imageOnly = active.managed && (active.mode === 'image' || (!active.title?.trim() && !active.eyebrow?.trim() && !active.description?.trim()));
   const rotating = !hovered && !focused && !paused && !reducedMotion && !hidden;
   const featuredPageSize = 8;
@@ -140,10 +142,12 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
         </div>
         {!active.managed && <p className="ref-handwriting" aria-hidden="true">Más que<br />zapatos,<br />es tu historia ♡</p>}
         </>}
+        {slides.length > 1 && <>
         <button className="ref-arrow ref-arrow--left" aria-label="Banner anterior" onClick={() => move(-1)}><ChevronLeft /></button>
         <button className="ref-arrow ref-arrow--right" aria-label="Banner siguiente" onClick={() => move(1)}><ChevronRight /></button>
-        <div className="ref-hero__dots">{slides.map((_, index) => <button key={index} aria-label={`Mostrar banner ${index + 1}`} aria-current={index === slide ? 'true' : undefined} onClick={() => setSlide(index)} />)}</div>
+        <div className="ref-hero__dots">{slides.map((_, index) => <button key={index} aria-label={`Mostrar banner ${index + 1}`} aria-current={index === activeIndex ? 'true' : undefined} onClick={() => setSlide(index)} />)}</div>
         <button className="ref-pause" onClick={() => setPaused(value => !value)} aria-label={paused ? 'Reanudar banners' : 'Pausar banners'} aria-pressed={paused}>{paused ? <Play size={14} /> : <Pause size={14} />}</button>
+        </>}
       </section>
 
       <section className="ref-collections ref-shell" aria-label="Colecciones de calzado">{collections.map(item => {
