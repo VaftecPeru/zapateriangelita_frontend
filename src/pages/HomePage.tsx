@@ -53,10 +53,11 @@ const HomePage = () => {
             const parsed = JSON.parse(raw);
             if (Array.isArray(parsed)) {
               managed = parsed
-                .filter((banner: any) => banner?.active !== false && banner?.title && banner?.image)
+                .filter((banner: any) => banner?.active !== false && typeof banner?.image === 'string' && banner.image.trim())
                 .slice(0, 12)
                 .map((banner: any) => ({
                   managed: true,
+                  mode: banner.mode === 'image' || banner.mode === 'content' ? banner.mode : (String(banner.title || '').trim() || String(banner.eyebrow || '').trim() || String(banner.description || '').trim() ? 'content' : 'image'),
                   eyebrow: String(banner.eyebrow || ''),
                   title: String(banner.title || '').slice(0, 120),
                   description: String(banner.description || '').slice(0, 220),
