@@ -6,13 +6,14 @@ import { authService } from '../services/authService';
 import GoogleIdentityButton from '../components/GoogleIdentityButton';
 import { authDestination } from '../utils/authDestination';
 import '../styles/login-home.css';
-import brandLogo from '../assets/brand/logo-angelita-horizontal.png';
+import { useSiteLogo } from '../hooks/useSiteLogo';
 
-const Logo = ({ light = false }: { light?: boolean }) => (
-    <a className={`logo ${light ? 'logo--light' : ''}`} href="/" aria-label="Zapatería Angelita - inicio">
-        <img className="brand-logo__image" src={brandLogo} alt="Zapatería Angelita" />
-    </a>
-);
+const Logo = ({ light = false }: { light?: boolean }) => {
+    const { logo } = useSiteLogo();
+    return <a className={`logo ${light ? 'logo--light' : ''}`} href="/" aria-label="Zapatería Angelita - inicio">
+        <img className="brand-logo__image" src={logo} alt="Zapatería Angelita" />
+    </a>;
+};
 
 export const getRetryAfterSeconds = (error: any, fallback = 10): number => {
     const fromBody = Number(error?.response?.data?.retry_after);

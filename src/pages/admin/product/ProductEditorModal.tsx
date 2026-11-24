@@ -12,7 +12,7 @@ import {
 } from '../../../services/crudService';
 import { getImageUrl } from '../../../config/api';
 import { ProductVariantDraft } from './types';
-import angelitaLogo from '../../../assets/brand/logo-angelita-horizontal.png';
+import { useSiteLogo } from '../../../hooks/useSiteLogo';
 import { getCatalogName } from '../../../utils/catalogName';
 
 type Props = {
@@ -119,6 +119,7 @@ const ProductEditorModal = ({
   onNavigate,
   onSaved,
 }: Props) => {
+  const { logo } = useSiteLogo();
   const [form, setForm] = useState<EditorForm>(emptyForm());
   const [variants, setVariants] = useState<ProductVariantDraft[]>([emptyVariant()]);
   const [simpleProduct, setSimpleProduct] = useState(false);
@@ -741,7 +742,7 @@ const ProductEditorModal = ({
     <div className="product-editor-workspace fixed inset-0 z-[110] flex overflow-hidden bg-[#f7f8fa] text-[#171923]">
       <aside className="hidden w-[226px] shrink-0 flex-col border-r border-[#e7e9ee] bg-white lg:flex">
         <div className="flex h-[66px] items-center border-b border-gray-100 px-7">
-          <img src={angelitaLogo} alt="Zapatería Angelita" className="max-h-[47px] w-[160px] object-contain object-left" />
+          <img src={logo} alt="Zapatería Angelita" className="max-h-[47px] w-[160px] object-contain object-left" />
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5 text-[13px]">
           {[

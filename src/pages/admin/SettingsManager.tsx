@@ -1,8 +1,9 @@
 import LoadingScreen from '../../components/LoadingScreen';
-import { normalizePreloaderMode, usePreloader, type PreloaderMode } from '../../hooks/usePreloader';
-import { useEffect, useMemo, useState } from 'react';
+import { usePreloader } from '../../hooks/usePreloader';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { settingsService } from '../../services/crudService';
 import { getImageUrl } from '../../config/api';
+import { resolveSiteLogo, useSiteLogo } from '../../hooks/useSiteLogo';
 import PhoneField from '../../components/PhoneField';
 import {
     AlertCircle,
@@ -138,12 +139,13 @@ const SettingsManager = () => {
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     const { setMode, setImageUrl } = usePreloader();
-    const [preloader, setPreloader] = useState<PreloaderMode>('branded');
-    const [savingPreloader, setSavingPreloader] = useState(false);
     const [preloaderImageUrl, setPreloaderImageUrl] = useState('');
     const [preloaderFile, setPreloaderFile] = useState<File | null>(null);
     const [preloaderLocalPreview, setPreloaderLocalPreview] = useState('');
     const [uploadingPreloader, setUploadingPreloader] = useState(false);
+    const preloaderInput = useRef<HTMLInputElement>(null);
+    const preloaderConfirmation = useRef<HTMLDialogElement>(null);
+    const { setSiteLogo } = useSiteLogo();
     const [logoUrl, setLogoUrl] = useState('');
     const [uploadingLogo, setUploadingLogo] = useState(false);
 
@@ -197,7 +199,6 @@ const SettingsManager = () => {
             const response = await settingsService.getAll();
             const data = response.data.data || {};
             setSettings(data);
-            setPreloader(normalizePreloaderMode(data.store_preloader));
             setPreloaderImageUrl(data.store_preloader_image || '');
             setLogoUrl(data.logo_url || '/logo-angelita-horizontal.png');
             setWhatsapp(data.whatsapp_number || '');
@@ -221,19 +222,6 @@ const SettingsManager = () => {
         }
     };
 
-    const savePreloader = async () => {
-        setSavingPreloader(true);
-        try {
-            await settingsService.update('store_preloader', preloader);
-            setMode(preloader);
-            notify('success', 'Precarga actualizada.');
-        } catch {
-            notify('error', 'No se pudo guardar la precarga.');
-        } finally {
-            setSavingPreloader(false);
-        }
-    };
-
     const toggleSection = (key: CollapsibleKey) => {
         setOpenSections((current) => ({ ...current, [key]: !current[key] }));
     };
@@ -244,8 +232,9 @@ const SettingsManager = () => {
         fallback;
 
     const uploadPreloader = async () => {
-        if (!preloaderFile) return;
+        if (!preloaderFile || !preloaderConfirmation.current?.open || uploadingPreloader) return;
 
+        preloaderConfirmation.current.close();
         try {
             setUploadingPreloader(true);
             const response = await settingsService.uploadPreloaderImage(preloaderFile);
@@ -254,10 +243,10 @@ const SettingsManager = () => {
 
             setPreloaderImageUrl(path);
             setSettings((current) => ({ ...current, store_preloader_image: path, store_preloader: 'branded' }));
-            setPreloader('branded');
             setMode('branded');
             setImageUrl(path);
             setPreloaderFile(null);
+            if (preloaderInput.current) preloaderInput.current.value = '';
             notify('success', 'Animación publicada. La precarga de la tienda ya usa el nuevo archivo.');
         } catch (error: any) {
             notify('error', errorMessage(error, 'No se pudo publicar la precarga.'));
@@ -280,8 +269,9 @@ const SettingsManager = () => {
             if (!path) throw new Error('El servidor no devolvió la ruta del logo.');
 
             setLogoUrl(path);
+            setSiteLogo(path);
             setSettings((current) => ({ ...current, logo_url: path }));
-            notify('success', 'Logo actualizado. Recarga la tienda para ver el cambio.');
+            notify('success', 'Logo actualizado en la tienda y los próximos correos.');
         } catch (error: any) {
             console.error(error);
             notify('error', errorMessage(error, 'No se pudo actualizar el logo.'));
@@ -468,62 +458,72 @@ const SettingsManager = () => {
             >
                 <div className="grid gap-5 sm:grid-cols-2 sm:items-start">
                     <div className="space-y-4">
-                        <label className="block text-sm font-bold">
-                            Estilo de precarga
-                            <select
-                                className="mt-2 block w-full rounded-xl border border-gray-200 bg-white p-3"
-                                value={preloader}
-                                disabled={savingPreloader || uploadingPreloader}
-                                onChange={(event) => setPreloader(normalizePreloaderMode(event.target.value))}
-                            >
-                                <option value="branded">Animación de precarga</option>
-                                <option value="simple">Solo mensaje de carga</option>
-                            </select>
-                        </label>
-                        <button
-                            type="button"
-                            disabled={savingPreloader || uploadingPreloader}
-                            className="rounded-xl border border-store-red px-4 py-3 text-sm font-bold text-store-red disabled:opacity-50"
-                            onClick={() => void savePreloader()}
-                        >
-                            {savingPreloader ? 'Guardando…' : 'Guardar estilo'}
-                        </button>
                         <div className="space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-4">
-                            <label htmlFor="preloader-upload" className="block text-sm font-bold text-black">
-                                Imagen o animación de precarga
-                            </label>
+                            <p className="text-sm font-bold text-black">Imagen de precarga</p>
                             <p className="text-xs text-gray-500">
                                 GIF animado, PNG o WebP. Máximo 8 MB. Archivo independiente del logo principal.
                             </p>
                             <input
+                                ref={preloaderInput}
                                 id="preloader-upload"
                                 type="file"
                                 accept="image/gif,image/png,image/webp"
                                 disabled={uploadingPreloader}
                                 onChange={(event) => {
                                     const file = event.target.files?.[0] || null;
-                                    if (file && (!['image/gif', 'image/png', 'image/webp'].includes(file.type) || file.size > 8 * 1024 * 1024)) {
-                                        notify('error', 'Selecciona GIF, PNG o WebP de hasta 8 MB.');
+                                    if (file && (!['image/gif', 'image/png', 'image/webp'].includes(file.type) || file.size === 0 || file.size > 8 * 1024 * 1024)) {
+                                        notify('error', 'Selecciona un GIF, PNG o WebP válido de hasta 8 MB.');
                                         setPreloaderFile(null);
                                         event.target.value = '';
                                         return;
                                     }
                                     setPreloaderFile(file);
                                 }}
-                                className="block w-full rounded-lg border border-gray-200 bg-white p-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-red-50 file:px-3 file:py-2 file:font-bold file:text-store-red"
+                                className="peer sr-only"
                             />
+                            <label
+                                htmlFor="preloader-upload"
+                                className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-store-red px-4 py-3 text-sm font-bold text-store-red peer-focus-visible:outline peer-focus-visible:outline-2 peer-disabled:pointer-events-none peer-disabled:opacity-50"
+                            >
+                                <FileImage size={16} aria-hidden="true" />
+                                Cambiar imagen
+                            </label>
                             <button
                                 type="button"
-                                disabled={!preloaderFile || uploadingPreloader || savingPreloader}
-                                onClick={() => void uploadPreloader()}
+                                disabled={!preloaderFile || !preloaderLocalPreview || uploadingPreloader}
+                                onClick={() => preloaderConfirmation.current?.showModal()}
                                 className="flex items-center gap-2 rounded-xl bg-store-red px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
                             >
                                 {uploadingPreloader ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                                {uploadingPreloader ? 'Publicando…' : 'Subir y publicar precarga'}
+                                {uploadingPreloader ? 'Publicando…' : 'Revisar archivo'}
                             </button>
-                            <p className="text-xs text-gray-500">
-                                La publicación activa automáticamente el modo animado y actualiza la tienda.
-                            </p>
+                            <dialog
+                                ref={preloaderConfirmation}
+                                aria-labelledby="preloader-confirmation-title"
+                                aria-describedby="preloader-confirmation-description"
+                                className="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-gray-200 bg-white p-6 text-gray-900 shadow-xl backdrop:bg-black/40"
+                            >
+                                <h3 id="preloader-confirmation-title" className="text-lg font-bold">Confirmar publicación</h3>
+                                <p id="preloader-confirmation-description" className="mt-2 text-sm text-gray-600">
+                                    Al aceptar, <strong className="break-all">{preloaderFile?.name}</strong> será la precarga de la tienda y se activará el modo animado.
+                                </p>
+                                <div className="mt-5 flex flex-wrap justify-end gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => preloaderConfirmation.current?.close()}
+                                        className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold"
+                                    >
+                                        Volver a la vista previa
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => void uploadPreloader()}
+                                        className="rounded-xl bg-store-red px-4 py-2 text-sm font-bold text-white"
+                                    >
+                                        Aceptar y publicar
+                                    </button>
+                                </div>
+                            </dialog>
                         </div>
                     </div>
                     <div className="space-y-2">
@@ -533,7 +533,7 @@ const SettingsManager = () => {
                         <div className="overflow-hidden rounded-xl border border-gray-200">
                             <LoadingScreen
                                 compact
-                                previewMode={preloaderFile ? 'branded' : preloader}
+                                previewMode="branded"
                                 previewImageUrl={preloaderLocalPreview || preloaderImageUrl || undefined}
                             />
                         </div>
@@ -543,7 +543,7 @@ const SettingsManager = () => {
 
             <CollapsibleCard
                 title="Identidad visual"
-                subtitle="Logo principal visible en la tienda y vouchers"
+                subtitle="Logo compartido por la tienda, correos y vouchers"
                 icon={<FileImage size={17} />}
                 open={openSections.branding}
                 onToggle={() => toggleSection('branding')}
@@ -553,7 +553,7 @@ const SettingsManager = () => {
                         <div className="grid min-h-[120px] place-items-center rounded-xl bg-white p-4">
                             {logoUrl ? (
                                 <img
-                                    src={getImageUrl(logoUrl)}
+                                    src={resolveSiteLogo(logoUrl)}
                                     alt="Logo actual de Zapatería Angelita"
                                     className="max-h-24 max-w-full object-contain"
                                 />
@@ -569,7 +569,7 @@ const SettingsManager = () => {
                     <div>
                         <h4 className="text-sm font-black text-black">Logo de Zapatería Angelita</h4>
                         <p className="mt-2 max-w-2xl text-[11px] leading-relaxed text-gray-500">
-                            El archivo se utilizará en la cabecera y pie de la tienda, detalle de productos y vouchers.
+                            El archivo se utilizará en la tienda, correos y comprobantes.
                             Recomendado: PNG o WEBP horizontal con fondo transparente. Máximo 4 MB.
                         </p>
                         <div className="mt-4 flex flex-wrap items-center gap-3">

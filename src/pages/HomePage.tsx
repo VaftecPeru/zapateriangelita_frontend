@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import StoreHome from '../components/StoreHome';
 import LoadingScreen from '../components/LoadingScreen';
+import { usePreloaderMinimum } from '../hooks/usePreloader';
 import { useAuth } from '../hooks/useAuth';
 import { productService, settingsService } from '../services/crudService';
 import { getImageUrl } from '../config/api';
@@ -28,7 +29,9 @@ const HomePage = () => {
   const navigate = useNavigate();
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [offerProduct, setOfferProduct] = useState<any | null>(null);
-  const [homeReady, setHomeReady] = useState(false);
+  const [bannersReady, setBannersReady] = useState(false);
+  const showPreloader = usePreloaderMinimum('home');
+  const homeReady = bannersReady && !showPreloader;
 
   const isLanding = location.pathname === '/' || location.pathname === '/home';
   const firstName = useMemo(() => {
@@ -81,7 +84,7 @@ const HomePage = () => {
           heroSlides.splice(0, heroSlides.length, ...defaultHeroSlides.map((slide: any) => ({ ...slide })));
         }
       } finally {
-        if (active) setHomeReady(true);
+        if (active) setBannersReady(true);
       }
     };
 
