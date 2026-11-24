@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowLeft, BarChart3, Bell, Check, ChevronDown, Eye, Image as ImageIcon, LayoutDashboard, Package, PenLine, Plus, Save, Search, ShoppingBag, Trash2, Upload, UserRound, Users, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BarChart3, Bell, Check, ChevronDown, Eye, Image as ImageIcon, LayoutDashboard, Package, Plus, Save, Search, ShoppingBag, Trash2, Upload, UserRound, Users, X } from 'lucide-react';
 import {
   Brand,
   Category,
@@ -11,7 +11,7 @@ import {
   productService,
 } from '../../../services/crudService';
 import { getImageUrl } from '../../../config/api';
-import { ProductVariantDraft } from './types';
+import type { ProductPhotoDraft, ProductVariantDraft } from './types';
 import { useSiteLogo } from '../../../hooks/useSiteLogo';
 import { getCatalogName } from '../../../utils/catalogName';
 
@@ -82,9 +82,7 @@ const emptyVariant = (): ProductVariantDraft => ({
   skus: [''],
   sizes: [''],
   stocks: [0],
-  files: [],
-  previews: [],
-  existingImages: [],
+  photos: [],
 });
 
 const colorHex = (name: string) => {
@@ -123,8 +121,8 @@ const ProductEditorModal = ({
   const [form, setForm] = useState<EditorForm>(emptyForm());
   const [variants, setVariants] = useState<ProductVariantDraft[]>([emptyVariant()]);
   const [simpleProduct, setSimpleProduct] = useState(false);
-  const [generalFiles, setGeneralFiles] = useState<(File | null)[]>(Array(5).fill(null));
-  const [generalPreviews, setGeneralPreviews] = useState<(string | null)[]>(Array(5).fill(null));
+  const [generalPhotos, setGeneralPhotos] = useState<ProductPhotoDraft[]>([]);
+  const previewUrls = useRef(new Set<string>());
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -138,6 +136,14 @@ const ProductEditorModal = ({
   const [catalogName, setCatalogName] = useState('');
   const [catalogBusy, setCatalogBusy] = useState(false);
   const [catalogError, setCatalogError] = useState('');
+
+  useEffect(() => {
+    const urls = previewUrls.current;
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+      urls.clear();
+    };
+  }, [open, product]);
 
   useEffect(() => {
     if (!open) return;
@@ -157,8 +163,7 @@ const ProductEditorModal = ({
       setForm(emptyForm());
       setSimpleProduct(false);
       setVariants([emptyVariant()]);
-      setGeneralFiles(Array(5).fill(null));
-      setGeneralPreviews(Array(5).fill(null));
+      setGeneralPhotos([]);
       return;
     }
 
@@ -192,21 +197,10 @@ const ProductEditorModal = ({
     const colors = parseColors(product.color);
     setSimpleProduct(colors.length === 0 && !product.variant_stocks?.length);
     const globalSizes = parseList(product.size);
-    const legacyGallery = product.images?.length
-      ? product.images
-      : product.img
-        ? [product.img]
-        : [];
     const hasExplicitVariantStocks = Boolean(product.variant_stocks?.length);
     const productVariants = colors.length
       ? colors.map((color, colorIndex) => {
-          const colorGallery = product.color_images?.[color] || [];
-          const gallery = colorGallery.length
-            ? colorGallery
-            : colorIndex === 0
-              ? legacyGallery
-              : [];
-
+          const gallery = product.color_images?.[color] || [];
           const sizesForColor = product.color_sizes?.[color]?.length
             ? product.color_sizes[color]
             : globalSizes.length ? globalSizes : [''];
@@ -246,22 +240,18 @@ const ProductEditorModal = ({
               const legacy = product.sizes?.find((item) => item.size === size);
               return colorIndex === 0 ? Number(legacy?.stock ?? 0) : 0;
             }),
-            files: [],
-            previews: [],
-            existingImages: gallery.slice(0, 5).map((image) => getImageUrl(image)),
+            photos: gallery.slice(0, 5).map((source) => ({ source })),
           };
         })
       : [emptyVariant()];
 
     setVariants(productVariants);
 
-    const previews = Array(5).fill(null) as (string | null)[];
-    const images = product.images?.length ? product.images : product.img ? [product.img] : [];
-    images.slice(0, 5).forEach((image, index) => {
-      previews[index] = getImageUrl(image);
-    });
-    setGeneralPreviews(previews);
-    setGeneralFiles(Array(5).fill(null));
+    const coverIsVariantPhoto = Object.values(product.color_images ?? {}).flat().some(
+      (image) => getImageUrl(image) === getImageUrl(product.img),
+    );
+    const images = product.images?.length ? product.images : product.img && !coverIsVariantPhoto ? [product.img] : [];
+    setGeneralPhotos(images.filter(Boolean).slice(0, 5).map((source) => ({ source })));
   }, [open, product]);
 
   const modelSuggestions = useMemo(
@@ -330,38 +320,27 @@ const ProductEditorModal = ({
     });
   };
 
-  const handleVariantImages = (variantIndex: number, filesList: FileList | null) => {
-    const files = Array.from(filesList || []).slice(0, 5);
-    const previews = files.map((file) => URL.createObjectURL(file));
-    setVariant(variantIndex, { files, previews });
-
-    // La primera variante gobierna también la portada general del producto.
-    // Esto mantiene compatibilidad con las vistas que aún consumen products.img/images.
-    if (variantIndex === 0) {
-      const nextFiles: (File | null)[] = Array(5).fill(null);
-      const nextPreviews: (string | null)[] = Array(5).fill(null);
-      files.forEach((file, imageIndex) => {
-        nextFiles[imageIndex] = file;
-        nextPreviews[imageIndex] = previews[imageIndex];
-      });
-      setGeneralFiles(nextFiles);
-      setGeneralPreviews(nextPreviews);
+  const addPhotos = (current: ProductPhotoDraft[], filesList: FileList | null) => {
+    const files = Array.from(filesList || []);
+    if (files.length > 5 - current.length) {
+      setError('Puedes agregar hasta cinco fotos por galería. Quita una foto antes de agregar otra.');
+      return current;
     }
+    setError('');
+    return [...current, ...files.map((file) => {
+      const source = URL.createObjectURL(file);
+      previewUrls.current.add(source);
+      return { source, file };
+    })];
   };
 
-  const handleGeneralImages = (filesList: FileList | null) => {
-    const files = Array.from(filesList || []).slice(0, 5);
-    if (!files.length) return;
-    const previews = files.map(file => URL.createObjectURL(file));
-    const nextFiles: (File | null)[] = Array(5).fill(null);
-    const nextPreviews: (string | null)[] = Array(5).fill(null);
-    files.forEach((file, i) => { nextFiles[i] = file; nextPreviews[i] = previews[i]; });
-    setGeneralFiles(nextFiles);
-    setGeneralPreviews(nextPreviews);
-    setMainImageIndex(0);
-    if (!simpleProduct && variants.length) {
-      setVariant(0, { files, previews });
+  const removePhoto = (photos: ProductPhotoDraft[], index: number) => {
+    const photo = photos[index];
+    if (photo.file) {
+      URL.revokeObjectURL(photo.source);
+      previewUrls.current.delete(photo.source);
     }
+    return photos.filter((_, position) => position !== index);
   };
 
   const openCatalogManager = (kind: CatalogKind) => {
@@ -665,21 +644,18 @@ const ProductEditorModal = ({
         .filter(v => v.priceOverride !== null && v.priceOverride > 0)
         .map(v => [v.color.trim(), Number(v.priceOverride!.toFixed(2))]))));
 
-      activeVariants.forEach((variant, index) => {
-        variant.files
-          .slice(0, 5)
-          .forEach((file) => data.append(`color_images[${index}][]`, file));
+      data.append('color_image_slots', JSON.stringify(activeVariants.map(({ photos }) =>
+        photos.map(({ file, source }) => file ? '__NEW__' : source),
+      )));
+      activeVariants.forEach(({ photos }, index) => {
+        photos.forEach(({ file }) => {
+          if (file) data.append(`color_images[${index}][]`, file);
+        });
       });
 
-      const imageSlots = generalPreviews.map((preview, index) => {
-        if (generalFiles[index] instanceof File) return '__NEW__';
-        if (preview) return preview;
-        return '__EMPTY__';
-      });
-
-      data.append('image_slots', JSON.stringify(imageSlots));
-      generalFiles.forEach((file) => {
-        if (file instanceof File) data.append('new_images[]', file);
+      data.append('image_slots', JSON.stringify(generalPhotos.map(({ file, source }) => file ? '__NEW__' : source)));
+      generalPhotos.forEach(({ file }) => {
+        if (file) data.append('new_images[]', file);
       });
 
       if (product?.id) await productService.update(product.id, data);
@@ -815,15 +791,23 @@ const ProductEditorModal = ({
                   <div className="grid gap-5 md:grid-cols-[268px_minmax(0,1fr)]">
                     <div className="min-w-0">
                       <div className="relative flex h-[159px] items-center justify-center overflow-hidden rounded-lg border border-[#e8ebf1] bg-[#f8f9fb]">
-                        {generalPreviews[mainImageIndex] ? <img src={generalPreviews[mainImageIndex]!} alt="Imagen principal del producto" className="h-full w-full object-contain"/> : <div className="flex flex-col items-center gap-2 text-center text-xs text-gray-400"><ImageIcon size={37} strokeWidth={1.2}/> Imagen del producto</div>}
-                        <label title="Subir fotografías del producto" className="absolute right-2 top-2 cursor-pointer rounded-lg border border-gray-200 bg-white p-2 shadow-sm hover:text-store-red"><PenLine size={15}/><input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={e=>handleGeneralImages(e.target.files)}/></label>
+                        {generalPhotos[mainImageIndex] ? <img src={generalPhotos[mainImageIndex].file ? generalPhotos[mainImageIndex].source : getImageUrl(generalPhotos[mainImageIndex].source)} alt="Vista previa del producto" className="h-full w-full object-contain"/> : <div className="flex flex-col items-center gap-2 text-center text-xs text-gray-400"><ImageIcon size={37} strokeWidth={1.2}/> Imagen del producto</div>}
                       </div>
+                      <p className="mt-2 text-[11px] text-gray-600">La primera foto se muestra en la portada y el catálogo.</p>
                       <div className="mt-2 grid grid-cols-5 gap-1.5">
-                        {[0,1,2,3].map((i)=><button key={i} type="button" onClick={()=>setMainImageIndex(i)}
-                          className={'flex aspect-square items-center justify-center overflow-hidden rounded-md border bg-[#f7f8fa] '+(mainImageIndex===i?'border-store-red':'border-gray-200')}>
-                          {generalPreviews[i] ? <img src={generalPreviews[i]!} alt={'Fotografía '+(i+1)} className="h-full w-full object-cover"/> : <ImageIcon size={16} className="text-gray-300"/>}
-                        </button>)}
-                        <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-gray-300 text-store-red hover:bg-red-50"><Plus size={18}/><span className="text-[9px]">Agregar</span><input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={e=>handleGeneralImages(e.target.files)}/></label>
+                        {generalPhotos.map((photo, index) => (
+                          <div className="min-w-0 text-center" key={`${photo.source}-${index}`}>
+                            <button type="button" aria-label={`Ver foto ${index + 1}`} onClick={() => setMainImageIndex(index)} className="aspect-square w-full overflow-hidden rounded-md border bg-gray-50">
+                              <img src={photo.file ? photo.source : getImageUrl(photo.source)} alt={index === 0 ? 'Portada' : `Foto ${index + 1}`} className="h-full w-full object-cover" />
+                            </button>
+                            <span className="block text-[9px] font-semibold">{index === 0 ? 'Portada' : index + 1}</span>
+                            <button type="button" onClick={() => { setGeneralPhotos(removePhoto(generalPhotos, index)); setMainImageIndex(0); }} className="text-[9px] text-store-red" aria-label={`Quitar foto general ${index + 1}`}>Quitar</button>
+                          </div>
+                        ))}
+                        {generalPhotos.length < 5 && <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-gray-300 text-store-red hover:bg-red-50"><Plus size={18}/><span className="text-[9px]">Agregar</span><input aria-label="Agregar fotos generales" type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" onChange={event => {
+                          setGeneralPhotos(addPhotos(generalPhotos, event.target.files));
+                          event.target.value = '';
+                        }}/></label>}
                       </div>
 
                     </div>
@@ -877,7 +861,6 @@ const ProductEditorModal = ({
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {variants.map((variant, index) => {
-                          const photos=variant.previews.length ? variant.previews : variant.existingImages;
                           const sum=variant.stocks.reduce((acc,qty)=>acc+Number(qty||0),0);
                           return (
                             <Fragment key={'variant-row-'+index}>
@@ -920,9 +903,17 @@ const ProductEditorModal = ({
                                 </td>
                                 <td className="px-2 py-3"><output className="block rounded-lg border border-gray-100 bg-[#f5f6f8] p-2 text-center text-[12px] font-bold">{sum}</output></td>
                                 <td className="px-2 py-3">
-                                  <div className="flex items-center gap-1">
-                                    <div className="flex h-10 w-11 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50">{photos[0] ? <img src={photos[0]} alt={'Foto '+variant.color} className="h-full w-full object-cover"/>:<ImageIcon size={17} className="text-gray-300"/>}</div>
-                                    <label className="flex h-9 w-8 cursor-pointer items-center justify-center rounded-md border border-dashed border-gray-300 text-gray-500 hover:text-store-red" title={'Agregar imágenes del color '+variant.color}><Plus size={17}/><input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={e=>handleVariantImages(index,e.target.files)}/></label>
+                                  <div className="flex flex-wrap items-start gap-1">
+                                    {variant.photos.map((photo, position) => (
+                                      <div key={`${photo.source}-${position}`} className="text-center">
+                                        <img src={photo.file ? photo.source : getImageUrl(photo.source)} alt={`Foto ${position + 1} de ${variant.color}`} className="h-8 w-8 rounded border border-gray-200 object-cover" />
+                                        <button type="button" onClick={() => setVariant(index, { photos: removePhoto(variant.photos, position) })} className="text-[9px] text-store-red" aria-label={`Quitar foto ${position + 1} de ${variant.color}`}>{position + 1} ×</button>
+                                      </div>
+                                    ))}
+                                    {variant.photos.length < 5 && <label className="flex h-9 w-8 cursor-pointer items-center justify-center rounded-md border border-dashed border-gray-300 text-gray-500 hover:text-store-red" title={`Agregar imágenes del color ${variant.color}`}><Plus size={17}/><input aria-label={`Agregar fotos de ${variant.color || 'la variante ' + (index + 1)}`} type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" onChange={event => {
+                                      setVariant(index, { photos: addPhotos(variant.photos, event.target.files) });
+                                      event.target.value = '';
+                                    }}/></label>}
                                   </div>
                                 </td>
                                 <td className="px-1 py-3">{variants.length>1 && <button type="button" title={'Eliminar variante '+variant.color} onClick={()=>removeVariant(index)} className="rounded-md border border-red-100 bg-[#fff4f5] p-1.5 text-store-red hover:bg-red-100"><Trash2 size={14}/></button>}</td>
