@@ -11,7 +11,8 @@ import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
 import apiClient from "../services/apiClient";
 import { useUbigeo } from "../hooks/useUbigeo";
-import { categoryService, productService, subcategoryService, Category, Product } from "../services/crudService";
+import { categoryService, productService, settingsService, subcategoryService, Category, Product } from "../services/crudService";
+import { emptySocialLinks, readSocialLinks } from '../utils/socialLinks';
 import { getImageUrl } from "../config/api";
 import {
   BookOpen,
@@ -302,6 +303,7 @@ function ProductCard({ product, onFavorite, isFavorite, onAddToCart }: any) {
 export default function StoreHome() {
   const [products, setProducts] = useState<any[]>([]);
   const { logo: siteLogo } = useSiteLogo();
+  const [socialLinks, setSocialLinks] = useState(emptySocialLinks);
   const [categories, setCategories] = useState<any[]>([]);
   const [subcategories, setSubcategories] = useState<any[]>([]);
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
@@ -361,6 +363,17 @@ export default function StoreHome() {
       setCartOpen(true);
     }
   }, [location.state]);
+
+  useEffect(() => {
+    let active = true;
+    settingsService.getAll().then(
+      ({ data }) => {
+        if (active) setSocialLinks(readSocialLinks(data.data?.social_links));
+      },
+      () => {},
+    );
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -676,8 +689,8 @@ export default function StoreHome() {
               <span className="announcement-message">La confianza de miles de familias</span>
             </div>
             <div className="announcement-socials" aria-label="Redes sociales">
-              <a href="#instagram" aria-label="Instagram"><InstagramIcon size={13} /></a>
-              <a href="#facebook" aria-label="Facebook"><FacebookIcon size={13} /></a>
+              {socialLinks.instagram && <a href={socialLinks.instagram} aria-label="Instagram" target="_blank" rel="noopener noreferrer"><InstagramIcon size={13} /></a>}
+              {socialLinks.facebook && <a href={socialLinks.facebook} aria-label="Facebook" target="_blank" rel="noopener noreferrer"><FacebookIcon size={13} /></a>}
             </div>
           </div>
         </div>
@@ -961,6 +974,7 @@ export default function StoreHome() {
         ) : isHomePage ? (
           <ReferenceLanding
             products={products}
+            instagramUrl={socialLinks.instagram}
             loading={catalogLoading}
             error={catalogError}
             onRetry={() => setCatalogReloadKey((current) => current + 1)}
@@ -1162,8 +1176,8 @@ export default function StoreHome() {
             <Logo light src={siteLogo} />
             <p>Tu tienda de calzado para toda la familia. Calidad, comodidad y estilo desde 1980.</p>
             <div className="footer__social">
-              <a href="#facebook" aria-label="Facebook"><FacebookIcon /></a>
-              <a href="#instagram" aria-label="Instagram"><InstagramIcon /></a>
+              {socialLinks.facebook && <a href={socialLinks.facebook} aria-label="Facebook" target="_blank" rel="noopener noreferrer"><FacebookIcon /></a>}
+              {socialLinks.instagram && <a href={socialLinks.instagram} aria-label="Instagram" target="_blank" rel="noopener noreferrer"><InstagramIcon /></a>}
             </div>
           </div>
           <div>

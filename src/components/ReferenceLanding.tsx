@@ -22,10 +22,11 @@ type Props = {
   renderProduct: (product: any) => ReactNode;
   loading: boolean;
   error: boolean;
+  instagramUrl?: string;
   onRetry?: () => void;
 };
 
-export default function ReferenceLanding({ products, renderProduct, loading, error, onRetry }: Props) {
+export default function ReferenceLanding({ products, renderProduct, loading, error, onRetry, instagramUrl }: Props) {
   // Managed banners remain available after the reference campaign.
   const slides = [...defaultSlides, ...heroSlides.filter((item: any) => item.managed).map((item: any) => ({ ...item, emphasis: '', href: '/catalogo' }))];
   const [slide, setSlide] = useState(0);
@@ -256,11 +257,11 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
         <div className="ref-testimonial-grid">{testimonials.map(item => <article key={item.name} className="ref-testimonial"><div className="ref-stars" aria-label="5 de 5 estrellas">{Array.from({ length: 5 }, (_, i) => <Star key={i} size={15} fill="currentColor" />)}</div><p>“{item.quote}”</p><footer><img src={item.avatar} alt="" loading="lazy" /><div><strong>{item.name}</strong><span>{item.city}</span></div></footer></article>)}</div>
       </section>
 
-      <section className="ref-instagram ref-shell" id="instagram">
-        <div className="ref-instagram__intro"><span>Síguenos en</span><h2>Instagram</h2><small>@zapateriaangelita</small><p>Inspírate con nuestros looks<br />y novedades</p><a href="https://www.instagram.com/zapateriaangelita/" target="_blank" rel="noopener noreferrer">Ver Instagram <ArrowRight size={15} /></a></div>
-        <div className="ref-instagram__track" ref={instagram}>{gallery.map((name, i) => <a key={i} href="https://www.instagram.com/zapateriaangelita/" target="_blank" rel="noopener noreferrer" aria-label="Visitar Instagram de Zapatería Angelita"><img src={`${assets}${name}`} alt={['Tacones rojos', 'Tenis blancos', 'Zapatos de vestir', 'Calzado urbano', 'Tacones nude'][i]} loading="lazy" /></a>)}</div>
+      {instagramUrl && <section className="ref-instagram ref-shell" id="instagram">
+        <div className="ref-instagram__intro"><span>Síguenos en</span><h2>Instagram</h2><p>Inspírate con nuestros looks<br />y novedades</p><a href={instagramUrl} target="_blank" rel="noopener noreferrer">Ver Instagram <ArrowRight size={15} /></a></div>
+        <div className="ref-instagram__track" ref={instagram}>{gallery.map((name, i) => <a key={i} href={instagramUrl} target="_blank" rel="noopener noreferrer" aria-label="Visitar Instagram de Zapatería Angelita"><img src={`${assets}${name}`} alt={['Tacones rojos', 'Tenis blancos', 'Zapatos de vestir', 'Calzado urbano', 'Tacones nude'][i]} loading="lazy" /></a>)}</div>
         <button className="ref-round ref-instagram__next" aria-label="Más imágenes" onClick={() => instagram.current?.scrollBy({ left: 220, behavior: reducedMotion ? 'auto' : 'smooth' })}><ChevronRight size={18} /></button>
-      </section>
+      </section>}
 
       <section className="ref-newsletter ref-shell">
         <div><Mail /><p><strong>Suscríbete a nuestro newsletter</strong><span>Recibe ofertas exclusivas, novedades y mucho más.</span></p></div>

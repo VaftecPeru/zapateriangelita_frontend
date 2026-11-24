@@ -5,6 +5,7 @@ import { settingsService } from '../../services/crudService';
 import { getImageUrl } from '../../config/api';
 import { resolveSiteLogo, useSiteLogo } from '../../hooks/useSiteLogo';
 import PhoneField from '../../components/PhoneField';
+import { emptySocialLinks, isSocialLink, readSocialLinks, socialNetworks, type SocialLinks } from '../../utils/socialLinks';
 import {
     AlertCircle,
     CheckCircle2,
@@ -13,6 +14,7 @@ import {
     FileImage,
     FileText,
     GripVertical,
+    Link2,
     Loader2,
     Palette,
     Plus,
@@ -39,7 +41,7 @@ type HomeBanner = {
     active: boolean;
 };
 
-type CollapsibleKey = 'branding' | 'contact' | 'legal' | 'banners' | 'preloader';
+type CollapsibleKey = 'branding' | 'social' | 'contact' | 'legal' | 'banners' | 'preloader';
 
 const defaultPrivacyPolicies = [
     'Usamos tus datos personales únicamente para gestionar tus pedidos, coordinar la entrega y brindarte atención relacionada con tu compra.',
@@ -148,6 +150,8 @@ const SettingsManager = () => {
     const { setSiteLogo } = useSiteLogo();
     const [logoUrl, setLogoUrl] = useState('');
     const [uploadingLogo, setUploadingLogo] = useState(false);
+    const [socialLinks, setSocialLinks] = useState<SocialLinks>(emptySocialLinks);
+    const [savingSocialLinks, setSavingSocialLinks] = useState(false);
 
     const [whatsapp, setWhatsapp] = useState('');
     const [savingWhatsapp, setSavingWhatsapp] = useState(false);
@@ -166,6 +170,7 @@ const SettingsManager = () => {
 
     const [openSections, setOpenSections] = useState<Record<CollapsibleKey, boolean>>({
         branding: true,
+        social: false,
         contact: false,
         legal: false,
         banners: true,
@@ -201,6 +206,7 @@ const SettingsManager = () => {
             setSettings(data);
             setPreloaderImageUrl(data.store_preloader_image || '');
             setLogoUrl(data.logo_url || '/logo-angelita-horizontal.png');
+            setSocialLinks(readSocialLinks(data.social_links));
             setWhatsapp(data.whatsapp_number || '');
 
             const terms = normalizeStringList(data.reservation_policies);
@@ -277,6 +283,28 @@ const SettingsManager = () => {
             notify('error', errorMessage(error, 'No se pudo actualizar el logo.'));
         } finally {
             setUploadingLogo(false);
+        }
+    };
+
+    const saveSocialLinks = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (savingSocialLinks) return;
+        const links = { instagram: socialLinks.instagram.trim(), facebook: socialLinks.facebook.trim() };
+        const invalidNetwork = socialNetworks.find(({ key }) => links[key] && !isSocialLink(links[key]));
+        if (invalidNetwork) {
+            notify('error', `Ingresa un enlace HTTPS válido para ${invalidNetwork.label}.`);
+            return;
+        }
+
+        setSavingSocialLinks(true);
+        try {
+            await settingsService.update('social_links', JSON.stringify(links));
+            setSocialLinks(links);
+            notify('success', 'Enlaces de redes sociales actualizados.');
+        } catch (error) {
+            notify('error', errorMessage(error, 'No se pudieron guardar los enlaces.'));
+        } finally {
+            setSavingSocialLinks(false);
         }
     };
 
@@ -592,6 +620,37 @@ const SettingsManager = () => {
                         </div>
                     </div>
                 </div>
+            </CollapsibleCard>
+
+            <CollapsibleCard
+                title="Redes sociales"
+                subtitle="Enlaces de Instagram y Facebook en la tienda"
+                icon={<Link2 size={17} />}
+                open={openSections.social}
+                onToggle={() => toggleSection('social')}
+            >
+                <form className="space-y-4" onSubmit={saveSocialLinks} noValidate>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        {socialNetworks.map(({ key, label }) => (
+                            <label className="block text-sm font-bold" key={key}>
+                                {label}
+                                <input
+                                    type="url"
+                                    maxLength={2048}
+                                    placeholder={`https://www.${key}.com/tu-perfil`}
+                                    value={socialLinks[key]}
+                                    disabled={savingSocialLinks}
+                                    onChange={(event) => setSocialLinks((current) => ({ ...current, [key]: event.target.value }))}
+                                    className="mt-2 block w-full rounded-xl border border-gray-200 bg-white p-3 text-sm font-normal"
+                                />
+                            </label>
+                        ))}
+                    </div>
+                    <p className="text-xs text-gray-500">Deja un enlace vacío para ocultar esa red en la tienda.</p>
+                    <button type="submit" disabled={savingSocialLinks} className="rounded-xl bg-store-red px-4 py-3 text-sm font-bold text-white disabled:opacity-50">
+                        {savingSocialLinks ? 'Guardando…' : 'Guardar redes sociales'}
+                    </button>
+                </form>
             </CollapsibleCard>
 
             <CollapsibleCard
