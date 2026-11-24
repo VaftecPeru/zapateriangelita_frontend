@@ -45,6 +45,7 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
   const brands = useRef<HTMLDivElement>(null);
   const instagram = useRef<HTMLDivElement>(null);
   const active = slides[slide % slides.length];
+  const imageOnly = active.managed && (active.mode === 'image' || (!active.title?.trim() && !active.eyebrow?.trim() && !active.description?.trim()));
   const rotating = !hovered && !focused && !paused && !reducedMotion && !hidden;
   const featuredPageSize = 8;
   const featuredPageCount = Math.max(1, Math.ceil(products.length / featuredPageSize));
@@ -120,23 +121,25 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
 
   return (
     <div className="reference-landing">
-      <section className="ref-hero ref-shell" aria-label="Colecciones destacadas" aria-roledescription="carrusel"
+      <section className={imageOnly ? 'ref-hero ref-shell ref-hero--image-only' : 'ref-hero ref-shell'} aria-label="Colecciones destacadas" aria-roledescription="carrusel"
         onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
         onFocusCapture={() => setFocused(true)} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }}
         onKeyDown={event => { if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); move(event.key === 'ArrowLeft' ? -1 : 1); } }}
         onTouchStart={event => { touch.current = { x: event.touches[0].clientX, y: event.touches[0].clientY }; }}
         onTouchEnd={event => { if (touch.current) { const dx = event.changedTouches[0].clientX - touch.current.x; const dy = event.changedTouches[0].clientY - touch.current.y; if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? -1 : 1); } touch.current = null; }}
         onTouchCancel={() => { touch.current = null; }}>
-        <img key={`photo-${slide}`} className="ref-hero__photo" src={active.image} style={{ objectPosition: active.imagePosition }} alt="" loading="eager" />
+        <img key={`photo-${slide}`} className="ref-hero__photo" src={active.image} style={{ objectPosition: active.imagePosition }} alt={imageOnly ? `Promoción de Zapatería Angelita ${slide + 1}` : ""} loading="eager" />
+        {!imageOnly && <>
         <div className="ref-hero__shade" />
         <div className="ref-hero__content" key={`copy-${slide}`} aria-live={rotating ? 'off' : 'polite'}>
-          <p className="ref-kicker">{active.eyebrow}</p>
-          <h1>{active.title}<strong>{active.emphasis}</strong></h1>
-          <p className="ref-hero__description">{active.description}</p>
+          {active.eyebrow && <p className="ref-kicker">{active.eyebrow}</p>}
+          {(active.title || active.emphasis) && <h1 style={active.managed ? { color: active.textColor } : undefined}>{active.title}{active.emphasis && <strong>{active.emphasis}</strong>}</h1>}
+          {active.description && <p className="ref-hero__description">{active.description}</p>}
           <div className="ref-hero__actions"><Link className="ref-button" to={active.href}>Ver colección <ArrowRight size={17} /></Link><Link className="ref-button ref-button--ghost" to="/catalogo">Descubrir</Link></div>
           <div className="ref-hero__promises"><span><Truck />Envíos a<br />todo México</span><span><ShieldCheck />Pagos<br />seguros</span><span><Award />Calidad<br />garantizada</span></div>
         </div>
-        <p className="ref-handwriting" aria-hidden="true">Más que<br />zapatos,<br />es tu historia ♡</p>
+        {!active.managed && <p className="ref-handwriting" aria-hidden="true">Más que<br />zapatos,<br />es tu historia ♡</p>}
+        </>}
         <button className="ref-arrow ref-arrow--left" aria-label="Banner anterior" onClick={() => move(-1)}><ChevronLeft /></button>
         <button className="ref-arrow ref-arrow--right" aria-label="Banner siguiente" onClick={() => move(1)}><ChevronRight /></button>
         <div className="ref-hero__dots">{slides.map((_, index) => <button key={index} aria-label={`Mostrar banner ${index + 1}`} aria-current={index === slide ? 'true' : undefined} onClick={() => setSlide(index)} />)}</div>
