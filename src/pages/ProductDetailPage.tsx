@@ -1,3 +1,4 @@
+import { usePreloaderMinimum } from '../hooks/usePreloader';
 import LoadingScreen from '../components/LoadingScreen';
 import visaLogo from "../assets/payment/visa.png";
 import mastercardLogo from "../assets/payment/mastercard.png";
@@ -17,11 +18,12 @@ import {
   X,
   ZoomIn,
 } from "lucide-react";
-import { analyticsService, productService, settingsService, Product } from "../services/crudService";
+import { analyticsService, productService, Product } from "../services/crudService";
 import { getImageUrl } from "../config/api";
 import { getCatalogName } from '../utils/catalogName';
 import { getActiveColorImages, getColorVariantValue } from "../utils/colorVariantLookup";
 import { useCart } from "../hooks/useCart";
+import { useSiteLogo } from '../hooks/useSiteLogo';
 import brandLogo from "../assets/brand/logo-angelita-horizontal.png";
 import fallbackImage from "../assets/foto1.jpg";
 import "../styles/product-detail.css";
@@ -158,37 +160,17 @@ export default function ProductDetailPage() {
   const [showDiscount, setShowDiscount] = useState(false);
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
   const [product, setProduct] = useState<any | null>(null);
-  const [siteLogo, setSiteLogo] = useState<string>(brandLogo);
+  const { logo: siteLogo } = useSiteLogo();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const showPreloader = usePreloaderMinimum(productId);
   const [error, setError] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [toast, setToast] = useState<{ product: any } | null>(null);
   const [variantError, setVariantError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-
-    const loadSiteLogo = async () => {
-      try {
-        const response = await settingsService.getAll();
-        const configuredLogo = response.data?.data?.logo_url;
-        if (active && configuredLogo) {
-          setSiteLogo(getImageUrl(configuredLogo) || brandLogo);
-        }
-      } catch {
-        if (active) setSiteLogo(brandLogo);
-      }
-    };
-
-    void loadSiteLogo();
-    return () => {
-      active = false;
-    };
-  }, []);
 
   useEffect(() => {
     let active = true;
@@ -218,7 +200,7 @@ export default function ProductDetailPage() {
     return () => { active = false; };
   }, [productId]);
 
-  if (loading) return <LoadingScreen label="Cargando producto" />;
+  if (loading || showPreloader) return <LoadingScreen label="Cargando producto" />;
 
   if (error || !product) {
     return (

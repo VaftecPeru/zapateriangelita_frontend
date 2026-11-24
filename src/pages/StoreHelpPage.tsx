@@ -1,6 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import brandLogo from '../assets/brand/logo-angelita-horizontal.png';
+import { useSiteLogo } from '../hooks/useSiteLogo';
 import '../styles/legal-pages.css';
 
 type Topic = {
@@ -38,6 +38,13 @@ export const storeHelpTopics: Record<string, Topic> = {
       { title: 'Si el pago queda pendiente', text: 'Consulta el estado del pedido antes de intentar otro pago. Si el cargo aparece en tu banco y el pedido sigue pendiente, contáctanos con tu número de pedido.' },
     ],
   },
+  'libro-de-reclamaciones': {
+    title: 'Libro de reclamaciones',
+    sections: [
+      { title: 'Presenta tu reclamación', text: 'Escribe a nuestro equipo de atención con el asunto «Reclamación». Incluye tu nombre, una descripción de lo ocurrido y el número de pedido si lo tienes. Indica cómo podemos ayudarte.' },
+      { title: 'Da seguimiento', text: 'Conserva una copia del correo enviado. Si necesitas agregar información, responde en el mismo hilo. Si adjuntas un comprobante, oculta los datos de tu tarjeta.' },
+    ],
+  },
   'guia-de-tallas': {
     title: 'Guía de tallas',
     sections: [
@@ -57,13 +64,14 @@ export const storeHelpTopics: Record<string, Topic> = {
 };
 
 export default function StoreHelpPage({ topic }: { topic: Topic }) {
+    const { logo } = useSiteLogo();
   return (
     <main className="legal-page">
       <div className="legal-page__topbar">
         <div className="legal-page__topbar-inner">Zapatería Angelita</div>
       </div>
       <div className="legal-page__brand">
-        <Link to="/catalogo"><img src={brandLogo} alt="Zapatería Angelita" className="h-auto w-48" /></Link>
+        <Link to="/catalogo"><img src={logo} alt="Zapatería Angelita" className="h-auto w-48" /></Link>
       </div>
       <div className="legal-page__content">
         <Link to="/catalogo" className="legal-page__back"><ArrowLeft size={18} aria-hidden="true" /> Volver al catálogo</Link>

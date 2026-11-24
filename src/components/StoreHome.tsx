@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import ReferenceLanding from "./ReferenceLanding";
 import { getCatalogName } from '../utils/catalogName';
 import PhoneField from "./PhoneField";
+import { useSiteLogo } from '../hooks/useSiteLogo';
 import brandLogo from "../assets/brand/logo-angelita-horizontal.png";
 import fallbackImage from "../assets/foto1.jpg";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
@@ -10,9 +11,12 @@ import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
 import apiClient from "../services/apiClient";
 import { useUbigeo } from "../hooks/useUbigeo";
-import { categoryService, productService, settingsService, subcategoryService, Category, Product } from "../services/crudService";
+import { categoryService, productService, subcategoryService, Category, Product } from "../services/crudService";
 import { getImageUrl } from "../config/api";
 import {
+  BookOpen,
+  HelpCircle,
+  CreditCard,
   ChevronLeft,
   ChevronDown,
   ChevronRight,
@@ -297,7 +301,7 @@ function ProductCard({ product, onFavorite, isFavorite, onAddToCart }: any) {
 
 export default function StoreHome() {
   const [products, setProducts] = useState<any[]>([]);
-  const [siteLogo, setSiteLogo] = useState<string>(brandLogo);
+  const { logo: siteLogo } = useSiteLogo();
   const [categories, setCategories] = useState<any[]>([]);
   const [subcategories, setSubcategories] = useState<any[]>([]);
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
@@ -357,27 +361,6 @@ export default function StoreHome() {
       setCartOpen(true);
     }
   }, [location.state]);
-
-  useEffect(() => {
-    let active = true;
-
-    const loadSiteLogo = async () => {
-      try {
-        const response = await settingsService.getAll();
-        const configuredLogo = response.data?.data?.logo_url;
-        if (active && configuredLogo) {
-          setSiteLogo(getImageUrl(configuredLogo) || brandLogo);
-        }
-      } catch {
-        if (active) setSiteLogo(brandLogo);
-      }
-    };
-
-    void loadSiteLogo();
-    return () => {
-      active = false;
-    };
-  }, []);
 
   useEffect(() => {
     let active = true;
@@ -728,7 +711,7 @@ export default function StoreHome() {
                         {item.name} <ChevronDown size={13} />
                       </button>
                       {openDropdown === item.name && (
-                        <div className="dropdown-menu">
+                        <div className={isChildrenMenu ? "dropdown-menu children-menu" : "dropdown-menu"}>
                           {isChildrenMenu ? (
                             item.submenu.map((group: any) => (
                               <div key={group.talla} className="dropdown-group">
@@ -1192,10 +1175,10 @@ export default function StoreHome() {
           </div>
           <div>
             <h2>Ayuda</h2>
-            <Link to="/como-comprar">¿Cómo comprar?</Link>
-            <Link to="/metodos-de-pago">Métodos de pago</Link>
-            <Link to="/guia-de-tallas">Guía de tallas</Link>
-            <Link to="/preguntas-frecuentes">Preguntas frecuentes</Link>
+            <Link className="footer__help-link" to="/como-comprar"><ShoppingBag aria-hidden="true" /> ¿Cómo comprar?</Link>
+            <Link className="footer__help-link" to="/metodos-de-pago"><CreditCard aria-hidden="true" /> Métodos de pago</Link>
+            <Link className="footer__help-link" to="/libro-de-reclamaciones"><BookOpen aria-hidden="true" /> Libro de reclamaciones</Link>
+            <Link className="footer__help-link" to="/preguntas-frecuentes"><HelpCircle aria-hidden="true" /> Preguntas frecuentes</Link>
           </div>
           <div className="footer__contact">
             <h2>Contacto</h2>

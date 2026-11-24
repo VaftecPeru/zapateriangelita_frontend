@@ -1,6 +1,8 @@
+import CookieConsent from './components/CookieConsent';
 // src/App.tsx
 import { useEffect, useState } from 'react';
 import { normalizePreloaderMode, PreloaderContext, type PreloaderMode } from './hooks/usePreloader';
+import { resolveSiteLogo, SiteLogoContext } from './hooks/useSiteLogo';
 import { settingsService } from './services/crudService';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
@@ -113,6 +115,7 @@ const AppContent = () => {
           <Route path="*" element={<Navigate to={fallbackPath} replace />} />
         </Routes>
       </div>
+      <CookieConsent />
     </div>
   );
 };
@@ -120,6 +123,7 @@ const AppContent = () => {
 function App() {
   const [mode, setMode] = useState<PreloaderMode | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [siteLogoPath, setSiteLogo] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -128,6 +132,7 @@ function App() {
         if (active) {
           setMode((current) => current ?? normalizePreloaderMode(response.data.data?.store_preloader));
           setImageUrl(response.data.data?.store_preloader_image || null);
+          setSiteLogo((current) => current ?? response.data.data?.logo_url ?? null);
         }
       },
       () => {
@@ -139,12 +144,14 @@ function App() {
 
 
   return (
-    <PreloaderContext.Provider value={{ mode: mode ?? 'simple', setMode, imageUrl, setImageUrl }}>
+    <PreloaderContext.Provider value={{ mode: mode ?? 'simple', ready: mode !== null, setMode, imageUrl, setImageUrl }}>
       <AuthProvider>
-        <CartProvider>
-          <ScrollToTop />
-          <AppContent />
-        </CartProvider>
+        <SiteLogoContext.Provider value={{ logo: resolveSiteLogo(siteLogoPath), setSiteLogo }}>
+          <CartProvider>
+            <ScrollToTop />
+            <AppContent />
+          </CartProvider>
+        </SiteLogoContext.Provider>
       </AuthProvider>
     </PreloaderContext.Provider>
   );

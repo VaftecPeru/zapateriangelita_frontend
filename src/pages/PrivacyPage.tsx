@@ -5,9 +5,10 @@ import { Link } from 'react-router-dom';
 import { useSettings } from '../hooks/useSettings';
 import '../styles/legal-pages.css';
 
-import brandLogo from '../assets/brand/logo-angelita-horizontal.png';
+import { useSiteLogo } from '../hooks/useSiteLogo';
 
 const PrivacyPage = ({ fromStore = false }: { fromStore?: boolean }) => {
+    const { logo } = useSiteLogo();
     const { settings, loading } = useSettings();
 
     useEffect(() => {
@@ -37,7 +38,7 @@ const PrivacyPage = ({ fromStore = false }: { fromStore?: boolean }) => {
             </div>
 
             <div className="legal-page__brand">
-                <Link to="/catalogo"><img src={brandLogo} alt="Zapatería Angelita" className="h-auto w-48" /></Link>
+                <Link to="/catalogo"><img src={logo} alt="Zapatería Angelita" className="h-auto w-48" /></Link>
             </div>
 
             <div className="legal-page__content">

@@ -4,15 +4,16 @@ import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
 import '../styles/register-home.css';
-import brandLogo from '../assets/brand/logo-angelita-horizontal.png';
+import { useSiteLogo } from '../hooks/useSiteLogo';
 import { onlyLettersAndSpaces } from '../utils/profileValidation';
 import PhoneField from '../components/PhoneField';
 
-const Logo = () => (
-    <a className="logo" href="/" aria-label="Zapatería Angelita - inicio">
-        <img className="brand-logo__image" src={brandLogo} alt="Zapatería Angelita" />
-    </a>
-);
+const Logo = () => {
+    const { logo } = useSiteLogo();
+    return <a className="logo" href="/" aria-label="Zapatería Angelita - inicio">
+        <img className="brand-logo__image" src={logo} alt="Zapatería Angelita" />
+    </a>;
+};
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
