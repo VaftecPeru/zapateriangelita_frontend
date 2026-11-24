@@ -31,6 +31,7 @@ type ReservationPolicy = {
 };
 
 type HomeBanner = {
+    mode: 'image' | 'content';
     id: string;
     eyebrow: string;
     title: string;
@@ -50,7 +51,8 @@ const defaultPrivacyPolicies = [
 
 const newBanner = (): HomeBanner => ({
     id: `banner-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    eyebrow: 'Colección Angelita',
+    mode: 'image',
+    eyebrow: '',
     title: '',
     description: '',
     image: '',
@@ -81,6 +83,7 @@ const normalizeBanners = (value?: string): HomeBanner[] => {
         if (!Array.isArray(parsed)) return [];
         return parsed.map((banner: any, index: number) => ({
             id: String(banner?.id || `banner-${index + 1}`),
+            mode: banner?.mode === 'image' || banner?.mode === 'content' ? banner.mode : (String(banner?.title || '').trim() || String(banner?.eyebrow || '').trim() || String(banner?.description || '').trim() ? 'content' : 'image'),
             eyebrow: String(banner?.eyebrow || ''),
             title: String(banner?.title || ''),
             description: String(banner?.description || ''),
@@ -408,21 +411,21 @@ const SettingsManager = () => {
             return;
         }
 
-        const invalid = banners.find((banner) => !banner.title.trim() || !banner.image.trim());
+        const invalid = banners.find((banner) => !banner.image.trim());
         if (invalid) {
-            notify('error', 'Cada banner necesita título e imagen antes de guardar.');
+            notify('error', 'Cada banner necesita una imagen antes de guardar. El texto es opcional.');
             setExpandedBanners((current) => ({ ...current, [invalid.id]: true }));
             return;
         }
 
         const payload = banners.map((banner) => ({
             ...banner,
-            eyebrow: banner.eyebrow.trim(),
-            title: banner.title.trim().slice(0, 120),
-            description: banner.description.trim().slice(0, 220),
+            eyebrow: banner.mode === 'image' ? '' : banner.eyebrow.trim(),
+            title: banner.mode === 'image' ? '' : banner.title.trim().slice(0, 120),
+            description: banner.mode === 'image' ? '' : banner.description.trim().slice(0, 220),
             image: banner.image.trim(),
             imagePosition: banner.imagePosition.trim() || 'center center',
-            textColor: banner.textColor,
+            textColor: /^#[0-9a-fA-F]{6}$/.test(banner.textColor) ? banner.textColor : '#ffffff',
             active: Boolean(banner.active),
         }));
 
@@ -858,7 +861,7 @@ const SettingsManager = () => {
                                                 <div className="space-y-3">
                                                     <div className="aspect-[16/9] overflow-hidden rounded-xl border border-gray-200 bg-white">
                                                         {banner.image ? (
-                                                            <img src={getImageUrl(banner.image)} alt={`Vista previa ${banner.title || 'banner'}`} className="h-full w-full object-cover" />
+                                                            <img src={getImageUrl(banner.image)} alt={`Vista previa ${banner.title || 'banner'}`} className="h-full w-full object-contain" />
                                                         ) : (
                                                             <div className="grid h-full place-items-center text-center text-gray-300">
                                                                 <div><FileImage size={26} className="mx-auto mb-2" /><span className="text-[10px] font-bold">Sin imagen</span></div>
@@ -881,7 +884,15 @@ const SettingsManager = () => {
 
                                                 <div className="grid gap-4 sm:grid-cols-2">
                                                     <label className="sm:col-span-2">
-                                                        <span className="mb-1.5 block text-[9px] font-black uppercase tracking-widest text-gray-500">Título principal</span>
+                                                        <span className="mb-1.5 block text-[9px] font-black uppercase tracking-widest text-gray-500">Modalidad del banner</span>
+                                                        <select value={banner.mode} onChange={(event) => updateBanner(banner.id, 'mode', event.target.value as HomeBanner['mode'])} className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold">
+                                                            <option value="image">Solo imagen (sin superposiciones)</option>
+                                                            <option value="content">Imagen + contenido opcional</option>
+                                                        </select>
+                                                    </label>
+                                                    {banner.mode === 'content' && <>
+                                                    <label className="sm:col-span-2">
+                                                        <span className="mb-1.5 block text-[9px] font-black uppercase tracking-widest text-gray-500">Título principal (opcional)</span>
                                                         <input
                                                             value={banner.title}
                                                             maxLength={120}
@@ -923,6 +934,7 @@ const SettingsManager = () => {
                                                         </div>
                                                     </div>
 
+                                                    </>}
                                                     <div className="flex items-end gap-3">
                                                         <label className="flex h-11 flex-1 cursor-pointer items-center justify-between rounded-xl border border-gray-200 bg-white px-3">
                                                             <span className="text-[10px] font-black uppercase tracking-wider text-gray-600">Visible</span>
