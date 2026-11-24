@@ -950,10 +950,23 @@ img {
   display: flex;
   gap: 22px;
   overflow-x: auto;
+  overflow-y: hidden;
   margin-bottom: 34px;
   padding: 4px 3px 16px;
   border-bottom: 1px solid var(--line);
   scrollbar-width: thin;
+  scrollbar-color: #ad737b transparent;
+}
+
+@supports not (scrollbar-color: #ad737b transparent) {
+  .offers-catalog__categories::-webkit-scrollbar {
+    height: 5px;
+  }
+
+  .offers-catalog__categories::-webkit-scrollbar-thumb {
+    background: #ad737b;
+    border-radius: 999px;
+  }
 }
 
 .offers-category {
@@ -973,7 +986,7 @@ img {
 .offers-category::after {
   position: absolute;
   right: 8px;
-  bottom: -17px;
+  bottom: -16px;
   left: 8px;
   height: 3px;
   content: "";

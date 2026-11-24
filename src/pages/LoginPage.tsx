@@ -6,13 +6,14 @@ import { authService } from '../services/authService';
 import GoogleIdentityButton from '../components/GoogleIdentityButton';
 import { authDestination } from '../utils/authDestination';
 import '../styles/login-home.css';
-import brandLogo from '../assets/brand/logo-angelita-horizontal.png';
+import { useSiteLogo } from '../hooks/useSiteLogo';
 
-const Logo = ({ light = false }: { light?: boolean }) => (
-    <a className={`logo ${light ? 'logo--light' : ''}`} href="/" aria-label="Zapatería Angelita - inicio">
-        <img className="brand-logo__image" src={brandLogo} alt="Zapatería Angelita" />
-    </a>
-);
+const Logo = ({ light = false }: { light?: boolean }) => {
+    const { logo } = useSiteLogo();
+    return <a className={`logo ${light ? 'logo--light' : ''}`} href="/" aria-label="Zapatería Angelita - inicio">
+        <img className="brand-logo__image" src={logo} alt="Zapatería Angelita" />
+    </a>;
+};
 
 export const getRetryAfterSeconds = (error: any, fallback = 10): number => {
     const fromBody = Number(error?.response?.data?.retry_after);
@@ -24,6 +25,29 @@ export const getRetryAfterSeconds = (error: any, fallback = 10): number => {
             : fallback;
 
     return Math.max(1, Math.ceil(value));
+};
+
+/**
+ * Traduce errores de conectividad sin exponer detalles de Axios al cliente.
+ * Una respuesta HTTP (401/422/5xx) se conserva para diagnóstico por estado.
+ */
+export const getLoginErrorMessage = (error: any, fallback = 'No fue posible iniciar sesión.'): string => {
+    const status = Number(error?.response?.status || 0);
+    if (!status) {
+        if (error?.code === 'ECONNABORTED' || error?.code === 'ETIMEDOUT') {
+            return 'La conexión con el servidor tardó demasiado. Intenta nuevamente.';
+        }
+        if (error?.code === 'ERR_NETWORK' || error?.request || /^(Network Error|Failed to fetch)$/i.test(error?.message || '')) {
+            return 'No fue posible conectar con el servidor. Comprueba tu conexión e intenta nuevamente.';
+        }
+        return typeof error?.message === 'string' && error.message.trim() ? error.message : fallback;
+    }
+    if (status >= 500) {
+        return 'El servicio no está disponible temporalmente. Intenta nuevamente más tarde.';
+    }
+    return error?.response?.data?.message
+        || error?.response?.data?.errors?.email?.[0]
+        || fallback;
 };
 
 const LoginPage = () => {
@@ -74,11 +98,7 @@ const LoginPage = () => {
                 setCooldownSeconds(retryAfter);
                 setError(`Se realizaron varios intentos seguidos. Espera ${retryAfter} segundos y vuelve a intentar.`);
             } else {
-                const msg = err.response?.data?.message
-                    || err.response?.data?.errors?.email?.[0]
-                    || err.message
-                    || 'Error al iniciar sesión';
-                setError(msg);
+                setError(getLoginErrorMessage(err));
             }
         } finally {
             loginInFlight.current = false;
@@ -118,10 +138,7 @@ const LoginPage = () => {
             } else if (err.code === 'ECONNABORTED') {
                 setError('Google está tardando más de lo esperado. Intenta nuevamente en unos segundos.');
             } else {
-                const msg = err.response?.data?.message
-                    || err.message
-                    || 'No fue posible continuar con Google.';
-                setError(msg);
+                setError(getLoginErrorMessage(err, 'No fue posible continuar con Google.'));
             }
         } finally {
             googleInFlight.current = false;

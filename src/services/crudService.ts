@@ -343,6 +343,16 @@ export const settingsService = {
             { headers: { 'Content-Type': 'multipart/form-data' } },
         );
     },
+    uploadPreloaderImage: (file: File) => {
+        const formData = new FormData();
+        formData.append('_method', 'PUT');
+        formData.append('image', file);
+        return apiClient.post<{ success: boolean; data: { path: string; mode: 'branded' } }>(
+            '/settings/store_preloader_image_upload',
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } },
+        );
+    },
     uploadLogoImage: (file: File) => {
         const formData = new FormData();
         formData.append('_method', 'PUT');

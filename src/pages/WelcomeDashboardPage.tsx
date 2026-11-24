@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, ShoppingBag, UserRound, ReceiptText, ArrowRight } from 'lucide-react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import brandLogo from '../assets/brand/logo-angelita-horizontal.png';
+import { useSiteLogo } from '../hooks/useSiteLogo';
 
 const WelcomeDashboardPage = () => {
+    const { logo } = useSiteLogo();
     const { user, isAuthenticated } = useAuth();
     const location = useLocation();
 
@@ -33,7 +34,7 @@ const WelcomeDashboardPage = () => {
             <div className="mx-auto max-w-5xl">
                 <section className="overflow-hidden rounded-[2rem] border border-black/5 bg-white shadow-xl shadow-black/5">
                     <div className="border-b border-gray-100 px-6 py-5 sm:px-9">
-                        <img src={brandLogo} alt="Zapatería Angelita" className="h-auto w-48 max-w-full" />
+                        <img src={logo} alt="Zapatería Angelita" className="h-auto w-48 max-w-full" />
                     </div>
 
                     <div className="grid gap-8 px-6 py-8 sm:px-9 lg:grid-cols-[1.15fr_.85fr] lg:items-center">

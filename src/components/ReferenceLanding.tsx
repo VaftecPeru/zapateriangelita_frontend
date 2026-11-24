@@ -22,10 +22,11 @@ type Props = {
   renderProduct: (product: any) => ReactNode;
   loading: boolean;
   error: boolean;
+  instagramUrl?: string;
   onRetry?: () => void;
 };
 
-export default function ReferenceLanding({ products, renderProduct, loading, error, onRetry }: Props) {
+export default function ReferenceLanding({ products, renderProduct, loading, error, onRetry, instagramUrl }: Props) {
   // Managed banners remain available after the reference campaign.
   const slides = [...defaultSlides, ...heroSlides.filter((item: any) => item.managed).map((item: any) => ({ ...item, emphasis: '', href: '/catalogo' }))];
   const [slide, setSlide] = useState(0);
@@ -37,6 +38,7 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
   const [reducedMotion, setReducedMotion] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [newsletterNotice, setNewsletterNotice] = useState('');
+  const [newsletterError, setNewsletterError] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterLoading, setNewsletterLoading] = useState(false);
   const touch = useRef<{ x: number; y: number } | null>(null);
@@ -80,21 +82,27 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
 
   const submitNewsletter = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (newsletterLoading) return;
     const email = newsletterEmail.trim().toLowerCase();
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setNewsletterError(true);
       setNewsletterNotice('Ingresa un correo electrónico válido.');
       return;
     }
 
     setNewsletterLoading(true);
+    setNewsletterError(false);
     setNewsletterNotice('');
 
     try {
       const response = await newsletterService.subscribe(email);
-      setNewsletterNotice(response.data.message || 'Suscripción registrada correctamente.');
+      setNewsletterNotice(response.data.already_subscribed
+        ? 'Ya estás suscrito a nuestras novedades.'
+        : 'Suscripción registrada. Recibirás un correo de bienvenida.');
       setNewsletterEmail('');
     } catch (error: any) {
+      setNewsletterError(true);
       const firstValidationError = error?.response?.data?.errors?.email?.[0];
       setNewsletterNotice(firstValidationError || error?.response?.data?.message || 'No fue posible registrar la suscripción. Intenta nuevamente.');
     } finally {
@@ -249,15 +257,15 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
         <div className="ref-testimonial-grid">{testimonials.map(item => <article key={item.name} className="ref-testimonial"><div className="ref-stars" aria-label="5 de 5 estrellas">{Array.from({ length: 5 }, (_, i) => <Star key={i} size={15} fill="currentColor" />)}</div><p>“{item.quote}”</p><footer><img src={item.avatar} alt="" loading="lazy" /><div><strong>{item.name}</strong><span>{item.city}</span></div></footer></article>)}</div>
       </section>
 
-      <section className="ref-instagram ref-shell" id="instagram">
-        <div className="ref-instagram__intro"><span>Síguenos en</span><h2>Instagram</h2><small>@zapateriaangelita</small><p>Inspírate con nuestros looks<br />y novedades</p><a href="https://www.instagram.com/zapateriaangelita/" target="_blank" rel="noopener noreferrer">Ver Instagram <ArrowRight size={15} /></a></div>
-        <div className="ref-instagram__track" ref={instagram}>{gallery.map((name, i) => <a key={i} href="https://www.instagram.com/zapateriaangelita/" target="_blank" rel="noopener noreferrer" aria-label="Visitar Instagram de Zapatería Angelita"><img src={`${assets}${name}`} alt={['Tacones rojos', 'Tenis blancos', 'Zapatos de vestir', 'Calzado urbano', 'Tacones nude'][i]} loading="lazy" /></a>)}</div>
+      {instagramUrl && <section className="ref-instagram ref-shell" id="instagram">
+        <div className="ref-instagram__intro"><span>Síguenos en</span><h2>Instagram</h2><p>Inspírate con nuestros looks<br />y novedades</p><a href={instagramUrl} target="_blank" rel="noopener noreferrer">Ver Instagram <ArrowRight size={15} /></a></div>
+        <div className="ref-instagram__track" ref={instagram}>{gallery.map((name, i) => <a key={i} href={instagramUrl} target="_blank" rel="noopener noreferrer" aria-label="Visitar Instagram de Zapatería Angelita"><img src={`${assets}${name}`} alt={['Tacones rojos', 'Tenis blancos', 'Zapatos de vestir', 'Calzado urbano', 'Tacones nude'][i]} loading="lazy" /></a>)}</div>
         <button className="ref-round ref-instagram__next" aria-label="Más imágenes" onClick={() => instagram.current?.scrollBy({ left: 220, behavior: reducedMotion ? 'auto' : 'smooth' })}><ChevronRight size={18} /></button>
-      </section>
+      </section>}
 
       <section className="ref-newsletter ref-shell">
         <div><Mail /><p><strong>Suscríbete a nuestro newsletter</strong><span>Recibe ofertas exclusivas, novedades y mucho más.</span></p></div>
-        <form onSubmit={submitNewsletter}>
+        <form onSubmit={submitNewsletter} noValidate aria-busy={newsletterLoading}>
           <label className="sr-only" htmlFor="ref-email">Correo electrónico para novedades</label>
           <input
             id="ref-email"
@@ -266,15 +274,21 @@ export default function ReferenceLanding({ products, renderProduct, loading, err
             placeholder="Ingresa tu correo electrónico"
             autoComplete="email"
             required
+            maxLength={255}
+            aria-describedby="ref-newsletter-notice"
             value={newsletterEmail}
-            onChange={(event) => setNewsletterEmail(event.target.value)}
+            onChange={(event) => {
+              setNewsletterEmail(event.target.value);
+              setNewsletterNotice('');
+              setNewsletterError(false);
+            }}
             disabled={newsletterLoading}
           />
           <button type="submit" disabled={newsletterLoading}>
             {newsletterLoading ? 'Suscribiendo...' : 'Suscribirme'}
           </button>
+          <p id="ref-newsletter-notice" className={`ref-newsletter__notice${newsletterError ? ' is-error' : ''}`} role="status" aria-live="polite">{newsletterNotice}</p>
         </form>
-        {newsletterNotice && <p className="ref-newsletter__notice" role="status" aria-live="polite">{newsletterNotice}</p>}
       </section>
     </div>
   );

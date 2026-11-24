@@ -1,6 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import brandLogo from '../assets/brand/logo-angelita-horizontal.png';
+import { useSiteLogo } from '../hooks/useSiteLogo';
 import '../styles/legal-pages.css';
 
 type Topic = {
@@ -64,13 +64,14 @@ export const storeHelpTopics: Record<string, Topic> = {
 };
 
 export default function StoreHelpPage({ topic }: { topic: Topic }) {
+    const { logo } = useSiteLogo();
   return (
     <main className="legal-page">
       <div className="legal-page__topbar">
         <div className="legal-page__topbar-inner">Zapatería Angelita</div>
       </div>
       <div className="legal-page__brand">
-        <Link to="/catalogo"><img src={brandLogo} alt="Zapatería Angelita" className="h-auto w-48" /></Link>
+        <Link to="/catalogo"><img src={logo} alt="Zapatería Angelita" className="h-auto w-48" /></Link>
       </div>
       <div className="legal-page__content">
         <Link to="/catalogo" className="legal-page__back"><ArrowLeft size={18} aria-hidden="true" /> Volver al catálogo</Link>

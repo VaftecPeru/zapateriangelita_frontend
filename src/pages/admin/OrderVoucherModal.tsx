@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
 import { Download, Printer, QrCode, X } from 'lucide-react';
-import { settingsService, type Order } from '../../services/crudService';
-import { getImageUrl } from '../../config/api';
+import type { Order } from '../../services/crudService';
+import { useSiteLogo } from '../../hooks/useSiteLogo';
 import { isOrderPaid, voucherPaymentToken } from '../../utils/orderVoucher';
 
 type Props = {
@@ -140,28 +139,8 @@ const voucherHtml = (
 
 const OrderVoucherModal = ({ order, onClose }: Props) => {
   const paid = isOrderPaid(order);
-  const [logoSource, setLogoSource] = useState(brandLogoUrl());
-
-  useEffect(() => {
-    let active = true;
-
-    const loadLogo = async () => {
-      try {
-        const response = await settingsService.getAll();
-        const configured = response.data?.data?.logo_url;
-        if (active && configured) {
-          setLogoSource(getImageUrl(configured) || brandLogoUrl());
-        }
-      } catch {
-        if (active) setLogoSource(brandLogoUrl());
-      }
-    };
-
-    void loadLogo();
-    return () => {
-      active = false;
-    };
-  }, []);
+  const { logo } = useSiteLogo();
+  const logoSource = new URL(logo, window.location.origin).href;
 
   const openPrintable = () => {
     const win = window.open('', '_blank', 'width=980,height=800');

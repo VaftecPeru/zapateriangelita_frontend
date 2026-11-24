@@ -5,7 +5,7 @@ import { JSDOM } from 'jsdom';
 import AdminModuleTabs, { ADMIN_MODULE_TABS } from '../src/pages/admin/AdminModuleTabs';
 import AdminSettingsWorkspace from '../src/pages/admin/AdminSettingsWorkspace';
 import { AuthProvider } from '../src/hooks/useAuth';
-import { additionalServiceService } from '../src/services/crudService';
+import { additionalServiceService, settingsService } from '../src/services/crudService';
 import { authService } from '../src/services/authService';
 
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'http://localhost/' });
@@ -21,6 +21,8 @@ const mount = dom.window.document.getElementById('root')!;
 const root = createRoot(mount);
 const initialGetAll = additionalServiceService.getAll;
 const initialProfile = authService.getProfile;
+const initialSettings = settingsService.getAll;
+const initialUpload = settingsService.uploadPreloaderImage;
 async function render(ui: React.ReactElement) {
     await act(async () => { root.render(ui); });
 }
@@ -89,9 +91,60 @@ async function run() {
         const price = mount.querySelector<HTMLInputElement>('input[name="price"]');
         assert.equal(price?.value, '75');
         console.log('PASS ajustes: Usuarios operativo, Costo delivery reutiliza tarifa real y edición del administrador');
+
+        const objectUrl = 'blob:http://localhost/preloader-preview';
+        URL.createObjectURL = () => objectUrl;
+        URL.revokeObjectURL = () => {};
+        Object.assign(dom.window.HTMLDialogElement.prototype, {
+            showModal(this: HTMLDialogElement) { this.open = true; },
+            close(this: HTMLDialogElement) { this.open = false; },
+        });
+        settingsService.getAll = async () => ({ data: { data: {} } }) as Awaited<ReturnType<typeof initialSettings>>;
+        let uploads = 0;
+        const file = new dom.window.File(['GIF89a'], 'precarga.gif', { type: 'image/gif' });
+        settingsService.uploadPreloaderImage = async (selected) => {
+            assert.equal(selected, file);
+            uploads++;
+            return { data: { data: { path: '/api/media/uploads/settings/preloader_qa.gif' } } } as Awaited<ReturnType<typeof initialUpload>>;
+        };
+        await render(<AdminSettingsWorkspace key="preloader-test" />);
+        const button = (label: string) => {
+            const found = [...mount.querySelectorAll<HTMLButtonElement>('button')]
+                .find(element => element.textContent?.includes(label));
+            assert.ok(found, `Botón esperado: ${label}`);
+            return found;
+        };
+        await click(button('Pantalla de carga de la tienda'));
+        assert.ok(!mount.textContent?.includes('Estilo de precarga'));
+        assert.equal(mount.querySelector('label[for="preloader-upload"]')?.textContent?.trim(), 'Cambiar imagen');
+        const input = mount.querySelector<HTMLInputElement>('#preloader-upload');
+        assert.ok(input);
+        assert.equal(button('Revisar archivo').disabled, true);
+        Object.defineProperty(input, 'files', { value: [file] });
+        await act(async () => { input.dispatchEvent(new dom.window.Event('change', { bubbles: true })); });
+        assert.ok(mount.querySelector(`img[src="${objectUrl}"]`), 'La vista previa usa el archivo local');
+        const dialog = mount.querySelector('dialog');
+        assert.ok(dialog);
+        await click(button('Aceptar y publicar'));
+        assert.equal(uploads, 0, 'La aceptación directa sin revisión no publica');
+        await click(button('Revisar archivo'));
+        assert.equal(dialog.open, true);
+        assert.equal(uploads, 0, 'La revisión no publica');
+        assert.ok(dialog.textContent?.includes('precarga.gif'));
+        await click(button('Volver a la vista previa'));
+        assert.equal(dialog.open, false);
+        assert.equal(uploads, 0, 'Volver cancela el intento de publicación');
+        await click(button('Revisar archivo'));
+        await click(button('Aceptar y publicar'));
+        assert.equal(uploads, 1);
+        assert.equal(dialog.open, false);
+        assert.ok(mount.textContent?.includes('Animación publicada'));
+        console.log('PASS precarga: vista previa local, revisión, cancelación y una publicación tras aceptar');
     } finally {
         (authService as any).getProfile = initialProfile;
         (additionalServiceService as any).getAll = initialGetAll;
+        settingsService.getAll = initialSettings;
+        settingsService.uploadPreloaderImage = initialUpload;
         await act(async () => { root.unmount(); });
         dom.window.close();
     }

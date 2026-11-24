@@ -9,7 +9,7 @@ import { authService } from '../src/services/authService';
 import apiClient from '../src/services/apiClient';
 import { userService } from '../src/services/crudService';
 import axios from 'axios';
-import LoginPage from '../src/pages/LoginPage';
+import LoginPage, { getLoginErrorMessage } from '../src/pages/LoginPage';
 import CheckoutPageV2 from '../src/pages/CheckoutPageV2';
 import { authDestination } from '../src/utils/authDestination';
 
@@ -53,6 +53,29 @@ const provider = () => <MemoryRouter><AuthProvider><Probe /></AuthProvider></Mem
 function check(name: string, assertion: () => void) { assertion(); console.log(`PASS ${name}`); }
 
 async function run() {
+  check('Login: errores de red, timeout y servidor usan mensajes comprensibles', () => {
+    assert.equal(
+      getLoginErrorMessage({ code: 'ERR_NETWORK', message: 'Network Error' }),
+      'No fue posible conectar con el servidor. Comprueba tu conexión e intenta nuevamente.',
+    );
+    assert.equal(
+      getLoginErrorMessage({ code: 'ECONNABORTED', message: 'timeout of 10000ms exceeded' }),
+      'La conexión con el servidor tardó demasiado. Intenta nuevamente.',
+    );
+    assert.equal(
+      getLoginErrorMessage({ response: { status: 503, data: { message: 'SQLSTATE secret' } } }),
+      'El servicio no está disponible temporalmente. Intenta nuevamente más tarde.',
+    );
+    assert.equal(
+      getLoginErrorMessage({ response: { status: 401, data: { message: 'Credenciales incorrectas.' } } }),
+      'Credenciales incorrectas.',
+    );
+    assert.equal(
+      getLoginErrorMessage(new Error('Google no devolvió una sesión válida.')),
+      'Google no devolvió una sesión válida.',
+    );
+  });
+
   const originalPost = (apiClient as any).post;
   let passwordRequest: { url?: string; data?: any } = {};
   (apiClient as any).post = async (url: string, data: any) => {

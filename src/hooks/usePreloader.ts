@@ -10,7 +10,9 @@ export const PreloaderContext = createContext<{
   mode: PreloaderMode;
   ready: boolean;
   setMode: (mode: PreloaderMode) => void;
-}>({ mode: 'branded', ready: true, setMode: () => {} });
+  imageUrl: string | null;
+  setImageUrl: (imageUrl: string | null) => void;
+}>({ mode: 'branded', ready: true, setMode: () => {}, imageUrl: null, setImageUrl: () => {} });
 
 export const usePreloader = () => useContext(PreloaderContext);
 
