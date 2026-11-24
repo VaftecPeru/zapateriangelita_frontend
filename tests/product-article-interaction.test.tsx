@@ -24,6 +24,8 @@ const product = {
   gender: 'mujer' as const, barcode: '7501234567890', collection_name: 'Primavera',
   seo_title: 'Zapatilla Casual Angelita', seo_description: 'Cómoda y elegante',
   img: '', rating: 0, reviews: 0, status: 'normal' as const,
+  images: ['/uploads/products/portada.webp'],
+  color_images: {Negro: ['/uploads/products/negro.webp'], Beige: ['/uploads/products/beige.webp']},
   color_sizes: {Negro: ['38', '39'], Beige: ['38', '39']},
   colors: [{color: 'Negro', hex: '#111111', price: 149.90}, {color: 'Beige', hex: '#d6c2a1', price: null}],
   variant_stocks: [
@@ -42,8 +44,23 @@ const original = productService.update;
   return { data: product };
 };
 let saved = 0;
+const createObjectURL = URL.createObjectURL;
+const revokeObjectURL = URL.revokeObjectURL;
+
+async function addPhoto(label: string, filename: string) {
+  const input = mount.querySelector<HTMLInputElement>(`input[aria-label="${label}"]`);
+  assert.ok(input);
+  Object.defineProperty(input, 'files', {
+    configurable: true,
+    value: [new dom.window.File(['photo'], filename, { type: 'image/webp' })],
+  });
+  await act(async () => input.dispatchEvent(new dom.window.Event('change', { bubbles: true })));
+}
+
 async function run() {
   try {
+    URL.createObjectURL = () => 'blob:' + Math.random();
+    URL.revokeObjectURL = () => {};
     await act(async () => root.render(React.createElement(ProductEditorModal, {
       open: true,
       product: product as any,
@@ -93,6 +110,12 @@ async function run() {
     await act(async () => closePreview!.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })));
     assert.equal(mount.querySelector('[role="dialog"]'), null);
 
+    await addPhoto('Agregar fotos generales', 'lateral.webp');
+    await addPhoto('Agregar fotos generales', 'suela.webp');
+    await addPhoto('Agregar fotos de Negro', 'negro-lateral.webp');
+    await addPhoto('Agregar fotos de Beige', 'beige-lateral.webp');
+    assert.match(mount.querySelector('img[alt="Portada"]')?.getAttribute('src') ?? '', /portada\.webp$/);
+
     const draftButton = [...mount.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes('Guardar borrador'));
     assert.ok(draftButton, 'Debe existir acción de borrador con precio positivo');
     assert.equal(draftButton?.disabled, false);
@@ -102,6 +125,16 @@ async function run() {
       mount.querySelector('form')!.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
     });
     assert.ok(captured, 'Formulario no envió cambios a la API simulada');
+    assert.deepEqual(JSON.parse(String(captured!.get('image_slots'))), [
+      '/uploads/products/portada.webp', '__NEW__', '__NEW__',
+    ]);
+    assert.deepEqual(captured!.getAll('new_images[]').map((file) => (file as File).name), ['lateral.webp', 'suela.webp']);
+    assert.deepEqual(JSON.parse(String(captured!.get('color_image_slots'))), [
+      ['/uploads/products/negro.webp', '__NEW__'],
+      ['/uploads/products/beige.webp', '__NEW__'],
+    ]);
+    assert.equal((captured!.get('color_images[0][]') as File).name, 'negro-lateral.webp');
+    assert.equal((captured!.get('color_images[1][]') as File).name, 'beige-lateral.webp');
     const payload = JSON.parse(String(captured!.get('variant_stocks')));
     assert.equal(payload.length, 4);
     assert.equal(payload[0].article_model, '2001-N');
@@ -122,6 +155,8 @@ async function run() {
   } finally {
     (productService as any).update = original;
     await act(async () => root.unmount());
+    URL.createObjectURL = createObjectURL;
+    URL.revokeObjectURL = revokeObjectURL;
     dom.window.close();
   }
 }
